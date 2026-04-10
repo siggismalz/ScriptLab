@@ -16,17 +16,81 @@
   <body class="bg-body-secondary d-flex flex-column vh-100">
     <nav class="navbar bg-body-tertiary flex-shrink-0 shadow-sm">
       <div class="container-fluid">
-        <h3 class="mb-0">ScriptLab</h3>
-        <i class="bi bi-transparency"></i>
+        <div class="d-flex gap-1">
+          <i class="bi bi-transparency fs-5 text-dark"></i>
+          <h4 class="mb-0 me-0 navbar-brand">ScriptLab</h3>
+        </div>
       </div>
     </nav>
 
     <main class="container-fluid flex-grow-1 d-flex overflow-hidden py-2">
       <div class="center-grid">
-        <div class="box a shadow-sm">A</div>
-        <div class="box b shadow-sm">B</div>
-        <div class="box c shadow-sm">C</div>
-        <div class="box d shadow-sm">D</div>
+        <div class="box a shadow-sm">
+          <div class="d-flex gap-2 align-items-center">
+            <img class="card-logo" src="../statics/info.svg">
+            <h5 class="mb-0">Best-Practices und Anleitungen</h5>
+          </div>
+        </div>
+        <div class="box b shadow-sm d-flex flex-column">
+          <div class="d-flex gap-2 align-items-center">
+            <img class="card-logo" src="../statics/user-robot.svg">
+            <h5 class="mb-0">Beginne mit dem Automatisieren</h5>
+          </div>
+
+          <div class="container-fluid ps-0 flex-grow-1 mt-3">
+            <div class="row h-100">
+              <div class="col-4 h-100">
+                <div class="h-100 d-flex align-items-center">
+                  <div class="card box-b-card w-100">
+                    <div class="card-body h-100">
+                      <p class="text-center fw-bold">VB-Script</p>
+                      <div class="d-flex justify-content-center align-items-center">
+                        <img class="file-logo" src="../statics/vbs.svg">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4 h-100">
+                <div class="h-100 d-flex align-items-center">
+                  <div class="card box-b-card w-100">
+                    <div class="card-body h-100">
+                      <p class="text-center fw-bold">Powershell</p>
+                      <div class="d-flex justify-content-center align-items-center">
+                        <img class="file-logo" src="../statics/powershell.png">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-4 h-100">
+                <div class="h-100 d-flex align-items-center">
+                  <div class="card box-b-card w-100">
+                    <div class="card-body h-100">
+                      <p class="text-center fw-bold">JavaScript</p>
+                      <div class="d-flex justify-content-center align-items-center">
+                        <img class="file-logo" src="../statics/js-logo.png">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="box c shadow-sm">
+          <div class="d-flex gap-2 align-items-center">
+            <img class="card-logo" src="../statics/pending.svg">
+            <h5 class="mb-0">Zuletzt verwendet</h5>
+          </div>
+        </div>
+        <div class="box d shadow-sm">
+          <div class="d-flex gap-2 align-items-center">
+            <img class="card-logo" src="../statics/settings.svg">
+            <h5 class="mb-0">Einstellungen</h5>
+          </div>
+        </div>
       </div>
     </main>
   </body>

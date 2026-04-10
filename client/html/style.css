@@ -40,3 +40,40 @@ body {
   grid-column: 3 / 4;
   grid-row: 2 / 3;
 }
+
+.card-logo {
+  height: 20px;
+  width: 20px;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.file-logo {
+  height: 80px;
+  background-color: whitesmoke;
+  width: 80px;
+  border-radius: 30%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.box-b-card {
+  background-color: #f8f9fa;
+  height: 75%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.box-b-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.box-b-card:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.12);
+}
