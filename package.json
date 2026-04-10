@@ -1,0 +1,25 @@
+{
+  "name": "scriptlab",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/siggismalz/ScriptLab#readme",
+  "bugs": {
+    "url": "https://github.com/siggismalz/ScriptLab/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siggismalz/ScriptLab.git"
+  },
+  "license": "ISC",
+  "author": "Leon Stolz",
+  "type": "commonjs",
+  "main": "server/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
+    "electron": "^41.2.0"
+  }
+}
