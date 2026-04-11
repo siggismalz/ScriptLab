@@ -8,10 +8,8 @@
   <link rel="stylesheet" href="../../node_modules/bootstrap-icons/font/bootstrap-icons.min.css">
   <script src="../../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
   <link rel="stylesheet" href="style.css">
+  <script src="../js/app.js"></script>
   <title>ScriptLab - Startseite</title>
-  <style>
-
-  </style>
 </head>
   <body class="bg-body-secondary d-flex flex-column vh-100">
     <nav class="navbar bg-body-tertiary flex-shrink-0 shadow-sm">
@@ -34,7 +32,7 @@
         <div class="box b shadow-sm d-flex flex-column">
           <div class="d-flex gap-2 align-items-center">
             <img class="card-logo" src="../statics/user-robot.svg">
-            <h5 class="mb-0">Beginne mit dem Automatisieren</h5>
+            <h5 class="mb-0">Beginne mit einer neuen Automation</h5>
           </div>
 
           <div class="container-fluid ps-0 flex-grow-1 mt-3">
@@ -42,7 +40,7 @@
               <div class="col-4 h-100">
                 <div class="h-100 d-flex align-items-center">
                   <div class="card box-b-card w-100">
-                    <div class="card-body h-100">
+                    <div class="card-body h-100" onclick=vb_workflow_erstellen()>
                       <p class="text-center fw-bold">VB-Script</p>
                       <div class="d-flex justify-content-center align-items-center">
                         <img class="file-logo" src="../statics/vbs.svg">
