@@ -14,6 +14,8 @@
 *.png binary
 *.py text eol=lf
 *.csv text eol=lf
+# Diese kleinen Golden-Fixtures verwenden bewusst BOM und CRLF wie ihr CSV-Export.
+beispiele/business/E-Dateistapel/eingaben/*.csv -text
 *.lock text eol=lf
 *.in text eol=lf
 *.ttf binary

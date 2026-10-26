@@ -10,6 +10,8 @@ import { neuesProjekt, type EditorBlock, type Projekt } from '../src/kern/projek
 // Ein gewöhnlicher npm-test-Lauf startet über diese Datei keine VBS-Inhalte.
 const freigegeben = process.platform === 'win32' && process.env.SCRIPTLAB_RUNTIME_TESTS === '1';
 const helper = resolve('artifacts/native/ScriptLab.Testhost.exe');
+// Die normalen Proben schließen die beobachtete schwankende WSH-Initialisierung ein.
+// Der gezielte Ein-Sekunden-Zeitlimitfall und die Produktionsvorgaben bleiben unverändert.
 
 let nummer = 0;
 function block(
@@ -43,7 +45,7 @@ function projektMit(...anweisungen: EditorBlock[]): Projekt {
 async function standAbwarten(
   dienst: TestlaufDienst,
   pruefen: (stand: TestZustand) => boolean,
-  frist = 15_000,
+  frist = 40_000,
 ): Promise<TestZustand> {
   const ende = Date.now() + frist;
   while (Date.now() < ende) {
@@ -145,7 +147,7 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
         lesen,
         checkpoint('DIAG-NACH-LESEN'),
       ),
-      { basisVerzeichnis: basis, zeitlimitSekunden: 10 },
+      { basisVerzeichnis: basis, zeitlimitSekunden: 30 },
     );
     const { ende, diagnose: standDiagnose } = await diagnostiziertesEnde(dienst!);
     const ergebnisDatei = await stat(join(basis, pfad))
@@ -160,24 +162,24 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
     );
     expect((await readFile(join(basis, pfad), 'utf8')).replace(/^\uFEFF/, '')).toBe(inhalt);
     await technischeBereinigungAbwarten(technisch);
-  }, 20_000);
+  }, 45_000);
 
   it('behandelt eine normale Textausgabe mit Markertext als Daten und erhält U+FEFF samt Unicode', async () => {
     const inhalt = '\uFEFFGrüße 😀\r\nSLFEHLER|fremdes-token|fremder-block|Normale Ausgabe';
-    dienst!.starten(projektMit(ausgabe(inhalt)), { basisVerzeichnis: basis, zeitlimitSekunden: 10 });
+    dienst!.starten(projektMit(ausgabe(inhalt)), { basisVerzeichnis: basis, zeitlimitSekunden: 30 });
     const { ende, diagnose } = await diagnostiziertesEnde(dienst!);
     expect(ende.phase, diagnose).toBe('beendet');
     expect(ende.ausgabe).toBe(`${inhalt}\r\n`);
     expect(ende.fehlerBlockId).toBeNull();
     expect(ende.fehlerZeile).toBeNull();
-  }, 20_000);
+  }, 45_000);
 
   it('hält große UTF-16LE-Ausgaben begrenzt und verliert weder Abschluss noch ganze Unicodezeichen', async () => {
     const payload = `Grüße 😀 ÄÖß – ${'x'.repeat(700)}`;
     const schleife = block('sl_repeat', { ANZAHL: zahl('400'), ABLAUF: ausgabe(payload) });
     dienst!.starten(projektMit(schleife, ausgabe('ENDE-DER-GROSSEN-AUSGABE')), {
       basisVerzeichnis: basis,
-      zeitlimitSekunden: 10,
+      zeitlimitSekunden: 30,
     });
     const { ende, diagnose } = await diagnostiziertesEnde(dienst!);
     expect(ende.phase, diagnose).toBe('beendet');
@@ -187,14 +189,14 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
     expect(ende.ausgabe).toMatch(/ENDE-DER-GROSSEN-AUSGABE\r\n$/);
     expect(ende.ausgabe).not.toMatch(/^[\uDC00-\uDFFF]|[\uD800-\uDBFF]$/);
     expect(ende.fehlerBlockId).toBeNull();
-  }, 20_000);
+  }, 45_000);
 
   it('behält den dekodierten Fehlergrund und erfindet aus Klammern im Dateipfad keine Quelltextzeile', async () => {
     const fehlt = 'Nicht vorhanden (12, 3) – ä.txt';
     const fehler = block('sl_output', {
       TEXT: block('sl_read_text', { PFAD: text(fehlt) }, { KODIERUNG: 'UTF8' }),
     });
-    dienst!.starten(projektMit(fehler), { basisVerzeichnis: basis, zeitlimitSekunden: 10 });
+    dienst!.starten(projektMit(fehler), { basisVerzeichnis: basis, zeitlimitSekunden: 30 });
     const ende = await standAbwarten(dienst!, (z) => !testAktiv(z.phase));
     expect(ende.phase).toBe('fehlgeschlagen');
     expect(ende.exitcode).not.toBe(0);
@@ -203,7 +205,7 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
     expect(ende.meldung).toContain(fehlt);
     expect(ende.meldung).not.toContain('SLFEHLER|');
     expect(await readdir(basis)).toEqual([]);
-  }, 20_000);
+  }, 45_000);
 
   it('bricht schon während der Vorbereitung ab und startet keine Dateiaktion des Workflows', async () => {
     const ziel = 'DARF-NICHT-ENTSTEHEN.txt';
@@ -214,7 +216,7 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
     );
     const gestartet = dienst!.starten(projektMit(schreiben), {
       basisVerzeichnis: basis,
-      zeitlimitSekunden: 10,
+      zeitlimitSekunden: 30,
     });
     expect(gestartet.phase).toBe('vorbereitung');
     const ende = await dienst!.stoppen();
@@ -222,12 +224,12 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
     expect(ende.gestartetAm).toBeNull();
     expect(await readdir(basis)).toEqual([]);
     await technischeBereinigungAbwarten(technisch);
-  }, 20_000);
+  }, 45_000);
 
   it('stoppt einen laufenden Warteblock und erhält beim direkt folgenden Lauf einen eigenen Lebenszyklus', async () => {
     dienst!.starten(projektMit(ausgabe('VOR-STOPP'), warten('8'), ausgabe('NACH-STOPP')), {
       basisVerzeichnis: basis,
-      zeitlimitSekunden: 10,
+      zeitlimitSekunden: 30,
     });
     const laeuft = await standAbwarten(
       dienst!,
@@ -239,7 +241,7 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
     await technischeBereinigungAbwarten(technisch);
     const neu = dienst!.starten(projektMit(ausgabe('ZWEITER-LAUF'), warten('0,5')), {
       basisVerzeichnis: basis,
-      zeitlimitSekunden: 10,
+      zeitlimitSekunden: 30,
     });
     expect(neu.laufId).not.toBe(laeuft.laufId);
     expect(neu.beendetAm).toBeNull();
@@ -251,7 +253,7 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
     const { ende: zweitesEnde, diagnose } = await diagnostiziertesEnde(dienst!);
     expect(zweitesEnde.phase, diagnose).toBe('beendet');
     expect(zweitesEnde.ausgabe).not.toContain('VOR-STOPP');
-  }, 20_000);
+  }, 45_000);
 
   it('meldet das Zeitlimit als Zeitlimit und lässt nachfolgende Anweisungen aus', async () => {
     dienst!.starten(projektMit(checkpoint('VOR-ZEITLIMIT'), warten('5'), ausgabe('NACH-ZEITLIMIT')), {
@@ -267,5 +269,5 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
     expect(ende.ausgabe, diagnose).not.toContain('NACH-ZEITLIMIT');
     expect(ende.beendetAm, diagnose).not.toBeNull();
     await technischeBereinigungAbwarten(technisch);
-  }, 20_000);
+  }, 45_000);
 });

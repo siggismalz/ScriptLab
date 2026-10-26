@@ -14,6 +14,8 @@ import { vbsKodieren } from '../../src/main/dateien';
 import { pythonKandidatenSuchen, pythonPruefen } from '../../src/windows/python';
 
 // Echte, ausdrücklich freigegebene Windows-Proben. Jeder Kindprozess bleibt im festen Jobhelper.
+// Windows verzögerte einzelne VBS-Starts schon vor dem ersten festen Marker über zehn Sekunden.
+// Normale Semantikproben erhalten deshalb 30 Sekunden; gezielte Zeitlimitfälle bleiben separat.
 const freigegeben =
   process.platform === 'win32' && process.arch === 'x64' && process.env.SCRIPTLAB_RUNTIME_TESTS === '1';
 const helper = resolve('artifacts/native/ScriptLab.Testhost.exe');
@@ -125,7 +127,7 @@ describe.skipIf(!freigegeben)('Begrenzte Windows-Syntax- und Semantikprüfung f�
     }
     if (!python)
       throw new Error('Keine unterstützte CPython-Laufzeit für die freigegebene Semantikprüfung vorhanden.');
-  }, 20000);
+  }, 45000);
   afterAll(async () => {
     if (!ordner) return;
     if (
@@ -148,7 +150,7 @@ describe.skipIf(!freigegeben)('Begrenzte Windows-Syntax- und Semantikprüfung f�
       '--basis',
       basis,
       '--limit-ms',
-      sprache === 'vbs' ? '10000' : '4000',
+      sprache === 'vbs' ? '30000' : '4000',
       '--token',
       token,
       ...(sprache === 'python' ? ['--sprache', 'python', '--interpreter', python] : []),
@@ -178,7 +180,7 @@ describe.skipIf(!freigegeben)('Begrenzte Windows-Syntax- und Semantikprüfung f�
           grenzenfehler = true;
           prozess.kill();
         },
-        sprache === 'vbs' ? 14000 : 8500,
+        sprache === 'vbs' ? 34000 : 8500,
       );
       prozess.stdin.on('error', () => {});
       for (const [index, strom] of [prozess.stdout, prozess.stderr].entries())
@@ -253,7 +255,7 @@ describe.skipIf(!freigegeben)('Begrenzte Windows-Syntax- und Semantikprüfung f�
     );
     expect(ergebnis.code, ergebnis.stderr).toBe(0);
     expect(Number(ergebnis.stdout.trim())).toBe(anzahl);
-  }, 20000);
+  }, 45000);
 
   it('erfasst die tatsächlichen VBS-Konvertierungsgrenzen als festen Textnachweis', async () => {
     const code =
@@ -398,7 +400,7 @@ WScript.Quit 0
       );
     anweisungen.push(setzen('Zahltext', text('2,5')), ausgabe(rechnen('ADD', lesen('Zahltext'), zahl('1'))));
     await gleich(projektMit(...anweisungen));
-  }, 20000);
+  }, 45000);
 
   it('lokalisiert einen VBS-Ausdruckfehler mit festen Start- und Innenmarkern', async () => {
     const division = rechnen('DIV', zahl('1'), zahl('0'));
@@ -432,7 +434,7 @@ WScript.Quit 0
     expect(ergebnis.stdout).toContain('DIAG_VOR_HAUPT');
     expect(ergebnis.stderr).toContain('DIAG_IN_TEILEN');
     expect(ergebnis.stderr).toContain('DIAG_IN_FEHLER');
-  }, 15000);
+  }, 45000);
 
   it('wertet Und und Oder vollständig aus und meldet den konkreten fehlerhaften Wert', async () => {
     for (const OP of ['AND', 'OR']) {
@@ -450,7 +452,7 @@ WScript.Quit 0
         if (sprache === 'python') expect(ergebnis.stderr).toContain(`|${division.id}|`);
       }
     }
-  }, 35000);
+  }, 65000);
 
   it('ordnet eine spätere ungültige Schleifenbedingung wieder dem Schleifenbaustein zu', async () => {
     const setzenText = setzen('Bool', text('kein Wahrheitswert'));
@@ -487,7 +489,7 @@ WScript.Quit 0
     );
     const ausgabeText = await gleich(projekt);
     expect(ausgabeText).toContain('2024-02-29 12:34:56\r\n');
-  }, 20000);
+  }, 45000);
 
   it('erhält Fehlerprotokoll und Originaltraceback bei einem einzelnen Surrogat im Fehlertext', async () => {
     const token = randomBytes(24).toString('hex');
@@ -629,7 +631,7 @@ ${vbsKodierungsHelfer}
       expect(vbsBytes).toEqual(original);
       expect(pythonBytes).toEqual(original);
     }
-  }, 35000);
+  }, 65000);
 
   it('erzeugt Ordner und erhält Kopieren, Verschieben, Umbenennen, Dateilisten und bewusstes Löschen', async () => {
     const ausgaben: string[] = [];
@@ -667,7 +669,7 @@ ${vbsKodierungsHelfer}
     }
     expect(ausgaben[1]).toBe(ausgaben[0]);
     expect(ausgaben[0]).toMatch(/^a.txt\r\nd.txt\r\na.txt\r\nd.txt\r\n/);
-  }, 35000);
+  }, 65000);
 
   it('meldet vorhandene Kopierziele ohne Änderung und ersetzt sie nur nach bewusster Auswahl', async () => {
     const quelle = 'Kopierquelle.txt',
@@ -688,7 +690,7 @@ ${vbsKodierungsHelfer}
       expect(ersetzt.code, ersetzt.stderr).toBe(0);
       expect(await readFile(join(basis, ziel), 'utf8')).toBe('Quelle ä');
     }
-  }, 35000);
+  }, 65000);
 
   it('erhält endliche geschachtelte Schleifen, Rechenarten, Zufallsgrenzen und erfolgreiches Beenden', async () => {
     const erhoehen = setzen('A', rechnen('ADD', lesen('A'), zahl('1')));
@@ -718,7 +720,7 @@ ${vbsKodierungsHelfer}
     delete b.next;
     const ausgabeText = await gleich(projekt);
     expect(ausgabeText).toBe('3\r\n3\r\n6\r\n6\r\n6\r\n42\r\n1899-12-30\r\n');
-  }, 20000);
+  }, 45000);
 
   it('schreibt echte UTF-8/UTF-16LE-BOMs, erhält CRLF und behandelt vorhandene Ziele ausdrücklich', async () => {
     for (const kodierung of ['UTF8', 'UTF16', 'ANSI']) {
@@ -736,5 +738,5 @@ ${vbsKodierungsHelfer}
       expect(python.stdout).toBe(vbs.stdout);
       expect(await readFile(join(basis, pfad))).toEqual(vorher);
     }
-  }, 20000);
+  }, 45000);
 });
