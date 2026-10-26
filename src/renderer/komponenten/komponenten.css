@@ -1,0 +1,329 @@
+.sl-symbol {
+  display: block;
+  flex: 0 0 auto;
+}
+.sl-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--abstand-8);
+  min-block-size: var(--hoehe-bedienfeld);
+  padding: var(--abstand-4) var(--abstand-12);
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-normal);
+  background: var(--farbe-grundflaeche);
+  color: var(--farbe-text);
+  font-family: var(--schrift-familie);
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  font-weight: var(--gewicht-normal);
+  line-height: var(--zeilenhoehe);
+  cursor: pointer;
+  transition:
+    background-color var(--dauer-uebergang),
+    border-color var(--dauer-uebergang);
+  text-align: center;
+}
+.sl-knopf:hover {
+  background: var(--farbe-erhoeht);
+}
+.sl-knopf:active {
+  background: var(--farbe-arbeitsflaeche);
+}
+.sl-knopf:focus-visible,
+.sl-feld-eingabe:focus-visible {
+  outline: var(--fokus-kontur) solid var(--farbe-akzent);
+  outline-offset: var(--fokus-abstand);
+}
+.sl-knopf[aria-pressed='true'],
+.sl-knopf[aria-expanded='true'] {
+  border-color: var(--farbe-akzent);
+  background: var(--farbe-erhoeht);
+}
+.sl-knopf--primaer {
+  background: var(--farbe-akzent);
+  border-color: var(--farbe-akzent);
+  color: var(--farbe-auf-akzent);
+  font-weight: var(--gewicht-semibold);
+}
+.sl-knopf--primaer:hover {
+  background: var(--farbe-akzent-hover);
+  border-color: var(--farbe-akzent-hover);
+}
+.sl-knopf--primaer:active {
+  background: var(--farbe-akzent-gedrueckt);
+  border-color: var(--farbe-akzent-gedrueckt);
+}
+.sl-knopf--leise {
+  background: transparent;
+  border-color: transparent;
+}
+.sl-knopf--leise:hover {
+  background: var(--farbe-erhoeht);
+  border-color: var(--farbe-kontur);
+}
+.sl-knopf--leise:active {
+  background: var(--farbe-arbeitsflaeche);
+}
+.sl-knopf--gefahr {
+  color: var(--farbe-fehler);
+}
+.sl-knopf--symbol {
+  min-inline-size: var(--hoehe-bedienfeld);
+  padding-inline: var(--abstand-4);
+}
+.sl-knopf:disabled {
+  background: var(--farbe-inaktiv-flaeche);
+  color: var(--farbe-inaktiv-text);
+  border-color: var(--farbe-inaktiv-kontur);
+  cursor: not-allowed;
+}
+.sl-knopf-mit-grund {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--abstand-4);
+  min-inline-size: 0;
+}
+.sl-knopf-grund {
+  display: block;
+  max-inline-size: 28ch;
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+  overflow-wrap: anywhere;
+}
+.sl-feld {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--abstand-8);
+  min-inline-size: 0;
+}
+.sl-feld > label {
+  color: var(--farbe-text);
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+}
+.sl-feld-eingabe {
+  min-block-size: var(--hoehe-bedienfeld);
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  inline-size: 100%;
+  padding: var(--abstand-4) var(--abstand-8);
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-normal);
+  background: var(--farbe-arbeitsflaeche);
+  color: var(--farbe-text);
+  font-family: var(--schrift-familie);
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+}
+textarea.sl-feld-eingabe {
+  min-block-size: calc(var(--hoehe-bedienfeld) * 2);
+  resize: vertical;
+}
+.sl-feld-eingabe::placeholder {
+  color: var(--farbe-text-sekundaer);
+  opacity: 1;
+}
+.sl-feld-eingabe:hover {
+  border-color: var(--farbe-text-sekundaer);
+}
+.sl-feld-eingabe:disabled {
+  color: var(--farbe-inaktiv-text);
+  background: var(--farbe-inaktiv-flaeche);
+  border-color: var(--farbe-inaktiv-kontur);
+  cursor: not-allowed;
+}
+.sl-feld-eingabe[aria-invalid='true'] {
+  border-color: var(--farbe-fehler);
+  border-inline-start-width: 3px;
+  padding-inline-start: calc(var(--abstand-8) - 2px);
+}
+.sl-feld-hilfe,
+.sl-feld-fehler {
+  margin: 0;
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+  overflow-wrap: anywhere;
+}
+.sl-feld-hilfe {
+  color: var(--farbe-text-sekundaer);
+}
+.sl-feld-fehler {
+  color: var(--farbe-fehler);
+}
+.sl-dialog {
+  max-inline-size: min(680px, calc(100vw - var(--abstand-32)));
+  max-block-size: calc(100dvh - var(--abstand-32));
+  padding: 0;
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-dialog);
+  background: var(--farbe-erhoeht);
+  color: var(--farbe-text);
+  box-shadow: var(--schatten-overlay);
+  font-family: var(--schrift-familie);
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+}
+.sl-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.sl-dialog::backdrop {
+  background: var(--dialog-hintergrund);
+}
+.sl-dialog-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--abstand-16);
+  padding: var(--abstand-16);
+  border-block-end: 1px solid var(--farbe-trennung);
+  flex: 0 0 auto;
+}
+.sl-dialog-kopf h2 {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-size: calc(var(--schrift-dialog) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+  line-height: 1.3;
+}
+.sl-dialog-kopf h2:focus-visible {
+  outline: var(--fokus-kontur) solid var(--farbe-akzent);
+  outline-offset: var(--fokus-abstand);
+}
+.sl-dialog-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--abstand-16);
+  padding: var(--abstand-16);
+  min-block-size: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.sl-dialog-inhalt p {
+  margin: 0;
+}
+.sl-dialog-fuss {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--abstand-8);
+  padding: var(--abstand-16);
+  border-block-start: 1px solid var(--farbe-trennung);
+  flex: 0 0 auto;
+}
+.sl-status {
+  display: flex;
+  align-items: start;
+  gap: var(--abstand-8);
+  margin: 0;
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+}
+.sl-status > .sl-symbol {
+  margin-block-start: 1px;
+}
+.sl-status--erfolg {
+  color: var(--farbe-erfolg);
+}
+.sl-status--hinweis {
+  color: var(--farbe-hinweis);
+}
+.sl-status--fehler {
+  color: var(--farbe-fehler);
+}
+.sl-status--verarbeitung {
+  color: var(--farbe-text);
+}
+.sl-menue {
+  position: relative;
+}
+.sl-menue-liste {
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + var(--abstand-4));
+  inset-inline-end: 0;
+  min-inline-size: 240px;
+  max-inline-size: min(360px, calc(100vw - var(--abstand-32)));
+  max-block-size: min(70dvh, 520px);
+  margin: 0;
+  padding: var(--abstand-8);
+  overflow: auto;
+  list-style: none;
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-dialog);
+  background: var(--farbe-erhoeht);
+  color: var(--farbe-text);
+  box-shadow: var(--schatten-overlay);
+}
+.sl-menue-liste li + li {
+  margin-block-start: var(--abstand-4);
+}
+.sl-menue-liste .sl-knopf,
+.sl-menue-liste .sl-knopf-mit-grund {
+  inline-size: 100%;
+}
+.sl-menue-liste .sl-knopf {
+  justify-content: flex-start;
+  text-align: start;
+  white-space: normal;
+}
+.sl-menue-liste .sl-knopf-grund {
+  padding-inline: var(--abstand-12);
+  max-inline-size: none;
+}
+.sl-nur-vorlesen {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sl-knopf {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .sl-knopf,
+  .sl-feld-eingabe,
+  .sl-dialog {
+    background: Canvas;
+    color: CanvasText;
+    border-color: ButtonText;
+  }
+  .sl-knopf--primaer,
+  .sl-knopf[aria-pressed='true'] {
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+  .sl-knopf:disabled,
+  .sl-feld-eingabe:disabled {
+    color: GrayText;
+    border-color: GrayText;
+  }
+  .sl-knopf:focus-visible,
+  .sl-feld-eingabe:focus-visible,
+  .sl-dialog-kopf h2:focus-visible {
+    outline-color: Highlight;
+  }
+  .sl-status,
+  .sl-knopf-grund,
+  .sl-feld > label,
+  .sl-feld-hilfe,
+  .sl-feld-fehler {
+    color: CanvasText;
+  }
+  .sl-feld-eingabe[aria-invalid='true'] {
+    border-color: Mark;
+  }
+}

@@ -1,3 +1,5 @@
+import { kategoriefarben } from '../gestaltung/tokens';
+
 export type WertTyp = 'String' | 'Number' | 'Boolean' | 'Array' | 'Any';
 export interface Eingabe {
   name: string;
@@ -66,15 +68,15 @@ function bausteinHinzufuegen(
   });
 }
 // Weiße Bausteinbeschriftungen behalten auf allen Kategorien mindestens 4,5:1 Kontrast.
-const farbeAblauf = '#8A5818',
-  farbeBedingungen = '#3B62A5',
-  farbeSchleifen = '#6C45A2',
-  farbeDateien = '#286E6B',
-  farbeVariablen = '#914D38',
-  farbeTexte = '#337145',
-  farbeZahlen = '#35677F',
-  farbeEingabenAusgaben = '#824A74',
-  farbeDatumZeit = '#5A5F8C';
+const farbeAblauf = kategoriefarben.Ablauf,
+  farbeBedingungen = kategoriefarben.Bedingungen,
+  farbeSchleifen = kategoriefarben.Schleifen,
+  farbeDateien = kategoriefarben['Dateien und Ordner'],
+  farbeVariablen = kategoriefarben['Variablen und Listen'],
+  farbeTexte = kategoriefarben.Texte,
+  farbeZahlen = kategoriefarben.Zahlen,
+  farbeEingabenAusgaben = kategoriefarben['Ein- und Ausgaben'],
+  farbeDatumZeit = kategoriefarben['Datum und Zeit'];
 bausteinHinzufuegen(
   'start',
   'Workflow starten',
@@ -339,7 +341,7 @@ bausteinHinzufuegen(
   'delete',
   'Datei löschen (erweitert)',
   'Dateien und Ordner',
-  '#9A3440',
+  kategoriefarben['Erweitertes Löschen'],
   'anweisung',
   '⚠ Datei löschen %1 Rückfrage %2',
   [eingabe('PFAD', 'String')],

@@ -1,0 +1,126 @@
+/** Gemeinsame logische Maße und Farben für HTML und Blockly. Kein DOM-Zugriff beim Import. */
+export const farben = {
+  arbeitsflaeche: '#14171B',
+  grundflaeche: '#1B1F24',
+  erhoeht: '#242A31',
+  trennung: '#343C46',
+  kontur: '#697687',
+  text: '#F1F3F5',
+  textSekundaer: '#B4BDC8',
+  akzent: '#88B4FF',
+  aufAkzent: '#121820',
+  erfolg: '#8CC8A2',
+  hinweis: '#EBC17A',
+  fehler: '#F19A9A',
+  akzentHover: '#A9C9FF',
+  akzentGedrueckt: '#729DDE',
+  inaktivFlaeche: '#242A31',
+  inaktivText: '#B4BDC8',
+  inaktivKontur: '#697687',
+  auswahl: '#B4BDC8',
+  canvasFokus: '#F1F3F5',
+  einfuegestelle: '#F1F3F5',
+  dialogHintergrund: '#00000099',
+} as const;
+
+export const abstaende = { eng: 4, zusammen: 8, gruppe: 12, panel: 16, abschnitt: 24, gross: 32 } as const;
+
+export const masse = {
+  werkzeugleiste: 52,
+  statusleiste: 28,
+  palette: 272,
+  paletteMinimum: 240,
+  paletteMaximum: 400,
+  eigenschaften: 304,
+  bedienfeld: 36,
+  iconZiel: 32,
+  icon: 20,
+  iconKlein: 16,
+  raster: 24,
+  radius: 6,
+  radiusDialog: 8,
+  fokusKontur: 2,
+  fokusAbstand: 3,
+  uebergang: 150,
+} as const;
+
+export const schrift = {
+  familie: '"Segoe UI Variable", "Segoe UI", system-ui, sans-serif',
+  codeFamilie: '"Cascadia Code", Consolas, "Courier New", monospace',
+  normal: 14,
+  metadaten: 12,
+  abschnitt: 16,
+  dialog: 20,
+  code: 13,
+  zeilenhoehe: 1.5,
+  normalGewicht: 400,
+  semiboldGewicht: 600,
+} as const;
+
+export const kategoriefarben = {
+  Ablauf: '#8A5818',
+  Bedingungen: '#3B62A5',
+  Schleifen: '#6C45A2',
+  'Dateien und Ordner': '#286E6B',
+  'Variablen und Listen': '#914D38',
+  Texte: '#337145',
+  Zahlen: '#35677F',
+  'Ein- und Ausgaben': '#824A74',
+  'Datum und Zeit': '#5A5F8C',
+  'Erweitertes Löschen': '#9A3440',
+} as const;
+
+export const cssVariablen: Readonly<Record<string, string>> = {
+  '--farbe-arbeitsflaeche': farben.arbeitsflaeche,
+  '--farbe-grundflaeche': farben.grundflaeche,
+  '--farbe-erhoeht': farben.erhoeht,
+  '--farbe-trennung': farben.trennung,
+  '--farbe-kontur': farben.kontur,
+  '--farbe-text': farben.text,
+  '--farbe-text-sekundaer': farben.textSekundaer,
+  '--farbe-akzent': farben.akzent,
+  '--farbe-auf-akzent': farben.aufAkzent,
+  '--farbe-erfolg': farben.erfolg,
+  '--farbe-hinweis': farben.hinweis,
+  '--farbe-fehler': farben.fehler,
+  '--farbe-akzent-hover': farben.akzentHover,
+  '--farbe-akzent-gedrueckt': farben.akzentGedrueckt,
+  '--farbe-inaktiv-flaeche': farben.inaktivFlaeche,
+  '--farbe-inaktiv-text': farben.inaktivText,
+  '--farbe-inaktiv-kontur': farben.inaktivKontur,
+  '--farbe-auswahl': farben.auswahl,
+  '--farbe-canvas-fokus': farben.canvasFokus,
+  '--farbe-einfuegestelle': farben.einfuegestelle,
+  '--dialog-hintergrund': farben.dialogHintergrund,
+  ...Object.fromEntries(Object.values(abstaende).map((wert) => [`--abstand-${wert}`, `${wert}px`])),
+  '--schrift-familie': schrift.familie,
+  '--schrift-code-familie': schrift.codeFamilie,
+  '--schrift-normal': `${schrift.normal}px`,
+  '--schrift-meta': `${schrift.metadaten}px`,
+  '--schrift-abschnitt': `${schrift.abschnitt}px`,
+  '--schrift-dialog': `${schrift.dialog}px`,
+  '--schrift-code': `${schrift.code}px`,
+  '--zeilenhoehe': String(schrift.zeilenhoehe),
+  '--gewicht-normal': String(schrift.normalGewicht),
+  '--gewicht-semibold': String(schrift.semiboldGewicht),
+  '--radius-normal': `${masse.radius}px`,
+  '--radius-dialog': `${masse.radiusDialog}px`,
+  '--hoehe-bedienfeld': `${masse.bedienfeld}px`,
+  '--ziel-icon': `${masse.iconZiel}px`,
+  '--groesse-icon': `${masse.icon}px`,
+  '--fokus-kontur': `${masse.fokusKontur}px`,
+  '--fokus-abstand': `${masse.fokusAbstand}px`,
+  '--dauer-uebergang': `${masse.uebergang}ms`,
+  '--hoehe-werkzeugleiste': `${masse.werkzeugleiste}px`,
+  '--hoehe-statusleiste': `${masse.statusleiste}px`,
+  '--breite-palette': `${masse.palette}px`,
+  '--breite-eigenschaften': `${masse.eigenschaften}px`,
+  '--schatten-overlay': '0 8px 24px rgb(0 0 0 / 0.35)',
+};
+
+/** Erst beim Start der Oberfläche anwenden; dieselben Werte verwendet das Blockly-Theme. */
+export function designTokensAnwenden(element?: Pick<HTMLElement, 'style'>): void {
+  const ziel = element ?? (typeof document === 'undefined' ? undefined : document.documentElement);
+  if (!ziel) return;
+  for (const [name, wert] of Object.entries(cssVariablen)) ziel.style.setProperty(name, wert);
+}
