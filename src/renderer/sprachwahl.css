@@ -1,0 +1,79 @@
+.sl-dialog.sprachwahl-dialog {
+  max-inline-size: min(960px, calc(100vw - var(--abstand-32)));
+}
+.sprachwahl-karten {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--abstand-16);
+  min-width: 0;
+  margin: var(--abstand-16) 0 0;
+  padding: 0;
+  border: 0;
+}
+.sprachwahl-karte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--abstand-16);
+  min-width: 0;
+  padding: var(--abstand-24);
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-dialog);
+  background: var(--farbe-grundflaeche);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.sprachwahl-karte:hover {
+  background: var(--farbe-erhoeht);
+}
+.sprachwahl-karte.ist-gewaehlt {
+  border-color: var(--farbe-akzent);
+}
+.sprachwahl-kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--abstand-12);
+  min-height: var(--hoehe-bedienfeld);
+}
+.sprachwahl-kopf input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--farbe-akzent);
+}
+.sprachwahl-kopf input:focus-visible {
+  outline: var(--fokus-kontur) solid var(--farbe-akzent);
+  outline-offset: var(--fokus-abstand);
+}
+.sprachwahl-name {
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+}
+.sprachwahl-vorteil,
+.sprachwahl-hinweis,
+.sprachwahl-startgrund {
+  color: var(--farbe-text-sekundaer);
+}
+.sprachwahl-startgrund {
+  margin-top: var(--abstand-16);
+}
+@media (max-width: 899px) {
+  .sprachwahl-karten {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (forced-colors: active) {
+  .sprachwahl-karte {
+    color: CanvasText;
+    background: Canvas;
+    border-color: ButtonText;
+  }
+  .sprachwahl-karte.ist-gewaehlt {
+    border-color: Highlight;
+  }
+  .sprachwahl-vorteil,
+  .sprachwahl-hinweis,
+  .sprachwahl-startgrund {
+    color: CanvasText;
+  }
+}
