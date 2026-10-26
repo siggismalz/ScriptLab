@@ -1,0 +1,24 @@
+{
+  "typ": "Prozessweise DPI-Darstellung; keine Änderung der Windows-Anzeigeeinstellungen",
+  "angefordert": {
+    "faktor": 1.25,
+    "breite": 1280,
+    "hoehe": 720
+  },
+  "renderer": {
+    "breite": 1282,
+    "hoehe": 722,
+    "devicePixelRatio": 1.25,
+    "dokumentBreite": 1282,
+    "dokumentHoehe": 722
+  },
+  "fenster": {
+    "displayScaleFactor": 1.25,
+    "inhalt": {
+      "x": 826,
+      "y": 422,
+      "width": 1281,
+      "height": 721
+    }
+  }
+}

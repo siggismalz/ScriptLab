@@ -4,14 +4,14 @@ ScriptLab ist ein Editor und Exportwerkzeug für Windows 11 x64. Die Anwendung f
 
 ## Aufteilung
 
-| Bereich | Aufgabe | Erlaubte Nebenwirkungen |
-| --- | --- | --- |
-| Hauptprozess | Fenster, native Dialoge, Projekte, Einstellungen, Export | Vom Nutzer gewählte Projektdateien lesen/schreiben; Exportdatei schreiben; Einstellungen im Benutzerprofil verwalten |
-| Preload | Kleine, fest benannte Brücke zwischen Oberfläche und Hauptprozess | Nur ausdrücklich angebotene IPC-Methoden aufrufen |
-| Renderer | Deutsche React-Oberfläche, Blockly, reine Codevorschau | Editorzustand und Darstellung ändern |
-| Workflowkern | Projektformat prüfen, Bedeutung aus Verbindungen ableiten, Fehler Blöcken zuordnen | Keine Datei-, Netzwerk- oder Prozesszugriffe |
-| Generator | Validiertes Zwischenmodell deterministisch nach VBScript übersetzen | Nur Text erzeugen |
-| Windows-Dienste | Festes Signaturwerkzeug und kontrollierter Anwendungsupdater | Zertifikate abfragen, Exportdatei signieren/prüfen; ausdrücklich bestätigtes Anwendungsupdate installieren |
+| Bereich         | Aufgabe                                                                            | Erlaubte Nebenwirkungen                                                                                                                         |
+| --------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hauptprozess    | Fenster, native Dialoge, Projekte, Index, Entwürfe, Einstellungen, Export          | Gewählte Projektdateien lesen/schreiben; Exportdatei schreiben; lokale Sicherungen, Dateiverweise und Einstellungen im Benutzerprofil verwalten |
+| Preload         | Kleine, fest benannte Brücke zwischen Oberfläche und Hauptprozess                  | Nur ausdrücklich angebotene IPC-Methoden aufrufen                                                                                               |
+| Renderer        | Deutsche React-Oberfläche, Blockly, reine Codevorschau                             | Editorzustand und Darstellung ändern                                                                                                            |
+| Workflowkern    | Projektformat prüfen, Bedeutung aus Verbindungen ableiten, Fehler Blöcken zuordnen | Keine Datei-, Netzwerk- oder Prozesszugriffe                                                                                                    |
+| Generator       | Validiertes Zwischenmodell deterministisch nach VBScript übersetzen                | Nur Text erzeugen                                                                                                                               |
+| Windows-Dienste | Festes Signaturwerkzeug und kontrollierter Anwendungsupdater                       | Zertifikate abfragen, Exportdatei signieren/prüfen; ausdrücklich bestätigtes Anwendungsupdate installieren                                      |
 
 Die genaue Dateiaufteilung ist im Quellverzeichnis `src` nachvollziehbar. Bibliotheken und Blockly-Medien werden lokal ausgeliefert. Bearbeiten, Speichern, Öffnen und unsignierter Export benötigen keine Netzwerkverbindung.
 
@@ -22,6 +22,16 @@ Die `.scriptlab`-Datei enthält die Schemaversion, App-Version, den Namen und di
 Beim Prüfen wird aus diesem Zustand die Bedeutung des Workflows abgeleitet. Nur ein validierter Hauptablauf darf exportiert werden. Das Zwischenmodell wird nicht als zweite, unabhängig änderbare Wahrheit gespeichert. Unvollständige Entwürfe können als Projekt erhalten bleiben. Ein Export meldet fehlende Werte, unbekannte Typen, mehrere Startblöcke und unverbundene aktive Blöcke.
 
 Der reine Generator behandelt alle Nutzertexte als Daten. Er bildet Variablennamen auf sichere technische Namen ab, verhindert Kollisionen ohne Beachtung der Groß-/Kleinschreibung und trennt diese von internen Hilfsnamen. Hilfsfunktionen werden nur einmal ausgegeben. Gleicher Workflow und gleiche Optionen ergeben denselben unsignierten Quelltext.
+
+## Startseite und lokale Arbeitsstände
+
+`src/renderer/Startbereich.tsx` hält ausschließlich Navigation, Suche, Sortierung und Listenposition. Der gemountete Blockly-Editor bleibt beim Wechsel verborgen erhalten. Die Bibliothek wird aus dem Hauptprozess geladen; sie ist kein zweiter Editorzustand. Lokale Hilfe wird aus `hilfe.ts` als React-Text dargestellt. Die drei Beispielmetadaten verweisen auf die vorhandenen Projektdateien; beim Übernehmen entsteht eine neue Projektkopie.
+
+`src/main/projektablage.ts` verwaltet unter dem Electron-Nutzerverzeichnis den Index `projektbibliothek.json` und `entwuerfe/<UUID>.json`. Beide haben ein geprüftes Schema der Version 1. Der Index erfasst nur ausdrücklich geöffnete oder gespeicherte Dateien. Windows-Pfade werden normalisiert und ohne Unterscheidung der Großschreibung zugeordnet. Langsame Dateiprüfungen erhalten ein Zeitlimit; höchstens drei tatsächliche Projektdateizugriffe laufen zugleich. Neuere oder beschädigte Indexformate bleiben unverändert und werden als Hinweis angezeigt.
+
+Die optionale UUID `projektKennung` ergänzt das bestehende Projektschema 1 abwärtskompatibel. Alte Projektdateien bleiben lesbar und erhalten beim Laden eine Kennung. Eine Entwurfskennung ist davon getrennt, damit eine neue Bearbeitung keine noch nicht gewählte Wiederherstellung überschreibt. Ein Entwurf enthält den vollständigen geprüften Projektstand, die letzte erfolgreiche Sicherungszeit sowie gegebenenfalls Ausgangspfad und SHA-256 des zugrunde liegenden Dateistands. Die verzögerte Sicherung schreibt ausschließlich in den Nutzerbereich; sie ändert weder Originaldatei noch deren Ungespeichert-Status.
+
+Vor Ersetzen, Schließen und Update-Neustart greifen gemeinsame Speicherentscheidungen. Ein Wechsel mit „Als Entwurf behalten“ wartet auf erfolgreiches atomisches Schreiben. Verwerfen entfernt auch vorgemerkte Sicherungen. Speichern prüft eine vorhandene Ausgangsdatei gegen den bekannten Hash und verlangt bei Konflikten eine separate Kopie. Nach einer Speicherentscheidung wird eine zu öffnende Datei erneut gelesen, damit ein gerade gespeicherter Stand nicht durch einen älteren Lesestand ersetzt wird. Testprofile sind über eine ausschließlich im Entwicklungsbetrieb erlaubte Konfiguration isoliert.
 
 ## Sicherheitsgrenze zwischen Oberfläche und Windows
 

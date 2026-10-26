@@ -1,0 +1,11 @@
+{
+  "angefordert": {
+    "breite": 850,
+    "hoehe": 720
+  },
+  "tatsaechlich": {
+    "breite": 851,
+    "hoehe": 721,
+    "devicePixelRatio": 1.75
+  }
+}

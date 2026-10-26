@@ -1,6 +1,6 @@
 # Designnotiz zur UI-Überarbeitung
 
-Prüfstand vom 26.10.2026. Die Oberfläche wurde in der tatsächlichen Windows-Electron-Anwendung geprüft. Die automatisierten Aufgaben wurden selbst mit Playwright durchgeführt; ergänzend fanden die unten beschriebenen nativen Windows-Prüfungen statt. Die aufgeführten Bildschirmaufnahmen wurden anschließend visuell kontrolliert. Eine externe Testperson war nicht beteiligt.
+Editor-Prüfstand vom 26.10.2026, vor Einführung der [Startseite](STARTSEITE.md). Die Oberfläche wurde in der tatsächlichen Windows-Electron-Anwendung geprüft. Die automatisierten Aufgaben wurden selbst mit Playwright durchgeführt; ergänzend fanden die unten beschriebenen nativen Windows-Prüfungen statt. Die aufgeführten Bildschirmaufnahmen wurden anschließend visuell kontrolliert. Eine externe Testperson war nicht beteiligt.
 
 ## Zweck der Änderungen
 

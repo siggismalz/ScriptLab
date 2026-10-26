@@ -13,7 +13,7 @@ const app = await electron.launch({
   env: { ...process.env, SCRIPTLAB_TESTDATEN: profil },
 });
 const seite = await app.firstWindow();
-await seite.getByTestId('statusleiste').waitFor();
+await seite.getByTestId('startbereich').waitFor();
 await app.evaluate(({ BrowserWindow, screen }) => {
   const anzeige = screen.getAllDisplays().sort((a, b) => b.bounds.x - a.bounds.x)[0];
   const fenster = BrowserWindow.getAllWindows()[0];

@@ -2,7 +2,13 @@
 
 Stand: 26.10.2026, ScriptLab 0.1.0. Die technische Erstprüfung unten dokumentiert den Stand **vor der anschließenden UI-Überarbeitung**. Ihre Testzahlen, Bildschirmgrößen, Commitverweise und Installerangaben gehören zu diesem Prüfzeitpunkt. Der UI-Nachtrag verweist auf die gesonderten aktuellen Bediennachweise. Ein vorhandener Prüfplan, ein erfolgreicher Build oder ein simulierter Updater ersetzt keine vollständig geprüfte produktive Installation und Updatekette.
 
-## UI-Nachtrag vom 26.10.2026
+## Startseiten-Erweiterung vom 26.10.2026
+
+Die spätere Erweiterung ersetzt den direkten Editorstart durch die Startseite. Ihre vier Inhaltsansichten, der dauerhafte Projektindex, automatische lokale Entwürfe, Wiederherstellung, Vorlagenkopien und Offlinehilfe sind in [STARTSEITE.md](STARTSEITE.md) mit eigenen Prüfungen und Bildschirmaufnahmen dokumentiert. Die folgenden UI- und Erstprüfungszahlen bleiben historische Nachweise ihres jeweiligen Stands.
+
+Der neue gemeinsame Abschluss besteht mit **159/159 automatischen Kern- und Komponententests** und **72/72 Electron-Desktopfällen in 120,8 Sekunden**, einschließlich der erneut ausgeführten bisherigen Editorfälle. Für die Startseite sind 14 geprüfte Aufnahmen und sieben Messdateien hinzugekommen; das gesamte Archiv umfasst damit 38 PNGs und 18 JSON-Dateien. Eine frische Paketprüfung wird getrennt im lokalen Bericht `release/pruefung.json` dem dort genannten Git-Stand zugeordnet. Ein Testinstaller ist kein veröffentlichtes Release und kein Nachweis einer produktiven Updatekette.
+
+## UI-Nachtrag vor Einführung der Startseite vom 26.10.2026
 
 Die überarbeitete Oberfläche startet mit genau einem Startbaustein. Sie besitzt eine gemeinsame Palette mit Suche und Klickzielen, optionale Eigenschaften, eine anfangs geschlossene Codevorschau unten und getrennte Bedienung für Canvas-Zoom und UI-Textgröße. Der tatsächliche Aufgabenweg vom Einfügen und Verbinden bis zum Speichern, Öffnen und unsignierten Export sowie die gemessenen Fenstergrößen, Prozess-DPI-Werte, Bildschirmaufnahmen und offenen Einschränkungen stehen in der [Designnotiz](DESIGNNOTIZ.md). Deren neue UI-Prüfungen werden nicht den folgenden Zahlen der Erstprüfung zugerechnet. Sie belegen weder einen neu gebauten Installer noch eine produktive Signatur- oder Updatekette.
 

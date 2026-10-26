@@ -4,9 +4,24 @@ ScriptLab erstellt, prüft und speichert Windows-Workflows als Bausteine. Beim E
 
 Entwickelt von Leon Stolz.
 
+## Auf der Startseite beginnen
+
+ScriptLab öffnet zuerst die Startseite. **Neuer Workflow** führt ohne Namensdialog in den Editor mit einem Startbaustein; **Workflow öffnen** lädt eine selbst gewählte `.scriptlab`-Datei. Wenn bereits ein Workflow aktiv ist, führt **Weiterbearbeiten** zu demselben Stand zurück. Auch der Wechsel über **Startseite** im Editor erhält Bausteine, Auswahl und Ansicht.
+
+Die vier Bereiche stehen in dieser Reihenfolge:
+
+| Bereich                       | Inhalt                                                                              |
+| ----------------------------- | ----------------------------------------------------------------------------------- |
+| Meine gespeicherten Workflows | Bekannte Projektdateien anhand von Name oder Pfad suchen und weiterbearbeiten.      |
+| Entwürfe                      | Lokal gesicherte Zwischenstände bewusst fortsetzen oder als Projektdatei speichern. |
+| Beispielworkflows             | Drei vorhandene Vorlagen als eigene bearbeitbare Kopien öffnen.                     |
+| Dokumentation und Anleitungen | Sieben lokale Hilfethemen durchsuchen; Treffer führen zur passenden Artikelstelle.  |
+
+**Einstellungen**, **Hilfe** und **Über ScriptLab** sind im Kopf der Startseite erreichbar. Die Hilfe funktioniert offline; Beispielverweise darin öffnen ebenfalls eine Vorlage als Kopie.
+
 ## Eine erste Nachricht erstellen
 
-1. Öffne ScriptLab. Ein neues Projekt enthält nur **Workflow starten** und den Hinweis „Füge links einen Baustein hinzu“.
+1. Wähle auf der Startseite **Neuer Workflow**. Das neue Projekt enthält nur **Workflow starten** und den Hinweis „Füge links einen Baustein hinzu“.
 2. Suche links nach **Nachricht**. Klicke beim Treffer **Nachricht anzeigen** auf Plus und wähle **Nach „Workflow starten“**. Damit ist die Nachricht bereits mit dem Ablauf verbunden.
 3. Klicke auf das Textfeld am Nachrichtenbaustein und schreibe deine Nachricht. Alternativ wählst du den Baustein aus und öffnest **Eigenschaften** über die Werkzeugleiste oder F4. Dort stehen dieselben Werte in größeren Eingabefeldern.
 4. Öffne das **Projektmenü** neben **Speichern** und wähle **Projektangaben**, wenn du Namen oder Beschreibung ändern möchtest. **Übernehmen** aktualisiert die Angaben; die Projektdatei wird erst mit **Speichern** geschrieben.
@@ -26,7 +41,7 @@ Ziehe einen verbundenen Baustein heraus, um ihn zu lösen oder neu einzusetzen. 
 
 Das Mausrad, Ziehen am freien Arbeitsbereich, die Bildlaufleisten und die vier Ansichtspfeile verschieben den sichtbaren Ausschnitt. **Strg+Mausrad** zoomt nur über der Arbeitsfläche. In der Palette scrollt das Rad die Bausteinliste. Unten im Arbeitsbereich stehen **Verkleinern**, die aktuelle Prozentanzeige zum Zurücksetzen auf **100 %**, **Vergrößern** und **Alles anzeigen** bereit. Der Zoom reicht von 25 bis 200 Prozent; „Alles anzeigen“ passt den gesamten Workflow ein. Unter **Weitere Funktionen → Einstellungen → UI-Textgröße** lässt sich die Schrift der Bedienelemente getrennt davon vergrößern.
 
-Die Werkzeugleiste enthält **Neu**, **Öffnen**, **Speichern**, das **Projektmenü**, **Rückgängig**, **Wiederholen**, **Eigenschaften**, **Codevorschau** und **Als VBS exportieren**. **Speichern unter** liegt im Projektmenü. **Weitere Funktionen** neben dem Export öffnet unter anderem **Einstellungen**, **Über ScriptLab**, **Kopieren** und **Einfügen**. **Duplizieren**, **Kopieren**, **Verschieben** und **Baustein löschen** findest du auch in den Eigenschaften des ausgewählten Bausteins. Blockly bietet zusätzlich das Kontextmenü per rechter Maustaste. Gelöschte Bausteine lassen sich mit **Rückgängig** wiederherstellen.
+Die Werkzeugleiste enthält **Startseite**, **Neu**, **Öffnen**, **Speichern**, das **Projektmenü**, **Rückgängig**, **Wiederholen**, **Eigenschaften**, **Codevorschau** und **Als VBS exportieren**. **Speichern unter** und **Als Entwurf sichern** liegen im Projektmenü. **Weitere Funktionen** neben dem Export öffnet unter anderem **Einstellungen**, **Hilfe und Anleitungen**, **Über ScriptLab**, **Kopieren** und **Einfügen**. **Duplizieren**, **Kopieren**, **Verschieben** und **Baustein löschen** findest du auch in den Eigenschaften des ausgewählten Bausteins. Blockly bietet zusätzlich das Kontextmenü per rechter Maustaste. Gelöschte Bausteine lassen sich mit **Rückgängig** wiederherstellen.
 
 ## Ohne Ziehen einfügen und umordnen
 
@@ -44,19 +59,19 @@ Bei schmaleren Fenstern liegt der Eigenschaftenbereich über dem rechten Rand de
 
 Die Projektkürzel funktionieren auch während einer Texteingabe. Die übrigen genannten Editoraktionen gelten außerhalb aktiver Texteingaben und bei geschlossenem Dialog:
 
-| Tastenkombination | Aktion |
-| --- | --- |
-| Strg+N | Neues Projekt |
-| Strg+O | Projekt öffnen |
-| Strg+S | Projekt speichern |
-| Strg+Umschalt+S | Speichern unter |
-| Strg+Plus / Strg+Minus | Vergrößern / verkleinern |
-| Strg+0 | Zoom auf 100 Prozent |
-| Strg+Z / Strg+Y | Blockly rückgängig / wiederholen |
-| Strg+Umschalt+Z | Wiederholen |
-| F4 | Eigenschaften öffnen |
-| Entf | Ausgewählten Baustein löschen |
-| Escape | Ziehen oder die Auswahl einer Einfügestelle abbrechen |
+| Tastenkombination      | Aktion                                                |
+| ---------------------- | ----------------------------------------------------- |
+| Strg+N                 | Neues Projekt                                         |
+| Strg+O                 | Projekt öffnen                                        |
+| Strg+S                 | Projekt speichern                                     |
+| Strg+Umschalt+S        | Speichern unter                                       |
+| Strg+Plus / Strg+Minus | Vergrößern / verkleinern                              |
+| Strg+0                 | Zoom auf 100 Prozent                                  |
+| Strg+Z / Strg+Y        | Blockly rückgängig / wiederholen                      |
+| Strg+Umschalt+Z        | Wiederholen                                           |
+| F4                     | Eigenschaften öffnen                                  |
+| Entf                   | Ausgewählten Baustein löschen                         |
+| Escape                 | Ziehen oder die Auswahl einer Einfügestelle abbrechen |
 
 Für mehrzeiligen Text kannst du „Texte verbinden“ mit dem Wert „Zeilenumbruch“ verwenden. Ein Zeilenumbruch entspricht dem Windows-Format CRLF.
 
@@ -70,7 +85,26 @@ Die angezeigten Prüfungen kontrollieren die Struktur und die Übersetzbarkeit. 
 
 ## Projekte und Änderungen erhalten
 
-**Öffnen** lädt `.scriptlab`-Dateien. **Projektmenü → Speichern unter** legt das aktuelle Projekt an einem anderen Ort ab. Die Statusleiste unterscheidet **Neues Projekt**, **Ungespeicherte Änderungen** und **Projekt gespeichert**. Ein erfolgreicher VBS-Export speichert die Projektdatei nicht mit. Bei einem Projektwechsel, beim Schließen oder vor einem Update-Neustart fragt die Anwendung nach, wenn Änderungen verloren gingen. Die Auswahl lautet **Speichern**, **Nicht speichern** oder **Abbrechen**. Ein abgebrochener Speicherdialog bricht auch den davon abhängigen Vorgang ab.
+**Öffnen** lädt `.scriptlab`-Dateien. **Projektmenü → Speichern unter** legt das aktuelle Projekt an einem anderen Ort ab. Die Statusleiste unterscheidet **Neues Projekt**, **Ungespeicherte Änderungen** und **Projekt gespeichert**. Ein erfolgreicher VBS-Export speichert die Projektdatei nicht mit.
+
+Inhaltliche Änderungen werden nach einer kurzen Eingabepause automatisch als lokaler Entwurf gesichert. **Projektmenü → Als Entwurf sichern** sichert den Zwischenstand ausdrücklich. Ein neuer leerer Startablauf und reine Ansichtsänderungen erzeugen keinen zusätzlichen Entwurf. Die Anzeige **Entwurf lokal gesichert** bestätigt die lokale Sicherung; **Ungespeicherte Änderungen** bleibt bestehen, solange die Projektdatei noch nicht den aktuellen Stand enthält. Eine ausstehende oder fehlgeschlagene Sicherung wird gesondert angezeigt.
+
+Bei einem Projektwechsel, beim Schließen oder vor einem Update-Neustart fragt die Anwendung nach, wenn Änderungen verloren gingen:
+
+| Auswahl              | Wirkung                                                                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Speichern            | Den Stand als `.scriptlab`-Projektdatei speichern; ein abgebrochener Speicherdialog bricht auch den davon abhängigen Vorgang ab.               |
+| Als Entwurf behalten | Den aktuellen Stand lokal sichern und den Wechsel erlauben; die Projektdatei bleibt unverändert.                                               |
+| Änderungen verwerfen | Den aktuellen ungespeicherten Stand und seine zugehörige Entwurfssicherung bewusst verwerfen. Eine vorhandene Projektdatei bleibt unverändert. |
+| Abbrechen            | Im aktuellen Workflow bleiben.                                                                                                                 |
+
+Unter **Entwürfe** auf der Startseite stehen Sicherungszeit und gegebenenfalls die zugehörige Projektdatei. **Fortsetzen** übernimmt einen ausgewählten Zwischenstand wieder zum Bearbeiten; es gibt keine automatische Wiederherstellung. **Als Projekt speichern** legt eine eigenständige Projektdatei an. Nach erfolgreichem Speichern wird nur der zugehörige Entwurf bereinigt; Abbruch oder Schreibfehler erhalten ihn. **Entwurf löschen** verlangt eine Bestätigung und löscht keine zugehörige Projektdatei.
+
+Vor dem Überschreiben prüft ScriptLab, ob die Ausgangsdatei außerhalb der Anwendung verändert wurde oder nicht mehr erreichbar ist. Im Konfliktfall wird eine **separate Projektkopie** verlangt. Wähle einen anderen Dateinamen; die betroffene Ausgangsdatei darf dabei nicht ersetzt werden.
+
+**Meine gespeicherten Workflows** führt nur bekannte, von dir geöffnete oder gespeicherte Dateien. Es gibt keinen Laufwerkscan. Suche nach Name oder vollständigem Pfad und sortiere nach Name oder letztem Öffnen. **Zuletzt geöffnet** enthält höchstens fünf tatsächlich geöffnete Projekte; bloßes Auflisten verändert den Zeitpunkt nicht. Bei verschobenen oder fehlenden Dateien bietet **Neu zuordnen** die Auswahl des neuen Speicherorts. **Aus Liste entfernen** entfernt nur den Verweis. Die vollständigen Pfade bleiben im Textfeld lesbar und kopierbar. Ein nicht vollständig lesbarer Index erscheint als Hinweis und wird nicht als sicher leerer Bestand dargestellt.
+
+Einstellungen und Bibliotheksdaten liegen im Nutzerverzeichnis `%APPDATA%\ScriptLab`, außerhalb der Installation: `projektbibliothek.json` enthält bekannte Dateiverweise, `entwuerfe\<UUID>.json` enthält lokale Sicherungen. Deine eigentlichen Projektdateien bleiben an den selbst gewählten Speicherorten. Sichere wichtige Projekte zusätzlich selbst.
 
 Projektdateien sind JSON-Daten. Die Anwendung prüft ihre Struktur und Schemaversion. Neuere unbekannte Formate und unbekannte Bausteintypen werden abgewiesen. Ein Rückimport beliebiger `.vbs`-Dateien als Bausteine ist nicht vorgesehen.
 
@@ -80,12 +114,12 @@ Eine `.scriptlab`-Datei bleibt bearbeitbar; eine `.vbs`-Datei ist das daraus erz
 
 ## Die drei Beispiele
 
-Die Beispiele sind im **Projektmenü** unter **Beispiel: Begrüßung**, **Beispiel: Datei-Backup** und **Beispiel: Dateinamenliste** erreichbar. Im neuen Projekt öffnet auch **Beispiel öffnen** den Begrüßungsablauf. Die Dateien liegen zusätzlich im Ordner `beispiele` des Quellprojekts und lassen sich über **Öffnen** laden. Das Öffnen oder Exportieren verändert keine der beschriebenen Testdateien.
+Auf der Startseite bietet **Beispielworkflows** die Vorlagen **Eine Nachricht anzeigen**, **Dateien in einen Sicherungsordner kopieren** und **Dateinamen in eine Textdatei schreiben**. **Als Vorlage öffnen** erstellt eine eigene bearbeitbare Kopie mit neuer Projektkennung und dem Namenszusatz **(Kopie)**. Die Originalvorlage bleibt unverändert. Die bisherigen Einträge im **Projektmenü** und **Beispiel öffnen** im neuen Editor bleiben erreichbar. Die Dateien liegen zusätzlich im Ordner `beispiele` des Quellprojekts. Das Öffnen oder Exportieren verändert keine der beschriebenen Testdateien.
 
-| Projekt | Inhalt und spätere Wirkung |
-| --- | --- |
-| `01-Begruessung.scriptlab` | Start → Nachricht. Zeigt beim eigenen Start eine Begrüßung. |
-| `02-Datei-Backup.scriptlab` | Prüft eine Testquelle, legt einen Sicherungsordner an und kopiert eine einzelne Datei. Eine vorhandene Sicherungsdatei führt ausdrücklich zu einem Fehler. |
+| Projekt                        | Inhalt und spätere Wirkung                                                                                                                                                                                        |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `01-Begruessung.scriptlab`     | Start → Nachricht. Zeigt beim eigenen Start eine Begrüßung.                                                                                                                                                       |
+| `02-Datei-Backup.scriptlab`    | Prüft eine Testquelle, legt einen Sicherungsordner an und kopiert eine einzelne Datei. Eine vorhandene Sicherungsdatei führt ausdrücklich zu einem Fehler.                                                        |
 | `03-Dateinamenliste.scriptlab` | Liest die Dateiliste eines Testordners und schreibt die Blattnamen einschließlich Endung zeilenweise in eine UTF-8-Textdatei. Unterordner werden nicht durchsucht. Eine vorhandene Ausgabetextdatei wird ersetzt. |
 
 Für einen späteren eigenständigen Start des Backupbeispiels legst du neben der exportierten VBS-Datei selbst `ScriptLab-Testdaten\Backup\Quelle\beispiel.txt` mit beliebigem Testinhalt an. Die Sicherung wird nach `ScriptLab-Testdaten\Backup\Sicherung\beispiel.txt` geschrieben. Wiederholtes Starten überschreibt diese Sicherung nicht.
@@ -108,4 +142,4 @@ Eine Signatur hilft, Herausgeber und Änderungen zu prüfen. Sie garantiert wede
 
 Ebenfalls unter **Einstellungen** stehen „Nach Updates suchen“, die abschaltbare automatische Prüfung und die bewusste Auswahl von Vorabversionen. Ein gefundenes Update muss erst heruntergeladen und anschließend von dir zur Installation bestätigt werden. Die Anwendung installiert es nicht stillschweigend beim Beenden. Produktive Updates benötigen die eingerichtete Release- und Anwendungssignaturinfrastruktur.
 
-Die [Designnotiz](DESIGNNOTIZ.md) hält die tatsächlich geprüften Größen, Bedienwege, Bildschirmaufnahmen und verbleibenden Einschränkungen der Oberfläche fest.
+Die [Designnotiz](DESIGNNOTIZ.md) hält die Editorprüfungen fest; die [Startseitendokumentation](STARTSEITE.md) ergänzt die später eingeführte Bibliothek, Entwürfe und lokale Hilfe samt eigenem Prüfstand und Grenzen.

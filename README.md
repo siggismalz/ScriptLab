@@ -12,7 +12,7 @@ Der Windows-Build erzeugt `release/ScriptLab-0.1.0-Setup-x64.exe`. Der NSIS-Inst
 
 ## Ein erster Workflow
 
-1. ScriptLab öffnen. Ein neues Projekt enthält genau den Baustein **Workflow starten**.
+1. ScriptLab öffnen und auf der Startseite **Neuer Workflow** wählen. Der Editor öffnet sich mit genau dem Baustein **Workflow starten**.
 2. Links nach **Nachricht** suchen und beim Treffer **Nachricht anzeigen** auf Plus klicken.
 3. Als Einfügestelle **Nach „Workflow starten“** wählen. Alternativ lässt sich der Baustein aus der Palette an den Start ziehen.
 4. Den Nachrichtentext direkt am Baustein bearbeiten oder den Baustein auswählen und **Eigenschaften** öffnen (F4). Namen und Beschreibung des Projekts änderst du im **Projektmenü → Projektangaben**.
@@ -21,9 +21,11 @@ Der Windows-Build erzeugt `release/ScriptLab-0.1.0-Setup-x64.exe`. Der NSIS-Inst
 
 Danach gilt: **„Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“** ScriptLab besitzt keinen Startknopf, Testlauf oder Zeitplan für Workflows. „Speicherordner anzeigen“ markiert die Datei im Explorer und startet sie nicht.
 
-47 Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Die drei Beispiele sind über das Projektmenü erreichbar und liegen außerdem in [beispiele](beispiele); auch ihr Öffnen und Exportieren führt keine ihrer Aktionen aus.
+47 Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Die drei Beispiele sind auf der Startseite unter **Beispielworkflows** und im Projektmenü erreichbar. Sie öffnen sich als bearbeitbare Kopien mit dem Namenszusatz **(Kopie)**; die Vorlagen in [beispiele](beispiele) bleiben unverändert. Auch ihr Öffnen und Exportieren führt keine ihrer Aktionen aus.
 
 Die linke Palette verbindet Suche und Kategorien in einem verstellbaren Bereich. Eigenschaften und Codevorschau sind anfangs geschlossen. Neben Drag-and-drop gibt es anklickbare Einfügestellen zum Hinzufügen, Verbinden und Verschieben. Das Mausrad verschiebt die Arbeitsfläche; Strg+Mausrad zoomt dort. Die [Designnotiz](docs/DESIGNNOTIZ.md) enthält die tatsächlichen UI-Prüfungen, Bildschirmaufnahmen und offenen Punkte.
+
+Die Startseite bietet **Meine gespeicherten Workflows**, **Entwürfe**, **Beispielworkflows** und **Dokumentation und Anleitungen**. Die Projektliste führt nur bekannte, selbst geöffnete oder gespeicherte Dateien; ScriptLab durchsucht keine Laufwerke. **Startseite** im Editor und anschließend **Weiterbearbeiten** erhalten den laufenden Arbeitsstand. Die [Startseitendokumentation](docs/STARTSEITE.md) hält ihre eigenen Bediennachweise fest.
 
 ## Entwicklung
 
@@ -48,6 +50,8 @@ Nach `npm run package` prüft `npm run verify:package` Installergröße, Update-
 
 `.scriptlab` enthält den bearbeitbaren JSON-Projektzustand. `.vbs` enthält erzeugten Quelltext und ist kein rückimportierbares Projektformat. Unvollständige Entwürfe dürfen gespeichert werden; Fehler verhindern den Export.
 
+Inhaltliche Änderungen werden nach kurzer Eingabepause zusätzlich als lokale Entwürfe gesichert. **Projektmenü → Als Entwurf sichern** stößt dies ausdrücklich an. Eine Entwurfssicherung lässt die Projektdatei unverändert: **Entwurf lokal gesichert** und **Ungespeicherte Änderungen** können gleichzeitig gelten. Vor einem möglichen Verlust stehen **Speichern**, **Als Entwurf behalten**, **Änderungen verwerfen** und **Abbrechen** zur Wahl. Wurde die Ausgangsdatei von außen verändert oder ist sie nicht erreichbar, muss der Arbeitsstand als separate Projektkopie gespeichert werden.
+
 VBS-Quelltext verwendet UTF-16LE mit BOM und CRLF; dies wurde vom Windows-VBScript-Parser ohne Ausführung bestätigt. Relative Dateipfade beziehen sich auf den Speicherort der exportierten VBS-Datei. Textdateien eines Workflows haben eine gesondert ausgewählte Kodierung. Dateiaktionen prüfen Quellen und vorhandene Ziele beim späteren eigenen Start; ihre Regeln stehen in der Bausteinhilfe.
 
 Die spätere eigenständige Ausführung benötigt die Windows-VBScript-Komponente, Windows Script Host und die jeweils zugelassenen Windows-Komponenten (`Scripting.FileSystemObject`, für Textkodierungen `ADODB.Stream`). Windows- und Unternehmensrichtlinien können die Ausführung verhindern. VBScript ist von Microsoft abgekündigt. ScriptLab aktiviert keine Features und ändert keine Richtlinien.
@@ -66,7 +70,7 @@ Automatische Updateprüfung ist standardmäßig aus. Download und Installation e
 - [Versionen und offizielle Quellen](docs/VERSIONEN.md).
 - [Prüfplan](docs/PRUEFPLAN.md) und [tatsächlicher Abnahmestand](docs/ABNAHME.md).
 
-Anwendungscode und Hilfen sind deutsch. Einstellungen liegen außerhalb des Installationsordners im Electron-Nutzerverzeichnis (`%APPDATA%\ScriptLab`); Projekte werden an selbst gewählten Orten gespeichert. Die Bibliotheken werden lokal ausgeliefert. Bearbeiten, Projektspeicherung und unsignierter Export benötigen kein Netzwerk.
+Anwendungscode und Hilfen sind deutsch. Einstellungen, der bekannte Dateiverweise enthaltende Index `projektbibliothek.json` und lokale Sicherungen unter `entwuerfe\<UUID>.json` liegen außerhalb des Installationsordners im Electron-Nutzerverzeichnis (`%APPDATA%\ScriptLab`). Projektdateien werden an selbst gewählten Orten gespeichert. Die Bibliotheken und Anleitungen werden lokal ausgeliefert. Bearbeiten, Projektspeicherung, Hilfe und unsignierter Export benötigen kein Netzwerk.
 
 ## Rechte und Drittanbieter
 

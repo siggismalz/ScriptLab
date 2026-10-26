@@ -1,0 +1,65 @@
+{
+  "canvas": {
+    "x": 276,
+    "y": 52.57143020629883,
+    "breite": 1006.2857666015625,
+    "hoehe": 636
+  },
+  "start": {
+    "x": 356.0000305175781,
+    "y": 148.57144165039062,
+    "breite": 122.00000762939453,
+    "hoehe": 56.00001907348633
+  },
+  "blockTransform": "translate(80, 96)",
+  "canvasTransform": "translate(0, 0) scale(1)",
+  "raster": [
+    {
+      "x": "0",
+      "y": "0",
+      "breite": "24",
+      "hoehe": "24"
+    },
+    {
+      "x": null,
+      "y": null,
+      "breite": "10",
+      "hoehe": "10"
+    }
+  ],
+  "renderer": {
+    "breite": 1282,
+    "hoehe": 721,
+    "devicePixelRatio": 1.75
+  },
+  "projekt": {
+    "schemaVersion": 1,
+    "appVersion": "0.1.0",
+    "projektKennung": "c8bc5e2a-886a-42c4-bf65-e88974976a99",
+    "name": "Mein Workflow",
+    "beschreibung": "",
+    "editor": {
+      "blocks": {
+        "languageVersion": 0,
+        "blocks": [
+          {
+            "type": "sl_start",
+            "id": "start",
+            "x": 80,
+            "y": 96
+          }
+        ]
+      }
+    },
+    "ansicht": {
+      "zoom": 1,
+      "x": 0,
+      "y": 0
+    },
+    "exportOptionen": {
+      "signieren": false,
+      "zertifikatFingerabdruck": "",
+      "zeitstempelUrl": ""
+    }
+  }
+}
