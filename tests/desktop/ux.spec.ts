@@ -708,23 +708,29 @@ test('UX: tatsächliche SVG-Textflächen, Auswahl und eigener Eingabefokus bleib
       kontur: getComputedStyle(element).stroke,
       breite: getComputedStyle(element).strokeWidth,
     }));
+    const variable = (await projektLesen(s.seite)).editor.variables!.find((v) => v.name === 'Name')!;
+    expect(variable.id).toBeTruthy();
     await s.seite.keyboard.press('Enter');
-    const blockEingabe = s.seite.locator('.blocklyHtmlInput');
+    await s.seite.getByRole('option', { name: 'Variable umbenennen …', exact: true }).click();
+    const variablendialog = s.seite.getByRole('dialog', { name: 'Variable bearbeiten', exact: true });
+    const blockEingabe = variablendialog.getByRole('textbox', { name: 'Variablenname', exact: true });
     await expect(blockEingabe).toBeVisible();
-    await expect(blockEingabe).toHaveValue('Name');
+    await expect(variablendialog).toContainText('Alle „Name“-Variablen umbenennen in:');
+    await expect(blockEingabe).toHaveValue('');
     await blockEingabe.fill('Name per Tastatur');
     await blockEingabe.press('Enter');
     await expect
       .poll(
-        async () =>
-          alleBausteine(await projektLesen(s.seite)).find((b) => b.id === 'ui-name-setzen')?.fields?.VAR,
+        async () => (await projektLesen(s.seite)).editor.variables!.find((v) => v.id === variable.id)?.name,
       )
       .toBe('Name per Tastatur');
+    expect(
+      alleBausteine(await projektLesen(s.seite)).find((b) => b.id === 'ui-name-setzen')?.fields?.VAR,
+    ).toEqual({ id: variable.id });
     await s.seite.keyboard.press('Control+z');
     await expect
       .poll(
-        async () =>
-          alleBausteine(await projektLesen(s.seite)).find((b) => b.id === 'ui-name-setzen')?.fields?.VAR,
+        async () => (await projektLesen(s.seite)).editor.variables!.find((v) => v.id === variable.id)?.name,
       )
       .toBe('Name');
     await writeFile(
@@ -734,7 +740,10 @@ test('UX: tatsächliche SVG-Textflächen, Auswahl und eigener Eingabefokus bleib
     expect(feldstil.kontur).toBe(fokusRgb);
     expect(feldstil.breite).toBe(`${masse.fokusKontur}px`);
     await eigenschaftenOeffnen(s.seite, 'ui-name-setzen');
-    const feld = await eigenschaftMitWert(s.seite, 'Name');
+    const feld = s.seite
+      .getByTestId('eigenschaften-panel')
+      .getByRole('combobox', { name: 'Variable', exact: true });
+    await expect(feld).toHaveValue(variable.id);
     await s.seite.bringToFront();
     await s.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus());
     await expect.poll(() => s.seite.evaluate(() => document.hasFocus())).toBe(true);

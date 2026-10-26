@@ -209,18 +209,38 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
         dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
       }, basis);
       await panel.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
+      await expect(
+        panel.getByRole('textbox', { name: 'Basisordner für den nächsten Test', exact: true }),
+      ).toHaveValue(basis);
       await panel.getByRole('spinbutton', { name: 'Zeitlimit in Sekunden', exact: true }).fill('10');
       await panel.getByRole('spinbutton', { name: 'Zeitlimit in Sekunden', exact: true }).press('Tab');
       await seite.getByRole('button', { name: 'Testen', exact: true }).click();
-      await expect
-        .poll(
-          async () => {
-            const r = await seite.evaluate(() => window.scriptlab.testLesen());
-            return r.ok ? r.wert.zustand.phase : 'fehler';
-          },
-          { timeout: 20_000 },
-        )
-        .toBe('beendet');
+      try {
+        await expect
+          .poll(
+            async () => {
+              const r = await seite.evaluate(() => window.scriptlab.testLesen());
+              return r.ok ? r.wert.zustand.phase : 'fehler';
+            },
+            { timeout: 20_000 },
+          )
+          .toBe('beendet');
+      } catch (fehler) {
+        await test.info().attach('python-startdiagnose', {
+          body: JSON.stringify(
+            {
+              test: await seite.evaluate(() => window.scriptlab.testLesen()),
+              projekt: (await dokument(seite)).dokument,
+              testpanel: await panel.innerText(),
+              status: await seite.getByTestId('statusleiste').innerText(),
+            },
+            null,
+            2,
+          ),
+          contentType: 'application/json',
+        });
+        throw fehler;
+      }
       await expect(panel.getByRole('log', { name: 'Testausgabe', exact: true })).toContainText(
         'Klare Python-Testausgabe ä',
       );

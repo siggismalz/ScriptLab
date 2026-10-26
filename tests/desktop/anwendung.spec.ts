@@ -205,6 +205,10 @@ test('beginnt mit einem leeren Start und isoliert den Renderer', async () => {
       'testAusgabeKopieren',
       'testOrdnerWaehlen',
       'testVerlassen',
+      'pythonStatus',
+      'pythonPruefen',
+      'pythonWaehlen',
+      'pythonHilfeOeffnen',
     ],
   });
   expect(

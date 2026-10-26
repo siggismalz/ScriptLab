@@ -331,7 +331,9 @@ test('Startseite: gespeicherter Index und echte zuletzt geöffnete Projekte blei
     await suche.fill('Zulu');
     await expect(liste.getByRole('article')).toHaveCount(1);
     await suche.fill('Dieser Name existiert nicht');
-    await expect(liste).toContainText('Keine Projekte gefunden');
+    await expect(liste).toContainText(
+      'Keine passenden Projekte gefunden. Ändere die Suche oder den Sprachfilter.',
+    );
     await liste.getByRole('button', { name: 'Suche leeren', exact: true }).click();
     await expect(liste.getByRole('article')).toHaveCount(2);
     await neustarten(s);

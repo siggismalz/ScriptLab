@@ -4,7 +4,7 @@ import { _electron as electron, type ElectronApplication, type Page } from 'play
 import { mkdtemp, readFile, writeFile, mkdir, stat, rm } from 'node:fs/promises';
 import { basename, join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
-import type { EditorBlock, Projekt } from '../../src/kern/projekt';
+import { projektPruefen, type EditorBlock, type Projekt } from '../../src/kern/projekt';
 import type { Einstellungen } from '../../src/gemeinsam/bruecke';
 import { bausteinDefinitionen } from '../../src/kern/katalog';
 import { vbsErzeugen } from '../../src/kern/generator';
@@ -357,6 +357,8 @@ test.describe('vorhandenes Profil aus der bisherigen Anwendung', () => {
       paletteEingeklappt: false,
       eigenschaftenAngeheftet: false,
       textSkalierung: 1,
+      letzteSkriptsprache: 'vbs',
+      pythonInterpreter: null,
     });
     expect((await seite.getByTestId('palette').boundingBox())!.width).toBeCloseTo(272, 0);
     const dialog = await einstellungenOeffnen();
@@ -450,7 +452,7 @@ function bausteineSammeln(projekt: Projekt): EditorBlock[] {
 for (const beispiel of beispiele) {
   test(`öffnet und exportiert das feste Beispiel „${beispiel.name}“ ohne dessen Dateiaktionen`, async () => {
     const quellbytes = await readFile(resolve('beispiele', beispiel.datei));
-    const vorlage = JSON.parse(quellbytes.toString('utf8')) as Projekt;
+    const vorlage = projektPruefen(JSON.parse(quellbytes.toString('utf8')));
     expect(vorlage.name).toBe(beispiel.name);
     // Vorhandene Testquellen verhindern, dass ein verbotener Testlauf nur an fehlenden Quellen scheitern könnte.
     const testdaten = join(ordner, 'ScriptLab-Testdaten');

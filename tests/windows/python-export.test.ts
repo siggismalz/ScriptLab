@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spawn, execFile, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { promisify } from 'node:util';
 import { randomBytes } from 'node:crypto';
-import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, stat, realpath } from 'node:fs/promises';
 import { dirname, basename, join, resolve, win32 } from 'node:path';
 import { homedir, tmpdir } from 'node:os';
 import { StringDecoder } from 'node:string_decoder';
@@ -98,7 +98,8 @@ describe.skipIf(!freigegeben)('Eigenständiger Python-Export und vorhandener ven
   }
   beforeAll(async () => {
     await appGeschlossenPruefen();
-    ordner = await mkdtemp(join(tmpdir(), 'ScriptLab-Pythonexport-'));
+    // CPython löst auch den 8.3-Tempalias eines Windows-Runners auf.
+    ordner = await realpath(await mkdtemp(join(tmpdir(), 'ScriptLab-Pythonexport-')));
     basis = join(ordner, 'Prüfbasis');
     technisch = join(ordner, 'Technisch');
     await mkdir(join(basis, 'Scriptordner ä'), { recursive: true });
@@ -128,7 +129,7 @@ describe.skipIf(!freigegeben)('Eigenständiger Python-Export und vorhandener ven
     }
     if (!ordner) return;
     if (
-      dirname(resolve(ordner)) !== resolve(tmpdir()) ||
+      dirname(resolve(ordner)) !== (await realpath(tmpdir())) ||
       !basename(ordner).startsWith('ScriptLab-Pythonexport-')
     )
       throw new Error('Unsicherer temporärer Exportprüfpfad.');
