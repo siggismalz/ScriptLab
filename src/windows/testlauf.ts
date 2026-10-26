@@ -180,7 +180,7 @@ export class TestlaufDienst {
         if (ergebnis.code !== 0 || ergebnis.fehler || !ergebnis.text.includes('SCRIPTLAB_LAUFZEIT_OK')) {
           this.zustand.technischeMeldung = ergebnis.text || ergebnis.fehler;
           throw new Error(
-            'VBScript ist nicht verfügbar oder wird durch Windows-Richtlinien blockiert. Bearbeiten, Speichern und Exportieren bleiben möglich. ScriptLab ändert keine Windows-Einstellungen.',
+            'VBScript ist nicht verfügbar oder die unsignierte Testdatei wird durch Windows-Richtlinien blockiert. Bearbeiten, Speichern und Exportieren bleiben möglich. ScriptLab ändert keine Windows-Einstellungen.',
           );
         }
         this.laufzeitGeprueft = true;
@@ -268,17 +268,39 @@ export class TestlaufDienst {
         zeile = '',
         fehler: string | null = null;
       let fallback: ReturnType<typeof setTimeout> | null = null;
+      let startBestaetigt = false;
+      let waechter: ReturnType<typeof setTimeout>;
+      const fristSetzen = (dauer: number, vorStart: boolean) => {
+        clearTimeout(waechter);
+        waechter = setTimeout(() => {
+          if (vorStart)
+            fehler = 'Der feste Windows-Testhost hat den Scriptstart nicht rechtzeitig bestätigt.';
+          else if (probe) fehler = 'Die feste VBScript-Laufzeitprüfung wurde nicht rechtzeitig beendet.';
+          else lauf.grund ??= 'zeitlimit';
+          if (!probe) {
+            this.zustand.phase = 'stoppt';
+            this.zustand.meldung = vorStart
+              ? 'Der Testhost antwortet nicht. Der Start wird beendet.'
+              : 'Das Zeitlimit ist erreicht. Der Test wird beendet.';
+          }
+          lauf.beenden?.();
+        }, dauer);
+      };
       const dekoder = [new StringDecoder('utf16le'), new StringDecoder('utf16le')];
       const protokoll = (text: string) => {
         if (text.startsWith('SLHOST|GESTARTET|')) {
+          const zeit = Date.parse(text.split('|')[2]);
+          const pid = Number(text.split('|')[3]);
+          if (startBestaetigt || !Number.isFinite(zeit) || !Number.isSafeInteger(pid) || pid <= 0)
+            return false;
+          startBestaetigt = true;
+          // Die fachliche Frist zählt ab ResumeThread, unabhängig vom CLR-Start des Helpers.
+          // Der native Host beendet zuerst; der zusätzliche Wächter erlaubt eine Sekunde für Abschluss/Pipes.
+          fristSetzen(Math.max(1, zeit + optionen.zeitlimitSekunden * 1000 + 1000 - Date.now()), false);
           if (!probe && !lauf.grund) {
             this.zustand.phase = 'laeuft';
-            const zeit = text.split('|')[2];
-            const pid = Number(text.split('|')[3]);
-            this.zustand.prozessId = Number.isSafeInteger(pid) && pid > 0 ? pid : null;
-            this.zustand.gestartetAm = Number.isFinite(Date.parse(zeit))
-              ? new Date(zeit).toISOString()
-              : new Date().toISOString();
+            this.zustand.prozessId = pid;
+            this.zustand.gestartetAm = new Date(zeit).toISOString();
             this.zustand.meldung = 'Der vollständige Workflow läuft auf diesem Computer.';
           }
           return true;
@@ -336,27 +358,17 @@ export class TestlaufDienst {
       prozess.once('error', (e) => {
         fehler = e.message;
       });
-      const zeitlimit = setTimeout(
-        () => {
-          if (probe) fehler = 'Die feste VBScript-Laufzeitprüfung wurde nicht rechtzeitig beendet.';
-          else lauf.grund ??= 'zeitlimit';
-          if (!probe) {
-            this.zustand.phase = 'stoppt';
-            this.zustand.meldung = 'Das Zeitlimit ist erreicht. Der Test wird beendet.';
-          }
-          lauf.beenden?.();
-        },
-        // Der native Host misst ab ResumeThread. Dieser zusätzliche Wächter darf den
-        // CLR-Start des Helpers nicht fälschlich von der Scriptlaufzeit abziehen.
-        optionen.zeitlimitSekunden * 1000 + (probe ? 1000 : 3000),
-      );
+      // Fehlender Hoststart ist ein Infrastrukturfehler, kein abgelaufenes Workflowzeitlimit.
+      fristSetzen(10000, true);
       // close folgt erst nach Prozessende UND geschlossenen Standardstreams, nicht bloß killed=true.
       prozess.once('close', (code, signal) => {
-        clearTimeout(zeitlimit);
         if (fallback) clearTimeout(fallback);
         lesen(dekoder[0].end(), 0);
         lesen(dekoder[1].end(), 1);
         if (zeile && !protokoll(zeile) && !probe) this.ausgabeAnhaengen(zeile);
+        clearTimeout(waechter);
+        // Exitcode 0 allein belegt keinen tatsächlich bestätigten Scriptstart.
+        if (!startBestaetigt && !fehler) fehler = 'Der Scriptstart wurde vom Testhost nicht bestätigt.';
         if (!probe && stderr) {
           this.zustand.technischeMeldung = stderr;
           const dateiname = datei.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

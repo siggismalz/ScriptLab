@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { spawn, execFile, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, realpath } from 'node:fs/promises';
 import { basename, join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -127,7 +127,11 @@ describe.skipIf(process.platform !== 'win32' || process.arch !== 'x64')(
       );
       const ergebnis = await probe.fertig;
       expect(ergebnis.code, JSON.stringify(ergebnis)).toBe(37);
-      expect(ergebnis.stdout).toBe(`1\r\nHallo ä, Ö und €\r\n${resolve(probe.basis)}\r\n${probe.token}\r\n`);
+      const zeilen = ergebnis.stdout.split('\r\n');
+      expect(zeilen.slice(0, 2)).toEqual(['1', 'Hallo ä, Ö und €']);
+      // Windows kann denselben Basisordner als 8.3- oder ausgeschriebenen Pfad zurückgeben.
+      expect(await realpath(zeilen[2])).toBe(await realpath(resolve(probe.basis)));
+      expect(zeilen.slice(3)).toEqual([probe.token, '']);
       expect(startBestaetigen(ergebnis.stderr).rest).toBe('');
     }, 15000);
 
@@ -139,6 +143,19 @@ describe.skipIf(process.platform !== 'win32' || process.arch !== 'x64')(
       expect(ergebnis.code).toBe(0);
       expect(ergebnis.stdout).toBe('BEREIT\r\nFERTIG\r\n');
       expect(startBestaetigen(ergebnis.stderr).rest).toBe('');
+    }, 15000);
+
+    test('schreibt die Startbestätigung vor einer sofortigen langen Fehlerzeile vollständig', async () => {
+      const fehlerzeile = `LANGE FEHLERZEILE|${'ä'.repeat(7000)}|ENDE`;
+      expect(Buffer.byteLength(fehlerzeile, 'utf16le')).toBeGreaterThan(4096);
+      const probe = await probeStarten(
+        'Option Explicit\nWScript.StdErr.WriteLine "LANGE FEHLERZEILE|" & String(7000, "ä") & "|ENDE"\nWScript.StdOut.WriteLine "FERTIG"\nWScript.Quit 23\n',
+      );
+      const ergebnis = await probe.fertig;
+      expect(ergebnis.code, JSON.stringify(ergebnis)).toBe(23);
+      expect(ergebnis.stdout).toBe('FERTIG\r\n');
+      expect(ergebnis.stderr).toMatch(/^SLHOST\|GESTARTET\|[^|\r\n]+\|\d+\r\n/);
+      expect(startBestaetigen(ergebnis.stderr).rest).toBe(`${fehlerzeile}\r\n`);
     }, 15000);
 
     test('beendet ausschließlich seinen laufenden Job nach STOP mit bestätigtem Pipe-Ende', async () => {
@@ -170,12 +187,12 @@ describe.skipIf(process.platform !== 'win32' || process.arch !== 'x64')(
       expect(ergebnis.stderr).toBe('');
     }, 15000);
 
-    test('meldet das feste Zeitlimit vor dem bestätigten Jobende', async () => {
+    test('meldet das feste Zeitlimit nach bestätigtem Job- und Pipe-Ende', async () => {
       const probe = await probeStarten(schleife, 350);
       const ergebnis = await probe.fertig;
       expect((ergebnis.code ?? 0) >>> 0).toBe(stopExitcode);
       expect(ergebnis.stdout).toContain('BEREIT');
-      expect(startBestaetigen(ergebnis.stderr).rest).toBe('SLHOST|ZEITLIMIT\r\n');
+      expect(startBestaetigen(ergebnis.stderr).rest).toBe('\r\nSLHOST|ZEITLIMIT\r\n');
     }, 15000);
 
     test('räumt den Job auch beim gezielten Beenden seines eigenen Helpers auf', async () => {

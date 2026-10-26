@@ -27,6 +27,10 @@ function block(
 const text = (TEXT: string) => block('sl_text', {}, { TEXT });
 const zahl = (ZAHL: string) => block('sl_number', {}, { ZAHL });
 const ausgabe = (TEXT: string) => block('sl_output', { TEXT: text(TEXT) });
+const checkpoint = (marke: string) =>
+  block('sl_output', {
+    TEXT: block('sl_join', { A: text(`${marke}|`), B: block('sl_time') }),
+  });
 const warten = (sekunden: string) => block('sl_sleep', { SEKUNDEN: zahl(sekunden) });
 function projektMit(...anweisungen: EditorBlock[]): Projekt {
   const projekt = neuesProjekt();
@@ -64,6 +68,42 @@ async function technischeBereinigungAbwarten(ordner: string): Promise<void> {
   ).toEqual([]);
 }
 
+function abschlussDiagnose(
+  stand: TestZustand,
+  zeitspur: { ms: number; phase: string; ausgabe: string }[],
+): string {
+  const zeit = (wert: string | null) => (wert ? Date.parse(wert) : null);
+  const vorbereitet = zeit(stand.vorbereitetAm),
+    gestartet = zeit(stand.gestartetAm),
+    beendet = zeit(stand.beendetAm);
+  return JSON.stringify({
+    phase: stand.phase,
+    ausgabe: stand.ausgabe,
+    tech: stand.technischeMeldung,
+    exitcode: stand.exitcode,
+    zeit: {
+      vorbereitet: stand.vorbereitetAm,
+      gestartet: stand.gestartetAm,
+      beendet: stand.beendetAm,
+      vorbereitungMs: vorbereitet !== null && gestartet !== null ? gestartet - vorbereitet : null,
+      nativeLaufzeitMs: gestartet !== null && beendet !== null ? beendet - gestartet : null,
+    },
+    zeitspur,
+  });
+}
+
+async function diagnostiziertesEnde(dienst: TestlaufDienst) {
+  const beginn = Date.now();
+  const zeitspur: { ms: number; phase: string; ausgabe: string }[] = [];
+  const ende = await standAbwarten(dienst, (stand) => {
+    const vorher = zeitspur.at(-1);
+    if (!vorher || vorher.phase !== stand.phase || vorher.ausgabe !== stand.ausgabe)
+      zeitspur.push({ ms: Date.now() - beginn, phase: stand.phase, ausgabe: stand.ausgabe });
+    return !testAktiv(stand.phase);
+  });
+  return { ende, diagnose: abschlussDiagnose(ende, zeitspur) };
+}
+
 describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolierten Testordnern', () => {
   let ordner: string;
   let basis: string;
@@ -97,11 +137,27 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
     const lesen = block('sl_output', {
       TEXT: block('sl_read_text', { PFAD: text(pfad) }, { KODIERUNG: 'UTF8' }),
     });
-    dienst!.starten(projektMit(schreiben, lesen), { basisVerzeichnis: basis, zeitlimitSekunden: 10 });
-    const ende = await standAbwarten(dienst!, (z) => !testAktiv(z.phase));
-    expect(ende).toMatchObject({ phase: 'beendet', exitcode: 0, fehlerBlockId: null });
-    expect(ende.beendetAm).not.toBeNull();
-    expect(ende.ausgabe).toContain(inhalt);
+    dienst!.starten(
+      projektMit(
+        checkpoint('DIAG-VOR-SCHREIBEN'),
+        schreiben,
+        checkpoint('DIAG-NACH-SCHREIBEN'),
+        lesen,
+        checkpoint('DIAG-NACH-LESEN'),
+      ),
+      { basisVerzeichnis: basis, zeitlimitSekunden: 10 },
+    );
+    const { ende, diagnose: standDiagnose } = await diagnostiziertesEnde(dienst!);
+    const ergebnisDatei = await stat(join(basis, pfad))
+      .then((s) => ({ vorhanden: true, bytes: s.size }))
+      .catch((e: NodeJS.ErrnoException) => ({ vorhanden: false, fehler: e.code }));
+    const diagnose = JSON.stringify({ stand: JSON.parse(standDiagnose), ergebnisDatei });
+    expect(ende, diagnose).toMatchObject({ phase: 'beendet', exitcode: 0, fehlerBlockId: null });
+    expect(ende.beendetAm, diagnose).not.toBeNull();
+    expect(ende.ausgabe, diagnose).toContain(inhalt);
+    expect(ende.ausgabe, diagnose).toMatch(
+      /DIAG-VOR-SCHREIBEN\|[^\r\n]+\r\nDIAG-NACH-SCHREIBEN\|[^\r\n]+\r\n[\s\S]*DIAG-NACH-LESEN\|[^\r\n]+\r\n$/,
+    );
     expect((await readFile(join(basis, pfad), 'utf8')).replace(/^\uFEFF/, '')).toBe(inhalt);
     await technischeBereinigungAbwarten(technisch);
   }, 20_000);
@@ -198,15 +254,18 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
   }, 20_000);
 
   it('meldet das Zeitlimit als Zeitlimit und lässt nachfolgende Anweisungen aus', async () => {
-    dienst!.starten(projektMit(ausgabe('VOR-ZEITLIMIT'), warten('5'), ausgabe('NACH-ZEITLIMIT')), {
+    dienst!.starten(projektMit(checkpoint('VOR-ZEITLIMIT'), warten('5'), ausgabe('NACH-ZEITLIMIT')), {
       basisVerzeichnis: basis,
       zeitlimitSekunden: 1,
     });
-    const ende = await standAbwarten(dienst!, (z) => !testAktiv(z.phase));
-    expect(ende.phase).toBe('zeitlimit');
-    expect(ende.ausgabe).toContain('VOR-ZEITLIMIT');
-    expect(ende.ausgabe).not.toContain('NACH-ZEITLIMIT');
-    expect(ende.beendetAm).not.toBeNull();
+    const { ende, diagnose } = await diagnostiziertesEnde(dienst!);
+    expect(ende.phase, diagnose).toBe('zeitlimit');
+    // Die Frist beginnt bei ResumeThread und umfasst auch die VBScript-Initialisierung.
+    expect(ende.gestartetAm, diagnose).not.toBeNull();
+    expect(ende.technischeMeldung, diagnose).toMatch(/SLHOST\|GESTARTET\|[^|\r\n]+\|[1-9]\d*\r\n/);
+    expect((ende.exitcode ?? 0) >>> 0, diagnose).toBe(0xc000013a);
+    expect(ende.ausgabe, diagnose).not.toContain('NACH-ZEITLIMIT');
+    expect(ende.beendetAm, diagnose).not.toBeNull();
     await technischeBereinigungAbwarten(technisch);
   }, 20_000);
 });

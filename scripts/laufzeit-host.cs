@@ -156,22 +156,20 @@ internal static class LaufzeitHost
         return Path.GetFullPath(text);
     }
 
-    // Diese Diagnose darf auch bei voller stderr-Pipe die Jobbeendigung nicht blockieren.
+    // Nur der Hauptthread schreibt Protokollmeldungen: vor den Pumpen oder nach deren Ende.
     private static void Diagnose(string text)
     {
-        Thread schreiben = new Thread(delegate()
-        {
-            try
-            {
-                byte[] daten = Encoding.Unicode.GetBytes(text + "\r\n");
-                Stream fehler = Console.OpenStandardError();
-                fehler.Write(daten, 0, daten.Length); fehler.Flush();
-            }
-            catch { }
-        });
-        schreiben.IsBackground = true;
-        schreiben.Start();
-        schreiben.Join(50);
+        byte[] daten = Encoding.Unicode.GetBytes(text + "\r\n");
+        Stream fehler = Console.OpenStandardError();
+        fehler.Write(daten, 0, daten.Length); fehler.Flush();
+    }
+
+    private static bool PumpenAbwarten(PipePumpe ausgabe, PipePumpe fehler)
+    {
+        // Beide Threads abwarten, auch wenn bereits die erste Pipe ihr Zeitlimit überschreitet.
+        bool ausgabeBeendet = ausgabe == null || ausgabe.Thread.Join(1000);
+        bool fehlerBeendet = fehler == null || fehler.Thread.Join(1000);
+        return ausgabeBeendet && fehlerBeendet;
     }
 
     // Keine vererbte stdin für cscript: nur der Helper liest diese Lebensleitung.
@@ -227,7 +225,7 @@ internal static class LaufzeitHost
         IntPtr ausgabeLesen = IntPtr.Zero, fehlerLesen = IntPtr.Zero;
         PipePumpe ausgabePumpe = null, fehlerPumpe = null;
         Prozessinfo prozess = new Prozessinfo();
-        bool listeInitialisiert = false;
+        bool listeInitialisiert = false, zeitlimitErreicht = false;
         try
         {
             if (IntPtr.Size != 8 || args.Length != 8 || args[0] != "--script" || args[2] != "--basis" || args[4] != "--limit-ms" || args[6] != "--token")
@@ -277,8 +275,6 @@ internal static class LaufzeitHost
             Pruefen(CreateProcessW(host, argumente, IntPtr.Zero, IntPtr.Zero, true, CreateSuspended | CreateNoWindow | ExtendedStartup, IntPtr.Zero, basis, ref start, out prozess), "Windows-Scripthost anlegen");
             CloseHandle(ausgabe); ausgabe = IntPtr.Zero;
             CloseHandle(fehlerausgabe); fehlerausgabe = IntPtr.Zero;
-            ausgabePumpe = new PipePumpe(ausgabeLesen, Console.OpenStandardOutput()); ausgabeLesen = IntPtr.Zero;
-            fehlerPumpe = new PipePumpe(fehlerLesen, Console.OpenStandardError()); fehlerLesen = IntPtr.Zero;
             bool enthalten;
             Pruefen(IsProcessInJob(prozess.Prozess, job, out enthalten) && enthalten, "Jobzuordnung bestätigen");
             if (KontrollePruefen(kontrolle, befehl)) { JobBeenden(job, prozess.Prozess); }
@@ -286,7 +282,11 @@ internal static class LaufzeitHost
             {
                 Pruefen(ResumeThread(prozess.Thread) != 0xFFFFFFFF, "Gebundenen Scripthost freigeben");
                 Stopwatch laufzeit = Stopwatch.StartNew();
+                // Der gebundene Prozess darf schon in seine nativen Pipes schreiben. Weitergegeben
+                // werden diese Bytes erst nach der vollständig geschriebenen Startbestätigung.
                 Diagnose("SLHOST|GESTARTET|" + DateTime.UtcNow.ToString("o") + "|" + prozess.ProzessId);
+                ausgabePumpe = new PipePumpe(ausgabeLesen, Console.OpenStandardOutput()); ausgabeLesen = IntPtr.Zero;
+                fehlerPumpe = new PipePumpe(fehlerLesen, Console.OpenStandardError()); fehlerLesen = IntPtr.Zero;
                 while (true)
                 {
                     uint wartet = WaitForSingleObject(prozess.Prozess, 20);
@@ -294,21 +294,35 @@ internal static class LaufzeitHost
                     Pruefen(wartet == 258, "Auf Scripthost warten");
                     if (ausgabePumpe.Fehler != null || fehlerPumpe.Fehler != null) throw new IOException("Die Ausgabe des Testlaufs konnte nicht weitergegeben werden.");
                     if (KontrollePruefen(kontrolle, befehl)) { JobBeenden(job, prozess.Prozess); break; }
-                    if (laufzeit.ElapsedMilliseconds >= limit) { Diagnose("SLHOST|ZEITLIMIT"); JobBeenden(job, prozess.Prozess); break; }
+                    if (laufzeit.ElapsedMilliseconds >= limit) { zeitlimitErreicht = true; JobBeenden(job, prozess.Prozess); break; }
                 }
             }
             uint code = 0;
             Pruefen(WaitForSingleObject(prozess.Prozess, 0) == WaitObject && GetExitCodeProcess(prozess.Prozess, out code), "Scripthost-Ende bestätigen");
             // Auch noch lebende normale Kindprozesse des Scripts bleiben nicht nach dessen Ende zurück.
             JobBeenden(job, prozess.Prozess);
-            if (!ausgabePumpe.Thread.Join(1000) || !fehlerPumpe.Thread.Join(1000)) throw new TimeoutException("Das Ende der Ausgabepipes wurde nicht rechtzeitig bestätigt.");
-            if (ausgabePumpe.Fehler != null || fehlerPumpe.Fehler != null) throw new IOException("Die Ausgabe des Testlaufs konnte nicht vollständig weitergegeben werden.");
+            if (!PumpenAbwarten(ausgabePumpe, fehlerPumpe)) throw new TimeoutException("Das Ende der Ausgabepipes wurde nicht rechtzeitig bestätigt.");
+            if ((ausgabePumpe != null && ausgabePumpe.Fehler != null) || (fehlerPumpe != null && fehlerPumpe.Fehler != null))
+                throw new IOException("Die Ausgabe des Testlaufs konnte nicht vollständig weitergegeben werden.");
+            // Eine offene letzte Scriptzeile darf die abschließende Protokollmeldung nicht verschlucken.
+            if (zeitlimitErreicht) Diagnose("\r\nSLHOST|ZEITLIMIT");
             return unchecked((int)code);
         }
         catch (Exception e)
         {
-            Diagnose("SLHOST|FEHLER|" + e.Message.Replace('\r', ' ').Replace('\n', ' '));
-            if (job != IntPtr.Zero) { try { JobBeenden(job, prozess.Prozess); } catch { } }
+            string meldung = e.Message;
+            if (job != IntPtr.Zero)
+            {
+                try { JobBeenden(job, prozess.Prozess); }
+                catch (Exception endeFehler) { meldung += " Das Jobende konnte nicht bestätigt werden: " + endeFehler.Message; }
+            }
+            // Bei einer blockierten Ausgabepipe niemals einen zweiten Schreiber daneben starten.
+            // Der Fehlercode bleibt 125; der Aufrufer begrenzt auch einen nicht lesenden Helper.
+            if (PumpenAbwarten(ausgabePumpe, fehlerPumpe))
+            {
+                try { Diagnose("\r\nSLHOST|FEHLER|" + meldung.Replace('\r', ' ').Replace('\n', ' ')); }
+                catch { /* Eine geschlossene Empfängerpipe verhindert die Diagnose, nicht das Jobende. */ }
+            }
             return 125;
         }
         finally
