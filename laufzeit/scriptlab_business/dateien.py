@@ -418,14 +418,14 @@ def beleg_ablegen(kontext: Kontext, k: dict, e: dict):
     import duckdb
     from .dokumente import pdf_text
     quelle = kontext.pfad(k["quelle"])
-    auszug = pdf_text(kontext, {"quelle": str(quelle)}, {})
     if k.get("bei_scan", "STOPP") not in {"BERICHT", "STOPP"}:
         raise BusinessFehler("Wähle BERICHT oder STOPP für Belege ohne Textschicht.")
+    auszug = pdf_text(kontext, {"quelle": str(quelle), "bei_scan": "BERICHT"}, {})
     if auszug["scan_verdacht"] or not auszug["text"].strip():
         if k.get("bei_scan", "STOPP") == "BERICHT":
-            ergebnis = {"status": "hinweis", "scan_verdacht": True, "quelle": str(quelle), "meldung": "Der Beleg hat keine verlässliche Textschicht. Die Quelle bleibt unverändert; OCR ist nicht eingerichtet."}
-            kontext.hinweise.append(ergebnis)
-            kontext.ereignis("hinweis", **ergebnis)
+            # pdf_text hat genau einen sichtbaren Hinweis erfasst; die Ablage
+            # übernimmt diese Entscheidung ohne einen zweiten Warnungseintrag.
+            ergebnis = {**auszug["hinweis"], "status": "hinweis"}
             return ergebnis
         raise BusinessFehler("Der Beleg hat keine verlässliche Textschicht. OCR ist nicht eingerichtet; die Quelle bleibt erhalten.")
     nummer_muster = k.get("belegnummer_muster", r"(?i)(?:Rechnung|Beleg)[\s:-]+([A-Za-z0-9][A-Za-z0-9_-]{0,63})")

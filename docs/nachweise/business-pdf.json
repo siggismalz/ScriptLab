@@ -1,0 +1,26 @@
+{
+  "quelle": "ausschließlich synthetische Testdaten",
+  "pdf_dateiname": "Pruefbericht-Zeilenumbrueche.pdf",
+  "seiten": 5,
+  "sha256": "643184ae0d8e844cf29a5a2e72a842cab0023ab445dc1bb9ecf09428ef2091f0",
+  "runtime_hash": "990155bf07494f8fc7c351fa5208e9a9213bfd0a8bc0c8e351b153a270d089a4",
+  "datenzeilen": 101,
+  "zeilenumbrueche": "CRLF, CR und LF",
+  "lange_zelle_zeilen": 90,
+  "wiederholte_koepfe": true,
+  "seitennummern": true,
+  "erste_letzte_zeile": true,
+  "alle_langtextzeilen": true,
+  "benutzer_html_als_daten": true,
+  "visuelle_pruefung": {
+    "datum": "2026-10-27",
+    "methode": "Alle fünf Seiten mit Poppler bei 90 dpi gerendert und tatsächlich angesehen",
+    "seiten_angesehen": [1, 2, 3, 4, 5],
+    "befund": "Die lange Zelle wird auf den Seiten 2 und 3 fortgesetzt. Tabellenköpfe und Seitennummern sind vorhanden. Keine abgeschnittenen Inhaltszeilen und keine Überdeckungen erkannt. HTML-artiger Benutzertext bleibt sichtbar als Text.",
+    "einschraenkung": "Sichtprüfung dieser synthetischen Fixture; kein Nachweis für beliebige fremde Dokumente oder vollständige PDF-Barrierefreiheit."
+  },
+  "belegbilder": [
+    "bilder/business-pdf-seite-2.png",
+    "bilder/business-pdf-seite-3.png"
+  ]
+}

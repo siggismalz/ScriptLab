@@ -383,6 +383,9 @@ def pdf_teilen(kontext: Kontext, k: dict, e: dict):
 
 
 def pdf_text(kontext: Kontext, k: dict, e: dict):
+    bei_scan = k.get("bei_scan", "STOPP")
+    if bei_scan not in {"STOPP", "BERICHT"}:
+        raise BusinessFehler("Wähle STOPP oder BERICHT für PDF-Dateien ohne verlässliche Textschicht.")
     quelle = kontext.pfad(k["quelle"])
     with quellkopie(kontext, quelle) as kopie:
         leser = _pdf_lesen(kontext, kopie)
@@ -395,7 +398,19 @@ def pdf_text(kontext: Kontext, k: dict, e: dict):
             if gesamt > kontext.grenzen.max_vorschau_bytes:
                 raise BusinessFehler("Der PDF-Text überschreitet 256 KiB. Wähle weniger Seiten.")
             seiten.append({"seite": index + 1, "text": text, "scan_verdacht": not text.strip() and bool(list(seite.images))})
-        return {"seiten": seiten, "text": "\n".join(s["text"] for s in seiten), "scan_verdacht": any(s["scan_verdacht"] for s in seiten), "ocr": False}
+        ergebnis = {"seiten": seiten, "text": "\n".join(s["text"] for s in seiten), "scan_verdacht": any(s["scan_verdacht"] for s in seiten), "ocr": False, "status": "gelesen"}
+        if ergebnis["scan_verdacht"] or not ergebnis["text"].strip():
+            meldung = ("Mindestens eine ausgewählte PDF-Seite hat keine verlässliche Textschicht. Der Textauszug ist unvollständig."
+                       if ergebnis["text"].strip() else "Die PDF-Datei enthält keine auslesbare Textschicht.")
+            meldung += " OCR ist nicht eingerichtet; die Quelle bleibt unverändert."
+            if bei_scan == "STOPP":
+                raise BusinessFehler(meldung)
+            status = "unvollstaendig" if ergebnis["text"].strip() else "kein_text"
+            hinweis = {"status": status, "quelle": str(quelle), "scan_verdacht": ergebnis["scan_verdacht"], "meldung": meldung}
+            kontext.hinweise.append(hinweis)
+            kontext.ereignis("hinweis", **hinweis)
+            ergebnis.update(status=status, hinweis=hinweis)
+        return ergebnis
 
 
 def pdf_bericht(kontext: Kontext, k: dict, e: dict):
@@ -405,6 +420,7 @@ def pdf_bericht(kontext: Kontext, k: dict, e: dict):
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont, TTFError
     from reportlab.platypus import LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
+    from reportlab.platypus.doctemplate import LayoutError
     dienst, tabelle = _tabelle(kontext, e)
     spalten = k.get("spalten") or [s.name for s in tabelle.spalten]
     if not isinstance(spalten, list) or not 1 <= len(spalten) <= 20 or any(s not in {s.name for s in tabelle.spalten} for s in spalten):
@@ -430,11 +446,15 @@ def pdf_bericht(kontext: Kontext, k: dict, e: dict):
             raise BusinessFehler(f"Die gewählte Schrift enthält Zeichen des Berichts nicht ({codes}). Wähle eine geeignete TTF-Schrift.")
         return text
     stil = ParagraphStyle("ScriptLab", fontName=fontname, fontSize=9, leading=12)
-    daten = [[Paragraph(escape(schrift_pruefen(s)), stil) for s in spalten]]
+    def absatz(text):
+        # Erst Benutzerdaten maskieren, danach ausschließlich eigene Umbruch-Tags einfügen.
+        maskiert = escape(schrift_pruefen(text)).replace("\r\n", "\n").replace("\r", "\n")
+        return Paragraph(maskiert.replace("\n", "<br/>"), stil)
+    daten = [[absatz(s) for s in spalten]]
     for zeile in _zeilen(kontext, dienst, tabelle):
         if (len(daten) + 1) * len(spalten) > kontext.grenzen.max_dokument_zellen:
             raise BusinessFehler("Der PDF-Bericht überschreitet die Dokumentzellengrenze. Teile den Bericht oder erhöhe die Grenze bewusst.")
-        daten.append([Paragraph(escape(schrift_pruefen(_text(zeile[s]))), stil) for s in spalten])
+        daten.append([absatz(_text(zeile[s])) for s in spalten])
     titel = schrift_pruefen(_text(k.get("titel", "Bericht")))
     schrift_pruefen("Seite 0123456789")
     def schreiben(temp):
@@ -449,16 +469,20 @@ def pdf_bericht(kontext: Kontext, k: dict, e: dict):
         format = {"A4": A4, "A3": A3, "LETTER": LETTER}[formatname]
         if k.get("querformat", False):
             format = landscape(format)
-        tabelle_pdf = LongTable(daten, colWidths=[(format[0] - 2 * raender * mm) / len(spalten)] * len(spalten), repeatRows=1)
+        tabelle_pdf = LongTable(daten, colWidths=[(format[0] - 2 * raender * mm) / len(spalten)] * len(spalten), repeatRows=1, splitInRow=1)
         tabelle_pdf.setStyle(TableStyle([("FONTNAME", (0, 0), (-1, -1), fontname), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8EBEF")), ("GRID", (0, 0), (-1, -1), .25, colors.grey), ("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 6), ("RIGHTPADDING", (0, 0), (-1, -1), 6)]))
         def seitenkopf(canvas, dokument):
             kontext.pruefen()
             if dokument.page > kontext.grenzen.max_seiten:
                 raise BusinessFehler("Der PDF-Bericht enthält zu viele Seiten.")
             canvas.setFont(fontname, 9)
-            canvas.drawString(raender * mm, format[1] - 24, titel[:140])
+            kopftitel = titel.replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
+            canvas.drawString(raender * mm, format[1] - 24, kopftitel[:140])
             canvas.drawRightString(format[0] - raender * mm, 24, f"Seite {dokument.page}")
-        SimpleDocTemplate(str(temp), pagesize=format, topMargin=max(42, raender * mm), bottomMargin=max(42, raender * mm), leftMargin=raender * mm, rightMargin=raender * mm).build([Paragraph(escape(titel), stil), Spacer(1, 12), tabelle_pdf], onFirstPage=seitenkopf, onLaterPages=seitenkopf)
+        try:
+            SimpleDocTemplate(str(temp), pagesize=format, topMargin=max(42, raender * mm), bottomMargin=max(42, raender * mm), leftMargin=raender * mm, rightMargin=raender * mm).build([absatz(titel), Spacer(1, 12), tabelle_pdf], onFirstPage=seitenkopf, onLaterPages=seitenkopf)
+        except LayoutError as fehler:
+            raise BusinessFehler("Der PDF-Inhalt passt nicht in das Seitenlayout. Kürze sehr große Zellen oder wähle ein größeres Seitenformat.") from fehler
     quellen_pruefen(kontext, [fingerprint])
     return {**publizieren(kontext, _ziel(k, ".pdf"), schreiben, k.get("konflikt", "FEHLER"), [schrift, *dienst.quellpfade(tabelle)], lambda pfad: _pdf_lesen(kontext, pfad)), "dokumenttyp": "PDF"}
 

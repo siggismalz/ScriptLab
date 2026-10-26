@@ -204,9 +204,31 @@ class DokumentTests(unittest.TestCase):
         c = canvas.Canvas(str(scan))
         c.drawImage(str(bild), 10, 10)
         c.save()
-        r = pdf_text(self.kontext("vorschau"), {"quelle": str(scan)}, {})
+        r = pdf_text(self.kontext("vorschau"), {"quelle": str(scan), "bei_scan": "BERICHT"}, {})
         self.assertTrue(r["scan_verdacht"])
         self.assertFalse(r["ocr"])
+        self.assertEqual(r["status"], "kein_text")
+
+    def test_pdf_text_stoppt_scans_und_leere_textschicht_standardmaessig(self):
+        bild = self.basis / "Bildscan.png"
+        Image.new("RGB", (12, 12), "white").save(bild)
+        scan = self.basis / "Bildscan.pdf"
+        c = canvas.Canvas(str(scan))
+        c.drawImage(str(bild), 10, 10)
+        c.save()
+        leer = self.pdf("OhneText.pdf", [""])
+        for quelle in (scan, leer):
+            with self.subTest(quelle=quelle.name):
+                vorher = quelle.read_bytes()
+                with self.assertRaisesRegex(BusinessFehler, "keine auslesbare Textschicht.*OCR"):
+                    pdf_text(self.kontext("vorschau"), {"quelle": str(quelle)}, {})
+                meldungen = []
+                k = self.kontext("vorschau", ereignis_callback=meldungen.append)
+                r = pdf_text(k, {"quelle": str(quelle), "bei_scan": "BERICHT"}, {})
+                self.assertEqual(r["status"], "kein_text")
+                self.assertEqual(len(k.hinweise), 1)
+                self.assertEqual([m["art"] for m in meldungen], ["hinweis"])
+                self.assertEqual(quelle.read_bytes(), vorher)
 
     def test_pdf_seiten_grenzen_und_duplikate(self):
         for text in ("0", "3-1", "1,1", "1-9", "__import__('os')"):
@@ -239,6 +261,34 @@ class DokumentTests(unittest.TestCase):
         with self.assertRaisesRegex(BusinessFehler, "U\\+10FFFF"):
             pdf_bericht(k, {"ziel": "NichtErzeugen.pdf", "schrift": "INTERN:VERA"}, {"tabelle": {"tabelle": "bericht"}})
         self.assertFalse((self.basis / "NichtErzeugen.pdf").exists())
+
+    def test_pdf_bericht_behaelt_zeilenumbrueche_und_teilt_lange_zellen(self):
+        k = self.kontext()
+        zeilen = "\r\n".join(f"Langtext {i:03d}: Grüße €" for i in range(100))
+        k.dienste["daten"] = TabellenFixture(["Beschreibung"], [("ErsteZeile\r\nZweiteZeile\rDritteZeile\n<b>Nur Daten</b>",), (zeilen,)])
+        pdf_bericht(k, {"ziel": "Umbrueche.pdf", "titel": "Textprüfung ä", "schrift": "INTERN:VERA"}, {"tabelle": {"tabelle": "bericht"}})
+        pdf = PdfReader(self.basis / "Umbrueche.pdf")
+        self.assertGreaterEqual(len(pdf.pages), 2)
+        text = "\n".join(s.extract_text() for s in pdf.pages)
+        self.assertIn("ErsteZeile\nZweiteZeile\nDritteZeile\n<b>Nur Daten</b>", text)
+        self.assertIn("Langtext 000: Grüße €", text)
+        self.assertIn("Langtext 099: Grüße €", text)
+        for i, seite in enumerate(pdf.pages, 1):
+            self.assertIn("Beschreibung", seite.extract_text())
+            self.assertIn(f"Seite {i}", seite.extract_text())
+
+    def test_pdf_layoutfehler_ist_verstaendlich_und_erhaelt_bestehendes_ziel(self):
+        from reportlab.platypus.doctemplate import LayoutError
+        ziel = self.basis / "Vorhanden.pdf"
+        ziel.write_bytes(b"vorhandener unveraenderter Testinhalt")
+        vorher = ziel.read_bytes()
+        k = self.kontext()
+        k.dienste["daten"] = TabellenFixture(["Name"], [("Testwert",)])
+        with patch("reportlab.platypus.SimpleDocTemplate.build", side_effect=LayoutError("Technische Testmeldung")):
+            with self.assertRaisesRegex(BusinessFehler, "Seitenlayout"):
+                pdf_bericht(k, {"ziel": str(ziel), "schrift": "INTERN:VERA", "konflikt": "ERSETZEN"}, {"tabelle": {"tabelle": "bericht"}})
+        self.assertEqual(ziel.read_bytes(), vorher)
+        self.assertFalse(list(self.basis.glob(".scriptlab-*")))
 
     def test_quellidentitaet_ist_stabil_und_aenderung_verhindert_publikation(self):
         quelle = self.basis / "Quelle.txt"
@@ -379,6 +429,7 @@ class DokumentTests(unittest.TestCase):
         self.assertEqual(h["status"], "hinweis")
         self.assertTrue(h["scan_verdacht"])
         self.assertTrue((self.basis / "Scan.pdf").exists())
+        self.assertEqual(len(k.hinweise), 1)
 
     def test_csv_stapel_fehlerquelle_bleibt_und_resume_prueft_erledigte_outputs(self):
         for name in ("Eingang", "Ausgabe", "Archiv"):
