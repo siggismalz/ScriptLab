@@ -1,6 +1,8 @@
 import { build } from 'esbuild';
 import { build as viteBauen } from 'vite';
 import { cp, mkdir } from 'node:fs/promises';
+// Der feste Windows-Host gehört zum Build; beim Anwender wird nichts kompiliert.
+await import('./laufzeit-host-bauen.mjs');
 
 await mkdir('dist/main', { recursive: true });
 await build({

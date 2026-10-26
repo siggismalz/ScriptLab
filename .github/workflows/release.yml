@@ -46,7 +46,10 @@ jobs:
       - name: Vollstaendige Lizenzbeilagen pruefen
         run: node scripts/lizenzhinweise.mjs --check --strict
       - run: npm run check
+      - run: node scripts/laufzeit-host-bauen.mjs
       - run: npm test
+        env:
+          SCRIPTLAB_RUNTIME_TESTS: '1'
       - run: npm run build
       - run: npm run test:e2e
       - name: Signaturinfrastruktur pruefen

@@ -10,6 +10,8 @@ files:
   - package.json
   - THIRD_PARTY_NOTICES.md
 extraResources:
+  - from: artifacts/native/ScriptLab.Testhost.exe
+    to: ScriptLab.Testhost.exe
   - from: scripts/signatur-helper.ps1
     to: signatur-helper.ps1
   - from: beispiele
