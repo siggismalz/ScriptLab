@@ -20,16 +20,16 @@ const sprachen: readonly {
 }[] = [
   {
     id: 'python',
-    name: 'Python',
-    beschreibung: 'Für vielseitige Automatisierungen mit Dateien, Texten und Daten.',
-    vorteil: 'Bietet viele Möglichkeiten und lässt sich durch zusätzliche Funktionen erweitern.',
+    name: 'Python – empfohlen für Geschäftsprozesse',
+    beschreibung: 'Daten verarbeiten, Excel-Auswertungen erstellen, Dokumente erzeugen und umfangreiche Abläufe automatisieren.',
+    vorteil: 'Gemeinsame Grundbausteine und zusätzliche Daten- und Dokumentbausteine.',
     hinweis:
       'Zum Ausführen wird eine passende Python-Installation benötigt. Je nach Workflow können weitere Pakete erforderlich sein.',
   },
   {
     id: 'vbs',
-    name: 'VBScript (VBS)',
-    beschreibung: 'Für klassische Windows-Abläufe und vorhandene VBScript-Umgebungen.',
+    name: 'VBS – für kleine Windows-Automatisierungen',
+    beschreibung: 'Einfache Datei- und Systemaufgaben sowie vorhandene VBScript-Abläufe weiterverwenden.',
     vorteil: 'Nutzt den Windows Script Host und vorhandene Windows-Schnittstellen.',
     hinweis: 'VBScript muss auf dem Rechner verfügbar sein. Microsoft lässt die Unterstützung auslaufen.',
   },
