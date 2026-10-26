@@ -17,6 +17,7 @@ test.beforeAll(async () => {
     env: { ...process.env, SCRIPTLAB_TESTDATEN: join(ordner, 'einstellungen') },
   });
   seite = await app.firstWindow();
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1100, 740));
   await expect(seite.locator('.speicherpunkt')).toHaveText('Neues Projekt');
 });
 test.afterAll(async () => {
@@ -230,11 +231,18 @@ test('zieht Bausteine aus der Palette, markiert lose Anweisungen und macht Ände
     const r = await window.scriptlab.laden();
     return r.ok ? r.wert.dokument.projekt.ansicht : null;
   });
-  await seite.mouse.move(arbeitsbereich.x + arbeitsbereich.width * 0.8, arbeitsbereich.y + 420);
+  await seite.mouse.move(
+    arbeitsbereich.x + arbeitsbereich.width * 0.8,
+    arbeitsbereich.y + arbeitsbereich.height * 0.75,
+  );
   await seite.mouse.down();
-  await seite.mouse.move(arbeitsbereich.x + arbeitsbereich.width * 0.8 - 60, arbeitsbereich.y + 370, {
-    steps: 12,
-  });
+  await seite.mouse.move(
+    arbeitsbereich.x + arbeitsbereich.width * 0.8 - 60,
+    arbeitsbereich.y + arbeitsbereich.height * 0.75 - 50,
+    {
+      steps: 12,
+    },
+  );
   await seite.mouse.up();
   await expect
     .poll(async () =>

@@ -100,7 +100,7 @@ function registrieren(kanal: string, funktion: (daten: unknown) => unknown | Pro
     try {
       absenderPruefen(event);
       // JSON-Daten sind klein begrenzt; Binär- und Fremdobjekte erreichen keine Dateidienste.
-      if (daten !== undefined && JSON.stringify(daten).length > 5 * 1024 * 1024)
+      if (daten !== undefined && Buffer.byteLength(JSON.stringify(daten), 'utf8') > 5 * 1024 * 1024)
         throw new Error('Die Anfrage ist zu groß.');
       return { ok: true, wert: await funktion(daten) };
     } catch (error) {

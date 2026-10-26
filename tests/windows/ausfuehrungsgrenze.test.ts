@@ -107,4 +107,24 @@ describe('Dateien erhalten und Workflows ausschliesslich als Daten verarbeiten',
       await rm(ordner, { recursive: true, force: true });
     }
   });
+
+  it('verhindert eigene nicht mehr lesbare Projektdateien mit vielen Mehrbyte-Zeichen', async () => {
+    const ordner = await mkdtemp(join(tmpdir(), 'ScriptLab-Dateigroesse-'));
+    try {
+      const datei = join(ordner, 'Erhalten.scriptlab');
+      await writeFile(datei, 'Vorhandener Inhalt');
+      const projekt = neuesProjekt();
+      for (let i = 0; i < 90; i++)
+        projekt.editor.blocks!.blocks.push({
+          type: 'sl_text',
+          id: `viel-text-${i}`,
+          fields: { TEXT: '漢'.repeat(20000) },
+        });
+      await expect(projektSchreiben(datei, projekt)).rejects.toThrow(/zu groß/);
+      expect(await readFile(datei, 'utf8')).toBe('Vorhandener Inhalt');
+      expect(await readdir(ordner)).toEqual(['Erhalten.scriptlab']);
+    } finally {
+      await rm(ordner, { recursive: true, force: true });
+    }
+  });
 });

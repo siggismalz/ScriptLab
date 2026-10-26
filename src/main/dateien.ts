@@ -44,7 +44,12 @@ export async function projektLesen(dateipfad: string): Promise<Projekt> {
 
 export async function projektSchreiben(dateipfad: string, projekt: Projekt): Promise<void> {
   const geprueft = projektPruefen(projekt);
-  await atomarSchreiben(dateipfad, `${JSON.stringify(geprueft, null, 2)}\n`);
+  const inhalt = `${JSON.stringify(geprueft, null, 2)}\n`;
+  if (Buffer.byteLength(inhalt, 'utf8') > MAX_PROJEKT_BYTES)
+    throw new Error(
+      'Das Projekt ist zu groß zum Speichern. Bitte reduziere die Zahl der Bausteine oder die Textmenge.',
+    );
+  await atomarSchreiben(dateipfad, inhalt);
 }
 
 export function dateiFehler(error: unknown): string {

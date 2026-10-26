@@ -53,6 +53,8 @@ Die angezeigten Prüfungen kontrollieren die Struktur und die Übersetzbarkeit. 
 
 Projektdateien sind JSON-Daten. Die Anwendung prüft ihre Struktur und Schemaversion. Neuere unbekannte Formate und unbekannte Bausteintypen werden abgewiesen. Ein Rückimport beliebiger `.vbs`-Dateien als Bausteine ist nicht vorgesehen.
 
+Ein Projekt darf höchstens 5 MiB als UTF-8-JSON-Datei enthalten. Die Anwendung prüft diese Größe vor dem Ersetzen einer vorhandenen Datei. Außerdem gelten Grenzen von 2.000 Bausteinen und 150 Ebenen im gespeicherten Verbindungsbaum; aufeinanderfolgende Verbindungen zählen dabei ebenfalls als Ebenen.
+
 Eine `.scriptlab`-Datei bleibt bearbeitbar; eine `.vbs`-Datei ist das daraus erzeugte Script für Windows. Änderungen am Projekt verändern bereits exportierte Dateien nicht. Exportiere erneut, wenn du eine neue Fassung brauchst.
 
 ## Die drei Beispiele
