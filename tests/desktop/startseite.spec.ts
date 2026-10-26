@@ -15,6 +15,10 @@ interface Sitzung {
   ordner: string;
   profil: string;
 }
+type DialogTestdaten = typeof globalThis & {
+  startseiteSpeicherGefragt?: boolean;
+  startseiteNachrichtGefragt?: boolean;
+};
 
 async function starten(ordner?: string, dpi?: number): Promise<Sitzung> {
   const basis = ordner ?? (await mkdtemp(join(tmpdir(), 'ScriptLab-Startseite-')));
@@ -78,14 +82,41 @@ async function projektBenennen(s: Sitzung, name: string): Promise<void> {
 
 async function dialogAntwort(s: Sitzung, response: number): Promise<void> {
   await s.app.evaluate(({ dialog }, antwort) => {
-    dialog.showMessageBox = async () => ({ response: antwort, checkboxChecked: false });
+    const daten = globalThis as DialogTestdaten;
+    daten.startseiteNachrichtGefragt = false;
+    dialog.showMessageBox = async () => {
+      daten.startseiteNachrichtGefragt = true;
+      return { response: antwort, checkboxChecked: false };
+    };
   }, response);
 }
 
 async function speicherziel(s: Sitzung, pfad: string | null): Promise<void> {
   await s.app.evaluate(({ dialog }, ziel) => {
-    dialog.showSaveDialog = async () => ({ canceled: ziel === null, filePath: ziel ?? '' });
+    const daten = globalThis as DialogTestdaten;
+    daten.startseiteSpeicherGefragt = false;
+    dialog.showSaveDialog = async () => {
+      daten.startseiteSpeicherGefragt = true;
+      return { canceled: ziel === null, filePath: ziel ?? '' };
+    };
   }, pfad);
+}
+async function nativenDialogAbwarten(s: Sitzung, art: 'speichern' | 'nachricht'): Promise<void> {
+  // Erst auf den wirklich angefragten Dialog warten. Sichtbare Zeilen/gleiche Projektnamen
+  // sind während Flush und Dialogvorbereitung bereits vorhanden und kein Abschlussnachweis.
+  await expect
+    .poll(() =>
+      s.app.evaluate((_electron, auswahl) => {
+        const daten = globalThis as DialogTestdaten;
+        return auswahl === 'speichern' ? daten.startseiteSpeicherGefragt : daten.startseiteNachrichtGefragt;
+      }, art),
+    )
+    .toBe(true);
+  await expect(s.seite.locator('#start-verarbeitung')).toHaveCount(0);
+  await s.seite.evaluate(
+    () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
+  );
+  await expect(s.seite.locator('#start-verarbeitung')).toHaveCount(0);
 }
 
 async function dateiOeffnen(s: Sitzung, pfad: string, editorErwartet = true): Promise<void> {
@@ -410,6 +441,8 @@ test('Startseite: Speichern-Abbruch und echter Schreibfehler erhalten Arbeitssta
     await dialogAntwort(s, 0);
     await speicherziel(s, null);
     await s.seite.getByRole('button', { name: 'Neu', exact: true }).click();
+    await nativenDialogAbwarten(s, 'speichern');
+    await editorBereit(s);
     expect((await dokumentLesen(s)).projekt).toEqual(vorher);
     await expect(s.seite.getByTestId('palette')).toBeVisible();
     expect((await bibliothekLesen(s)).entwuerfe.map((e) => e.id)).toContain(id);
@@ -443,11 +476,14 @@ test('Startseite: Entwurf als neue Projektkopie speichern und lokalen Entwurf be
     await dialogAntwort(s, 1);
     await speicherziel(s, null);
     await zeile.getByRole('button', { name: 'Als Projekt speichern', exact: true }).click();
+    await nativenDialogAbwarten(s, 'speichern');
+    await expect(zeile.getByRole('button', { name: 'Als Projekt speichern', exact: true })).toBeEnabled();
     await expect(zeile).toBeVisible();
     expect((await bibliothekLesen(s)).projekte).toHaveLength(0);
     const pfad = join(s.ordner, 'Entwurfskopie.scriptlab');
     await speicherziel(s, pfad);
     await zeile.getByRole('button', { name: 'Als Projekt speichern', exact: true }).click();
+    await nativenDialogAbwarten(s, 'speichern');
     await editorBereit(s);
     const kopie = JSON.parse(await readFile(pfad, 'utf8')) as Projekt;
     expect(kopie.projektKennung).not.toBe(projektKennung);
@@ -463,9 +499,12 @@ test('Startseite: Entwurf als neue Projektkopie speichern und lokalen Entwurf be
       .getByRole('article', { name: 'Nur die lokale Sicherung löschen', exact: true });
     await dialogAntwort(s, 1);
     await loeschzeile.getByRole('button', { name: 'Entwurf löschen', exact: true }).click();
+    await nativenDialogAbwarten(s, 'nachricht');
+    await expect(loeschzeile.getByRole('button', { name: 'Entwurf löschen', exact: true })).toBeEnabled();
     await expect(loeschzeile).toBeVisible();
     await dialogAntwort(s, 0);
     await loeschzeile.getByRole('button', { name: 'Entwurf löschen', exact: true }).click();
+    await nativenDialogAbwarten(s, 'nachricht');
     await expect(loeschzeile).toHaveCount(0);
     expect(await readFile(pfad)).toEqual(original);
   } finally {
