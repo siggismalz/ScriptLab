@@ -13,9 +13,12 @@ npm test
 npm run build
 npm run test:e2e
 npm run package
+npm run verify:package
 ```
 
 `electron-builder` 26.18.0 erzeugt einen NSIS-Installer in `release/`. Der Name lautet `ScriptLab-0.1.0-Setup-x64.exe` fuer die Paketversion 0.1.0. Das reproduzierbare Abhaengigkeitsverzeichnis stammt aus `package-lock.json`. `npm run package:dir` baut das entpackte Programmpaket zum Pruefen.
+
+`verify:package` vergleicht die vollständige Installergröße und SHA-512 mit den Updatemetadaten des tatsächlichen Versionskanals und prüft die Blockmap-Struktur. Renderer, Hauptprozess, Preload, Beispiele und Beilagen müssen bytegleich zum vorhandenen Build beziehungsweise Quellstand sein. Windows-Dateimetadaten und Authenticode werden ausschließlich lesend abgefragt. Der Bericht in `release/pruefung.json` nennt Git-Stand, offene Prüfungen und Grenzen. Er entpackt den NSIS-Payload nicht und ersetzt keine praktische Installation oder produktive Updateprüfung.
 
 Ein lokaler Build ohne eingerichtetes Entwicklerzertifikat ist **unsigniert**. Er ist ein Testartefakt und kann Windows-Warnungen ausloesen. Die Anwendung laesst fuer einen solchen Build keine Updates zu, wenn der verifizierbare Herausgeber in `resources/app-update.yml` fehlt. Eine fehlende Signaturpruefung wird niemals durch Abschalten einer Sicherheitsoption umgangen.
 
@@ -25,7 +28,7 @@ Der Installer arbeitet pro Nutzer, fordert keine Administratorrechte und loescht
 
 Das genehmigte oeffentliche Repository und die feste Releasequelle sind [siggismalz/ScriptLab](https://github.com/siggismalz/ScriptLab).
 
-`windows-pruefung.yml` laeuft bei Push auf `main` und bei Pull Requests auf einem Windows-Runner. Sie installiert mit `npm ci`, prueft TypeScript, Tests, Produktionsbuild und Electron-Oberflaechentests und erstellt einen nicht veroeffentlichten Testinstaller als Actions-Artefakt. Gewoehnliche Commits erzeugen kein Release.
+`windows-pruefung.yml` laeuft bei Push auf `main` und bei Pull Requests auf einem Windows-Runner. Sie installiert mit `npm ci`, prueft TypeScript, Tests, Produktionsbuild und Electron-Oberflaechentests und erstellt einen nicht veroeffentlichten Testinstaller. Anschließend prüft `verify:package` dessen Metadaten und Paketinhalt. Installer, Updatemetadaten und Prüfbericht werden als Actions-Artefakt bereitgestellt. Gewoehnliche Commits erzeugen kein Release.
 
 `release.yml` wird bewusst durch einen Tag wie `v0.1.0` oder manuell fuer einen bereits vorhandenen Versionstag gestartet. Paketversion und Tag muessen uebereinstimmen. Eine manuelle Ausloesung baut ebenfalls den angegebenen Tag und kein beliebiges aktuelles `main`.
 
@@ -33,11 +36,11 @@ Das genehmigte oeffentliche Repository und die feste Releasequelle sind [siggism
 
 In den GitHub-Einstellungen muessen vor dem ersten produktiven Release eingerichtet werden:
 
-| Name | Ort | Inhalt |
-| --- | --- | --- |
-| `WINDOWS_CSC_LINK` | Actions Secret | Fuer den Runner zugaengliches Code-Signing-Zertifikat, beispielsweise als von electron-builder unterstuetzter Base64-PFX-Inhalt. Kein Repositorypfad zu einem eingecheckten Schluessel. |
-| `WINDOWS_CSC_KEY_PASSWORD` | Actions Secret | Kennwort des Zertifikats. |
-| `WINDOWS_PUBLISHER_NAME` | Actions Variable | Exakter Common Name des tatsaechlich verwendeten Zertifikats. Keinen frei gewaehlten Herausgeber vortaeuschen. |
+| Name                       | Ort              | Inhalt                                                                                                                                                                                  |
+| -------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WINDOWS_CSC_LINK`         | Actions Secret   | Fuer den Runner zugaengliches Code-Signing-Zertifikat, beispielsweise als von electron-builder unterstuetzter Base64-PFX-Inhalt. Kein Repositorypfad zu einem eingecheckten Schluessel. |
+| `WINDOWS_CSC_KEY_PASSWORD` | Actions Secret   | Kennwort des Zertifikats.                                                                                                                                                               |
+| `WINDOWS_PUBLISHER_NAME`   | Actions Variable | Exakter Common Name des tatsaechlich verwendeten Zertifikats. Keinen frei gewaehlten Herausgeber vortaeuschen.                                                                          |
 
 `GITHUB_TOKEN` wird ausschliesslich im Releasejob mit `contents: write` verwendet. Der Token wird weder in das Anwendungspaket noch in Projektdateien geschrieben. Fuer hardwaregebundene EV-Schluessel oder Azure Artifact/Trusted Signing muss der Signierjob passend zur realen Infrastruktur konfiguriert werden; es ist hierfuer kein funktionsloser Ersatz eingebaut.
 

@@ -19,7 +19,9 @@ Der vollständige Klickweg wurde in der echten Anwendung bis zum Schreiben und e
 
 Ein vor der Korrektur reproduzierter Undo-Fehler entfernte bei sofortigem Rückgängig nach einem Einfügeklick die ältere Nachricht. Nach der Korrektur bestanden der Timingfall und der Strg+Z/Strg+Y-Fall je drei Wiederholungen (**6/6**) sowie der gemeinsame 47er-Lauf. Die Wiederholungen sind ein zusätzlicher Regressionsnachweis und werden nicht zu den 47 unterschiedlichen Desktopfällen addiert. Sie decken die konkreten Ereignisfolgen ab, nicht jedes mögliche Timing.
 
-Die älteren Installer- und GitHub-CI-Nachweise unten bleiben ihrer Erstprüfung zugeordnet. Für die aktuelle UI-Fassung wird hier noch kein neuer Installer oder GitHub-Lauf behauptet. Gesteuerte Signatur-/Updateantworten in den UI-Tests prüfen ausschließlich die Darstellung. Es wurde kein Nutzerworkflow ausgeführt.
+Der UI-Commit `d348836` besteht auch den unabhängigen [GitHub-Windows-Lauf 40318064995](https://github.com/siggismalz/ScriptLab/actions/runs/40318064995) mit Abhängigkeitsinstallation, Typprüfung, Tests, Produktionsbuild, Desktoptests, NSIS-Bau und Artefakt-Upload. Die ältere CI-Tabelle unten bleibt ihrer Erstprüfung zugeordnet.
+
+Für die aktuelle UI wurde lokal erneut `npm run package` ausgeführt. Installer, Blockmap und Updatemetadaten liegen unter `release/`. Der zusätzliche lesende Prüfer `npm run verify:package` bestand mit **10/10 Paketprüfungen**: Dateigröße und SHA-512, Blockmap-Struktur, bytegleicher gepackter Build, Beispiele, Beilagen sowie Windows-Produktangaben. Aktuelle Hashes und der tatsächliche Git-Arbeitsstand stehen im lokalen Bericht `release/pruefung.json`. Der Prüfer vergleicht das entpackte Anwendungspaket; den im NSIS eingebetteten Payload extrahiert er nicht. Beide Anwendungsdateien sind tatsächlich `NotSigned`. Installation/Deinstallation und eine produktive Updatekette bleiben offen. Gesteuerte Signatur-/Updateantworten in den UI-Tests prüfen ausschließlich die Darstellung. Es wurde kein Nutzerworkflow ausgeführt.
 
 ## Verifizierte Umgebung
 

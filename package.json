@@ -23,7 +23,8 @@
     "test:e2e": "playwright test",
     "build": "node scripts/bauen.mjs",
     "package": "npm run build && electron-builder --win nsis --x64 --publish never",
-    "package:dir": "npm run build && electron-builder --win --x64 --dir --publish never"
+    "package:dir": "npm run build && electron-builder --win --x64 --dir --publish never",
+    "verify:package": "node scripts/pruefe-bau.mjs"
   },
   "dependencies": {
     "blockly": "13.4.0",
