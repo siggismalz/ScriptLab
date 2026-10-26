@@ -1,0 +1,55 @@
+.business-formular,
+.business-parameter {
+  display: grid;
+  gap: var(--abstand-16);
+  min-width: 0;
+}
+.business-formular fieldset,
+.business-parameter fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-normal);
+  display: grid;
+  gap: 12px;
+}
+.business-formular legend,
+.business-parameter legend {
+  padding: 0 4px;
+  font-weight: 600;
+}
+.business-untergruppe,
+.business-listeneintrag {
+  display: grid;
+  gap: 8px;
+  border-left: 2px solid var(--farbe-kontur);
+  padding-left: 8px;
+  min-width: 0;
+}
+.business-checkbox {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+}
+.business-checkbox input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--farbe-akzent);
+}
+.business-vorschau {
+  max-height: 280px;
+  overflow: auto;
+}
+.business-vorschau table {
+  border-collapse: collapse;
+}
+.business-vorschau th,
+.business-vorschau td {
+  padding: 8px;
+  border: 1px solid var(--farbe-kontur);
+  text-align: left;
+  max-width: 320px;
+  overflow-wrap: anywhere;
+}

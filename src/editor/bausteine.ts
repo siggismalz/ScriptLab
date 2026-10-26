@@ -13,6 +13,8 @@ export const bausteinKatalog = bausteinDefinitionen.map(({ typ, name, kategorie,
 }));
 
 const reihenfolge: Record<string, string[]> = {
+  sl_biz_stapel_schleife: ['NAME', 'VAR', 'ABLAUF'],
+  sl_biz_fehlerbehandlung: ['NAME', 'ABLAUF', 'FEHLER'],
   sl_compare: ['A', 'OP', 'B'],
   sl_logic: ['A', 'OP', 'B'],
   sl_exists: ['ART', 'PFAD'],
@@ -71,8 +73,9 @@ export function registriereBausteine(): void {
         type: def.typ,
         message0: def.nachricht,
         args0: args,
-        style:
-          def.typ === 'sl_delete'
+        style: def.typ.startsWith('sl_biz_')
+          ? 'dateien'
+          : def.typ === 'sl_delete'
             ? 'datei_loeschen'
             : blockStilNachKategorie[def.kategorie as keyof typeof blockStilNachKategorie],
         tooltip: def.hilfe,

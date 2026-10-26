@@ -1,5 +1,69 @@
 /** Reine Erläuterungen mit klaren Testdaten. Diese Beispiele führen keine Aktionen aus. */
+import { businessDefinitionen } from '../kern/business-katalog';
+function businessBeispiel(def: (typeof businessDefinitionen)[number]): string {
+  const format = String(def.felder.find((f) => f.name === 'format')?.standard ?? 'CSV');
+  if (def.operation === 'daten.importieren')
+    return `Lies „eingaben/Kunden.${format.toLowerCase()}“. Die Kundennummer „001“ bleibt beim Textimport unverändert. Verbinde das Ergebnis anschließend über die Eigenschaften mit „Zeilen filtern“.`;
+  if (def.operation === 'daten.exportieren')
+    return `Speichere die verbundene Tabelle unter „ausgaben/Auswertung.${format.toLowerCase()}“. Mit der Vorgabe „Mit Fehler anhalten“ bleibt eine vorhandene Datei erhalten.`;
+  const beispiele: Record<string, string> = {
+    'daten.spalten':
+      'Wähle zum Beispiel „Region“ und „Betrag“, benenne eine Spalte um oder berechne „Bestellmenge“ als Zielbestand minus Bestand. Die Aktion ist durch den gewählten Baustein festgelegt.',
+    'daten.werte':
+      'Bereinige Leerzeichen in „Kundenname“ oder ersetze den Wert „unbekannt“ bewusst durch „offen“. Wähle die betroffenen Spalten und die gewünschte Behandlung leerer Werte.',
+    'daten.dubletten':
+      'Vergleiche doppelte Kundennummern. Sortiere vorher nach dem Änderungsdatum und wähle bewusst, ob der erste, letzte oder kein doppelter Datensatz erhalten bleiben soll.',
+    'daten.filtern':
+      'Zeige nur Zeilen mit Betrag größer als 50. Ergänze mit UND einen Datumsbereich, um beispielsweise ausschließlich die Bestellungen des Berichtsmonats zu berücksichtigen.',
+    'daten.sortieren':
+      'Sortiere die Tabelle zuerst nach Region aufsteigend und danach nach Betrag absteigend. Leere Werte kannst du bewusst an den Anfang oder ans Ende setzen.',
+    'daten.vereinigen':
+      'Führe die Tabellen „Oktober“ und „November“ untereinander zusammen. Die Spalten werden nach ihren Namen zugeordnet; gleiche Ergebniszeilen bleiben ohne ausdrückliche Auswahl erhalten.',
+    'daten.verknuepfen':
+      'Ergänze Bestellungen um die Region aus der Kundentabelle anhand der Kundennummer. „Viele zu einem“ verhindert, dass ein doppelter Kundenschlüssel Umsätze unbemerkt vervielfacht.',
+    'daten.gruppieren':
+      'Gruppiere nach Region und summiere die Spalte Betrag. Aus Nord 100, Süd 80 und Nord 50 entstehen Nord 150 und Süd 80. Eine zusätzliche Anzahl nennt die berücksichtigten Zeilen.',
+    'daten.pruefen':
+      'Prüfe, ob jede Kundennummer gefüllt und eindeutig ist. Mit „Ablauf anhalten“ werden nachfolgende Ausgaben bei einem Prüffehler verhindert; Berichten erlaubt bewusstes Fortfahren.',
+    'daten.vorschau':
+      'Zeige höchstens 200 Zeilen der verbundenen Tabelle. Lange Zellen und große Ausschnitte werden für die Anzeige begrenzt; die Quelldatei und der Tabellenplan bleiben unverändert.',
+    'dateien.stapel':
+      'Erfasse aus „eingaben“ alle Dateien mit dem Muster „*.csv“. Später erzeugte Ausgaben kommen nicht nachträglich in diesen bereits erfassten Stapel.',
+    'dateien.aktion':
+      'Kopiere eine ausdrücklich gewählte Testdatei in einen anderen Ordner oder erstelle ein ZIP-Archiv. Prüfe Quelle, Ziel und die gewählte Konfliktregel vor der echten Ausführung.',
+    'dateien.archivieren':
+      'Wähle die zuvor erfolgreich geschriebene Auswertung als bestätigtes Ergebnis. Erst dann darf die verarbeitete Quelle nach „archiv“ verschoben werden.',
+    'dateien.csv_stapel':
+      'Verarbeite die synthetischen CSVs aus dem Stapelbeispiel. Vollständige Dateien erhalten geprüfte Ausgaben und Archivkopien; die absichtlich fehlerhafte Quelle bleibt im Eingang.',
+    'dateien.beleg_ablegen':
+      'Lies einen synthetischen PDF-Beleg mit Nummer und Datum. Die Kopie landet im Monatsordner. Ein reiner Bildscan erhält einen Hinweis; sein Original bleibt unverändert.',
+    'dokument.xlsx_vorlage':
+      'Fülle A1 mit einem Titel und B2 mit einem geprüften Wert. Schreibe eine gewünschte Excel-Formel ausdrücklich in der Formelzuordnung. ScriptLab berechnet diese Formel nicht.',
+    'dokument.docx_vorlage':
+      'Ordne dem Platzhalter {{Name}} einen Text zu. Bei einer Positionsvorlage wird die gewählte Musterzeile für jede Tabellenposition wiederholt, ohne die ursprüngliche Vorlage zu überschreiben.',
+    'dokument.docx_serie':
+      'Erzeuge für jeden Lieferanten eine Bestellung mit eigener Positionstabelle. Im Beispiel enthält S1 zwei Positionen mit den Mengen 15 und 12 und insgesamt 27 Einheiten.',
+    'dokument.docx_erstellen':
+      'Erstelle ein neues Dokument mit Titel, Absatz und einer optional verbundenen Tabelle. Ein Bild wird nur aus der ausdrücklich gewählten lokalen Datei übernommen.',
+    'dokument.pdf_bericht':
+      'Erzeuge eine Monatsübersicht mit Region und Betrag. Die mitgelieferte Vera-Schrift stellt deutsche Texte dar; Tabellenköpfe werden auf weiteren Seiten wiederholt.',
+    'dokument.pdf_verbinden':
+      'Verbinde die ausdrücklich gewählten PDF-Dateien in der Reihenfolge des Dateistapels zu einem neuen Dokument. Die Quelldateien bleiben erhalten.',
+    'dokument.pdf_seiten':
+      'Übernimm mit „1-3,5“ die ersten drei und die fünfte Seite in eine neue PDF-Datei. Eine nicht vorhandene Seitennummer führt zu einer verständlichen Fehlermeldung.',
+    'dokument.pdf_teilen':
+      'Teile eine PDF beispielsweise in die Bereiche „1-2“ und „3-4“. Die Teile erhalten sichere Namen wie „Teil-1.pdf“ im gewählten Ausgabeordner.',
+    'dokument.pdf_text':
+      'Lies die vorhandene Textebene eines PDF-Belegs. Bei einem reinen Scan fehlen auslesbare Zeichen; der Baustein führt keine OCR oder Office-Konvertierung durch.',
+    'ablauf.stapel':
+      'Durchlaufe den zuvor erfassten Dateistapel. Die Variable „Aktuelle Datei“ kann in den Eigenschaften einer Kopier-, Tabellen- oder Dokumentaktion als Quelle gewählt werden.',
+    'ablauf.fehler':
+      'Versuche das Lesen einer Datei und gib im Fehlerzweig einen Hinweis aus. Der Bericht bewahrt den Fehler. Stoppen, Zeitlimit und unklare Dateizustände werden nicht verschluckt.',
+  };
+  return beispiele[def.operation];
+}
 export const bausteinBeispiele: Readonly<Record<string, string>> = {
+  ...Object.fromEntries(businessDefinitionen.map((d) => [d.typ, businessBeispiel(d)])),
   sl_start:
     'Verbinde darunter „Nachricht anzeigen“. Beim eigenen Start der exportierten Datei beginnt der Ablauf mit dieser Nachricht.',
   sl_comment:

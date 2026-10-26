@@ -10,7 +10,7 @@ import {
   type IpcMainInvokeEvent,
   type IpcMainEvent,
 } from 'electron';
-import { readFile, mkdir, rename, unlink } from 'node:fs/promises';
+import { readFile, mkdir, rename, unlink, cp } from 'node:fs/promises';
 import { join, resolve, extname, dirname, basename, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -35,6 +35,11 @@ import type { TestOptionen } from '../gemeinsam/testlauf';
 import type { Antwort, Dokument, Einstellungen } from '../gemeinsam/bruecke';
 import type { PythonInstallation, PythonStatus } from '../gemeinsam/python';
 import { pythonKandidatenSuchen, pythonPruefen, pythonDateipfadPruefen } from '../windows/python';
+import { businessStatusPruefen, businessEinrichten } from '../windows/business-laufzeit';
+import type { BusinessStatus, BusinessFortschritt } from '../gemeinsam/business-laufzeit';
+import { businessSchritte } from '../kern/business';
+import { businessPaketDateien, zipErzeugen } from './business-export';
+import { businessBeispiele } from '../kern/business-beispiele';
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'scriptlab', privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -57,6 +62,17 @@ const einstellungenSchema = z
 let einstellungen: Einstellungen = einstellungenSchema.parse({
   automatischeUpdates: false,
   vorabversionen: false,
+});
+let businessStatus: BusinessStatus | null = null;
+let businessFortschritt: BusinessFortschritt | null = null;
+let businessAuftrag: AbortController | null = null;
+let businessFertig: Promise<void> | null = null;
+const businessPaketwurzel = () =>
+  app.isPackaged ? join(process.resourcesPath, 'laufzeit') : join(app.getAppPath(), 'laufzeit');
+const businessOptionen = () => ({
+  helper: testWerkzeugPfad(),
+  technischeOrdner: join(app.getPath('userData'), 'business-pruefungen'),
+  paketwurzel: businessPaketwurzel(),
 });
 let projekt = neuesProjekt();
 let projektPfad: string | null = null;
@@ -360,7 +376,7 @@ function projektAktivieren(
   projekt = { ...neu, projektKennung: neu.projektKennung ?? randomUUID() };
   entwuerfe.neueBearbeitung(projekt.projektKennung!);
   projektPfad = pfad;
-  testOptionen = { ...testOptionen, basisVerzeichnis };
+  testOptionen = { basisVerzeichnis, zeitlimitSekunden: 120 };
   baselineHash = hash;
   gespeichert = JSON.stringify(projekt);
   gespeichertInhalt = ungespeichert ? '' : projektHash(projekt);
@@ -458,6 +474,10 @@ async function mitDialog<T>(funktion: () => Promise<T>): Promise<T> {
 function ipcEinrichten(): void {
   registrieren('test-lesen', () => ({ zustand: testDienst.lesen(), optionen: testOptionen }));
   registrieren('test-starten', (daten) => {
+    if (businessAuftrag)
+      throw new Error(
+        'Die Business-Laufzeit wird gerade eingerichtet oder geprüft. Warte bis zum Abschluss.',
+      );
     if (dialogAktiv) throw new Error('Schließe zuerst den geöffneten Dialog.');
     if (testDienst.aktiv()) throw new Error('Es läuft bereits ein Test.');
     if (pythonPruefAuftrag) throw new Error('Python wird gerade geprüft. Warte kurz auf das Ergebnis.');
@@ -561,6 +581,11 @@ function ipcEinrichten(): void {
             'begruessung-python',
             'backup-python',
             'dateiliste-python',
+            'business-monat',
+            'business-bestellungen',
+            'business-bestellvorschlag',
+            'business-belege',
+            'business-stapel',
           ]),
         })
         .strict()
@@ -573,18 +598,51 @@ function ipcEinrichten(): void {
         'begruessung-python': '04-Python-Begruessung.scriptlab',
         'backup-python': '05-Python-Datei-Backup.scriptlab',
         'dateiliste-python': '06-Python-Dateinamenliste.scriptlab',
+        ...(Object.fromEntries(
+          businessBeispiele.map((b) => [b.id, `business/${b.ordner}/workflow.scriptlab`]),
+        ) as Record<(typeof businessBeispiele)[number]['id'], string>),
       } as const;
       const basis = app.isPackaged
         ? join(process.resourcesPath, 'beispiele')
         : join(app.getAppPath(), 'beispiele');
       const geladen = await projektLesen(join(basis, dateien[auswahl.beispiel]));
       if (!(await aenderungenSichern())) return null;
+      let beispielBasis: string | undefined;
+      if (auswahl.beispiel.startsWith('business-')) {
+        beispielBasis = join(app.getPath('userData'), 'beispieldaten', randomUUID());
+        await cp(dirname(join(basis, dateien[auswahl.beispiel])), beispielBasis, {
+          recursive: true,
+          errorOnExist: true,
+          force: false,
+        });
+        const pfadParameter = new Set(
+          geladen.business.parameter
+            .filter((p) => ['Datei', 'Dokument', 'Dokumentvorlage'].includes(p.typ))
+            .map((p) => p.name),
+        );
+        const anpassen = (name: string, w: string | number | boolean | null) =>
+          pfadParameter.has(name) && typeof w === 'string' && w && w !== 'INTERN:VERA'
+            ? resolve(beispielBasis!, w)
+            : w;
+        geladen.business.parameter = geladen.business.parameter.map((p) => ({
+          ...p,
+          standard: anpassen(p.name, p.standard),
+        }));
+        for (const satz of ['test', 'echt'] as const)
+          geladen.business.parametersaetze[satz] = Object.fromEntries(
+            Object.entries(geladen.business.parametersaetze[satz]).map(([name, w]) => [
+              name,
+              anpassen(name, w),
+            ]),
+          );
+      }
       await verworfenenEntwurfBereinigen();
       projektAktivieren(
         { ...geladen, projektKennung: randomUUID(), name: `${geladen.name} (Kopie)` },
         null,
         null,
         true,
+        beispielBasis,
       );
       return dokument();
     }),
@@ -742,6 +800,60 @@ function ipcEinrichten(): void {
       const ergebnis = skriptErzeugen(stand);
       if (!ergebnis.code || ergebnis.meldungen.some((m) => m.stufe === 'fehler'))
         throw new Error('Der Export ist noch nicht möglich. Bitte korrigiere die markierten Bausteine.');
+      if (businessSchritte(stand).length) {
+        let ressourcen: string[] = [];
+        while (true) {
+          const dateien = await businessPaketDateien(
+            stand,
+            ergebnis.code,
+            businessPaketwurzel(),
+            ressourcen,
+            testOptionen.basisVerzeichnis ?? (projektPfad ? dirname(projektPfad) : undefined),
+          );
+          const entscheidung = await dialog.showMessageBox(fenster, {
+            type: 'info',
+            title: 'Business-Paket exportieren',
+            message: 'Diese Dateien werden in das ZIP-Paket aufgenommen:',
+            detail:
+              dateien.map((d) => `${d.name} (${d.inhalt.length.toLocaleString('de-DE')} Bytes)`).join('\n') +
+              '\n\nGeschäftsdaten und Laufprotokolle werden nicht automatisch beigefügt. Vorlagen, Bilder oder Schriftarten nur mit passenden Rechten ausdrücklich auswählen. Das Paket benötigt eine vorbereitete Python-Umgebung.',
+            buttons: ['Paket exportieren', 'Ressourcen auswählen', 'Abbrechen'],
+            defaultId: 0,
+            cancelId: 2,
+            noLink: true,
+          });
+          if (entscheidung.response === 2) return null;
+          if (entscheidung.response === 1) {
+            const w = await dialog.showOpenDialog(fenster, {
+              title: 'Ressourcen für dieses Paket ausdrücklich auswählen',
+              properties: ['openFile', 'multiSelections'],
+              filters: [
+                {
+                  name: 'Vorlagen, Bilder und Schriften',
+                  extensions: ['docx', 'xlsx', 'ttf', 'png', 'jpg', 'jpeg'],
+                },
+              ],
+            });
+            if (!w.canceled) ressourcen = w.filePaths;
+            continue;
+          }
+          const auswahl = await dialog.showSaveDialog(fenster, {
+            title: 'Business-Paket exportieren',
+            defaultPath: `${dateiname(stand.name)}-Business.zip`,
+            filters: [{ name: 'ScriptLab-Business-Paket', extensions: ['zip'] }],
+          });
+          if (auswahl.canceled || !auswahl.filePath) return null;
+          if (extname(auswahl.filePath).toLowerCase() !== '.zip')
+            throw new Error('Bitte verwende die Endung .zip für das Business-Paket.');
+          await atomarSchreiben(auswahl.filePath, zipErzeugen(dateien));
+          exportPfad = auswahl.filePath;
+          return {
+            dateiname: basename(auswahl.filePath),
+            skriptsprache: stand.skriptsprache,
+            signatur: null,
+          };
+        }
+      }
       const auswahl = await dialog.showSaveDialog(fenster, {
         title: sprachdaten[stand.skriptsprache].exportAktion,
         defaultPath: `${dateiname(stand.name)}.${sprachdaten[stand.skriptsprache].dateiendung}`,
@@ -791,6 +903,67 @@ function ipcEinrichten(): void {
     return einstellungen;
   });
   registrieren('python-status', () => pythonZustand);
+  registrieren('business-lesen', () => ({
+    status: businessStatus,
+    fortschritt: businessFortschritt,
+    aktiv: !!businessAuftrag,
+  }));
+  registrieren('business-aktion', async (daten) => {
+    const art = z.enum(['pruefen', 'einrichten', 'offline', 'abbrechen']).parse(daten);
+    if (art === 'abbrechen') {
+      businessAuftrag?.abort();
+      return businessStatus;
+    }
+    if (testDienst.aktiv()) throw new Error('Stoppe den laufenden Workflow vor einer Änderung der Laufzeit.');
+    if (businessAuftrag) throw new Error('Die Business-Laufzeit wird bereits geprüft oder eingerichtet.');
+    const auftrag = new AbortController();
+    businessAuftrag = auftrag;
+    let auftragBeendet: () => void = () => {};
+    businessFertig = new Promise<void>((fertig) => {
+      auftragBeendet = fertig;
+    });
+    try {
+      let wheelhouse: string | undefined;
+      if (art === 'offline') {
+        const auswahl = await dialog.showOpenDialog(fenster, {
+          title: 'Vorbereiteten Offline-Paketordner auswählen',
+          properties: ['openDirectory'],
+        });
+        if (auswahl.canceled) return businessStatus;
+        wheelhouse = auswahl.filePaths[0];
+      }
+      const basis = await pythonErmitteln(false, auftrag.signal);
+      if (art === 'pruefen')
+        businessStatus = await businessStatusPruefen(basis, {
+          ...businessOptionen(),
+          signal: auftrag.signal,
+        });
+      else {
+        businessStatus = await businessEinrichten(basis, {
+          ...businessOptionen(),
+          signal: auftrag.signal,
+          laufzeitenOrdner: join(app.getPath('userData'), 'laufzeiten'),
+          quelle: art === 'offline' ? 'wheelhouse' : 'pypi',
+          ...(wheelhouse ? { wheelhouseOrdner: wheelhouse } : {}),
+          fortschritt: (s) => {
+            businessFortschritt = s;
+          },
+        });
+        if (businessStatus.zustand === 'bereit') {
+          await lokaleEinstellungenSpeichern({
+            ...einstellungen,
+            pythonInterpreter: businessStatus.installation.pfad,
+          });
+          await pythonErmitteln(false, auftrag.signal);
+        }
+      }
+      return businessStatus;
+    } finally {
+      businessAuftrag = null;
+      auftragBeendet();
+      businessFertig = null;
+    }
+  });
   registrieren('python-pruefen', async () => {
     if (testDienst.aktiv()) throw new Error('Stoppe den laufenden Test vor einer neuen Laufzeitprüfung.');
     try {
@@ -829,6 +1002,8 @@ function ipcEinrichten(): void {
     if (aktion === 'pruefen') return aktualisierungen.pruefen();
     if (aktion === 'laden') return aktualisierungen.herunterladen();
     return mitDialog(async () => {
+      if (businessAuftrag)
+        throw new Error('Beende die Einrichtung der Business-Laufzeit vor der Updateinstallation.');
       await aktuellenStandAnfordern();
       if (aktualisierungen.zustandLesen().phase !== 'bereit-zur-installation')
         throw new Error('Es liegt noch kein geprüftes Update zur Installation bereit.');
@@ -923,6 +1098,10 @@ async function fensterErstellen(): Promise<void> {
     if (darfSchliessen) return;
     event.preventDefault();
     void mitDialog(async () => {
+      if (businessAuftrag) {
+        businessAuftrag.abort();
+        await businessFertig;
+      }
       await aktuellenStandAnfordern();
       if (await aenderungenSichern()) {
         await verworfenenEntwurfBereinigen();
@@ -971,6 +1150,15 @@ else {
         testWerkzeugPfad(),
         join(app.getPath('userData'), 'testlaeufe'),
         (tkinter, signal) => pythonErmitteln(tkinter, signal),
+        {
+          paketwurzel: businessPaketwurzel(),
+          journaleOrdner: join(app.getPath('userData'), 'business-journale'),
+          pruefen: async (installation, signal) => {
+            businessStatus = await businessStatusPruefen(installation, { ...businessOptionen(), signal });
+            if (businessStatus.zustand !== 'bereit')
+              throw new Error(businessStatus.meldung + ' Öffne Einstellungen → Business-Laufzeit.');
+          },
+        },
       );
       aktualisierungen = new AktualisierungsDienst({
         installierteVersion: app.getVersion(),

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 3,
+  "business": {
+    "parameter": [
+      {
+        "name": "Eingangsordner",
+        "beschriftung": "Eingangsordner",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "eingaben",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Ausgabeordner",
+        "beschriftung": "Ausgabeordner",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "ausgaben",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Archivordner",
+        "beschriftung": "Archivordner",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "archiv",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      }
+    ],
+    "parametersaetze": {
+      "test": {
+        "Eingangsordner": "eingaben",
+        "Ausgabeordner": "ausgaben",
+        "Archivordner": "archiv"
+      },
+      "echt": {}
+    },
+    "ressourcen": []
+  },
+  "skriptsprache": "python",
+  "appVersion": "0.2.0",
+  "projektKennung": "9a9d47cf-5600-53e3-a699-2ce97e8880e4",
+  "name": "Dateistapel verarbeiten und fortsetzen",
+  "beschreibung": "CSV-Dateien prüfen, bestätigte Ergebnisse schreiben und erfolgreiche Quellen archivieren. Erwartung: Fehlerhafte Quelle bleibt erhalten · bestätigte Ergebnisse beim Fortsetzen prüfen",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "start",
+          "x": 80,
+          "y": 96,
+          "next": {
+            "block": {
+              "type": "sl_biz_csv_stapel",
+              "id": "e-csv-stapel",
+              "fields": {
+                "NAME": "CSV-Dateistapel prüfen und archivieren (1)"
+              },
+              "data": "{\"konfiguration\":{\"ordner\":{\"parameter\":\"Eingangsordner\"},\"zielordner\":{\"parameter\":\"Ausgabeordner\"},\"archivordner\":{\"parameter\":\"Archivordner\"},\"muster\":\"*.csv\",\"trennzeichen\":\";\",\"bei_fehler\":\"BERICHT\",\"konflikt\":\"FEHLER\"},\"eingaben\":{}}"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

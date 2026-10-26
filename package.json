@@ -1,7 +1,7 @@
 {
   "name": "scriptlab",
   "productName": "ScriptLab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Visueller Baukasten für Windows-Automatisierungen. Entwickelt von Leon Stolz.",
   "author": "Leon Stolz",
   "private": true,

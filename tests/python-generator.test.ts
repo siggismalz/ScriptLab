@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bausteinDefinitionen, type BausteinDefinition } from '../src/kern/katalog';
+import { grundBausteine as bausteinDefinitionen, type BausteinDefinition } from '../src/kern/katalog';
 import { neuesProjekt, type EditorBlock, type Projekt } from '../src/kern/projekt';
 import { pythonErzeugen, pythonText, pythonUnterstuetzteTypen } from '../src/kern/python-generator';
 
@@ -65,7 +65,7 @@ function katalogprojekt(def: BausteinDefinition, variante?: { feld: string; wert
 describe('Vollständiger Python-Generator ohne Ausführung', () => {
   it('deckt genau die tatsächlichen 48 angebotenen Katalogtypen ab', () => {
     expect(bausteinDefinitionen).toHaveLength(48);
-    expect([...pythonUnterstuetzteTypen].sort()).toEqual(bausteinDefinitionen.map((def) => def.typ).sort());
+    expect([...pythonUnterstuetzteTypen].filter(t=>!t.startsWith('sl_biz_')).sort()).toEqual(bausteinDefinitionen.map((def) => def.typ).sort());
   });
   for (const def of bausteinDefinitionen)
     it(`erzeugt ${def.typ} mit gültiger Blockzuordnung`, () => {

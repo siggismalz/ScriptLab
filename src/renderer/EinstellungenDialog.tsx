@@ -8,8 +8,10 @@ import { Knopf } from './komponenten/Knopf';
 import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
 import { Statusanzeige } from './komponenten/Statusanzeige';
 import type { PythonStatus } from '../gemeinsam/python';
+import { BusinessLaufzeit } from './BusinessLaufzeit';
 
 export function EinstellungenDialog({
+  businessGewechselt = () => {},
   projektOptionenAnzeigen = true,
   offen,
   schliessen,
@@ -28,6 +30,7 @@ export function EinstellungenDialog({
   pythonStatus,
   pythonAktion,
 }: {
+  businessGewechselt?: () => void;
   projektOptionenAnzeigen?: boolean;
   offen: boolean;
   schliessen: () => void;
@@ -136,6 +139,7 @@ export function EinstellungenDialog({
         />
         <p>Ansichtseinstellungen werden beim Auswählen oder Verlassen eines Felds gespeichert.</p>
       </section>
+      <BusinessLaufzeit gewechselt={businessGewechselt} />
       <section className="einstellungs-abschnitt" aria-labelledby="python-installation-titel">
         <h3 id="python-installation-titel">Python-Installation</h3>
         <p>

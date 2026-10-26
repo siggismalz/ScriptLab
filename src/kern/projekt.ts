@@ -1,6 +1,7 @@
 import { definitionNachTyp } from './katalog';
 import { sprachePruefen, type Skriptsprache } from './sprachen';
 import { businessProjektPruefen, leeresBusinessProjekt, type BusinessProjekt } from './business-modell';
+import paket from '../../package.json';
 
 /** Das Projekt speichert ausschließlich Daten. Es enthält niemals ausführbaren Anwendungscode. */
 export interface EditorBlock {
@@ -197,7 +198,7 @@ export function projektPruefen(wert: unknown): Projekt {
         block.disabledReasons.some((s) => !text(s, 200)))
     )
       return fehler('Die Deaktivierungsangaben sind ungültig.');
-    if (block.data !== undefined && !text(block.data, 10000))
+    if (block.data !== undefined && !text(block.data, 65536))
       return fehler('Bausteindaten sind zu lang oder ungültig.');
     if (
       block.fields !== undefined &&
@@ -317,7 +318,12 @@ export function projektPruefen(wert: unknown): Projekt {
   }
   // Kopieren entfernt geteilte Referenzen und verhindert spätere Änderungen am geprüften Objekt.
   const business = wert.schemaVersion === 3 ? businessProjektPruefen(wert.business) : leeresBusinessProjekt();
-  const projekt = { ...JSON.parse(JSON.stringify(wert)), schemaVersion: 3, skriptsprache, business } as Projekt;
+  const projekt = {
+    ...JSON.parse(JSON.stringify(wert)),
+    schemaVersion: 3,
+    skriptsprache,
+    business,
+  } as Projekt;
   variablenIdentitaetenErgaenzen(projekt);
   return projekt;
 }
@@ -381,7 +387,7 @@ export function neuesProjekt(skriptsprache: Skriptsprache = 'vbs'): Projekt {
     schemaVersion: 3,
     business: leeresBusinessProjekt(),
     skriptsprache,
-    appVersion: '0.1.0',
+    appVersion: paket.version,
     projektKennung: globalThis.crypto.randomUUID(),
     name: 'Mein Workflow',
     beschreibung: '',

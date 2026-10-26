@@ -6,7 +6,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { StringDecoder } from 'node:string_decoder';
 import { neuesProjekt, type Projekt, type EditorBlock } from '../../src/kern/projekt';
-import { bausteinDefinitionen, type BausteinDefinition } from '../../src/kern/katalog';
+import { grundBausteine as bausteinDefinitionen, type BausteinDefinition } from '../../src/kern/katalog';
 import { pythonErzeugen } from '../../src/kern/python-generator';
 import { vbsErzeugen, vbsText } from '../../src/kern/generator';
 import { vbsKodierungsHelfer } from '../../src/kern/vbs-kodierung';

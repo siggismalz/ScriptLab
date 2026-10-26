@@ -165,8 +165,8 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
   it('behandelt eine normale Textausgabe mit Markertext als Daten und erhält U+FEFF samt Unicode', async () => {
     const inhalt = '\uFEFFGrüße 😀\r\nSLFEHLER|fremdes-token|fremder-block|Normale Ausgabe';
     dienst!.starten(projektMit(ausgabe(inhalt)), { basisVerzeichnis: basis, zeitlimitSekunden: 10 });
-    const ende = await standAbwarten(dienst!, (z) => !testAktiv(z.phase));
-    expect(ende.phase).toBe('beendet');
+    const { ende, diagnose } = await diagnostiziertesEnde(dienst!);
+    expect(ende.phase, diagnose).toBe('beendet');
     expect(ende.ausgabe).toBe(`${inhalt}\r\n`);
     expect(ende.fehlerBlockId).toBeNull();
     expect(ende.fehlerZeile).toBeNull();
@@ -179,8 +179,8 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
       basisVerzeichnis: basis,
       zeitlimitSekunden: 10,
     });
-    const ende = await standAbwarten(dienst!, (z) => !testAktiv(z.phase));
-    expect(ende.phase).toBe('beendet');
+    const { ende, diagnose } = await diagnostiziertesEnde(dienst!);
+    expect(ende.phase, diagnose).toBe('beendet');
     expect(ende.abgeschnitteneZeichen).toBeGreaterThan(0);
     expect(ende.ausgabe.length).toBeLessThanOrEqual(131072);
     expect(ende.ausgabe).toContain('Grüße 😀 ÄÖß');
@@ -248,8 +248,8 @@ describe.skipIf(!freigegeben)('Freigegebener echter Windows-Testdienst in isolie
       (z) => z.phase === 'laeuft' && z.ausgabe.includes('ZWEITER-LAUF'),
     );
     expect(zweiter.beendetAm).toBeNull();
-    const zweitesEnde = await standAbwarten(dienst!, (z) => !testAktiv(z.phase));
-    expect(zweitesEnde.phase).toBe('beendet');
+    const { ende: zweitesEnde, diagnose } = await diagnostiziertesEnde(dienst!);
+    expect(zweitesEnde.phase, diagnose).toBe('beendet');
     expect(zweitesEnde.ausgabe).not.toContain('VOR-STOPP');
   }, 20_000);
 

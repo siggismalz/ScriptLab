@@ -3,6 +3,8 @@ import type { ScriptLabBruecke } from '../gemeinsam/bruecke';
 
 // Die Sandbox erhält ausschließlich diese fachlichen Aufrufe, keine Electron-Objekte.
 const bruecke: ScriptLabBruecke = {
+  businessLesen: () => ipcRenderer.invoke('scriptlab:business-lesen'),
+  businessAktion: (art) => ipcRenderer.invoke('scriptlab:business-aktion', art),
   laden: () => ipcRenderer.invoke('scriptlab:laden'),
   aendern: (projekt) => ipcRenderer.invoke('scriptlab:aendern', projekt),
   darstellungBereit: (projekt) => ipcRenderer.invoke('scriptlab:darstellung-bereit', projekt),

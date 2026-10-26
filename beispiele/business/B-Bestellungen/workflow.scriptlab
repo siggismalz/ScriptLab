@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 3,
+  "business": {
+    "parameter": [
+      {
+        "name": "Bestelldatei",
+        "beschriftung": "Bestelldatei",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "eingaben/bestellungen.csv",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Kundendatei",
+        "beschriftung": "Kundendatei",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "eingaben/kunden.csv",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Ausgabedatei",
+        "beschriftung": "Ausgabedatei",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "ausgaben/Bestelluebersicht.xlsx",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      }
+    ],
+    "parametersaetze": {
+      "test": {
+        "Bestelldatei": "eingaben/bestellungen.csv",
+        "Kundendatei": "eingaben/kunden.csv",
+        "Ausgabedatei": "ausgaben/Bestelluebersicht.xlsx"
+      },
+      "echt": {}
+    },
+    "ressourcen": []
+  },
+  "skriptsprache": "python",
+  "appVersion": "0.2.0",
+  "projektKennung": "3b78d5c4-bd8b-5450-a79a-f93a28e8879c",
+  "name": "Bestellungen mit Stammdaten ergänzen",
+  "beschreibung": "Kundennummern kontrolliert zuordnen und fehlende beziehungsweise doppelte Schlüssel erkennen. Erwartung: 3 Zuordnungen · K9 als Fehlerhinweis · Nord 45 · Süd 40 · zugeordnet 85",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "start",
+          "x": 80,
+          "y": 96,
+          "next": {
+            "block": {
+              "type": "sl_biz_lesen_csv",
+              "id": "b-bestellungen",
+              "fields": {
+                "NAME": "CSV-Tabelle lesen (1)"
+              },
+              "data": "{\"konfiguration\":{\"format\":\"CSV\",\"pfad\":{\"parameter\":\"Bestelldatei\"}},\"eingaben\":{}}",
+              "next": {
+                "block": {
+                  "type": "sl_biz_typ",
+                  "id": "b-betrag",
+                  "fields": {
+                    "NAME": "Datentyp festlegen (2)"
+                  },
+                  "data": "{\"konfiguration\":{\"aktion\":\"TYP\",\"spalte\":\"Betrag\",\"typ\":\"DEZIMAL\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-bestellungen\"}}}",
+                  "next": {
+                    "block": {
+                      "type": "sl_biz_lesen_csv",
+                      "id": "b-kunden",
+                      "fields": {
+                        "NAME": "CSV-Tabelle lesen (3)"
+                      },
+                      "data": "{\"konfiguration\":{\"format\":\"CSV\",\"pfad\":{\"parameter\":\"Kundendatei\"}},\"eingaben\":{}}",
+                      "next": {
+                        "block": {
+                          "type": "sl_biz_verknuepfen",
+                          "id": "b-zuordnen",
+                          "fields": {
+                            "NAME": "Kundendaten ergänzen (4)"
+                          },
+                          "data": "{\"konfiguration\":{\"art\":\"LEFT\",\"schluessel\":[{\"links\":\"Kunde\",\"rechts\":\"Kunde\"}],\"kardinalitaet\":\"n:1\",\"fehlende_zuordnung\":\"BEHALTEN\"},\"eingaben\":{\"links\":{\"referenz\":\"b-betrag\"},\"rechts\":{\"referenz\":\"b-kunden\"}}}",
+                          "next": {
+                            "block": {
+                              "type": "sl_biz_pruefen",
+                              "id": "b-pruefen",
+                              "fields": {
+                                "NAME": "Datenqualität prüfen (5)"
+                              },
+                              "data": "{\"konfiguration\":{\"regeln\":[{\"art\":\"NICHT_LEER\",\"spalte\":\"Region\"}],\"bei_fehler\":\"BERICHT\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-zuordnen\"}}}",
+                              "next": {
+                                "block": {
+                                  "type": "sl_biz_filtern",
+                                  "id": "b-fehlend",
+                                  "fields": {
+                                    "NAME": "Zeilen filtern (6)"
+                                  },
+                                  "data": "{\"konfiguration\":{\"bedingung\":{\"art\":\"vergleich\",\"spalte\":\"Region\",\"operator\":\"IST_LEER\"}},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-zuordnen\"}}}",
+                                  "next": {
+                                    "block": {
+                                      "type": "sl_biz_vorschau",
+                                      "id": "b-fehlerhinweis",
+                                      "fields": {
+                                        "NAME": "Tabelle begrenzt anzeigen (7)"
+                                      },
+                                      "data": "{\"konfiguration\":{\"limit\":200},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-fehlend\"}}}",
+                                      "next": {
+                                        "block": {
+                                          "type": "sl_biz_filtern",
+                                          "id": "b-gueltig",
+                                          "fields": {
+                                            "NAME": "Zeilen filtern (8)"
+                                          },
+                                          "data": "{\"konfiguration\":{\"bedingung\":{\"art\":\"vergleich\",\"spalte\":\"Region\",\"operator\":\"IST_NICHT_LEER\"}},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-zuordnen\"}}}",
+                                          "next": {
+                                            "block": {
+                                              "type": "sl_biz_gruppieren",
+                                              "id": "b-regionen",
+                                              "fields": {
+                                                "NAME": "Daten zusammenfassen (9)"
+                                              },
+                                              "data": "{\"konfiguration\":{\"schluessel\":[\"Region\"],\"aggregate\":[{\"funktion\":\"ANZAHL\",\"name\":\"Bestellungen\"},{\"funktion\":\"SUMME\",\"spalte\":\"Betrag\",\"name\":\"Betrag\"}]},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-gueltig\"}}}",
+                                              "next": {
+                                                "block": {
+                                                  "type": "sl_biz_sortieren",
+                                                  "id": "b-sortieren",
+                                                  "fields": {
+                                                    "NAME": "Zeilen sortieren (10)"
+                                                  },
+                                                  "data": "{\"konfiguration\":{\"schluessel\":[{\"spalte\":\"Region\",\"richtung\":\"ASC\",\"nullen\":\"LETZTE\"}]},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-regionen\"}}}",
+                                                  "next": {
+                                                    "block": {
+                                                      "type": "sl_biz_gruppieren",
+                                                      "id": "b-gesamt",
+                                                      "fields": {
+                                                        "NAME": "Daten zusammenfassen (11)"
+                                                      },
+                                                      "data": "{\"konfiguration\":{\"schluessel\":[],\"aggregate\":[{\"funktion\":\"ANZAHL\",\"name\":\"Bestellungen\"},{\"funktion\":\"SUMME\",\"spalte\":\"Betrag\",\"name\":\"Betrag\"}]},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-gueltig\"}}}",
+                                                      "next": {
+                                                        "block": {
+                                                          "type": "sl_biz_berechnen",
+                                                          "id": "b-gesamtname",
+                                                          "fields": {
+                                                            "NAME": "Spalte berechnen (12)"
+                                                          },
+                                                          "data": "{\"konfiguration\":{\"aktion\":\"BERECHNEN\",\"spalte\":\"Region\",\"ausdruck\":{\"art\":\"wert\",\"typ\":\"TEXT\",\"wert\":\"Gesamt\"}},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-gesamt\"}}}",
+                                                          "next": {
+                                                            "block": {
+                                                              "type": "sl_biz_vereinigen",
+                                                              "id": "b-ergebnis",
+                                                              "fields": {
+                                                                "NAME": "Tabellen untereinander zusammenführen (13)"
+                                                              },
+                                                              "data": "{\"konfiguration\":{\"nach_name\":true,\"dubletten\":false},\"eingaben\":{\"links\":{\"referenz\":\"b-sortieren\"},\"rechts\":{\"referenz\":\"b-gesamtname\"}}}",
+                                                              "next": {
+                                                                "block": {
+                                                                  "type": "sl_biz_schreiben_xlsx",
+                                                                  "id": "b-xlsx",
+                                                                  "fields": {
+                                                                    "NAME": "Tabelle als XLSX speichern (14)"
+                                                                  },
+                                                                  "data": "{\"konfiguration\":{\"format\":\"XLSX\",\"pfad\":{\"parameter\":\"Ausgabedatei\"},\"konflikt\":\"FEHLER\",\"optionen\":{\"blatt\":\"Bestellungen\"}},\"eingaben\":{\"tabelle\":{\"referenz\":\"b-ergebnis\"}}}"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

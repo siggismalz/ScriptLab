@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as Blockly from 'blockly/core';
-import { bausteinDefinitionen, type BausteinDefinition } from '../src/kern/katalog';
+import { grundBausteine as bausteinDefinitionen, type BausteinDefinition } from '../src/kern/katalog';
 import { neuesProjekt, projektPruefen, type EditorBlock, type Projekt } from '../src/kern/projekt';
 import { vbsErzeugen, vbsText } from '../src/kern/generator';
 import { registriereBausteine } from '../src/editor/bausteine';
@@ -78,7 +78,7 @@ describe('Projektdateien', () => {
     expect(projektPruefen(JSON.parse(JSON.stringify(p)))).toEqual(p);
   });
   it('weist neue Schemata, doppelte IDs und ungültige Strukturen zurück', () => {
-    expect(() => projektPruefen({ ...neuesProjekt(), schemaVersion: 3 })).toThrow(/neueren/);
+    expect(() => projektPruefen({ ...neuesProjekt(), schemaVersion: 4 })).toThrow(/neueren/);
     const p = neuesProjekt();
     p.editor.blocks!.blocks.push(structuredClone(p.editor.blocks!.blocks[0]));
     expect(() => projektPruefen(p)).toThrow(/doppelte/);

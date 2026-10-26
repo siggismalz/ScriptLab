@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "schritte": [
+    {"id":"a-import","operation":"daten.importieren","konfiguration":{"format":"CSV","pfad":{"parameter":"Quelldatei"}},"eingaben":{}},
+    {"id":"a-datum","operation":"daten.spalten","konfiguration":{"aktion":"TYP","spalte":"Datum","typ":"DATUM"},"eingaben":{"tabelle":{"referenz":"a-import"}}},
+    {"id":"a-betrag","operation":"daten.spalten","konfiguration":{"aktion":"TYP","spalte":"Betrag","typ":"DEZIMAL"},"eingaben":{"tabelle":{"referenz":"a-datum"}}},
+    {"id":"a-monat","operation":"daten.filtern","konfiguration":{"bedingung":{"art":"vergleich","spalte":"Datum","operator":"BEGINNT","wert":{"art":"wert","typ":"TEXT","wert":{"parameter":"Berichtsmonat"}}}},"eingaben":{"tabelle":{"referenz":"a-betrag"}}},
+    {"id":"a-regionen","operation":"daten.gruppieren","konfiguration":{"schluessel":["Region"],"aggregate":[{"funktion":"ANZAHL","name":"Datensätze"},{"funktion":"SUMME","spalte":"Betrag","name":"Betrag"}]},"eingaben":{"tabelle":{"referenz":"a-monat"}}},
+    {"id":"a-sortieren","operation":"daten.sortieren","konfiguration":{"schluessel":[{"spalte":"Region","richtung":"ASC","nullen":"LETZTE"}]},"eingaben":{"tabelle":{"referenz":"a-regionen"}}},
+    {"id":"a-gesamt","operation":"daten.gruppieren","konfiguration":{"schluessel":[],"aggregate":[{"funktion":"ANZAHL","name":"Datensätze"},{"funktion":"SUMME","spalte":"Betrag","name":"Betrag"}]},"eingaben":{"tabelle":{"referenz":"a-monat"}}},
+    {"id":"a-gesamtname","operation":"daten.spalten","konfiguration":{"aktion":"BERECHNEN","spalte":"Region","ausdruck":{"art":"wert","typ":"TEXT","wert":"Gesamt"}},"eingaben":{"tabelle":{"referenz":"a-gesamt"}}},
+    {"id":"a-ergebnis","operation":"daten.vereinigen","konfiguration":{"nach_name":true,"dubletten":false},"eingaben":{"links":{"referenz":"a-sortieren"},"rechts":{"referenz":"a-gesamtname"}}},
+    {"id":"a-xlsx","operation":"daten.exportieren","konfiguration":{"format":"XLSX","pfad":{"parameter":"XLSX_Ziel"},"konflikt":"FEHLER","optionen":{"blatt":"Monatsauswertung"}},"eingaben":{"tabelle":{"referenz":"a-ergebnis"}}},
+    {"id":"a-pdf","operation":"dokument.pdf_bericht","konfiguration":{"ziel":{"parameter":"PDF_Ziel"},"schrift":{"parameter":"Schriftdatei"},"titel":"Monatsauswertung – synthetische Testdaten","spalten":["Region","Datensätze","Betrag"],"konflikt":"FEHLER"},"eingaben":{"tabelle":{"referenz":"a-ergebnis"}}}
+  ]
+}

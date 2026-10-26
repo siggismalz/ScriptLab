@@ -3,6 +3,8 @@ import { projektPruefen, type Projekt } from './projekt';
 import { workflowPruefen, type Ausdruck, type Anweisung } from './modell';
 import type { GeneratorErgebnis, GeneratorOptionen, ZeilenZuordnung } from './generator';
 import { pythonHelfer } from './python-helfer';
+import { businessDefinitionen } from './business-katalog';
+import type { JsonWert } from './business-modell';
 
 const pythonBasis = new PythonGenerator('ScriptLab-Python');
 pythonBasis.INDENT = '    ';
@@ -23,6 +25,7 @@ export function pythonText(text: string): string {
 }
 
 export const pythonUnterstuetzteTypen = new Set([
+  ...businessDefinitionen.map((d) => d.typ),
   'sl_start',
   'sl_comment',
   'sl_end',
@@ -120,6 +123,9 @@ export function pythonErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): 
     };
   const { workflow, meldungen } = workflowPruefen(geprueft);
   if (!workflow) return { code: null, meldungen, zeilenZuordnung: [] };
+  const businessEnthalten = (liste: Anweisung[]): boolean =>
+    liste.some((a) => !!a.business || Object.values(a.zweige).some(businessEnthalten));
+  const mitBusiness = businessEnthalten(workflow.anweisungen);
   const variablen = new Map(workflow.variablen.map((id, index) => [id, `v_${index + 1}`]));
   const helfer = new Set<string>();
   const importe = new Set(['import sys']);
@@ -135,6 +141,17 @@ export function pythonErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): 
     const name = variablen.get(id);
     if (!name) throw new Error('Die referenzierte Variable fehlt im Workflow.');
     return name;
+  }
+  function businessWert(w: JsonWert): string {
+    if (w === null) return 'None';
+    if (typeof w === 'boolean') return w ? 'True' : 'False';
+    if (typeof w === 'number') return String(w);
+    if (typeof w === 'string') return pythonText(w);
+    if (Array.isArray(w)) return `[${w.map(businessWert).join(', ')}]`;
+    if (Object.keys(w).length === 1 && typeof w.variable === 'string') return variable(w.variable);
+    return `{${Object.entries(w)
+      .map(([k, v]) => `${pythonText(k)}: ${businessWert(v)}`)
+      .join(', ')}}`;
   }
   function ausdruckIds(a: Ausdruck): string[] {
     return [a.id, ...Object.values(a.werte).flatMap(ausdruckIds)];
@@ -258,13 +275,51 @@ export function pythonErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): 
       const zeile = (text: string, extra = 0) => ausgeben(text, tiefe + extra, ids);
       const w = (name: string) => wert(a.werte[name]);
       zeile(`sl_block = ${pythonText(a.id)}`);
+      if (a.business) {
+        if (a.business.operation === 'ablauf.stapel') {
+          const ref = a.business.eingaben.dateien as { referenz: string };
+          const eintrag = neu();
+          zeile(`for ${eintrag} in sl_business_kontext.ergebnisse[${pythonText(ref.referenz)}]['dateien']:`);
+          zeile(`sl_block = ${pythonText(a.id)}`, 1);
+          zeile(`sl_quellen_pruefen(sl_business_kontext, [${eintrag}])`, 1);
+          zeile(`${variable(a.felder.VAR)} = ${eintrag}['pfad']`, 1);
+          anweisungen(a.zweige.ABLAUF, tiefe + 1);
+          continue;
+        }
+        if (a.business.operation === 'ablauf.fehler') {
+          zeile('try:');
+          anweisungen(a.zweige.ABLAUF, tiefe + 1);
+          zeile('except (SL_AbbruchFehler, SL_UnklarerZustand):');
+          zeile('raise', 1);
+          zeile('except Exception as sl_behandelter_fehler:');
+          zeile('sl_business_kontext.block_id = sl_block', 1);
+          zeile(
+            "if not sl_business_kontext.fehler or sl_business_kontext.fehler[-1].get('block_id') != sl_block:",
+            1,
+          );
+          zeile(
+            "sl_business_kontext.fehler.append({'block_id': sl_block, 'meldung': str(sl_behandelter_fehler)})",
+            2,
+          );
+          zeile(
+            "sl_business_kontext.ereignis('fehler', meldung=str(sl_behandelter_fehler), behandelt=True)",
+            1,
+          );
+          anweisungen(a.zweige.FEHLER, tiefe + 1);
+          continue;
+        }
+        zeile(
+          `sl_business_schritt(sl_business_kontext, ${pythonText(a.id)}, ${pythonText(a.business.operation)}, ${businessWert(a.business.konfiguration)}, ${businessWert(a.business.eingaben)})`,
+        );
+        continue;
+      }
       switch (a.art) {
         case 'sl_comment':
           for (const zeileText of a.felder.TEXT.split(/\r\n|\r|\n|\u2028|\u2029/))
             zeile(`# ${zeileText.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')}`);
           break;
         case 'sl_end':
-          zeile('raise SystemExit(0)');
+          zeile(mitBusiness ? 'return' : 'raise SystemExit(0)');
           break;
         case 'sl_message':
           zeile(`${hilfe('dialog', 'sl_dialog')}(${w('TEXT')}, 'NACHRICHT')`);
@@ -380,7 +435,8 @@ export function pythonErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): 
   }
   [...helfer].sort().forEach(aufnehmen);
   const mitDateien = reihenfolge.includes('pfad');
-  if (mitDateien || token) importe.add('import os');
+  if (mitDateien || token || mitBusiness) importe.add('import os');
+  if (mitBusiness) importe.add('import json');
   if (token) {
     importe.add('import argparse');
     importe.add('import traceback');
@@ -403,6 +459,18 @@ export function pythonErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): 
       : '# Relative Pfade verwenden den Speicherort dieser Pythondatei.',
   );
   hinzufuegen([...importe].sort().join('\n'));
+  if (mitBusiness) {
+    hinzufuegen('# Das Business-Paket liegt neben diesem Script; keine Downloads beim Start.');
+    hinzufuegen('sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))');
+    hinzufuegen(
+      'from scriptlab_business.ausfuehrung import schritt as sl_business_schritt, kontext_laden, abschliessen',
+    );
+    hinzufuegen('from scriptlab_business.dateien import quellen_pruefen as sl_quellen_pruefen');
+    hinzufuegen(
+      'from scriptlab_business.kontext import AbbruchFehler as SL_AbbruchFehler, UnklarerZustand as SL_UnklarerZustand',
+    );
+    hinzufuegen('sl_business_kontext = None');
+  }
   hinzufuegen('');
   hinzufuegen(`sl_block = ${pythonText(workflow.startId)}`, [workflow.startId]);
   if (mitDateien && !token) hinzufuegen('sl_basis = os.path.dirname(os.path.abspath(__file__))');
@@ -442,9 +510,19 @@ def sl_wert(kennung, auswerten):
         sl_basis = sl_optionen.scriptlab_basis`,
       [workflow.startId],
     );
+  if (mitBusiness)
+    hinzufuegen(
+      `        sl_business_kontext = kontext_laden(__file__, json.loads(${pythonText(JSON.stringify({ workflow_id: geprueft.projektKennung ?? '', workflow_hash: '', projekt_name: geprueft.name, parameter: geprueft.business.parameter, standard_parameter: geprueft.business.parametersaetze.test }))}), ${token ? pythonText(token) : 'None'})`,
+    );
+  if (mitBusiness && mitDateien) hinzufuegen('        sl_basis = str(sl_business_kontext.basis)');
   hinzufuegen('        sl_haupt()');
+  if (mitBusiness) hinzufuegen('        raise SystemExit(abschliessen(sl_business_kontext))');
   hinzufuegen(`    except Exception as sl_fehler:
         sl_meldung = str(sl_fehler) if isinstance(sl_fehler, (ValueError, RuntimeError)) else 'Die Aktion konnte nicht abgeschlossen werden. Prüfe die technischen Fehlerangaben.'`);
+  if (mitBusiness)
+    hinzufuegen(
+      '        if sl_business_kontext is not None:\n            abschliessen(sl_business_kontext, sl_fehler)',
+    );
   if (token)
     hinzufuegen(`        sys.stderr.write('SLFEHLER|${token}|' + urllib.parse.quote(sl_block, safe='') + '|' + urllib.parse.quote(sl_meldung, safe='', errors='backslashreplace') + '\\r\\n')
         sys.stderr.flush()

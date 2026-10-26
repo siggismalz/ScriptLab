@@ -1,5 +1,8 @@
 import { definitionNachTyp, type WertTyp } from './katalog';
 import { projektPruefen, type EditorBlock, type Projekt } from './projekt';
+import { businessDatenLesen, businessNachTyp, businessKonfigurationFuerLauf } from './business-katalog';
+import type { BusinessSchritt } from './business-modell';
+import { businessKonfigurationPruefen } from './business-validierung';
 
 export interface Meldung {
   blockId?: string;
@@ -14,6 +17,7 @@ export interface Ausdruck {
   werte: Record<string, Ausdruck>;
 }
 export interface Anweisung {
+  business?: BusinessSchritt;
   id: string;
   art: string;
   felder: Record<string, string>;
@@ -88,7 +92,8 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
           continue;
         }
         felder.VAR = variable.id;
-        if (['sl_set', 'sl_foreach', 'sl_foreach_file'].includes(b.type)) variablen.add(variable.id);
+        if (['sl_set', 'sl_foreach', 'sl_foreach_file', 'sl_biz_stapel_schleife'].includes(b.type))
+          variablen.add(variable.id);
         else referenzen.push({ name: variable.id, blockId: b.id });
         continue;
       }
@@ -111,7 +116,8 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
         if (!wert.trim() || wert.trim().length > 160 || /[\r\n\t]/.test(wert))
           fehler(b, 'Bitte einen Variablennamen mit höchstens 160 Zeichen ohne Zeilenumbrüche angeben.');
         const name = wert;
-        if (['sl_set', 'sl_foreach', 'sl_foreach_file'].includes(b.type)) variablen.add(name);
+        if (['sl_set', 'sl_foreach', 'sl_foreach_file', 'sl_biz_stapel_schleife'].includes(b.type))
+          variablen.add(name);
         else referenzen.push({ name, blockId: b.id });
       }
     }
@@ -217,7 +223,55 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
           ['.', '..'].includes(werte.NAME.felder.TEXT))
       )
         fehler(b, 'Der neue Dateiname darf keinen Pfad oder ungültige Windows-Zeichen enthalten.');
-      ausgabe.push({ id: b.id, art: b.type, felder, werte, zweige });
+      let business: BusinessSchritt | undefined;
+      const businessDef = businessNachTyp.get(b.type);
+      if (businessDef) {
+        if (projekt.skriptsprache !== 'python')
+          fehler(
+            b,
+            'Dieser Business-Baustein benötigt ein Python-Projekt. Die Projektsprache wird nicht automatisch geändert.',
+          );
+        try {
+          business = { id: b.id, operation: businessDef.operation, ...businessDatenLesen(b.type, b.data) };
+          business.konfiguration = businessKonfigurationFuerLauf(business.operation, business.konfiguration);
+          for (const meldung of businessKonfigurationPruefen(
+            businessDef,
+            business.konfiguration,
+            projekt.business.parameter,
+          ))
+            fehler(b, meldung);
+          const variableRefs = (wert: unknown) => {
+            if (!wert || typeof wert !== 'object') return;
+            if (
+              !Array.isArray(wert) &&
+              Object.keys(wert).length === 1 &&
+              typeof (wert as Record<string, unknown>).variable === 'string'
+            )
+              referenzen.push({ name: (wert as { variable: string }).variable, blockId: b!.id });
+            else Object.values(wert).forEach(variableRefs);
+          };
+          variableRefs(business.konfiguration);
+          for (const [name, typ] of Object.entries(businessDef.eingaben)) {
+            const e = business.eingaben[name];
+            const ref = e && typeof e === 'object' && !Array.isArray(e) ? e.referenz : null;
+            const quelle = alle.find((a) => a.id === ref);
+            if (
+              !quelle ||
+              businessNachTyp.get(quelle.type)?.ausgabe !== typ ||
+              businessNachTyp.get(quelle.type)?.steuerung ||
+              !genutzt.has(quelle.id) ||
+              quelle.id === b.id
+            )
+              fehler(b, `Wähle für „${name}“ ein vorheriges Ergebnis vom Typ ${typ}.`);
+          }
+          for (const feld of businessDef.felder)
+            if (feld.name === 'pfad' && !business.konfiguration.pfad)
+              fehler(b, 'Wähle einen Dateipfad oder einen Workflowparameter aus.');
+        } catch (e) {
+          fehler(b, e instanceof Error ? e.message : 'Prüfe die Einstellungen dieses Bausteins.');
+        }
+      }
+      ausgabe.push({ id: b.id, art: b.type, felder, werte, zweige, ...(business ? { business } : {}) });
       if (def.form === 'ende' && naechster)
         fehler(naechster, 'Nach „Workflow beenden“ darf kein weiterer Baustein verbunden sein.');
       b = naechster;
@@ -298,6 +352,34 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
     return gesetzt;
   }
   zuweisungenPruefen(anweisungen, new Set());
+  function businessVerweisePruefen(liste: Anweisung[], vorher: Set<string>): Set<string> {
+    let sicher = new Set(vorher);
+    for (const a of liste) {
+      if (a.business) {
+        for (const [name, e] of Object.entries(a.business.eingaben))
+          if (
+            e &&
+            typeof e === 'object' &&
+            !Array.isArray(e) &&
+            typeof e.referenz === 'string' &&
+            !sicher.has(e.referenz)
+          )
+            meldungen.push({
+              blockId: a.id,
+              stufe: 'fehler',
+              text: `Das Ergebnis für „${name}“ ist hier nicht sicher vorhanden. Wähle einen vorherigen Schritt im selben Ablauf.`,
+            });
+        sicher.add(a.id);
+      }
+      if (a.art === 'sl_if') {
+        const dann = businessVerweisePruefen(a.zweige.DANN, sicher),
+          sonst = businessVerweisePruefen(a.zweige.SONST, sicher);
+        sicher = new Set([...dann].filter((k) => sonst.has(k)));
+      } else for (const zweig of Object.values(a.zweige)) businessVerweisePruefen(zweig, sicher);
+    }
+    return sicher;
+  }
+  businessVerweisePruefen(anweisungen, new Set());
   return {
     workflow: meldungen.some((m) => m.stufe === 'fehler')
       ? null

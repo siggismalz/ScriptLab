@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "schritte": [
+    {
+      "id": "e-csv-stapel",
+      "operation": "dateien.csv_stapel",
+      "konfiguration": {
+        "ordner": { "parameter": "Eingangsordner" },
+        "zielordner": { "parameter": "Ausgabeordner" },
+        "archivordner": { "parameter": "Archivordner" },
+        "muster": "*.csv",
+        "trennzeichen": ";",
+        "bei_fehler": "BERICHT",
+        "konflikt": "FEHLER"
+      },
+      "eingaben": {}
+    }
+  ]
+}

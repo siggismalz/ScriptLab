@@ -34,14 +34,18 @@ import { Palette, type PlatzierungsAuftrag } from './Palette';
 import { Eigenschaften } from './Eigenschaften';
 import { EinstellungenDialog } from './EinstellungenDialog';
 import { ProjektDialog } from './ProjektDialog';
+import { ParameterDialog } from './ParameterDialog';
 import { SprachwahlDialog } from './SprachwahlDialog';
 import { Variablendialoge } from './Variablendialoge';
-import type { BeispielKennung } from './hilfe';
+import { beispiele, type BeispielKennung } from './hilfe';
 import { Menue } from './komponenten/Menue';
 import { Startbereich } from './Startbereich';
 import { Testbereich } from './Testbereich';
+import { BusinessVorbereitung } from './BusinessVorbereitung';
+import { businessSchritte } from '../kern/business';
 import { testAktiv, testBereit, type TestZustand, type TestOptionen } from '../gemeinsam/testlauf';
 import type { PythonStatus } from '../gemeinsam/python';
+import paket from '../../package.json';
 
 registriereBausteine();
 const vorgaben: Einstellungen = {
@@ -99,6 +103,10 @@ export function Anwendung() {
     rueckfokus = useRef<HTMLElement | null>(null);
   const platzierungRef = useRef<PlatzierungsAuftrag | null>(null);
   const [projekt, setProjekt] = useState(projektRef.current);
+  useEffect(() => {
+    setTestOptionen((alt) => ({ basisVerzeichnis: alt.basisVerzeichnis, zeitlimitSekunden: 120 }));
+    testKontextGesehen.current = null;
+  }, [projekt.projektKennung]);
   const [datei, setDatei] = useState<string | null>(null);
   const [geaendert, setGeaendert] = useState(false);
   const [auswahl, setAuswahl] = useState<string | null>(null);
@@ -119,8 +127,10 @@ export function Anwendung() {
   const [statusArt, setStatusArt] = useState<'neutral' | 'erfolg' | 'hinweis' | 'fehler'>('neutral');
   const [dauerfehler, setDauerfehler] = useState<string | null>(null);
   const [verarbeitung, setVerarbeitung] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<'einstellungen' | 'ueber' | 'projekt' | 'sprache' | null>(null);
-  const [version, setVersion] = useState('0.1.0');
+  const [dialog, setDialog] = useState<
+    'einstellungen' | 'ueber' | 'projekt' | 'sprache' | 'parameter' | null
+  >(null);
+  const [version, setVersion] = useState(paket.version);
   const [zertifikate, setZertifikate] = useState<Zertifikat[]>([]);
   const [zertifikatMeldung, setZertifikatMeldung] = useState('');
   const [update, setUpdate] = useState<UpdateZustand | null>(null);
@@ -128,9 +138,10 @@ export function Anwendung() {
   const [pythonStatus, setPythonStatus] = useState<PythonStatus | null>(null);
   const ergebnis = useMemo(
     () => skriptErzeugen(projekt),
-    [projekt.editor, projekt.exportOptionen, projekt.skriptsprache],
+    [projekt.editor, projekt.exportOptionen, projekt.skriptsprache, projekt.business],
   );
   const sprache = sprachdaten[projekt.skriptsprache];
+  const hatBusiness = businessSchritte(projekt).length > 0;
   const sichtbareHinweise = ergebnis.meldungen.filter(
     (m) => pruefungAngefordert || (m.blockId && beruehrt.has(m.blockId)),
   );
@@ -460,14 +471,7 @@ export function Anwendung() {
             ? await window.scriptlab.neu(stand, neueSprache!)
             : art === 'oeffnen'
               ? await window.scriptlab.oeffnen(stand)
-              : [
-                    'begruessung',
-                    'backup',
-                    'dateiliste',
-                    'begruessung-python',
-                    'backup-python',
-                    'dateiliste-python',
-                  ].includes(art)
+              : beispiele.some((b) => b.id === art)
                 ? await window.scriptlab.beispielOeffnen(stand, art as BeispielKennung)
                 : await window.scriptlab.speichern(stand, art === 'unter');
         const neu = antwort(r);
@@ -537,7 +541,7 @@ export function Anwendung() {
     return JSON.stringify(inhalt);
   }
   function testKontextKennung(optionen = testOptionen): string {
-    return `${projektRef.current.projektKennung}:${optionen.basisVerzeichnis}:${optionen.zeitlimitSekunden}`;
+    return `${projektRef.current.projektKennung}:${JSON.stringify(optionen)}`;
   }
   function testUebernehmen(neu: TestZustand) {
     const sperren = testAktiv(neu.phase);
@@ -1073,6 +1077,12 @@ export function Anwendung() {
                   grund: 'Stoppe den Test vor Änderungen.',
                   aktion: () => setDialog('projekt'),
                 },
+                {
+                  text: 'Workflowparameter',
+                  gesperrt: testAktiv(test.phase),
+                  grund: 'Stoppe den Lauf vor Änderungen.',
+                  aktion: () => setDialog('parameter'),
+                },
                 { text: 'Beispiel: Begrüßung', aktion: () => void projektAktion('begruessung') },
                 { text: 'Beispiel: Datei-Backup', aktion: () => void projektAktion('backup') },
                 { text: 'Beispiel: Dateinamenliste', aktion: () => void projektAktion('dateiliste') },
@@ -1131,7 +1141,11 @@ export function Anwendung() {
               grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
               onClick={() => void testStarten()}
             >
-              Testen
+              {hatBusiness && testOptionen.business?.modus === 'vorschau'
+                ? 'Datenvorschau'
+                : hatBusiness && testOptionen.business?.modus === 'prueflauf'
+                  ? 'Prüflauf'
+                  : 'Testen'}
             </Knopf>
             {testAktiv(test.phase) && (
               <>
@@ -1177,7 +1191,7 @@ export function Anwendung() {
               grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
               onClick={() => void exportieren()}
             >
-              {sprache.exportAktion}
+              {hatBusiness ? 'Business-Paket exportieren' : sprache.exportAktion}
             </Knopf>
             <Menue
               beschriftung="Weitere Funktionen"
@@ -1196,6 +1210,7 @@ export function Anwendung() {
         <main className={`arbeitszeile ${angeheftet ? 'mit-eigenschaften' : ''}`}>
           <div className="test-palette" inert={testAktiv(test.phase)}>
             <Palette
+              sprache={projekt.skriptsprache}
               ws={workspace}
               eingeklappt={einstellungen.paletteEingeklappt}
               umschalten={() =>
@@ -1402,6 +1417,18 @@ export function Anwendung() {
                   }}
                 />
                 <Testbereich
+                  businessVorbereitung={
+                    businessSchritte(projekt).length > 0 ? (
+                      <BusinessVorbereitung
+                        key={projekt.projektKennung}
+                        projekt={projekt}
+                        optionen={testOptionen}
+                        aendern={setTestOptionen}
+                        gesperrt={testAktiv(test.phase)}
+                        merken={aendern}
+                      />
+                    ) : undefined
+                  }
                   sprache={projekt.skriptsprache}
                   pythonStatus={pythonStatus}
                   pythonEinrichten={() => setDialog('einstellungen')}
@@ -1544,6 +1571,13 @@ export function Anwendung() {
           </section>
           {eigenschaftenOffen && (
             <Eigenschaften
+              spalten={
+                test.projektKennung === projekt.projektKennung &&
+                Array.isArray(test.business?.vorschau?.spalten)
+                  ? (test.business.vorschau.spalten as { name: string }[]).map((s) => s.name)
+                  : []
+              }
+              parameter={projekt.business.parameter}
               ws={workspace}
               blockId={auswahl}
               angeheftet={einstellungen.eigenschaftenAngeheftet}
@@ -1646,7 +1680,24 @@ export function Anwendung() {
         schliessen={() => setDialog(null)}
         speichern={(name, beschreibung) => aendern({ ...projektRef.current, name, beschreibung })}
       />
+      <ParameterDialog
+        offen={dialog === 'parameter'}
+        business={projekt.business}
+        schliessen={() => setDialog(null)}
+        speichern={(business) => aendern({ ...standLesen(), business })}
+      />
       <EinstellungenDialog
+        businessGewechselt={() => {
+          void window.scriptlab.laden().then((r) => {
+            if (r.ok) {
+              setEinstellungen(r.wert.einstellungen);
+              einstellungenRef.current = r.wert.einstellungen;
+            }
+          });
+          void window.scriptlab.pythonStatus().then((r) => {
+            if (r.ok) setPythonStatus(r.wert);
+          });
+        }}
         pythonStatus={pythonStatus}
         pythonAktion={(art) => void pythonAktion(art)}
         projektOptionenAnzeigen={editorBegonnen}

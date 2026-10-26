@@ -5,8 +5,13 @@ import { eigenschaftenLesen, eigenschaftSetzen, neueVariableAnlegen } from '../e
 import { bausteinBeispiele } from '../editor/beispieleHilfe';
 import { Knopf } from './komponenten/Knopf';
 import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
+import { BusinessEigenschaften } from './BusinessEigenschaften';
+import { businessNachTyp } from '../kern/business-katalog';
+import type { WorkflowParameter } from '../kern/business-modell';
 
 export function Eigenschaften({
+  parameter = [],
+  spalten = [],
   ws,
   blockId,
   angeheftet,
@@ -18,6 +23,8 @@ export function Eigenschaften({
   beruehrt,
   schreibgeschuetzt = false,
 }: {
+  parameter?: WorkflowParameter[];
+  spalten?: string[];
   ws: Blockly.WorkspaceSvg | null;
   blockId: string | null;
   angeheftet: boolean;
@@ -92,6 +99,16 @@ export function Eigenschaften({
           <>
             <h3>{definition.name}</h3>
             <p>{definition.hilfe}</p>
+            {businessNachTyp.has(block.type) && ws && (
+              <BusinessEigenschaften
+                ws={ws}
+                block={block}
+                parameter={parameter}
+                spalten={spalten}
+                gesperrt={schreibgeschuetzt}
+                geaendert={() => beruehrt(block.id)}
+              />
+            )}
             <section className="blockbeispiel">
               <h3>Beispiel</h3>
               <p>{bausteinBeispiele[block.type]}</p>

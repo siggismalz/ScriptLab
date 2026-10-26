@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "schritte": [
+    {
+      "id": "d-textbeleg-1",
+      "operation": "dateien.beleg_ablegen",
+      "konfiguration": {
+        "quelle": { "parameter": "Textbeleg1" },
+        "zielordner": { "parameter": "Ablageordner" },
+        "bei_scan": "BERICHT",
+        "konflikt": "FEHLER"
+      },
+      "eingaben": {}
+    },
+    {
+      "id": "d-textbeleg-2",
+      "operation": "dateien.beleg_ablegen",
+      "konfiguration": {
+        "quelle": { "parameter": "Textbeleg2" },
+        "zielordner": { "parameter": "Ablageordner" },
+        "bei_scan": "BERICHT",
+        "konflikt": "FEHLER"
+      },
+      "eingaben": {}
+    },
+    {
+      "id": "d-scanhinweis",
+      "operation": "dateien.beleg_ablegen",
+      "konfiguration": {
+        "quelle": { "parameter": "Scanbeleg" },
+        "zielordner": { "parameter": "Ablageordner" },
+        "bei_scan": "BERICHT",
+        "konflikt": "FEHLER"
+      },
+      "eingaben": {}
+    }
+  ]
+}

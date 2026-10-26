@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { bausteinDefinitionen, type BausteinDefinition, type WertTyp } from '../../src/kern/katalog';
+import { grundBausteine as bausteinDefinitionen, type BausteinDefinition, type WertTyp } from '../../src/kern/katalog';
 import { neuesProjekt, type EditorBlock } from '../../src/kern/projekt';
 import { vbsErzeugen } from '../../src/kern/generator';
 

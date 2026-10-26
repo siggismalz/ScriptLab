@@ -1,0 +1,7 @@
+{
+  "Quelldatei": "eingaben/umsaetze.csv",
+  "Berichtsmonat": "2026-10",
+  "XLSX_Ziel": "ausgaben/Monatsauswertung.xlsx",
+  "PDF_Ziel": "ausgaben/Monatsauswertung.pdf",
+  "Schriftdatei": "INTERN:VERA"
+}

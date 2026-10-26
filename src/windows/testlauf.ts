@@ -1,6 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { mkdir, writeFile, stat, unlink, rmdir, realpath } from 'node:fs/promises';
+import { mkdir, writeFile, stat, unlink, rmdir, realpath, cp, rm } from 'node:fs/promises';
 import { join, isAbsolute } from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import { z } from 'zod';
@@ -10,6 +10,8 @@ import { vbsKodieren } from '../main/dateien';
 import { testAktiv, testBereit, type TestZustand, type TestOptionen } from '../gemeinsam/testlauf';
 import type { PythonInstallation } from '../gemeinsam/python';
 import { pythonDateipfadPruefen } from './python';
+import { businessSchritte, businessModusPruefen } from '../kern/business';
+import { parameterWertePruefen } from '../kern/business-modell';
 
 export const testOptionenSchema = z
   .object({
@@ -18,7 +20,21 @@ export const testOptionenSchema = z
       .min(1)
       .max(32768)
       .refine((p) => isAbsolute(p) && !p.includes('\0')),
-    zeitlimitSekunden: z.number().int().min(1).max(3600),
+    zeitlimitSekunden: z.number().int().min(1).max(28800),
+    business: z
+      .object({
+        modus: z.enum(['vorschau', 'prueflauf', 'ausfuehren']),
+        parametersatz: z.enum(['test', 'echt']),
+        parameter: z.record(
+          z.string().max(64),
+          z.union([z.string().max(32768), z.number().finite(), z.boolean(), z.null()]),
+        ),
+        speicherMB: z.number().int().min(64).max(8192),
+        tempGB: z.number().int().min(1).max(100),
+        fortsetzen: z.boolean(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
@@ -27,6 +43,7 @@ export function testStandHash(projekt: Projekt): string {
   return createHash('sha256').update(JSON.stringify(inhalt)).digest('hex');
 }
 interface Lauf {
+  projekt: Projekt;
   id: string;
   token: string;
   ordner: string;
@@ -75,6 +92,11 @@ export class TestlaufDienst {
       tkinterNoetig: boolean,
       signal: AbortSignal,
     ) => Promise<PythonInstallation>,
+    private readonly business?: {
+      paketwurzel: string;
+      journaleOrdner: string;
+      pruefen: (installation: PythonInstallation, signal: AbortSignal) => Promise<void>;
+    },
   ) {}
 
   lesen(): TestZustand {
@@ -92,6 +114,14 @@ export class TestlaufDienst {
     if (this.aktiv()) throw new Error('Es läuft bereits ein Test. Stoppe ihn vor einem neuen Start.');
     const projekt = projektPruefen(structuredClone(daten));
     const kontext = testOptionenSchema.parse(optionen);
+    const business = businessSchritte(projekt);
+    if (business.length) {
+      if (!kontext.business) throw new Error('Wähle Modus und Parameter für den Business-Lauf aus.');
+      businessModusPruefen(projekt, kontext.business.modus);
+    } else if (kontext.business?.modus && kontext.business.modus !== 'ausfuehren')
+      throw new Error(
+        'Dieser Workflow besitzt keine unterstützte Business-Vorschau. Wähle für einen echten Test bewusst „Ausführen“.',
+      );
     const id = randomUUID(),
       token = randomBytes(24).toString('hex');
     const erzeugt = skriptErzeugen(projekt, { modus: 'test', token });
@@ -111,8 +141,12 @@ export class TestlaufDienst {
       quelltext: erzeugt.code,
       zeilenZuordnung: erzeugt.zeilenZuordnung,
       meldung: 'Workflow und Windows-Laufzeit werden vorbereitet.',
+      ...(business.length
+        ? { business: { schritt: null, ereignisse: [], vorschau: null, bericht: null } }
+        : {}),
     };
     const lauf: Lauf = {
+      projekt,
       id,
       token,
       ordner: join(this.technischeOrdner, id),
@@ -137,8 +171,16 @@ export class TestlaufDienst {
     lauf.abbruch.abort();
     this.zustand.phase = 'stoppt';
     this.zustand.meldung = 'Der Test wird beendet. Bereits erfolgte Änderungen bleiben bestehen.';
-    lauf.beenden?.();
+    let notbremse: ReturnType<typeof setTimeout> | undefined;
+    if (this.zustand.business && lauf.prozess) {
+      // Kooperative Schritte erhalten eine kurze Gelegenheit, ihre eigene Ausgabe zu schließen.
+      void writeFile(join(lauf.ordner, 'abbruch.signal'), '').catch(() => {});
+      notbremse = setTimeout(() => {
+        if (this.lauf === lauf) lauf.beenden?.();
+      }, 1000);
+    } else lauf.beenden?.();
     await lauf.fertig;
+    if (notbremse) clearTimeout(notbremse);
     return this.lesen();
   }
   private ausgabeAnhaengen(text: string): void {
@@ -199,6 +241,67 @@ export class TestlaufDienst {
         // Dieser Lauf behält genau die geprüfte Datei, auch wenn später Einstellungen geändert werden.
         lauf.python = Object.freeze({ ...python, pfad: pythonDateipfadPruefen(python.pfad) });
         this.zustand.pythonVersion = python.version;
+        if (this.zustand.business) {
+          if (!this.business) throw new Error('Die Business-Laufzeit ist nicht eingerichtet.');
+          await this.business.pruefen(python, lauf.abbruch.signal);
+          await pruefen(
+            cp(
+              join(this.business.paketwurzel, 'scriptlab_business'),
+              join(lauf.ordner, 'scriptlab_business'),
+              { recursive: true, filter: (p) => !p.includes('__pycache__') && !p.endsWith('.pyc') },
+            ),
+          );
+          const b = optionen.business!;
+          await mkdir(join(lauf.ordner, 'arbeitsdaten'), { recursive: true });
+          const parameter = parameterWertePruefen(lauf.projekt.business.parameter, {
+            ...Object.fromEntries(lauf.projekt.business.parameter.map((p) => [p.name, p.standard])),
+            ...lauf.projekt.business.parametersaetze[b.parametersatz],
+            ...b.parameter,
+          });
+          for (const p of lauf.projekt.business.parameter)
+            if (
+              p.erforderlich &&
+              (parameter[p.name] === null || parameter[p.name] === undefined || parameter[p.name] === '')
+            )
+              throw new Error(`Fülle den Workflowparameter „${p.beschriftung}“ aus.`);
+          await mkdir(this.business.journaleOrdner, { recursive: true });
+          const journalName = createHash('sha256')
+            .update(
+              JSON.stringify({ stand: this.zustand.standHash, parameter, basis: optionen.basisVerzeichnis }),
+            )
+            .digest('hex');
+          // Der zufällige Testtoken ist technisch. Die stabile Exportfassung bindet
+          // zusätzlich Änderungen am Generator an den fachlichen Wiederanlauf.
+          const workflowHash = createHash('sha256')
+            .update(this.zustand.standHash!)
+            .update('\0')
+            .update(skriptErzeugen(lauf.projekt, { modus: 'export' }).code!)
+            .digest('hex');
+          await writeFile(
+            join(lauf.ordner, 'scriptlab-kontext.json'),
+            JSON.stringify({
+              version: 1,
+              basis: optionen.basisVerzeichnis,
+              modus: b.modus,
+              parameter,
+              grenzen: {
+                zeitlimit_sekunden: optionen.zeitlimitSekunden,
+                duckdb_speicher: `${b.speicherMB}MB`,
+                max_temp_bytes: b.tempGB * 1024 ** 3,
+                max_datei_bytes: 16 * 1024 ** 3,
+                max_ausgaben: 100000,
+                max_zeilen: 1048575,
+              },
+              journal_pfad: join(this.business.journaleOrdner, `${journalName}.jsonl`),
+              fortsetzen: b.fortsetzen,
+              workflow_hash: workflowHash,
+              technischer_ordner: join(lauf.ordner, 'arbeitsdaten'),
+              abbruch_datei: join(lauf.ordner, 'abbruch.signal'),
+              lauf_id: lauf.id,
+            }),
+            { flag: 'wx' },
+          );
+        }
       } else if (!this.laufzeitGeprueft) {
         const probe = join(lauf.ordner, 'laufzeitprobe.vbs');
         await pruefen(
@@ -242,7 +345,11 @@ export class TestlaufDienst {
       const ergebnis = await this.prozessStarten(lauf, ausgefuehrteDatei, optionen, false);
       this.zustand.exitcode = ergebnis.code;
       if (lauf.grund) return;
-      if (ergebnis.code === 0 && !ergebnis.fehler) {
+      if (ergebnis.code === 2 && !ergebnis.fehler && this.zustand.business) {
+        abschluss = 'mit_fehlern';
+        this.zustand.meldung =
+          'Mit Fehlern beendet. Erfolgreiche Ergebnisse und offene Einheiten stehen im Laufbericht.';
+      } else if (ergebnis.code === 0 && !ergebnis.fehler) {
         abschluss = 'beendet';
         this.zustand.meldung = 'Ohne gemeldeten Fehler beendet. Prüfe die gewünschten Ergebnisse selbst.';
       } else {
@@ -270,6 +377,10 @@ export class TestlaufDienst {
       void (async () => {
         for (const name of ['workflow.vbs', 'workflow.py', 'laufzeitprobe.vbs'])
           await unlink(join(lauf.ordner, name)).catch(() => {});
+        await unlink(join(lauf.ordner, 'scriptlab-kontext.json')).catch(() => {});
+        await unlink(join(lauf.ordner, 'abbruch.signal')).catch(() => {});
+        await rm(join(lauf.ordner, 'arbeitsdaten'), { recursive: true, force: true }).catch(() => {});
+        await rm(join(lauf.ordner, 'scriptlab_business'), { recursive: true, force: true }).catch(() => {});
         await rmdir(lauf.ordner).catch(() => {});
       })();
       if (lauf.grund) {
@@ -310,6 +421,15 @@ export class TestlaufDienst {
           shell: false,
           windowsHide: true,
           cwd: optionen.basisVerzeichnis!,
+          ...(this.zustand.business
+            ? {
+                env: {
+                  ...process.env,
+                  TEMP: join(lauf.ordner, 'arbeitsdaten'),
+                  TMP: join(lauf.ordner, 'arbeitsdaten'),
+                },
+              }
+            : {}),
           stdio: ['pipe', 'pipe', 'pipe'],
         },
       );
@@ -340,6 +460,36 @@ export class TestlaufDienst {
       const kodierung = lauf.sprache === 'python' ? 'utf8' : 'utf16le';
       const dekoder = [new StringDecoder(kodierung), new StringDecoder(kodierung)];
       const protokoll = (text: string) => {
+        const businessMarke = `SLBUS|${lauf.token}|`;
+        if (!probe && this.zustand.business && text.startsWith(businessMarke)) {
+          try {
+            const e = JSON.parse(text.slice(businessMarke.length));
+            if (e && typeof e === 'object' && !Array.isArray(e)) {
+              const b = this.zustand.business;
+              b.ereignisse = [...b.ereignisse.slice(-99), e];
+              while (b.ereignisse.length > 1 && JSON.stringify(b.ereignisse).length > 524288)
+                b.ereignisse.shift();
+              if (typeof e.block_id === 'string') b.schritt = e.block_id;
+              if (
+                e.art === 'fehler' &&
+                typeof e.block_id === 'string' &&
+                this.zustand.zeilenZuordnung.some((z) => z.blockId === e.block_id)
+              )
+                this.zustand.fehlerBlockId = e.block_id;
+              if (e.art === 'vorschau') b.vorschau = e;
+              if (e.art === 'bericht' || e.art === 'abschluss') b.bericht = e;
+              if (e.art === 'abschluss' && (e.grund === 'zeitlimit' || e.status === 'zeitlimit'))
+                lauf.grund ??= 'zeitlimit';
+              if (e.art === 'abschluss' && e.status === 'unklar')
+                lauf.fehlerText =
+                  'Ein Dateischritt ist nicht eindeutig abgeschlossen. Prüfe den Laufbericht und die betroffenen Dateien vor einem Wiederanlauf.';
+              if (typeof e.meldung === 'string') this.ausgabeAnhaengen(e.meldung + '\r\n');
+              return true;
+            }
+          } catch {
+            /* Fremde Ausgabe bleibt Text. */
+          }
+        }
         if (text.startsWith('SLHOST|GESTARTET|')) {
           const zeit = Date.parse(text.split('|')[2]);
           const pid = Number(text.split('|')[3]);
@@ -388,7 +538,7 @@ export class TestlaufDienst {
           stderr = (stderr + text).slice(-32768);
           zeile += text;
           const teile = zeile.split(/\r\n|\n/);
-          zeile = teile.pop()!.slice(-32768);
+          zeile = teile.pop()!.slice(-524288);
           for (const t of teile)
             if (!protokoll(t.replace(/\r$/, '')) && !probe) this.ausgabeAnhaengen(t + '\n');
         }

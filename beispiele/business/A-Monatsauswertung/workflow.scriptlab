@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 3,
+  "business": {
+    "parameter": [
+      {
+        "name": "Quelldatei",
+        "beschriftung": "Quelldatei",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "eingaben/umsaetze.csv",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Berichtsmonat",
+        "beschriftung": "Berichtsmonat",
+        "typ": "Text",
+        "erforderlich": true,
+        "standard": "2026-10",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "XLSX_Ziel",
+        "beschriftung": "XLSX Ziel",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "ausgaben/Monatsauswertung.xlsx",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "PDF_Ziel",
+        "beschriftung": "PDF Ziel",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "ausgaben/Monatsauswertung.pdf",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Schriftdatei",
+        "beschriftung": "Schriftdatei",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "INTERN:VERA",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      }
+    ],
+    "parametersaetze": {
+      "test": {
+        "Quelldatei": "eingaben/umsaetze.csv",
+        "Berichtsmonat": "2026-10",
+        "XLSX_Ziel": "ausgaben/Monatsauswertung.xlsx",
+        "PDF_Ziel": "ausgaben/Monatsauswertung.pdf",
+        "Schriftdatei": "INTERN:VERA"
+      },
+      "echt": {}
+    },
+    "ressourcen": []
+  },
+  "skriptsprache": "python",
+  "appVersion": "0.2.0",
+  "projektKennung": "e410eef7-c355-527e-ab03-03fe39c80d48",
+  "name": "Monatliche Auswertung",
+  "beschreibung": "Oktober auswählen und Umsätze nach Region als XLSX und PDF ausgeben. Erwartung: 3 Datensätze · Nord 150 · Süd 80 · Gesamt 230",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "start",
+          "x": 80,
+          "y": 96,
+          "next": {
+            "block": {
+              "type": "sl_biz_lesen_csv",
+              "id": "a-import",
+              "fields": {
+                "NAME": "CSV-Tabelle lesen (1)"
+              },
+              "data": "{\"konfiguration\":{\"format\":\"CSV\",\"pfad\":{\"parameter\":\"Quelldatei\"}},\"eingaben\":{}}",
+              "next": {
+                "block": {
+                  "type": "sl_biz_typ",
+                  "id": "a-datum",
+                  "fields": {
+                    "NAME": "Datentyp festlegen (2)"
+                  },
+                  "data": "{\"konfiguration\":{\"aktion\":\"TYP\",\"spalte\":\"Datum\",\"typ\":\"DATUM\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"a-import\"}}}",
+                  "next": {
+                    "block": {
+                      "type": "sl_biz_typ",
+                      "id": "a-betrag",
+                      "fields": {
+                        "NAME": "Datentyp festlegen (3)"
+                      },
+                      "data": "{\"konfiguration\":{\"aktion\":\"TYP\",\"spalte\":\"Betrag\",\"typ\":\"DEZIMAL\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"a-datum\"}}}",
+                      "next": {
+                        "block": {
+                          "type": "sl_biz_filtern",
+                          "id": "a-monat",
+                          "fields": {
+                            "NAME": "Zeilen filtern (4)"
+                          },
+                          "data": "{\"konfiguration\":{\"bedingung\":{\"art\":\"vergleich\",\"spalte\":\"Datum\",\"operator\":\"BEGINNT\",\"wert\":{\"art\":\"wert\",\"typ\":\"TEXT\",\"wert\":{\"parameter\":\"Berichtsmonat\"}}}},\"eingaben\":{\"tabelle\":{\"referenz\":\"a-betrag\"}}}",
+                          "next": {
+                            "block": {
+                              "type": "sl_biz_gruppieren",
+                              "id": "a-regionen",
+                              "fields": {
+                                "NAME": "Daten zusammenfassen (5)"
+                              },
+                              "data": "{\"konfiguration\":{\"schluessel\":[\"Region\"],\"aggregate\":[{\"funktion\":\"ANZAHL\",\"name\":\"Datensätze\"},{\"funktion\":\"SUMME\",\"spalte\":\"Betrag\",\"name\":\"Betrag\"}]},\"eingaben\":{\"tabelle\":{\"referenz\":\"a-monat\"}}}",
+                              "next": {
+                                "block": {
+                                  "type": "sl_biz_sortieren",
+                                  "id": "a-sortieren",
+                                  "fields": {
+                                    "NAME": "Zeilen sortieren (6)"
+                                  },
+                                  "data": "{\"konfiguration\":{\"schluessel\":[{\"spalte\":\"Region\",\"richtung\":\"ASC\",\"nullen\":\"LETZTE\"}]},\"eingaben\":{\"tabelle\":{\"referenz\":\"a-regionen\"}}}",
+                                  "next": {
+                                    "block": {
+                                      "type": "sl_biz_gruppieren",
+                                      "id": "a-gesamt",
+                                      "fields": {
+                                        "NAME": "Daten zusammenfassen (7)"
+                                      },
+                                      "data": "{\"konfiguration\":{\"schluessel\":[],\"aggregate\":[{\"funktion\":\"ANZAHL\",\"name\":\"Datensätze\"},{\"funktion\":\"SUMME\",\"spalte\":\"Betrag\",\"name\":\"Betrag\"}]},\"eingaben\":{\"tabelle\":{\"referenz\":\"a-monat\"}}}",
+                                      "next": {
+                                        "block": {
+                                          "type": "sl_biz_berechnen",
+                                          "id": "a-gesamtname",
+                                          "fields": {
+                                            "NAME": "Spalte berechnen (8)"
+                                          },
+                                          "data": "{\"konfiguration\":{\"aktion\":\"BERECHNEN\",\"spalte\":\"Region\",\"ausdruck\":{\"art\":\"wert\",\"typ\":\"TEXT\",\"wert\":\"Gesamt\"}},\"eingaben\":{\"tabelle\":{\"referenz\":\"a-gesamt\"}}}",
+                                          "next": {
+                                            "block": {
+                                              "type": "sl_biz_vereinigen",
+                                              "id": "a-ergebnis",
+                                              "fields": {
+                                                "NAME": "Tabellen untereinander zusammenführen (9)"
+                                              },
+                                              "data": "{\"konfiguration\":{\"nach_name\":true,\"dubletten\":false},\"eingaben\":{\"links\":{\"referenz\":\"a-sortieren\"},\"rechts\":{\"referenz\":\"a-gesamtname\"}}}",
+                                              "next": {
+                                                "block": {
+                                                  "type": "sl_biz_schreiben_xlsx",
+                                                  "id": "a-xlsx",
+                                                  "fields": {
+                                                    "NAME": "Tabelle als XLSX speichern (10)"
+                                                  },
+                                                  "data": "{\"konfiguration\":{\"format\":\"XLSX\",\"pfad\":{\"parameter\":\"XLSX_Ziel\"},\"konflikt\":\"FEHLER\",\"optionen\":{\"blatt\":\"Monatsauswertung\"}},\"eingaben\":{\"tabelle\":{\"referenz\":\"a-ergebnis\"}}}",
+                                                  "next": {
+                                                    "block": {
+                                                      "type": "sl_biz_pdf_bericht",
+                                                      "id": "a-pdf",
+                                                      "fields": {
+                                                        "NAME": "PDF-Bericht erzeugen (11)"
+                                                      },
+                                                      "data": "{\"konfiguration\":{\"ziel\":{\"parameter\":\"PDF_Ziel\"},\"schrift\":{\"parameter\":\"Schriftdatei\"},\"titel\":\"Monatsauswertung – synthetische Testdaten\",\"spalten\":[\"Region\",\"Datensätze\",\"Betrag\"],\"konflikt\":\"FEHLER\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"a-ergebnis\"}}}"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

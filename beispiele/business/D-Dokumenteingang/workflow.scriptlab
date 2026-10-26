@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 3,
+  "business": {
+    "parameter": [
+      {
+        "name": "Textbeleg1",
+        "beschriftung": "Textbeleg1",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "eingaben/01-Rechnung.pdf",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Textbeleg2",
+        "beschriftung": "Textbeleg2",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "eingaben/02-Beleg.pdf",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Scanbeleg",
+        "beschriftung": "Scanbeleg",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "eingaben/03-Scan.pdf",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Ablageordner",
+        "beschriftung": "Ablageordner",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "ausgaben/Ablage",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      }
+    ],
+    "parametersaetze": {
+      "test": {
+        "Textbeleg1": "eingaben/01-Rechnung.pdf",
+        "Textbeleg2": "eingaben/02-Beleg.pdf",
+        "Scanbeleg": "eingaben/03-Scan.pdf",
+        "Ablageordner": "ausgaben/Ablage"
+      },
+      "echt": {}
+    },
+    "ressourcen": []
+  },
+  "skriptsprache": "python",
+  "appVersion": "0.2.0",
+  "projektKennung": "60081fb0-419a-50fb-a5a8-db9d50c7ec7c",
+  "name": "Dokumenteingang geordnet ablegen",
+  "beschreibung": "PDF-Textebenen prüfen und Belege als Kopien nach Monat ablegen. Erwartung: 2 Kopien · 1 Scan-Hinweis · unveränderte Originale",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "start",
+          "x": 80,
+          "y": 96,
+          "next": {
+            "block": {
+              "type": "sl_biz_beleg_ablegen",
+              "id": "d-textbeleg-1",
+              "fields": {
+                "NAME": "PDF-Beleg prüfen und geordnet ablegen (1)"
+              },
+              "data": "{\"konfiguration\":{\"quelle\":{\"parameter\":\"Textbeleg1\"},\"zielordner\":{\"parameter\":\"Ablageordner\"},\"bei_scan\":\"BERICHT\",\"konflikt\":\"FEHLER\"},\"eingaben\":{}}",
+              "next": {
+                "block": {
+                  "type": "sl_biz_beleg_ablegen",
+                  "id": "d-textbeleg-2",
+                  "fields": {
+                    "NAME": "PDF-Beleg prüfen und geordnet ablegen (2)"
+                  },
+                  "data": "{\"konfiguration\":{\"quelle\":{\"parameter\":\"Textbeleg2\"},\"zielordner\":{\"parameter\":\"Ablageordner\"},\"bei_scan\":\"BERICHT\",\"konflikt\":\"FEHLER\"},\"eingaben\":{}}",
+                  "next": {
+                    "block": {
+                      "type": "sl_biz_beleg_ablegen",
+                      "id": "d-scanhinweis",
+                      "fields": {
+                        "NAME": "PDF-Beleg prüfen und geordnet ablegen (3)"
+                      },
+                      "data": "{\"konfiguration\":{\"quelle\":{\"parameter\":\"Scanbeleg\"},\"zielordner\":{\"parameter\":\"Ablageordner\"},\"bei_scan\":\"BERICHT\",\"konflikt\":\"FEHLER\"},\"eingaben\":{}}"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

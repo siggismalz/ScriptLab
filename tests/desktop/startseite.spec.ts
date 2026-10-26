@@ -579,7 +579,7 @@ test('Startseite: sieben lokale Hilfethemen, Suche und Vorlagenlink funktioniere
     await s.seite.context().setOffline(true);
     await s.seite.getByRole('button', { name: 'Dokumentation und Anleitungen', exact: true }).click();
     const hilfe = s.seite.getByTestId('hilfe');
-    expect(hilfeArtikel).toHaveLength(7);
+    expect(hilfeArtikel).toHaveLength(10);
     for (const thema of hilfeArtikel) {
       await hilfe.getByRole('button', { name: thema.titel, exact: true }).click();
       await expect(s.seite.getByRole('heading', { name: thema.titel, level: 1, exact: true })).toBeVisible();

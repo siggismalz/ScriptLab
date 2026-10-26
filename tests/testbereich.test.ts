@@ -96,7 +96,7 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
     expect(knopf(html, 'Workflow testen')).toContain('disabled=""');
     expect(knopf(html, 'Workflow testen')).not.toContain('sl-knopf--primaer');
     expect(knopf(html, 'Stoppen')).toContain('disabled=""');
-    expect(html).toMatch(/min="1"[^>]+max="3600"[^>]+value="120"/);
+    expect(html).toMatch(/min="1"[^>]+max="28800"[^>]+value="120"/);
     expect(html).toMatch(/<h2[^>]*>Testausgabe<\/h2>/);
     expect(html).toMatch(/<details[^>]+class="testbereich-vorbereitung"[^>]+open=""/);
     expect(knopf(html, 'Ausgabe leeren')).toContain('disabled=""');
@@ -115,7 +115,7 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
     expect(html).not.toMatch(/<details[^>]+class="testbereich-vorbereitung"[^>]+open/);
     expect(html).toContain('C:\\Tatsaechlicher Test');
     expect(html).not.toContain('C:\\Naechster Test');
-    expect(html).toMatch(/min="1"[^>]+max="3600"[^>]+value="7"/);
+    expect(html).toMatch(/min="1"[^>]+max="28800"[^>]+value="7"/);
   });
 
   it('trennt nächste Optionen von tatsächlichem Laufkontext und zeigt das echte Ergebnis', () => {
@@ -180,9 +180,10 @@ describe('Begrenzte Eingabe und Anzeigehilfen', () => {
       [' 120 ', 120],
       ['0012', 12],
       ['3600', 3600],
+      ['28800', 28800],
     ] as const)
       expect(zeitlimitAusText(text)).toBe(wert);
-    for (const text of ['', '0', '-1', '3601', '1,5', '1.5', '1e3', 'NaN', '120x'])
+    for (const text of ['', '0', '-1', '28801', '1,5', '1.5', '1e3', 'NaN', '120x'])
       expect(zeitlimitAusText(text)).toBeNull();
   });
   it('behält eine feste beendete Laufzeit und behandelt fehlende oder falsche Zeitpunkte lesbar', () => {

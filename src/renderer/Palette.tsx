@@ -5,6 +5,7 @@ import { paletteZiehenStarten, type Einfuegestelle } from '../editor/bedienung';
 import { Knopf } from './komponenten/Knopf';
 import { Feld } from './komponenten/Feld';
 import { Symbol } from './komponenten/Icon';
+import type { Skriptsprache } from '../kern/sprachen';
 
 export interface PlatzierungsAuftrag {
   art: 'einfuegen' | 'verschieben';
@@ -13,6 +14,7 @@ export interface PlatzierungsAuftrag {
 }
 
 export function Palette({
+  sprache = 'vbs',
   ws,
   eingeklappt,
   umschalten,
@@ -24,6 +26,7 @@ export function Palette({
   blockAuswaehlen,
   meldung,
 }: {
+  sprache?: Skriptsprache;
   ws: Blockly.WorkspaceSvg | null;
   eingeklappt: boolean;
   umschalten: () => void;
@@ -38,10 +41,11 @@ export function Palette({
   const [suche, setSuche] = useState('');
   const [kategorie, setKategorie] = useState('Ein- und Ausgaben');
   const [ausgewaehlt, setAusgewaehlt] = useState<string | null>(null);
-  const gruppen = [...new Set(bausteinDefinitionen.map((b) => b.kategorie))];
+  const verfuegbar = bausteinDefinitionen.filter((b) => sprache === 'python' || !b.typ.startsWith('sl_biz_'));
+  const gruppen = [...new Set(verfuegbar.map((b) => b.kategorie))];
   const reihenfolge = ['Ein- und Ausgaben', ...gruppen.filter((g) => g !== 'Ein- und Ausgaben')];
   const filter = suche.trim().toLocaleLowerCase('de');
-  const treffer = bausteinDefinitionen.filter((b) =>
+  const treffer = verfuegbar.filter((b) =>
     `${b.name} ${b.kategorie} ${b.hilfe}`.toLocaleLowerCase('de').includes(filter),
   );
   const darstellung = (typ: string) => {
@@ -171,6 +175,17 @@ export function Palette({
                         : 'Keine Bausteine gefunden'}
                   </p>
                   {treffer.map((b) => darstellung(b.typ))}
+                  {sprache === 'vbs' &&
+                    bausteinDefinitionen.some(
+                      (b) =>
+                        b.typ.startsWith('sl_biz_') &&
+                        `${b.name} ${b.kategorie} ${b.hilfe}`.toLocaleLowerCase('de').includes(filter),
+                    ) && (
+                      <p>
+                        Passende Daten- und Dokumentbausteine sind in Python-Projekten verfügbar. Du kannst
+                        über „Neu“ einen Python-Workflow erstellen.
+                      </p>
+                    )}
                 </>
               ) : (
                 reihenfolge.map((g) => (
@@ -184,9 +199,7 @@ export function Palette({
                       <span>{g}</span>
                     </button>
                     {kategorie === g && (
-                      <div>
-                        {bausteinDefinitionen.filter((b) => b.kategorie === g).map((b) => darstellung(b.typ))}
-                      </div>
+                      <div>{verfuegbar.filter((b) => b.kategorie === g).map((b) => darstellung(b.typ))}</div>
                     )}
                   </section>
                 ))

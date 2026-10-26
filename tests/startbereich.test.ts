@@ -159,8 +159,8 @@ describe('Bibliotheksansicht ohne zweite Datenwahrheit', () => {
 
 describe('Lokale Hilfe und vorhandene Vorlagen', () => {
   it('liefert gezielte Fundstellen in existierenden Artikeln und Abschnitten', () => {
-    expect(hilfeArtikel).toHaveLength(7);
-    expect(new Set(hilfeArtikel.map((a) => a.id)).size).toBe(7);
+    expect(hilfeArtikel).toHaveLength(10);
+    expect(new Set(hilfeArtikel.map((a) => a.id)).size).toBe(10);
     const treffer = hilfeDurchsuchen('SHA-256');
     expect(treffer.length).toBeGreaterThan(0);
     for (const t of treffer) {
@@ -172,8 +172,9 @@ describe('Lokale Hilfe und vorhandene Vorlagen', () => {
     expect(hilfeDurchsuchen('<script>keinehilfe</script>')).toEqual([]);
   });
 
-  it('verweist auf die sechs echten Beispielprojekte und gültige Vorlagenlinks', async () => {
+  it('verweist auf die elf echten Beispielprojekte und gültige Vorlagenlinks', async () => {
     expect(beispiele.map((b) => b.id)).toEqual([
+      'business-monat','business-bestellungen','business-bestellvorschlag','business-belege','business-stapel',
       'begruessung',
       'backup',
       'dateiliste',

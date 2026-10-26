@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "schritte": [
+    {"id":"b-bestellungen","operation":"daten.importieren","konfiguration":{"format":"CSV","pfad":{"parameter":"Bestelldatei"}},"eingaben":{}},
+    {"id":"b-betrag","operation":"daten.spalten","konfiguration":{"aktion":"TYP","spalte":"Betrag","typ":"DEZIMAL"},"eingaben":{"tabelle":{"referenz":"b-bestellungen"}}},
+    {"id":"b-kunden","operation":"daten.importieren","konfiguration":{"format":"CSV","pfad":{"parameter":"Kundendatei"}},"eingaben":{}},
+    {"id":"b-zuordnen","operation":"daten.verknuepfen","konfiguration":{"art":"LEFT","schluessel":[{"links":"Kunde","rechts":"Kunde"}],"kardinalitaet":"n:1","fehlende_zuordnung":"BEHALTEN"},"eingaben":{"links":{"referenz":"b-betrag"},"rechts":{"referenz":"b-kunden"}}},
+    {"id":"b-pruefen","operation":"daten.pruefen","konfiguration":{"regeln":[{"art":"NICHT_LEER","spalte":"Region"}],"bei_fehler":"BERICHT"},"eingaben":{"tabelle":{"referenz":"b-zuordnen"}}},
+    {"id":"b-fehlend","operation":"daten.filtern","konfiguration":{"bedingung":{"art":"vergleich","spalte":"Region","operator":"IST_LEER"}},"eingaben":{"tabelle":{"referenz":"b-zuordnen"}}},
+    {"id":"b-fehlerhinweis","operation":"daten.vorschau","konfiguration":{"limit":200},"eingaben":{"tabelle":{"referenz":"b-fehlend"}}},
+    {"id":"b-gueltig","operation":"daten.filtern","konfiguration":{"bedingung":{"art":"vergleich","spalte":"Region","operator":"IST_NICHT_LEER"}},"eingaben":{"tabelle":{"referenz":"b-zuordnen"}}},
+    {"id":"b-regionen","operation":"daten.gruppieren","konfiguration":{"schluessel":["Region"],"aggregate":[{"funktion":"ANZAHL","name":"Bestellungen"},{"funktion":"SUMME","spalte":"Betrag","name":"Betrag"}]},"eingaben":{"tabelle":{"referenz":"b-gueltig"}}},
+    {"id":"b-sortieren","operation":"daten.sortieren","konfiguration":{"schluessel":[{"spalte":"Region","richtung":"ASC","nullen":"LETZTE"}]},"eingaben":{"tabelle":{"referenz":"b-regionen"}}},
+    {"id":"b-gesamt","operation":"daten.gruppieren","konfiguration":{"schluessel":[],"aggregate":[{"funktion":"ANZAHL","name":"Bestellungen"},{"funktion":"SUMME","spalte":"Betrag","name":"Betrag"}]},"eingaben":{"tabelle":{"referenz":"b-gueltig"}}},
+    {"id":"b-gesamtname","operation":"daten.spalten","konfiguration":{"aktion":"BERECHNEN","spalte":"Region","ausdruck":{"art":"wert","typ":"TEXT","wert":"Gesamt"}},"eingaben":{"tabelle":{"referenz":"b-gesamt"}}},
+    {"id":"b-ergebnis","operation":"daten.vereinigen","konfiguration":{"nach_name":true,"dubletten":false},"eingaben":{"links":{"referenz":"b-sortieren"},"rechts":{"referenz":"b-gesamtname"}}},
+    {"id":"b-xlsx","operation":"daten.exportieren","konfiguration":{"format":"XLSX","pfad":{"parameter":"Ausgabedatei"},"konflikt":"FEHLER","optionen":{"blatt":"Bestellungen"}},"eingaben":{"tabelle":{"referenz":"b-ergebnis"}}}
+  ]
+}

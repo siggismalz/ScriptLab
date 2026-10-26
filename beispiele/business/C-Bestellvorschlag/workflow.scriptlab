@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 3,
+  "business": {
+    "parameter": [
+      {
+        "name": "Lagerdatei",
+        "beschriftung": "Lagerdatei",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "eingaben/Lager.xlsx",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Bestellvorlage",
+        "beschriftung": "Bestellvorlage",
+        "typ": "Dokumentvorlage",
+        "erforderlich": true,
+        "standard": "vorlagen/Bestellung.docx",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Ausgabeordner",
+        "beschriftung": "Ausgabeordner",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "ausgaben",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      },
+      {
+        "name": "Bestelldatum",
+        "beschriftung": "Bestelldatum",
+        "typ": "Text",
+        "erforderlich": true,
+        "standard": "2026-10-26",
+        "hilfe": "Synthetische Beispieldaten. Vor einem echten Lauf Pfade und Ziele prüfen."
+      }
+    ],
+    "parametersaetze": {
+      "test": {
+        "Lagerdatei": "eingaben/Lager.xlsx",
+        "Bestellvorlage": "vorlagen/Bestellung.docx",
+        "Ausgabeordner": "ausgaben",
+        "Bestelldatum": "2026-10-26"
+      },
+      "echt": {}
+    },
+    "ressourcen": []
+  },
+  "skriptsprache": "python",
+  "appVersion": "0.2.0",
+  "projektKennung": "bec431d8-2c2d-5eb0-ac30-1b03884df45b",
+  "name": "Bestellvorschlag als Word-Dokument",
+  "beschreibung": "Lagerdaten aus Excel lesen, Auffüllmengen berechnen und eine DOCX-Vorlage befüllen. Erwartung: Lieferant S1 · 2 Positionen · 15 und 12 · insgesamt 27 Einheiten",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "start",
+          "x": 80,
+          "y": 96,
+          "next": {
+            "block": {
+              "type": "sl_biz_lesen_xlsx",
+              "id": "c-lager",
+              "fields": {
+                "NAME": "XLSX-Tabelle lesen (1)"
+              },
+              "data": "{\"konfiguration\":{\"format\":\"XLSX\",\"pfad\":{\"parameter\":\"Lagerdatei\"},\"optionen\":{\"blatt\":\"Lager\",\"formeln\":\"STOPP\"}},\"eingaben\":{}}",
+              "next": {
+                "block": {
+                  "type": "sl_biz_typ",
+                  "id": "c-bestand",
+                  "fields": {
+                    "NAME": "Datentyp festlegen (2)"
+                  },
+                  "data": "{\"konfiguration\":{\"aktion\":\"TYP\",\"spalte\":\"Bestand\",\"typ\":\"GANZZAHL\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"c-lager\"}}}",
+                  "next": {
+                    "block": {
+                      "type": "sl_biz_typ",
+                      "id": "c-mindestbestand",
+                      "fields": {
+                        "NAME": "Datentyp festlegen (3)"
+                      },
+                      "data": "{\"konfiguration\":{\"aktion\":\"TYP\",\"spalte\":\"Mindestbestand\",\"typ\":\"GANZZAHL\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"c-bestand\"}}}",
+                      "next": {
+                        "block": {
+                          "type": "sl_biz_typ",
+                          "id": "c-zielbestand",
+                          "fields": {
+                            "NAME": "Datentyp festlegen (4)"
+                          },
+                          "data": "{\"konfiguration\":{\"aktion\":\"TYP\",\"spalte\":\"Zielbestand\",\"typ\":\"GANZZAHL\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"c-mindestbestand\"}}}",
+                          "next": {
+                            "block": {
+                              "type": "sl_biz_pruefen",
+                              "id": "c-qualitaet",
+                              "fields": {
+                                "NAME": "Datenqualität prüfen (5)"
+                              },
+                              "data": "{\"konfiguration\":{\"regeln\":[{\"art\":\"NICHT_LEER\",\"spalte\":\"Artikel\"},{\"art\":\"NICHT_LEER\",\"spalte\":\"Lieferant\"},{\"art\":\"BEREICH\",\"spalte\":\"Bestand\",\"minimum\":{\"typ\":\"GANZZAHL\",\"wert\":0}},{\"art\":\"BEREICH\",\"spalte\":\"Mindestbestand\",\"minimum\":{\"typ\":\"GANZZAHL\",\"wert\":0}},{\"art\":\"BEREICH\",\"spalte\":\"Zielbestand\",\"minimum\":{\"typ\":\"GANZZAHL\",\"wert\":0}}],\"bei_fehler\":\"STOPP\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"c-zielbestand\"}}}",
+                              "next": {
+                                "block": {
+                                  "type": "sl_biz_filtern",
+                                  "id": "c-unterbestand",
+                                  "fields": {
+                                    "NAME": "Zeilen filtern (6)"
+                                  },
+                                  "data": "{\"konfiguration\":{\"bedingung\":{\"art\":\"vergleich\",\"links\":{\"art\":\"spalte\",\"name\":\"Bestand\"},\"operator\":\"LT\",\"rechts\":{\"art\":\"spalte\",\"name\":\"Mindestbestand\"}}},\"eingaben\":{\"tabelle\":{\"referenz\":\"c-zielbestand\"}}}",
+                                  "next": {
+                                    "block": {
+                                      "type": "sl_biz_berechnen",
+                                      "id": "c-bestellmenge",
+                                      "fields": {
+                                        "NAME": "Spalte berechnen (7)"
+                                      },
+                                      "data": "{\"konfiguration\":{\"aktion\":\"BERECHNEN\",\"spalte\":\"Bestellmenge\",\"ausdruck\":{\"art\":\"rechnen\",\"operator\":\"SUB\",\"links\":{\"art\":\"spalte\",\"name\":\"Zielbestand\"},\"rechts\":{\"art\":\"spalte\",\"name\":\"Bestand\"}}},\"eingaben\":{\"tabelle\":{\"referenz\":\"c-unterbestand\"}}}",
+                                      "next": {
+                                        "block": {
+                                          "type": "sl_biz_sortieren",
+                                          "id": "c-sortieren",
+                                          "fields": {
+                                            "NAME": "Zeilen sortieren (8)"
+                                          },
+                                          "data": "{\"konfiguration\":{\"schluessel\":[{\"spalte\":\"Lieferant\",\"richtung\":\"ASC\",\"nullen\":\"LETZTE\"},{\"spalte\":\"Artikel\",\"richtung\":\"ASC\",\"nullen\":\"LETZTE\"}]},\"eingaben\":{\"tabelle\":{\"referenz\":\"c-bestellmenge\"}}}",
+                                          "next": {
+                                            "block": {
+                                              "type": "sl_biz_docx_gruppenserie",
+                                              "id": "c-bestellungen",
+                                              "fields": {
+                                                "NAME": "Word-Bestellungen je Lieferant erstellen (9)"
+                                              },
+                                              "data": "{\"konfiguration\":{\"vorlage\":{\"parameter\":\"Bestellvorlage\"},\"zielordner\":{\"parameter\":\"Ausgabeordner\"},\"dateiname\":\"Bestellung-{Lieferant}.docx\",\"gruppe_nach\":\"Lieferant\",\"positionen\":{\"tabelle\":0,\"zeile\":1,\"praefix\":\"Position\"},\"summen\":{\"Gesamtbestellmenge\":\"Bestellmenge\"},\"werte\":{\"Datum\":{\"parameter\":\"Bestelldatum\"}},\"konflikt\":\"FEHLER\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"c-sortieren\"}}}"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

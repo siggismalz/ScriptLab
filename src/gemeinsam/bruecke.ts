@@ -3,9 +3,20 @@ import type { SignaturErgebnis, Zertifikat } from '../windows/signatur';
 import type { TestOptionen, TestZustand } from './testlauf';
 import type { Skriptsprache } from '../kern/sprachen';
 import type { PythonStatus } from './python';
+import type { BusinessStatus, BusinessFortschritt } from './business-laufzeit';
 
 export type BeispielKennung =
-  'begruessung' | 'backup' | 'dateiliste' | 'begruessung-python' | 'backup-python' | 'dateiliste-python';
+  | 'business-monat'
+  | 'business-bestellungen'
+  | 'business-bestellvorschlag'
+  | 'business-belege'
+  | 'business-stapel'
+  | 'begruessung'
+  | 'backup'
+  | 'dateiliste'
+  | 'begruessung-python'
+  | 'backup-python'
+  | 'dateiliste-python';
 
 export interface Einstellungen {
   letzteSkriptsprache: Skriptsprache | null;
@@ -73,6 +84,12 @@ export interface ExportErgebnis {
   signatur: SignaturErgebnis | null;
 }
 export interface ScriptLabBruecke {
+  businessLesen(): Promise<
+    Antwort<{ status: BusinessStatus | null; fortschritt: BusinessFortschritt | null; aktiv: boolean }>
+  >;
+  businessAktion(
+    art: 'pruefen' | 'einrichten' | 'offline' | 'abbrechen',
+  ): Promise<Antwort<BusinessStatus | null>>;
   laden(): Promise<Antwort<{ dokument: Dokument; einstellungen: Einstellungen; version: string }>>;
   aendern(projekt: Projekt): Promise<Antwort<void>>;
   darstellungBereit(projekt: Projekt): Promise<Antwort<Dokument>>;

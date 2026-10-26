@@ -21,7 +21,8 @@ const sprachen: readonly {
   {
     id: 'python',
     name: 'Python – empfohlen für Geschäftsprozesse',
-    beschreibung: 'Daten verarbeiten, Excel-Auswertungen erstellen, Dokumente erzeugen und umfangreiche Abläufe automatisieren.',
+    beschreibung:
+      'Daten verarbeiten, Excel-Auswertungen erstellen, Dokumente erzeugen und umfangreiche Abläufe automatisieren.',
     vorteil: 'Gemeinsame Grundbausteine und zusätzliche Daten- und Dokumentbausteine.',
     hinweis:
       'Zum Ausführen wird eine passende Python-Installation benötigt. Je nach Workflow können weitere Pakete erforderlich sein.',
@@ -76,7 +77,7 @@ export function SprachwahlDialog({ offen, vorauswahl, abbrechen, erstellen }: Sp
                 value={sprache.id}
                 checked={wahl === sprache.id}
                 onChange={() => setWahl(sprache.id)}
-                aria-label={sprache.name}
+                aria-label={sprache.id === 'python' ? 'Python' : 'VBScript (VBS)'}
                 aria-describedby={`${id}-${sprache.id}-beschreibung ${id}-${sprache.id}-vorteil ${id}-${sprache.id}-hinweis`}
               />
               <span className="sprachwahl-name">{sprache.name}</span>

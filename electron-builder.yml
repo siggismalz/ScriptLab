@@ -10,6 +10,16 @@ files:
   - package.json
   - THIRD_PARTY_NOTICES.md
 extraResources:
+  - from: laufzeit
+    to: laufzeit
+    filter:
+      - '**/*.py'
+      - '**/*.ttf'
+      - '**/*.txt'
+      - '**/*.md'
+      - '*.lock'
+      - '*.in'
+      - '*.md'
   - from: artifacts/native/ScriptLab.Testhost.exe
     to: ScriptLab.Testhost.exe
   - from: scripts/signatur-helper.ps1

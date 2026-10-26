@@ -13,6 +13,7 @@
 *.ico binary
 *.png binary
 *.py text eol=lf
+*.csv text eol=lf
 *.lock text eol=lf
 *.in text eol=lf
 *.ttf binary

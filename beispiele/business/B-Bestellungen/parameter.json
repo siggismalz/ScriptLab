@@ -1,0 +1,5 @@
+{
+  "Bestelldatei": "eingaben/bestellungen.csv",
+  "Kundendatei": "eingaben/kunden.csv",
+  "Ausgabedatei": "ausgaben/Bestelluebersicht.xlsx"
+}

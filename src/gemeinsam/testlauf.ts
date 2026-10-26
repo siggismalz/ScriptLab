@@ -4,11 +4,20 @@ export type TestPhase =
   | 'laeuft'
   | 'stoppt'
   | 'beendet'
+  | 'mit_fehlern'
   | 'fehlgeschlagen'
   | 'abgebrochen'
   | 'zeitlimit';
 
 export interface TestOptionen {
+  business?: {
+    modus: 'vorschau' | 'prueflauf' | 'ausfuehren';
+    parametersatz: 'test' | 'echt';
+    parameter: Record<string, string | number | boolean | null>;
+    speicherMB: number;
+    tempGB: number;
+    fortsetzen: boolean;
+  };
   basisVerzeichnis: string | null;
   zeitlimitSekunden: number;
 }
@@ -18,6 +27,12 @@ export interface ZeilenZuordnung {
   blockId: string;
 }
 export interface TestZustand {
+  business?: {
+    schritt: string | null;
+    ereignisse: Record<string, unknown>[];
+    vorschau: Record<string, unknown> | null;
+    bericht: Record<string, unknown> | null;
+  };
   skriptsprache: Skriptsprache | null;
   pythonVersion: string | null;
   phase: TestPhase;

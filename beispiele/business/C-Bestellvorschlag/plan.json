@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "schritte": [
+    {
+      "id": "c-lager",
+      "operation": "daten.importieren",
+      "konfiguration": {
+        "format": "XLSX",
+        "pfad": { "parameter": "Lagerdatei" },
+        "optionen": { "blatt": "Lager", "formeln": "STOPP" }
+      },
+      "eingaben": {}
+    },
+    {
+      "id": "c-bestand",
+      "operation": "daten.spalten",
+      "konfiguration": { "aktion": "TYP", "spalte": "Bestand", "typ": "GANZZAHL" },
+      "eingaben": { "tabelle": { "referenz": "c-lager" } }
+    },
+    {
+      "id": "c-mindestbestand",
+      "operation": "daten.spalten",
+      "konfiguration": { "aktion": "TYP", "spalte": "Mindestbestand", "typ": "GANZZAHL" },
+      "eingaben": { "tabelle": { "referenz": "c-bestand" } }
+    },
+    {
+      "id": "c-zielbestand",
+      "operation": "daten.spalten",
+      "konfiguration": { "aktion": "TYP", "spalte": "Zielbestand", "typ": "GANZZAHL" },
+      "eingaben": { "tabelle": { "referenz": "c-mindestbestand" } }
+    },
+    {
+      "id": "c-qualitaet",
+      "operation": "daten.pruefen",
+      "konfiguration": {
+        "regeln": [
+          { "art": "NICHT_LEER", "spalte": "Artikel" },
+          { "art": "NICHT_LEER", "spalte": "Lieferant" },
+          { "art": "BEREICH", "spalte": "Bestand", "minimum": { "typ": "GANZZAHL", "wert": 0 } },
+          { "art": "BEREICH", "spalte": "Mindestbestand", "minimum": { "typ": "GANZZAHL", "wert": 0 } },
+          { "art": "BEREICH", "spalte": "Zielbestand", "minimum": { "typ": "GANZZAHL", "wert": 0 } }
+        ],
+        "bei_fehler": "STOPP"
+      },
+      "eingaben": { "tabelle": { "referenz": "c-zielbestand" } }
+    },
+    {
+      "id": "c-unterbestand",
+      "operation": "daten.filtern",
+      "konfiguration": {
+        "bedingung": {
+          "art": "vergleich",
+          "links": { "art": "spalte", "name": "Bestand" },
+          "operator": "LT",
+          "rechts": { "art": "spalte", "name": "Mindestbestand" }
+        }
+      },
+      "eingaben": { "tabelle": { "referenz": "c-zielbestand" } }
+    },
+    {
+      "id": "c-bestellmenge",
+      "operation": "daten.spalten",
+      "konfiguration": {
+        "aktion": "BERECHNEN",
+        "spalte": "Bestellmenge",
+        "ausdruck": {
+          "art": "rechnen",
+          "operator": "SUB",
+          "links": { "art": "spalte", "name": "Zielbestand" },
+          "rechts": { "art": "spalte", "name": "Bestand" }
+        }
+      },
+      "eingaben": { "tabelle": { "referenz": "c-unterbestand" } }
+    },
+    {
+      "id": "c-sortieren",
+      "operation": "daten.sortieren",
+      "konfiguration": {
+        "schluessel": [
+          { "spalte": "Lieferant", "richtung": "ASC", "nullen": "LETZTE" },
+          { "spalte": "Artikel", "richtung": "ASC", "nullen": "LETZTE" }
+        ]
+      },
+      "eingaben": { "tabelle": { "referenz": "c-bestellmenge" } }
+    },
+    {
+      "id": "c-bestellungen",
+      "operation": "dokument.docx_serie",
+      "konfiguration": {
+        "vorlage": { "parameter": "Bestellvorlage" },
+        "zielordner": { "parameter": "Ausgabeordner" },
+        "dateiname": "Bestellung-{Lieferant}.docx",
+        "gruppe_nach": "Lieferant",
+        "positionen": { "tabelle": 0, "zeile": 1, "praefix": "Position" },
+        "summen": { "Gesamtbestellmenge": "Bestellmenge" },
+        "werte": { "Datum": { "parameter": "Bestelldatum" } },
+        "konflikt": "FEHLER"
+      },
+      "eingaben": { "tabelle": { "referenz": "c-sortieren" } }
+    }
+  ]
+}

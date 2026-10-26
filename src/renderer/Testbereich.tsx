@@ -7,8 +7,10 @@ import { Statusanzeige, type StatusArt } from './komponenten/Statusanzeige';
 import './testbereich.css';
 import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
 import type { PythonStatus } from '../gemeinsam/python';
+import type { ReactNode } from 'react';
 
 export interface TestbereichEigenschaften {
+  businessVorbereitung?: ReactNode;
   sprache?: Skriptsprache;
   pythonStatus?: PythonStatus | null;
   pythonEinrichten?: () => void;
@@ -32,6 +34,7 @@ const phasen: Record<TestPhase, string> = {
   laeuft: 'Test läuft',
   stoppt: 'Test wird gestoppt',
   beendet: 'Test beendet',
+  mit_fehlern: 'Mit Fehlern beendet',
   fehlgeschlagen: 'Test fehlgeschlagen',
   abgebrochen: 'Test abgebrochen',
   zeitlimit: 'Zeitlimit erreicht',
@@ -40,7 +43,7 @@ const phasen: Record<TestPhase, string> = {
 export function zeitlimitAusText(text: string): number | null {
   if (!/^\d+$/.test(text.trim())) return null;
   const wert = Number(text);
-  return Number.isSafeInteger(wert) && wert >= 1 && wert <= 3600 ? wert : null;
+  return Number.isSafeInteger(wert) && wert >= 1 && wert <= 28800 ? wert : null;
 }
 
 export function ausgabeIstAmEnde(
@@ -70,7 +73,7 @@ function zeitpunktAnzeigen(iso: string | null): string {
 function statusArt(zustand: TestZustand): StatusArt {
   if (zustand.phase === 'fehlgeschlagen') return 'fehler';
   if (zustand.phase === 'beendet' && zustand.exitcode === 0) return 'erfolg';
-  if (['abgebrochen', 'zeitlimit', 'stoppt'].includes(zustand.phase)) return 'hinweis';
+  if (['abgebrochen', 'zeitlimit', 'stoppt', 'mit_fehlern'].includes(zustand.phase)) return 'hinweis';
   return testAktiv(zustand.phase) ? 'verarbeitung' : 'neutral';
 }
 
@@ -79,12 +82,18 @@ export function Testbereich(props: TestbereichEigenschaften) {
   const { zustand, optionen, veraltet, gesperrt = false } = props;
   const aktiv = testAktiv(zustand.phase);
   const sprache = sprachdaten[zustand.skriptsprache ?? props.sprache ?? 'vbs'];
+  const vorschau = zustand.business?.vorschau;
+  const spalten = Array.isArray(vorschau?.spalten)
+    ? (vorschau.spalten as { name: string; typ: string }[])
+    : [];
+  const zeilen = Array.isArray(vorschau?.zeilen) ? (vorschau.zeilen as unknown[][]) : [];
   const anzeigeOptionen = aktiv ? zustand.optionen : optionen;
   const [zeitlimitEntwurf, setZeitlimitEntwurf] = useState(String(anzeigeOptionen.zeitlimitSekunden));
   const [zeitlimitFehler, setZeitlimitFehler] = useState('');
   const zeitlimitInBearbeitung = useRef(false);
   const [jetzt, setJetzt] = useState(Date.now);
   const ausgabe = useRef<HTMLPreElement>(null);
+  const inhalt = useRef<HTMLDivElement>(null);
   const endeVerfolgen = useRef(true);
   const [amEnde, setAmEnde] = useState(true);
   const titelId = useId();
@@ -96,7 +105,12 @@ export function Testbereich(props: TestbereichEigenschaften) {
   const [konfigurationOffen, setKonfigurationOffen] = useState(!zustand.laufId);
 
   useEffect(() => {
-    if (aktiv) setKonfigurationOffen(false);
+    if (aktiv) {
+      setKonfigurationOffen(false);
+      requestAnimationFrame(() => {
+        if (inhalt.current) inhalt.current.scrollTop = 0;
+      });
+    }
   }, [aktiv]);
 
   useEffect(() => {
@@ -140,7 +154,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
       : !optionen.basisVerzeichnis?.trim()
         ? 'Wähle vor dem Test einen Basisordner aus.'
         : zeitlimit === null
-          ? 'Gib ein ganzzahliges Zeitlimit von 1 bis 3600 Sekunden ein.'
+          ? 'Gib ein ganzzahliges Zeitlimit von 1 bis 28800 Sekunden ein.'
           : null;
   const hatKontext = Boolean(zustand.laufId || zustand.projektName || zustand.standHash);
   const hatDetails = Boolean(
@@ -158,7 +172,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
   function zeitlimitAbschliessen() {
     zeitlimitInBearbeitung.current = false;
     const wert = zeitlimitAusText(zeitlimitEntwurf);
-    setZeitlimitFehler(wert === null ? 'Gib eine ganze Zahl zwischen 1 und 3600 ein.' : '');
+    setZeitlimitFehler(wert === null ? 'Gib eine ganze Zahl zwischen 1 und 28800 ein.' : '');
     if (wert !== null) setZeitlimitEntwurf(String(wert));
   }
 
@@ -184,7 +198,11 @@ export function Testbereich(props: TestbereichEigenschaften) {
             disabled={Boolean(startGrund)}
             grundId={aktiv ? statusId : startGrundId}
           >
-            Workflow testen
+            {optionen.business?.modus === 'vorschau'
+              ? 'Datenvorschau laden'
+              : optionen.business?.modus === 'prueflauf'
+                ? 'Prüflauf starten'
+                : 'Workflow testen'}
           </Knopf>
           <Knopf
             symbol="stoppen"
@@ -204,12 +222,15 @@ export function Testbereich(props: TestbereichEigenschaften) {
           />
         </div>
       </header>
-      <div className="testbereich-inhalt">
+      <div ref={inhalt} className="testbereich-inhalt">
         <p className="testbereich-wirkung" id={hinweisId}>
           <Symbol name="hinweis" />
           <span>
-            Der Test führt deinen Workflow auf diesem Computer aus. Dateiänderungen werden tatsächlich
-            vorgenommen.
+            {optionen.business?.modus === 'vorschau'
+              ? 'Die Datenvorschau liest begrenzte Daten und führt keine Zieländerungen aus.'
+              : optionen.business?.modus === 'prueflauf'
+                ? 'Der Prüflauf plant Dateiaktionen und verändert keine fachlichen Ziele.'
+                : 'Der Test führt deinen Workflow auf diesem Computer aus. Dateiänderungen werden tatsächlich vorgenommen.'}
           </span>
         </p>
         <p className="testbereich-kontextkurz">
@@ -223,6 +244,44 @@ export function Testbereich(props: TestbereichEigenschaften) {
         </p>
         <div className={`testbereich-arbeitsinhalt ${konfigurationOffen ? 'mit-konfiguration' : ''}`}>
           <div className="testbereich-ergebnis">
+            {vorschau && (
+              <div className="business-vorschau" tabIndex={0} aria-label="Begrenzte Datenvorschau">
+                <h3>Datenvorschau · {zeilen.length} angezeigte Zeilen</h3>
+                <p>
+                  {vorschau.gekuerzt || vorschau.abgeschnitten || vorschau.zellen_gekuerzt
+                    ? 'Begrenzter Ausschnitt: Weitere Zeilen oder lange Zelltexte wurden nicht angezeigt.'
+                    : 'Begrenzte Abfrage; die Vorschau ist kein vollständiger fachlicher Nachweis.'}
+                </p>
+                <table>
+                  <thead>
+                    <tr>
+                      {spalten.map((s) => (
+                        <th key={s.name} scope="col">
+                          {s.name}
+                          <br />
+                          <span className="metadaten">{s.typ}</span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {zeilen.map((z, i) => (
+                      <tr key={i}>
+                        {z.map((w, n) => (
+                          <td key={n}>{w === null ? '(leer)' : String(w)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {zustand.business?.bericht && (
+              <details>
+                <summary>Laufbericht und erzeugte Ergebnisse</summary>
+                <pre>{JSON.stringify(zustand.business.bericht, null, 2)}</pre>
+              </details>
+            )}
             <div className="testbereich-ausgabekopf">
               <div id={statusId} className="testbereich-status">
                 <Statusanzeige art={statusArt(zustand)}>
@@ -408,6 +467,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
           >
             <summary>{aktiv ? 'Optionen dieses Tests' : 'Test vorbereiten'}</summary>
             <div className="testbereich-konfiguration" aria-label="Test vorbereiten">
+              {props.businessVorbereitung}
               <Textfeld
                 beschriftung={aktiv ? 'Basisordner des laufenden Tests' : 'Basisordner für den nächsten Test'}
                 value={anzeigeOptionen.basisVerzeichnis ?? ''}
@@ -429,7 +489,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
                 type="number"
                 inputMode="numeric"
                 min={1}
-                max={3600}
+                max={28800}
                 step={1}
                 value={zeitlimitEntwurf}
                 disabled={aktiv || gesperrt}
@@ -456,7 +516,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
                   ? 'Basisordner und Zeitlimit bleiben während dieses Tests unverändert.'
                   : gesperrt
                     ? 'Bitte warte, bis der aktuelle Vorgang abgeschlossen ist.'
-                    : 'Relative Pfade verwenden diesen Ordner. Zeitlimit: 1 bis 3600 s, Standard 120 s.'}
+                    : 'Relative Pfade verwenden diesen Ordner. Zeitlimit: 1 bis 28800 s; das gewählte Laufprofil bleibt sichtbar.'}
               </p>
               {props.sprache === 'python' &&
                 props.pythonStatus?.zustand !== 'bereit' &&

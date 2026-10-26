@@ -1,4 +1,5 @@
 import { kategoriefarben } from '../gestaltung/tokens';
+import { businessBlocklyDefinitionen } from './business-katalog';
 
 export type WertTyp = 'String' | 'Number' | 'Boolean' | 'Array' | 'Any';
 export interface Eingabe {
@@ -682,5 +683,6 @@ bausteinHinzufuegen(
   [],
   'Wartet im später gestarteten Script 0 bis 86.400 Sekunden. ScriptLab selbst wartet beim Export nicht.',
 );
-export const bausteinDefinitionen = katalog;
-export const definitionNachTyp = new Map(katalog.map((d) => [d.typ, d]));
+export const grundBausteine = katalog;
+export const bausteinDefinitionen = [...katalog, ...businessBlocklyDefinitionen];
+export const definitionNachTyp = new Map(bausteinDefinitionen.map((d) => [d.typ, d]));
