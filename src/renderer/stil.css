@@ -94,9 +94,14 @@ summary {
   margin-left: auto;
   min-width: 0;
 }
-.test-kurzstatus { color: var(--farbe-hinweis); white-space: nowrap; }
+.test-kurzstatus {
+  color: var(--farbe-hinweis);
+  white-space: nowrap;
+}
 @media (max-width: 1439px) {
-  .ansichtknopfgruppe .sl-knopf > span { display: none; }
+  .ansichtknopfgruppe .sl-knopf > span {
+    display: none;
+  }
 }
 .werkzeugleiste .sl-knopf {
   white-space: nowrap;
@@ -854,6 +859,17 @@ progress {
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--farbe-text-sekundaer);
+}
+.skriptsprache-kennzeichen {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: var(--abstand-4);
+  padding: var(--abstand-4) var(--abstand-8);
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-normal);
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
 }
 .verarbeitung-editor {
   position: absolute;

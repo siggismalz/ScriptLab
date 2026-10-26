@@ -1,5 +1,5 @@
 import { definitionNachTyp, type WertTyp } from './katalog';
-import type { EditorBlock, Projekt } from './projekt';
+import { projektPruefen, type EditorBlock, type Projekt } from './projekt';
 
 export interface Meldung {
   blockId?: string;
@@ -30,6 +30,16 @@ export function variablenSchluessel(name: string): string {
 }
 
 export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; meldungen: Meldung[] } {
+  try {
+    projekt = projektPruefen(projekt);
+  } catch (fehler) {
+    return {
+      workflow: null,
+      meldungen: [
+        { stufe: 'fehler', text: fehler instanceof Error ? fehler.message : 'Das Projekt ist ungültig.' },
+      ],
+    };
+  }
   const meldungen: Meldung[] = [];
   const alle: EditorBlock[] = [];
   const genutzt = new Set<string>();
@@ -71,6 +81,17 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
         fehler(b, 'Der Baustein enthält ein unbekanntes Eingabefeld.');
     for (const f of def.felder) {
       const roh = b.fields?.[f.name] ?? f.standard;
+      if (f.name === 'VAR' && typeof roh === 'object') {
+        const variable = projekt.editor.variables?.find((v) => v.id === roh.id);
+        if (!variable) {
+          fehler(b, 'Wähle eine vorhandene Variable aus.');
+          continue;
+        }
+        felder.VAR = variable.id;
+        if (['sl_set', 'sl_foreach', 'sl_foreach_file'].includes(b.type)) variablen.add(variable.id);
+        else referenzen.push({ name: variable.id, blockId: b.id });
+        continue;
+      }
       if (!['string', 'number'].includes(typeof roh)) {
         fehler(b, 'Ein Eingabefeld hat einen ungültigen Wert.');
         continue;
@@ -89,7 +110,7 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
       if (f.name === 'VAR') {
         if (!wert.trim() || wert.trim().length > 160 || /[\r\n\t]/.test(wert))
           fehler(b, 'Bitte einen Variablennamen mit höchstens 160 Zeichen ohne Zeilenumbrüche angeben.');
-        const name = variablenSchluessel(wert);
+        const name = wert;
         if (['sl_set', 'sl_foreach', 'sl_foreach_file'].includes(b.type)) variablen.add(name);
         else referenzen.push({ name, blockId: b.id });
       }
@@ -245,11 +266,7 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
   function zuweisungenPruefen(liste: Anweisung[], anfang: Set<string>): Set<string> {
     let gesetzt = new Set(anfang);
     function lesen(a: Ausdruck): void {
-      if (
-        a.art === 'sl_get' &&
-        variablen.has(variablenSchluessel(a.felder.VAR)) &&
-        !gesetzt.has(variablenSchluessel(a.felder.VAR))
-      )
+      if (a.art === 'sl_get' && variablen.has(a.felder.VAR) && !gesetzt.has(a.felder.VAR))
         meldungen.push({
           blockId: a.id,
           text: 'Diese Variable wird hier möglicherweise vor ihrer ersten Zuweisung gelesen. Setze sie vor der Verwendung.',
@@ -259,13 +276,13 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
     }
     for (const a of liste) {
       Object.values(a.werte).forEach(lesen);
-      if (a.art === 'sl_list_add' && !gesetzt.has(variablenSchluessel(a.felder.VAR)))
+      if (a.art === 'sl_list_add' && !gesetzt.has(a.felder.VAR))
         meldungen.push({
           blockId: a.id,
           text: 'Die Liste wird hier möglicherweise vor dem Anlegen verwendet.',
           stufe: 'hinweis',
         });
-      if (a.art === 'sl_set') gesetzt.add(variablenSchluessel(a.felder.VAR));
+      if (a.art === 'sl_set') gesetzt.add(a.felder.VAR);
       if (a.art === 'sl_if') {
         const dann = zuweisungenPruefen(a.zweige.DANN, gesetzt);
         const sonst = zuweisungenPruefen(a.zweige.SONST, gesetzt);
@@ -273,8 +290,7 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
       } else {
         for (const zweig of Object.values(a.zweige)) {
           const imZweig = new Set(gesetzt);
-          if (a.art === 'sl_foreach' || a.art === 'sl_foreach_file')
-            imZweig.add(variablenSchluessel(a.felder.VAR));
+          if (a.art === 'sl_foreach' || a.art === 'sl_foreach_file') imZweig.add(a.felder.VAR);
           zuweisungenPruefen(zweig, imZweig);
         }
       }

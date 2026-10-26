@@ -6,7 +6,7 @@ export interface Eigenschaft {
   quellBlockId: string;
   feldName: string;
   beschriftung: string;
-  art: 'text' | 'zahl' | 'auswahl';
+  art: 'text' | 'zahl' | 'auswahl' | 'variable';
   wert: string;
   optionen?: Array<{ text: string; wert: string }>;
   min?: number;
@@ -16,7 +16,7 @@ export interface Eigenschaft {
 }
 
 const beschriftungen: Record<string, string> = {
-  VAR: 'Variablenname',
+  VAR: 'Variable',
   TEXT: 'Text',
   ZAHL: 'Zahl',
   WERT: 'Wert',
@@ -46,9 +46,9 @@ const beschriftungen: Record<string, string> = {
 
 function feldHilfe(feld: Feld, pfad: string[]): string {
   if (pfad.some((teil) => /pfad|datei/i.test(teil)))
-    return 'Vollständiger Wert. Beispiel: ScriptLab-Testdaten\\Datei.txt. Relative Pfade beziehen sich auf den Ordner der exportierten VBS-Datei.';
+    return 'Vollständiger Wert. Beispiel: ScriptLab-Testdaten\\Datei.txt. Relative Pfade beziehen sich beim Export auf den Scriptordner und beim Test auf den gewählten Basisordner.';
   if (feld.name === 'VAR')
-    return 'Verwende denselben Namen beim Setzen und Lesen. Groß- und Kleinschreibung unterscheiden keine Variablen.';
+    return 'Wähle dieselbe Variable beim Setzen und Lesen. Der Name kann geändert werden; die Verbindung bleibt über ihre Kennung erhalten.';
   if (feld.art === 'zahl') return 'Gib eine ganze Zahl im angegebenen Bereich ein.';
   if (feld.name === 'TEXT')
     return 'Der Text bleibt unverändert als Daten erhalten. Anführungszeichen und Zeilenumbrüche sind möglich.';
@@ -78,9 +78,18 @@ export function eigenschaftenLesen(workspace: Blockly.Workspace, blockId: string
         quellBlockId: block.id,
         feldName: feld.name,
         beschriftung,
-        art: block.type === 'sl_number' ? 'zahl' : feld.art,
+        art: feld.name === 'VAR' ? 'variable' : block.type === 'sl_number' ? 'zahl' : feld.art,
         wert: String(block.getFieldValue(feld.name) ?? ''),
-        ...(feld.optionen ? { optionen: feld.optionen.map(([text, wert]) => ({ text, wert })) } : {}),
+        ...(feld.name === 'VAR'
+          ? {
+              optionen: workspace
+                .getVariableMap()
+                .getAllVariables()
+                .map((variable) => ({ text: variable.getName(), wert: variable.getId() })),
+            }
+          : feld.optionen
+            ? { optionen: feld.optionen.map(([text, wert]) => ({ text, wert })) }
+            : {}),
         ...(feld.min !== undefined ? { min: feld.min } : {}),
         ...(feld.max !== undefined ? { max: feld.max } : {}),
         mehrzeilig: feld.art === 'text' && feld.name === 'TEXT',
@@ -115,6 +124,8 @@ export function eigenschaftSetzen(
   )
     throw new Error('Der eingegebene Wert ist zu lang oder enthält ein unzulässiges Zeichen.');
   let neuerWert: string | number = wert;
+  if (feld.name === 'VAR' && !workspace.getVariableMap().getVariableById(wert))
+    throw new Error('Wähle eine vorhandene Variable oder lege eine neue Variable an.');
   if (feld.art === 'auswahl' && !feld.optionen?.some(([, v]) => v === wert))
     throw new Error('Wähle eine der angebotenen Einstellungen aus.');
   if (feld.art === 'zahl') {
@@ -136,4 +147,30 @@ export function eigenschaftSetzen(
   } finally {
     if (!vorhandeneGruppe) Blockly.Events.setGroup(false);
   }
+}
+
+/** Die Namensabfrage selbst hält keine globale Gruppe offen; erst ihre synchrone Antwort ändert Blockly. */
+export function variablenAntwortAusfuehren(antwort: () => void): void {
+  const vorher = Blockly.Events.getGroup();
+  if (!vorher) Blockly.Events.setGroup(true);
+  try {
+    antwort();
+  } finally {
+    Blockly.Events.setGroup(vorher || false);
+  }
+}
+
+export function neueVariableAnlegen(
+  workspace: Blockly.WorkspaceSvg,
+  blockId: string,
+  feldName: string,
+  ausgewaehlt: () => void,
+): void {
+  Blockly.Variables.createVariableButtonHandler(workspace, (name) => {
+    if (!name) return;
+    const variable = Blockly.Variables.nameUsedWithAnyType(name, workspace);
+    if (!variable) return;
+    eigenschaftSetzen(workspace, blockId, feldName, variable.getId());
+    ausgewaehlt();
+  });
 }

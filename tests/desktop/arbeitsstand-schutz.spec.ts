@@ -1,3 +1,4 @@
+import { sprachwahlBestaetigen } from './sprache';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
@@ -159,10 +160,12 @@ async function schreibbremseLoesen(): Promise<void> {
 
 test('erhält nach Konfliktkopie und anschließendem Entwurf-Speichern-Abbruch die aktuelle Projektkennung', async () => {
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+  await sprachwahlBestaetigen(seite);
   await benennen('Entwurf B zur späteren Auswahl');
   const entwurfB = await entwurfAbwarten();
   await guardAntwort(1);
   await seite.getByRole('button', { name: 'Neu', exact: true }).click();
+  await sprachwahlBestaetigen(seite);
   await benennen('Gespeicherter Arbeitsstand A');
   const dateiA = join(ordner, 'Arbeitsstand-A.scriptlab');
   const dateiC = join(ordner, 'Konfliktkopie-C.scriptlab');
@@ -221,6 +224,7 @@ test('erhält nach Konfliktkopie und anschließendem Entwurf-Speichern-Abbruch d
 
 test('sperrt Eigenschaften, Blockly und Tastenkürzel während echter ausstehender Schreib-I/O', async () => {
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+  await sprachwahlBestaetigen(seite);
   await nachrichtEinfuegen();
   await benennen('Test mit gezielt langsamer Dateispeicherung');
   const feld = await nachrichtFeld();
@@ -288,6 +292,7 @@ test('sperrt Eigenschaften, Blockly und Tastenkürzel während echter ausstehend
 for (const weg of ['Dateidialog', 'Projektbibliothek'] as const) {
   test(`lädt beim erneuten Öffnen über ${weg} den im Schutzdialog gespeicherten aktuellen Stand`, async () => {
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+    await sprachwahlBestaetigen(seite);
     await nachrichtEinfuegen();
     await benennen('Workflow A – Version 1');
     const feld = await nachrichtFeld();

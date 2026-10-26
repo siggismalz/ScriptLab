@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import * as Blockly from 'blockly/core';
 import { bausteinDefinitionen } from '../kern/katalog';
-import { eigenschaftenLesen, eigenschaftSetzen } from '../editor/eigenschaften';
+import { eigenschaftenLesen, eigenschaftSetzen, neueVariableAnlegen } from '../editor/eigenschaften';
 import { bausteinBeispiele } from '../editor/beispieleHilfe';
 import { Knopf } from './komponenten/Knopf';
 import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
@@ -113,7 +113,32 @@ export function Eigenschaften({
                   e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
                 ) => setzen(f.quellBlockId, f.feldName, f.id, e.target.value),
               };
-              return f.art === 'auswahl' ? (
+              return f.art === 'variable' ? (
+                <div key={f.id} className="variablen-eigenschaft">
+                  <Auswahlfeld {...gemeinsam}>
+                    {!f.wert && (
+                      <option value="" disabled>
+                        Variable auswählen
+                      </option>
+                    )}
+                    {f.optionen?.map((o) => (
+                      <option key={o.wert} value={o.wert}>
+                        {o.text}
+                      </option>
+                    ))}
+                  </Auswahlfeld>
+                  <Knopf
+                    disabled={schreibgeschuetzt}
+                    grund="Stoppe den Test vor Änderungen."
+                    onClick={() => {
+                      if (!ws) return;
+                      neueVariableAnlegen(ws, f.quellBlockId, f.feldName, () => beruehrt(f.quellBlockId));
+                    }}
+                  >
+                    Neue Variable anlegen
+                  </Knopf>
+                </div>
+              ) : f.art === 'auswahl' ? (
                 <Auswahlfeld key={f.id} {...gemeinsam}>
                   {f.optionen?.map((o) => (
                     <option key={o.wert} value={o.wert}>

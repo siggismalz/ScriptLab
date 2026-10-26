@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 2,
+  "appVersion": "0.1.0",
+  "name": "Eine Begrüßung",
+  "beschreibung": "Ein erstes Beispiel: Nach dem selbstständigen Start außerhalb von ScriptLab erscheint eine Nachricht. Öffnen, Bearbeiten und Exportieren führen diese Nachricht nicht aus.",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "beispiel_3",
+          "x": 90,
+          "y": 65,
+          "next": {
+            "block": {
+              "type": "sl_message",
+              "id": "beispiel_2",
+              "inputs": {
+                "TEXT": {
+                  "block": {
+                    "type": "sl_text",
+                    "id": "beispiel_1",
+                    "fields": {
+                      "TEXT": "Hallo! Schön, dass du ScriptLab ausprobierst."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  },
+  "skriptsprache": "python",
+  "projektKennung": "55e07e16-debf-472e-8e2a-6e971001f36e"
+}

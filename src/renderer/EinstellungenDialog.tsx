@@ -5,8 +5,9 @@ import type { Zertifikat } from '../windows/signatur';
 import type { UpdateZustand } from '../windows/updates';
 import { Dialog } from './komponenten/Dialog';
 import { Knopf } from './komponenten/Knopf';
-import { Auswahlfeld, Feld } from './komponenten/Feld';
+import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
 import { Statusanzeige } from './komponenten/Statusanzeige';
+import type { PythonStatus } from '../gemeinsam/python';
 
 export function EinstellungenDialog({
   projektOptionenAnzeigen = true,
@@ -24,6 +25,8 @@ export function EinstellungenDialog({
   updateAktion,
   verarbeitung,
   fehlerMeldung,
+  pythonStatus,
+  pythonAktion,
 }: {
   projektOptionenAnzeigen?: boolean;
   offen: boolean;
@@ -40,6 +43,8 @@ export function EinstellungenDialog({
   updateAktion: (art: 'pruefen' | 'laden' | 'installieren') => void;
   verarbeitung: string | null;
   fehlerMeldung: string | null;
+  pythonStatus: PythonStatus | null;
+  pythonAktion: (aktion: 'pruefen' | 'waehlen' | 'hilfe') => void;
 }) {
   const [breitenEntwurf, setBreitenEntwurf] = useState(String(einstellungen.palettenBreite));
   const [zeitstempelEntwurf, setZeitstempelEntwurf] = useState(projekt.exportOptionen.zeitstempelUrl);
@@ -64,6 +69,7 @@ export function EinstellungenDialog({
     return true;
   }
   function zeitstempelUebernehmen(): boolean {
+    if (projekt.skriptsprache !== 'vbs') return true;
     if (zeitstempelEntwurf) {
       try {
         const url = new URL(zeitstempelEntwurf);
@@ -130,6 +136,74 @@ export function EinstellungenDialog({
         />
         <p>Ansichtseinstellungen werden beim Auswählen oder Verlassen eines Felds gespeichert.</p>
       </section>
+      <section className="einstellungs-abschnitt" aria-labelledby="python-installation-titel">
+        <h3 id="python-installation-titel">Python-Installation</h3>
+        <p>
+          Python wird zum Bearbeiten und Exportieren nicht benötigt. Für einen Python-Test muss eine passende
+          Installation tatsächlich geprüft werden.
+        </p>
+        <div id="python-installation-status">
+          <Statusanzeige
+            art={
+              pythonStatus?.zustand === 'bereit' && pythonStatus.installation
+                ? 'erfolg'
+                : pythonStatus?.zustand === 'prueft'
+                  ? 'verarbeitung'
+                  : pythonStatus?.zustand === 'fehler'
+                    ? 'fehler'
+                    : 'neutral'
+            }
+          >
+            {pythonStatus?.meldung ?? 'Der Python-Status wurde noch nicht geladen.'}
+          </Statusanzeige>
+        </div>
+        {pythonStatus?.installation && (
+          <>
+            <p>
+              {pythonStatus.installation.implementierung} {pythonStatus.installation.version} ·{' '}
+              {pythonStatus.installation.architektur}
+            </p>
+            <p>
+              {pythonStatus.installation.tkinter === true
+                ? 'Dialogfunktionen (tkinter) geprüft.'
+                : pythonStatus.installation.tkinter === false
+                  ? 'Dialogfunktionen (tkinter) sind nicht verfügbar.'
+                  : 'Dialogfunktionen werden bei Bedarf gesondert geprüft.'}
+            </p>
+          </>
+        )}
+        {(pythonStatus?.installation?.pfad || pythonStatus?.auswahl) && (
+          <Textfeld
+            beschriftung="Python-Interpreter"
+            readOnly
+            rows={2}
+            value={pythonStatus.installation?.pfad ?? pythonStatus.auswahl ?? ''}
+          />
+        )}
+        <div className="knopfgruppe umbrechen">
+          <Knopf
+            onClick={() => pythonAktion('waehlen')}
+            disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft'}
+            grundId={verarbeitung ? 'einstellungen-vorgang' : 'python-installation-status'}
+          >
+            Interpreter auswählen
+          </Knopf>
+          <Knopf
+            onClick={() => pythonAktion('pruefen')}
+            disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft'}
+            grundId={verarbeitung ? 'einstellungen-vorgang' : 'python-installation-status'}
+          >
+            Erneut prüfen
+          </Knopf>
+          <Knopf variante="leise" onClick={() => pythonAktion('hilfe')}>
+            Offizielle Python-Hilfe
+          </Knopf>
+        </div>
+        <p>
+          Die Auswahl erfolgt über eine Programmdatei. ScriptLab installiert keine Python-Pakete automatisch
+          und bietet hier keine freie Befehlszeile an.
+        </p>
+      </section>
       <section className="einstellungs-abschnitt">
         <h3>Anwendungsupdates</h3>
         <p>
@@ -192,7 +266,7 @@ export function EinstellungenDialog({
           </section>
         )}
       </section>
-      {projektOptionenAnzeigen && (
+      {projektOptionenAnzeigen && projekt.skriptsprache === 'vbs' && (
         <section className="einstellungs-abschnitt">
           <h3>Signatur für dieses Projekt</h3>
           <label className="schalter">

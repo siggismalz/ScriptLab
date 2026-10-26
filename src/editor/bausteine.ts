@@ -3,6 +3,7 @@ import * as deutscheTexte from 'blockly/msg/de';
 import { bausteinDefinitionen } from '../kern/katalog';
 import { deutscheErgaenzungen } from './deutsch';
 import { blockStilNachKategorie } from '../gestaltung/blocklyThema';
+import { Variablenfeld } from './variablenfeld';
 
 export const bausteinKatalog = bausteinDefinitionen.map(({ typ, name, kategorie, hilfe }) => ({
   typ,
@@ -47,6 +48,8 @@ export function registriereBausteine(): void {
             ...(eingabe.typ !== 'Any' && eingabe.typ !== 'Statement' ? { check: eingabe.typ } : {}),
           };
         const feld = def.felder.find((f) => f.name === name)!;
+        if (feld.name === 'VAR')
+          return { type: 'sl_variablenfeld', name, variable: String(feld.standard || 'Meine Variable') };
         if (feld.art === 'auswahl') return { type: 'field_dropdown', name, options: feld.optionen };
         if (feld.art === 'zahl')
           return {
@@ -85,6 +88,7 @@ export function registriereBausteine(): void {
     }),
   );
   registriert = true;
+  Blockly.fieldRegistry.register('sl_variablenfeld', Variablenfeld);
 }
 
 function schatten(typ: string): Record<string, unknown> {

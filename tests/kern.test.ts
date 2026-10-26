@@ -78,7 +78,7 @@ describe('Projektdateien', () => {
     expect(projektPruefen(JSON.parse(JSON.stringify(p)))).toEqual(p);
   });
   it('weist neue Schemata, doppelte IDs und ungültige Strukturen zurück', () => {
-    expect(() => projektPruefen({ ...neuesProjekt(), schemaVersion: 2 })).toThrow(/neueren/);
+    expect(() => projektPruefen({ ...neuesProjekt(), schemaVersion: 3 })).toThrow(/neueren/);
     const p = neuesProjekt();
     p.editor.blocks!.blocks.push(structuredClone(p.editor.blocks!.blocks[0]));
     expect(() => projektPruefen(p)).toThrow(/doppelte/);

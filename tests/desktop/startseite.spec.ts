@@ -1,3 +1,4 @@
+import { sprachwahlBestaetigen } from './sprache';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, rm, readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
@@ -6,7 +7,7 @@ import { execFile } from 'node:child_process';
 import { basename, join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { Dokument, ProjektBibliothek } from '../../src/gemeinsam/bruecke';
-import { neuesProjekt, type Projekt } from '../../src/kern/projekt';
+import { neuesProjekt, projektPruefen, type Projekt } from '../../src/kern/projekt';
 import { beispiele, hilfeArtikel } from '../../src/renderer/hilfe';
 
 interface Sitzung {
@@ -66,6 +67,7 @@ async function zurStartseite(s: Sitzung): Promise<void> {
 
 async function neuerAblauf(s: Sitzung, name?: string): Promise<void> {
   await s.seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+  await sprachwahlBestaetigen(s.seite);
   await editorBereit(s);
   if (name) await projektBenennen(s, name);
 }
@@ -206,6 +208,7 @@ test('Startseite: neuer Ablauf und Weiterbearbeiten erhalten Kennung, Auswahl un
       };
     });
     await s.seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+    await sprachwahlBestaetigen(s.seite);
     await editorBereit(s);
     const startansicht = await s.seite.getByTestId('arbeitsbereich').evaluate((element) => {
       const block = element.querySelector('g[data-id="start"]');
@@ -419,6 +422,7 @@ for (const zustand of ['ausstehend', 'gesichert'] as const) {
       else await expect.poll(async () => (await dokumentLesen(s)).entwurfStatus.phase).toBe('ausstehend');
       await dialogAntwort(s, 2);
       await s.seite.getByRole('button', { name: 'Neu', exact: true }).click();
+      await sprachwahlBestaetigen(s.seite);
       await expect.poll(async () => (await dokumentLesen(s)).projektKennung).not.toBe(alteId);
       // Negativer Timer-Nachweis: bewusst länger als die 1200-ms-Entwurfssicherung warten.
       await s.seite.waitForTimeout(1600);
@@ -441,6 +445,7 @@ test('Startseite: Speichern-Abbruch und echter Schreibfehler erhalten Arbeitssta
     await dialogAntwort(s, 0);
     await speicherziel(s, null);
     await s.seite.getByRole('button', { name: 'Neu', exact: true }).click();
+    await sprachwahlBestaetigen(s.seite);
     await nativenDialogAbwarten(s, 'speichern');
     await editorBereit(s);
     expect((await dokumentLesen(s)).projekt).toEqual(vorher);
@@ -527,13 +532,16 @@ test('Startseite: leeres Projekt und reine Ansichtsänderung erzeugen keinen Ent
 });
 
 for (const beispiel of beispiele) {
-  test(`Startseite: Vorlage „${beispiel.name}“ wird eine eigene bearbeitbare Kopie`, async () => {
+  test(`Startseite: Vorlage „${beispiel.name}“ (${beispiel.skriptsprache}) wird eine eigene bearbeitbare Kopie`, async () => {
     const s = await starten();
     try {
       const quelle = resolve('beispiele', beispiel.dateiname);
       const original = await readFile(quelle);
-      const vorlage = JSON.parse(original.toString('utf8')) as Projekt;
+      const vorlage = projektPruefen(JSON.parse(original.toString('utf8')));
       await s.seite.getByRole('button', { name: 'Beispielworkflows', exact: true }).click();
+      await s.seite
+        .getByRole('combobox', { name: 'Beispiele nach Sprache filtern', exact: true })
+        .selectOption(beispiel.skriptsprache);
       const karte = s.seite
         .getByTestId('beispiele')
         .getByRole('article')
@@ -585,7 +593,10 @@ test('Startseite: sieben lokale Hilfethemen, Suche und Vorlagenlink funktioniere
     await hilfe.getByRole('button', { name: 'Erste Schritte', exact: true }).click();
     await bild(s, 'offline-hilfe');
     await hilfe
-      .getByRole('button', { name: 'Beispiel als Vorlage öffnen: Eine Nachricht anzeigen', exact: true })
+      .getByRole('button', {
+        name: 'Beispiel als Vorlage öffnen: Eine Nachricht anzeigen · VBS',
+        exact: true,
+      })
       .click();
     await expect(s.seite.getByTestId('palette')).toBeVisible();
     expect((await dokumentLesen(s)).projekt.editor.blocks!.blocks[0].next!.block.type).toBe('sl_message');

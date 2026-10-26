@@ -1,3 +1,4 @@
+import { sprachwahlBestaetigen } from './sprache';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, readFile, writeFile, mkdir, rm, stat } from 'node:fs/promises';
@@ -46,6 +47,7 @@ async function starten(faktor = 1, breite = 1280, hoehe = 720): Promise<Sitzung>
       );
     }
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+    await sprachwahlBestaetigen(seite);
     await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
     await seite.evaluate(
       () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
@@ -177,7 +179,7 @@ for (const faktor of [1, 1.25, 1.5, 2]) {
       const { seite } = s;
       await expect(seite.getByTestId('code-panel')).not.toBeVisible();
       await expect(seite.getByTestId('eigenschaften-panel')).not.toBeVisible();
-      await expect(seite.getByRole('button', { name: 'Als VBS exportieren', exact: true })).toBeVisible();
+      await expect(seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true })).toBeVisible();
       const p = await projektLesen(seite);
       expect(alleBausteine(p).map((b) => b.type)).toEqual(['sl_start']);
       const palette = (await seite.getByTestId('palette').boundingBox())!;
@@ -324,7 +326,7 @@ test('UX: ungültiger Entwurf bleibt speicherbar und Export führt zu konkreten 
     );
     const vbs = join(s.ordner, 'Darf nicht entstehen.vbs');
     await speicherziel(s, vbs);
-    await s.seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+    await s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
     await expect(s.seite.getByTestId('hinweise-panel')).toBeVisible();
     await expect(s.seite.getByTestId('hinweise-panel')).toContainText(/verbinde|Eingang|Ziel/i);
     await expect(stat(vbs)).rejects.toThrow();
@@ -368,9 +370,11 @@ test('UX: UI-Textgröße ist vom Canvas-Zoom getrennt und behält Export und Pan
         .getByRole('combobox', { name: 'UI-Textgröße', exact: true })
         .selectOption({ label: groesse });
       await s.seite.getByRole('button', { name: 'Dialog schließen', exact: true }).click();
-      await expect(s.seite.getByRole('button', { name: 'Als VBS exportieren', exact: true })).toBeVisible();
+      await expect(
+        s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }),
+      ).toBeVisible();
       const hauptaktion = await s.seite
-        .getByRole('button', { name: 'Als VBS exportieren', exact: true })
+        .getByRole('button', { name: 'VBS-Script exportieren', exact: true })
         .evaluate((element) => {
           const rect = element.getBoundingClientRect();
           return {
@@ -504,7 +508,7 @@ test('UX: vollständiger Aufgabenweg mit einzelnen Klicks, Umordnen, Rückgängi
       .toBe(true);
     const exportdatei = join(s.ordner, 'Eigene Klickprüfung.vbs');
     await speicherziel(s, exportdatei);
-    await s.seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+    await s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
     await expect(s.seite.getByTestId('statusleiste')).toContainText('Script');
     const bytes = await readFile(exportdatei);
     expect([...bytes.subarray(0, 2)]).toEqual([255, 254]);
@@ -521,7 +525,7 @@ test('UX: fehlende gewünschte Signaturkonfiguration verhindert eine falsche Erf
     await oeffnen(s, '05-Signatur-ohne-Zertifikat.scriptlab');
     const exportdatei = join(s.ordner, 'Nicht signiert freigegeben.vbs');
     await speicherziel(s, exportdatei);
-    await s.seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+    await s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
     await expect(s.seite.getByTestId('statusleiste')).toContainText(/Zertifikat|Signatur/);
     await expect(s.seite.getByTestId('statusleiste')).not.toContainText('Signatur gültig');
     await expect(stat(exportdatei)).rejects.toThrow();
@@ -541,11 +545,12 @@ test('UX: Signatur-Erfolgsdarstellung aus ausdrücklich gesteuerter Testantwort'
         ok: true,
         wert: {
           dateiname: 'Gesteuerte Testantwort.vbs',
+          skriptsprache: 'vbs',
           signatur: { status: 'gueltig', meldung: 'Signatur gültig', zeitstempel: true },
         },
       }));
     });
-    await s.seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+    await s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
     await expect(s.seite.getByRole('status', { name: 'Export abgeschlossen', exact: true })).toContainText(
       'Signatur gültig',
     );
@@ -751,9 +756,9 @@ test('UX: prozessweise simulierte Kontrastfarben und reduzierte Bewegung behalte
     expect(await s.seite.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
     await s.seite.getByRole('button', { name: 'Weitere Funktionen', exact: true }).focus();
     await s.seite.keyboard.press('Shift+Tab');
-    await expect(s.seite.getByRole('button', { name: 'Als VBS exportieren', exact: true })).toBeFocused();
+    await expect(s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true })).toBeFocused();
     const stil = await s.seite
-      .getByRole('button', { name: 'Als VBS exportieren', exact: true })
+      .getByRole('button', { name: 'VBS-Script exportieren', exact: true })
       .evaluate((el) => ({
         transition: getComputedStyle(el).transitionDuration,
         outline: getComputedStyle(el).outlineStyle,

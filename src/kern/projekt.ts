@@ -1,4 +1,5 @@
 import { definitionNachTyp } from './katalog';
+import { sprachePruefen, type Skriptsprache } from './sprachen';
 
 /** Das Projekt speichert ausschließlich Daten. Es enthält niemals ausführbaren Anwendungscode. */
 export interface EditorBlock {
@@ -6,7 +7,7 @@ export interface EditorBlock {
   id: string;
   x?: number;
   y?: number;
-  fields?: Record<string, string | number | boolean>;
+  fields?: Record<string, string | number | boolean | { id: string }>;
   inputs?: Record<string, { block?: EditorBlock; shadow?: EditorBlock }>;
   next?: { block: EditorBlock };
   enabled?: boolean;
@@ -21,7 +22,8 @@ export interface EditorBlock {
 }
 
 export interface Projekt {
-  schemaVersion: 1;
+  schemaVersion: 2;
+  skriptsprache: Skriptsprache;
   appVersion: string;
   projektKennung?: string;
   name: string;
@@ -51,15 +53,19 @@ const objekt = (wert: unknown): wert is Record<string, unknown> =>
 const text = (wert: unknown, maximum: number): wert is string =>
   typeof wert === 'string' && wert.length <= maximum && !wert.includes('\u0000');
 const zahl = (wert: unknown): wert is number => typeof wert === 'number' && Number.isFinite(wert);
+const kennung = (wert: unknown): wert is string =>
+  text(wert, 160) &&
+  !!wert &&
+  !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(wert);
 
 export function projektPruefen(wert: unknown): Projekt {
   const fehler = (meldung: string): never => {
     throw new Error(meldung);
   };
   if (!objekt(wert)) return fehler('Die Projektdatei enthält kein gültiges Projekt.');
-  if (wert.schemaVersion !== 1)
+  if (wert.schemaVersion !== 1 && wert.schemaVersion !== 2)
     return fehler(
-      typeof wert.schemaVersion === 'number' && wert.schemaVersion > 1
+      typeof wert.schemaVersion === 'number' && wert.schemaVersion > 2
         ? 'Dieses Projekt wurde mit einem neueren Dateiformat gespeichert. Bitte ScriptLab aktualisieren.'
         : 'Die Schemaversion der Projektdatei wird nicht unterstützt.',
     );
@@ -68,6 +74,7 @@ export function projektPruefen(wert: unknown): Projekt {
       (k) =>
         ![
           'schemaVersion',
+          'skriptsprache',
           'appVersion',
           'projektKennung',
           'name',
@@ -79,6 +86,11 @@ export function projektPruefen(wert: unknown): Projekt {
     )
   )
     return fehler('Die Projektdatei enthält nicht unterstützte Zusatzdaten.');
+  if (wert.schemaVersion === 2 && !Object.hasOwn(wert, 'skriptsprache'))
+    return fehler('Im Projekt fehlt die Scriptsprache. Die Datei wird nicht verändert.');
+  const skriptsprache = Object.hasOwn(wert, 'skriptsprache') ? sprachePruefen(wert.skriptsprache) : 'vbs';
+  if (wert.schemaVersion === 1 && skriptsprache !== 'vbs')
+    return fehler('Python-Projekte benötigen das Projektformat 2. Die Datei wird nicht verändert.');
   if (
     wert.projektKennung !== undefined &&
     (typeof wert.projektKennung !== 'string' ||
@@ -141,13 +153,7 @@ export function projektPruefen(wert: unknown): Projekt {
   const blockPruefen = (block: unknown, tiefe: number): void => {
     if (++anzahl > 2000 || tiefe > 150)
       return fehler('Das Projekt enthält zu viele oder zu tief verschachtelte Bausteine.');
-    if (
-      !objekt(block) ||
-      !text(block.type, 80) ||
-      !/^sl_[a-z_]+$/.test(block.type) ||
-      !text(block.id, 160) ||
-      !block.id
-    )
+    if (!objekt(block) || !text(block.type, 80) || !/^sl_[a-z_]+$/.test(block.type) || !kennung(block.id))
       return fehler('Ein Baustein hat einen ungültigen Typ oder keine stabile Kennung.');
     if (!definitionNachTyp.has(block.type))
       return fehler(
@@ -195,7 +201,14 @@ export function projektPruefen(wert: unknown): Projekt {
       (!objekt(block.fields) ||
         Object.keys(block.fields).length > 30 ||
         Object.entries(block.fields).some(
-          ([k, v]) => !/^[A-Z_]+$/.test(k) || !(text(v, 32768) || zahl(v) || typeof v === 'boolean'),
+          ([k, v]) =>
+            !/^[A-Z_]+$/.test(k) ||
+            !(
+              text(v, 32768) ||
+              zahl(v) ||
+              typeof v === 'boolean' ||
+              (k === 'VAR' && objekt(v) && Object.keys(v).length === 1 && kennung(v.id))
+            ),
         ))
     )
       return fehler('Ein Bausteinfeld ist ungültig.');
@@ -254,7 +267,7 @@ export function projektPruefen(wert: unknown): Projekt {
         (v) =>
           !objekt(v) ||
           !text(v.name, 160) ||
-          !text(v.id, 160) ||
+          !kennung(v.id) ||
           (v.type !== undefined && !text(v.type, 80)) ||
           Object.keys(v).some((k) => !['name', 'id', 'type'].includes(k)),
       ))
@@ -266,8 +279,7 @@ export function projektPruefen(wert: unknown): Projekt {
     for (const kommentar of wert.editor.workspaceComments) {
       if (
         !objekt(kommentar) ||
-        !text(kommentar.id, 160) ||
-        !kommentar.id ||
+        !kennung(kommentar.id) ||
         ids.has(kommentar.id) ||
         (kommentar.text !== undefined && !text(kommentar.text, 10000)) ||
         Object.keys(kommentar).some(
@@ -301,12 +313,69 @@ export function projektPruefen(wert: unknown): Projekt {
     }
   }
   // Kopieren entfernt geteilte Referenzen und verhindert spätere Änderungen am geprüften Objekt.
-  return JSON.parse(JSON.stringify(wert)) as Projekt;
+  const projekt = { ...JSON.parse(JSON.stringify(wert)), schemaVersion: 2, skriptsprache } as Projekt;
+  variablenIdentitaetenErgaenzen(projekt);
+  return projekt;
 }
 
-export function neuesProjekt(): Projekt {
+/** Alte Namensfelder werden einmalig auf die stabilen Blockly-Variablenkennungen abgebildet. */
+function variablenIdentitaetenErgaenzen(projekt: Projekt): void {
+  const variablen = projekt.editor.variables ?? [];
+  const nachId = new Map(variablen.map((v) => [v.id, v]));
+  if (nachId.size !== variablen.length) throw new Error('Die Variablenliste enthält doppelte Kennungen.');
+  const schluessel = (name: string) => name.trim().normalize('NFC').toLocaleLowerCase('de-DE');
+  const bloecke: EditorBlock[] = [];
+  const sammeln = (b: EditorBlock): void => {
+    if (definitionNachTyp.get(b.type)?.felder.some((f) => f.name === 'VAR')) bloecke.push(b);
+    for (const eingang of Object.values(b.inputs ?? {})) {
+      if (eingang.block) sammeln(eingang.block);
+      if (eingang.shadow) sammeln(eingang.shadow);
+    }
+    if (b.next) sammeln(b.next.block);
+  };
+  projekt.editor.blocks?.blocks.forEach(sammeln);
+  const alteNamen = [
+    ...new Set(
+      bloecke.flatMap((b) => {
+        const wert =
+          b.fields?.VAR ?? definitionNachTyp.get(b.type)!.felder.find((f) => f.name === 'VAR')!.standard;
+        return typeof wert === 'string' && wert.trim() && !nachId.has(wert) ? [schluessel(wert)] : [];
+      }),
+    ),
+  ].sort();
+  let nummer = 0;
+  for (const name of alteNamen) {
+    if (variablen.some((v) => schluessel(v.name) === name)) continue;
+    let id: string;
+    do {
+      id = `sl_variable_${++nummer}`;
+    } while (nachId.has(id));
+    const block = bloecke.find((b) => typeof b.fields?.VAR === 'string' && schluessel(b.fields.VAR) === name);
+    const roh = block?.fields?.VAR ?? name;
+    const variable = { name: String(roh).trim(), id };
+    variablen.push(variable);
+    nachId.set(id, variable);
+  }
+  for (const block of bloecke) {
+    const wert =
+      block.fields?.VAR ?? definitionNachTyp.get(block.type)!.felder.find((f) => f.name === 'VAR')!.standard;
+    if (typeof wert === 'object') {
+      if (!nachId.has(wert.id)) throw new Error('Ein Baustein verweist auf eine unbekannte Variable.');
+      continue;
+    }
+    if (typeof wert !== 'string' || !wert.trim()) continue; // Unvollständige Entwürfe bleiben prüfbar.
+    const variable = nachId.get(wert) ?? variablen.find((v) => schluessel(v.name) === schluessel(wert));
+    if (!variable) throw new Error('Eine Variable konnte nicht zugeordnet werden.');
+    block.fields = { ...block.fields, VAR: { id: variable.id } };
+  }
+  if (variablen.length) projekt.editor.variables = variablen;
+}
+
+export function neuesProjekt(skriptsprache: Skriptsprache = 'vbs'): Projekt {
+  sprachePruefen(skriptsprache);
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
+    skriptsprache,
     appVersion: '0.1.0',
     projektKennung: globalThis.crypto.randomUUID(),
     name: 'Mein Workflow',

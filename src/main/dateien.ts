@@ -2,12 +2,17 @@ import { open, rename, unlink, readFile, stat } from 'node:fs/promises';
 import { dirname, basename, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { projektPruefen, type Projekt } from '../kern/projekt';
+import type { Skriptsprache } from '../kern/sprachen';
 
 export const MAX_PROJEKT_BYTES = 5 * 1024 * 1024;
 
 export function vbsKodieren(code: string): Buffer {
   const normalisiert = code.replace(/\r?\n/g, '\r\n');
   return Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(normalisiert, 'utf16le')]);
+}
+
+export function skriptKodieren(code: string, sprache: Skriptsprache): Buffer {
+  return sprache === 'vbs' ? vbsKodieren(code) : Buffer.from(code.replace(/\r?\n/g, '\r\n'), 'utf8');
 }
 
 export async function atomarSchreiben(dateipfad: string, inhalt: string | Buffer): Promise<void> {

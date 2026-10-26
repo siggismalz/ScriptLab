@@ -1,3 +1,4 @@
+import { sprachwahlBestaetigen } from './sprache';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
@@ -94,6 +95,7 @@ test.beforeEach(async () => {
     dialog.showMessageBox = async () => ({ response: 3, checkboxChecked: false });
   });
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+  await sprachwahlBestaetigen(seite);
   await bereit();
 });
 test.afterEach(async () => {

@@ -20,7 +20,7 @@ const bruecke: ScriptLabBruecke = {
       ipcRenderer.removeListener('scriptlab:stand-anfordern', anfrage);
     };
   },
-  neu: (projekt) => ipcRenderer.invoke('scriptlab:neu', projekt),
+  neu: (projekt, sprache) => ipcRenderer.invoke('scriptlab:neu', { projekt, sprache }),
   oeffnen: (projekt) => ipcRenderer.invoke('scriptlab:oeffnen', projekt),
   beispielOeffnen: (projekt, beispiel) => ipcRenderer.invoke('scriptlab:beispiel', { projekt, beispiel }),
   speichern: (projekt, unter) => ipcRenderer.invoke('scriptlab:speichern', { projekt, unter }),
@@ -48,5 +48,9 @@ const bruecke: ScriptLabBruecke = {
   testAusgabeKopieren: () => ipcRenderer.invoke('scriptlab:test-kopieren'),
   testOrdnerWaehlen: () => ipcRenderer.invoke('scriptlab:test-ordner'),
   testVerlassen: () => ipcRenderer.invoke('scriptlab:test-verlassen'),
+  pythonStatus: () => ipcRenderer.invoke('scriptlab:python-status'),
+  pythonPruefen: () => ipcRenderer.invoke('scriptlab:python-pruefen'),
+  pythonWaehlen: () => ipcRenderer.invoke('scriptlab:python-waehlen'),
+  pythonHilfeOeffnen: () => ipcRenderer.invoke('scriptlab:python-hilfe'),
 };
 contextBridge.exposeInMainWorld('scriptlab', Object.freeze(bruecke));

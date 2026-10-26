@@ -25,7 +25,7 @@ export async function verlaufAendern(workspace: Blockly.Workspace, wiederholen =
 function blockName(block: Blockly.Block): string {
   const name = definitionNachTyp.get(block.type)?.name ?? 'Baustein';
   const inhalt =
-    block.getFieldValue('VAR') ??
+    block.getField('VAR')?.getText() ??
     block.getFieldValue('TEXT') ??
     block.getInputTargetBlock('TEXT')?.getFieldValue('TEXT') ??
     block.getInputTargetBlock('QUELLE')?.getFieldValue('TEXT');

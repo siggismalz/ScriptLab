@@ -18,6 +18,8 @@ export interface ZeilenZuordnung {
   blockId: string;
 }
 export interface TestZustand {
+  skriptsprache: Skriptsprache | null;
+  pythonVersion: string | null;
   phase: TestPhase;
   laufId: string | null;
   projektKennung: string | null;
@@ -43,6 +45,8 @@ export function testAktiv(phase: TestPhase): boolean {
 }
 export function testBereit(): TestZustand {
   return {
+    skriptsprache: null,
+    pythonVersion: null,
     phase: 'bereit',
     laufId: null,
     projektKennung: null,
@@ -64,3 +68,4 @@ export function testBereit(): TestZustand {
     technischeMeldung: null,
   };
 }
+import type { Skriptsprache } from '../kern/sprachen';

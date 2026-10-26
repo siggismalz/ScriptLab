@@ -5,8 +5,13 @@ import { Knopf } from './komponenten/Knopf';
 import { Symbol } from './komponenten/Icon';
 import { Statusanzeige, type StatusArt } from './komponenten/Statusanzeige';
 import './testbereich.css';
+import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
+import type { PythonStatus } from '../gemeinsam/python';
 
 export interface TestbereichEigenschaften {
+  sprache?: Skriptsprache;
+  pythonStatus?: PythonStatus | null;
+  pythonEinrichten?: () => void;
   zustand: TestZustand;
   optionen: TestOptionen;
   veraltet: boolean;
@@ -73,6 +78,7 @@ function statusArt(zustand: TestZustand): StatusArt {
 export function Testbereich(props: TestbereichEigenschaften) {
   const { zustand, optionen, veraltet, gesperrt = false } = props;
   const aktiv = testAktiv(zustand.phase);
+  const sprache = sprachdaten[zustand.skriptsprache ?? props.sprache ?? 'vbs'];
   const anzeigeOptionen = aktiv ? zustand.optionen : optionen;
   const [zeitlimitEntwurf, setZeitlimitEntwurf] = useState(String(anzeigeOptionen.zeitlimitSekunden));
   const [zeitlimitFehler, setZeitlimitFehler] = useState('');
@@ -167,6 +173,9 @@ export function Testbereich(props: TestbereichEigenschaften) {
     <section className="testbereich" data-testid="test-panel" aria-labelledby={titelId}>
       <header className="panel-kopf testbereich-kopf">
         <h2 id={titelId}>Testausgabe</h2>
+        <span className="skriptsprache-kennzeichen" aria-label="Skriptsprache des Tests">
+          {sprache.bezeichnung}
+        </span>
         <div className="knopfgruppe testbereich-aktionen">
           <Knopf
             variante="standard"
@@ -274,7 +283,9 @@ export function Testbereich(props: TestbereichEigenschaften) {
               </p>
             )}
             {zustand.fehlerZeile !== null && (
-              <p className="testbereich-fehler">Fehler in VBS-Zeile {zustand.fehlerZeile}.</p>
+              <p className="testbereich-fehler">
+                Fehler in {sprache.kurzbezeichnung}-Zeile {zustand.fehlerZeile}.
+              </p>
             )}
             {zustand.fehlerBlockId && (
               <Knopf symbol="bausteine" onClick={() => props.blockAnzeigen(zustand.fehlerBlockId!)}>
@@ -296,6 +307,16 @@ export function Testbereich(props: TestbereichEigenschaften) {
                       <dt>Projekt des Tests</dt>
                       <dd>{zustand.projektName ?? 'Nicht verfügbar'}</dd>
                     </div>
+                    <div>
+                      <dt>Skriptsprache</dt>
+                      <dd>{sprache.bezeichnung}</dd>
+                    </div>
+                    {zustand.pythonVersion && (
+                      <div>
+                        <dt>Python-Version dieses Tests</dt>
+                        <dd>{zustand.pythonVersion}</dd>
+                      </div>
+                    )}
                     <div>
                       <dt>Gestartet</dt>
                       <dd>{zeitpunktAnzeigen(zustand.gestartetAm)}</dd>
@@ -358,7 +379,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
                     <table>
                       <thead>
                         <tr>
-                          <th>VBS-Zeilen</th>
+                          <th>{sprache.kurzbezeichnung}-Zeilen</th>
                           <th>Baustein-ID</th>
                         </tr>
                       </thead>
@@ -437,6 +458,16 @@ export function Testbereich(props: TestbereichEigenschaften) {
                     ? 'Bitte warte, bis der aktuelle Vorgang abgeschlossen ist.'
                     : 'Relative Pfade verwenden diesen Ordner. Zeitlimit: 1 bis 3600 s, Standard 120 s.'}
               </p>
+              {props.sprache === 'python' &&
+                props.pythonStatus?.zustand !== 'bereit' &&
+                props.pythonEinrichten && (
+                  <>
+                    <p className="testbereich-hilfe">
+                      Für Python-Tests muss ein geeigneter Interpreter eingerichtet und geprüft sein.
+                    </p>
+                    <Knopf onClick={props.pythonEinrichten}>Python einrichten</Knopf>
+                  </>
+                )}
               <p className="testbereich-hilfe">
                 Keine Sandbox. Stoppen macht Änderungen nicht rückgängig. Ein neuer Test verwendet den
                 vollständigen aktuellen Workflow.

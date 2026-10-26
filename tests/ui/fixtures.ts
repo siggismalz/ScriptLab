@@ -1,4 +1,4 @@
-import { neuesProjekt, type EditorBlock, type Projekt } from '../../src/kern/projekt';
+import { neuesProjekt, projektPruefen, type EditorBlock, type Projekt } from '../../src/kern/projekt';
 
 /** Ausschließlich Editor-Testdaten. Keine dieser beschriebenen Aktionen wird hier ausgeführt. */
 function baustein(
@@ -339,9 +339,9 @@ export function bausteineZaehlen(p: Projekt): number {
 }
 
 export const uiTestprojekte = {
-  '01-Alltagsworkflow.scriptlab': alltagsworkflow(),
-  '02-Verschachtelte-Ablaeufe.scriptlab': verschachtelterWorkflow(),
-  '03-Lange-Texte-und-Pfade.scriptlab': langeWerteWorkflow(),
-  '04-Fehlende-Pflichtwerte.scriptlab': fehlerhafterWorkflow(),
-  '05-Signatur-ohne-Zertifikat.scriptlab': signaturOhneZertifikatWorkflow(),
+  '01-Alltagsworkflow.scriptlab': projektPruefen(alltagsworkflow()),
+  '02-Verschachtelte-Ablaeufe.scriptlab': projektPruefen(verschachtelterWorkflow()),
+  '03-Lange-Texte-und-Pfade.scriptlab': projektPruefen(langeWerteWorkflow()),
+  '04-Fehlende-Pflichtwerte.scriptlab': projektPruefen(fehlerhafterWorkflow()),
+  '05-Signatur-ohne-Zertifikat.scriptlab': projektPruefen(signaturOhneZertifikatWorkflow()),
 };

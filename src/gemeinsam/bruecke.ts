@@ -1,8 +1,15 @@
 import type { Projekt } from '../kern/projekt';
 import type { SignaturErgebnis, Zertifikat } from '../windows/signatur';
 import type { TestOptionen, TestZustand } from './testlauf';
+import type { Skriptsprache } from '../kern/sprachen';
+import type { PythonStatus } from './python';
+
+export type BeispielKennung =
+  'begruessung' | 'backup' | 'dateiliste' | 'begruessung-python' | 'backup-python' | 'dateiliste-python';
 
 export interface Einstellungen {
+  letzteSkriptsprache: Skriptsprache | null;
+  pythonInterpreter: string | null;
   automatischeUpdates: boolean;
   vorabversionen: boolean;
   palettenBreite: number;
@@ -26,6 +33,7 @@ export interface Verfuegbarkeit {
   meldung: string;
 }
 export interface ProjektEintrag {
+  skriptsprache: Skriptsprache;
   id: string;
   projektKennung: string;
   name: string;
@@ -38,6 +46,7 @@ export interface ProjektEintrag {
   verfuegbarkeit: VerfuegbarkeitsZustand;
 }
 export interface EntwurfEintrag {
+  skriptsprache: Skriptsprache;
   id: string;
   projektKennung: string;
   name: string;
@@ -60,19 +69,17 @@ export interface ProjektBibliothek {
 export type Antwort<T> = { ok: true; wert: T } | { ok: false; meldung: string };
 export interface ExportErgebnis {
   dateiname: string;
-  signatur: SignaturErgebnis;
+  skriptsprache: Skriptsprache;
+  signatur: SignaturErgebnis | null;
 }
 export interface ScriptLabBruecke {
   laden(): Promise<Antwort<{ dokument: Dokument; einstellungen: Einstellungen; version: string }>>;
   aendern(projekt: Projekt): Promise<Antwort<void>>;
   darstellungBereit(projekt: Projekt): Promise<Antwort<Dokument>>;
   beiStandAnfrage(lesen: () => Projekt): () => void;
-  neu(projekt: Projekt): Promise<Antwort<Dokument | null>>;
+  neu(projekt: Projekt, sprache: Skriptsprache): Promise<Antwort<Dokument | null>>;
   oeffnen(projekt: Projekt): Promise<Antwort<Dokument | null>>;
-  beispielOeffnen(
-    projekt: Projekt,
-    beispiel: 'begruessung' | 'backup' | 'dateiliste',
-  ): Promise<Antwort<Dokument | null>>;
+  beispielOeffnen(projekt: Projekt, beispiel: BeispielKennung): Promise<Antwort<Dokument | null>>;
   speichern(projekt: Projekt, unter: boolean): Promise<Antwort<Dokument | null>>;
   exportieren(projekt: Projekt): Promise<Antwort<ExportErgebnis | null>>;
   exportOrdnerAnzeigen(): Promise<Antwort<void>>;
@@ -96,6 +103,10 @@ export interface ScriptLabBruecke {
   testAusgabeKopieren(): Promise<Antwort<void>>;
   testOrdnerWaehlen(): Promise<Antwort<string | null>>;
   testVerlassen(): Promise<Antwort<boolean>>;
+  pythonStatus(): Promise<Antwort<PythonStatus>>;
+  pythonPruefen(): Promise<Antwort<PythonStatus>>;
+  pythonWaehlen(): Promise<Antwort<PythonStatus | null>>;
+  pythonHilfeOeffnen(): Promise<Antwort<void>>;
 }
 
 declare global {

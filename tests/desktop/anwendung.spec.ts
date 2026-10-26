@@ -1,3 +1,4 @@
+import { sprachwahlBestaetigen } from './sprache';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, readFile, writeFile, rm, mkdir, stat } from 'node:fs/promises';
@@ -117,6 +118,7 @@ async function neuenWorkflowAnlegen(knopf: 'Neu' | 'Neuer Workflow' = 'Neu'): Pr
   await expect(seite.getByRole('button', { name: knopf, exact: true })).toBeVisible();
   const vorher = (await projektLesen()).projektKennung;
   await seite.getByRole('button', { name: knopf, exact: true }).click();
+  await sprachwahlBestaetigen(seite);
   await expect.poll(async () => (await projektLesen()).projektKennung).not.toBe(vorher);
   await editorBereit();
 }
@@ -242,7 +244,7 @@ test('findet, fügt ein, konfiguriert und verbindet eine Nachricht ohne gehalten
   await nachrichtBearbeiten('Hallo! Erstellt mit ScriptLab.');
   await seite.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
   await vorschauOeffnen();
-  const code = seite.getByLabel('Schreibgeschützte VBS-Codevorschau', { exact: true });
+  const code = seite.getByLabel('Schreibgeschützter VBS-Code', { exact: true });
   await expect(code).toContainText('Option Explicit');
   await expect(code).toContainText('Hallo! Erstellt mit ScriptLab.');
   expect(
@@ -255,13 +257,13 @@ test('exportiert echte UTF16LE-BOM-Bytes mit CRLF, Umlauten und Dialogabbruch', 
   await nachrichtBearbeiten('Grüße "Leon"\nC:\\Mein Ordner\\Datei.txt');
   await seite.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
   await speicherziel(null);
-  await seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+  await seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
   await dateidialogAbwarten('speichern');
-  await expect(seite.getByRole('button', { name: 'Als VBS exportieren', exact: true })).toBeEnabled();
+  await expect(seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true })).toBeEnabled();
   await expect(seite.getByRole('status', { name: 'Export abgeschlossen' })).toHaveCount(0);
   const ziel = join(ordner, 'Grüße mit Leerzeichen.vbs');
   await speicherziel(ziel);
-  await seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+  await seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
   const meldung = seite.getByRole('status', { name: 'Export abgeschlossen' });
   await expect(meldung).toContainText(
     'Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.',
@@ -319,6 +321,7 @@ test('verhindert Projektverlust bei Abbruch und schützt unbekannte Formate', as
   await projektangaben(undefined, 'Letzte Änderung bleibt erhalten.');
   await verlustAntwort(3);
   await seite.getByRole('button', { name: 'Neu', exact: true }).click();
+  await sprachwahlBestaetigen(seite);
   await verlustdialogAbwarten();
   await expect.poll(async () => (await projektLesen()).beschreibung).toBe('Letzte Änderung bleibt erhalten.');
   await speicherziel(null);
@@ -348,7 +351,7 @@ test('zeigt Exportfehler verständlich und erhält vorhandene Ziele', async () =
   const ziel = join(ordner, 'Ordner.vbs');
   await mkdir(ziel);
   await speicherziel(ziel);
-  await seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+  await seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
   await expect(seite.getByRole('alert')).toContainText(/Zugriff|Dateivorgang/);
   expect((await stat(ziel)).isDirectory()).toBe(true);
   await expect(seite.getByRole('status', { name: 'Export abgeschlossen' })).toHaveCount(0);
@@ -428,7 +431,7 @@ test('fügt per Klick ein, meldet lose Anweisungen und erhält Kopieren sowie R�
   await expect(seite.locator('.code')).toContainText("' Mein Hinweis");
   await menueAktion('Weitere Funktionen', 'Kopieren');
   await menueAktion('Weitere Funktionen', 'Einfügen');
-  await seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+  await seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
   await expect(seite.getByTestId('hinweise-panel')).toContainText('nicht mit dem Startablauf verbunden');
   await seite.getByRole('button', { name: 'Rückgängig', exact: true }).click();
   await expect(seite.getByTestId('hinweise-panel')).toContainText('keine erkannten Strukturfehler');
@@ -526,7 +529,7 @@ test('exportiert einen kombinierten Ablauf ohne dessen Dateiaktionen auszuführe
   await expect(seite.locator('.code')).toContainText('For sl_intern_');
   await expect(seite.locator('.code')).toContainText('If (v_1 <>');
   await speicherziel(join(ordner, 'Kombiniert.vbs'));
-  await seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+  await seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
   await expect(seite.getByRole('status', { name: 'Export abgeschlossen' })).toContainText(
     'Das Script wurde gespeichert.',
   );

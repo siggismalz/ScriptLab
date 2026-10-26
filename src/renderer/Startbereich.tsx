@@ -6,14 +6,17 @@ import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
 import { Symbol, type SymbolName } from './komponenten/Icon';
 import { Statusanzeige } from './komponenten/Statusanzeige';
 import './startbereich.css';
+import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
 
 type Seite = 'start' | 'projekte' | 'entwuerfe' | 'beispiele' | 'hilfe';
 type Sortierung = 'zuletzt' | 'name';
+type Sprachfilter = 'alle' | Skriptsprache;
 
 export interface AktiverWorkflowInfo {
   name: string;
   dateiname: string | null;
   geaendert: boolean;
+  skriptsprache: Skriptsprache;
 }
 
 export interface StartbereichEigenschaften {
@@ -88,10 +91,15 @@ export function projekteFiltern(
   projekte: readonly ProjektEintrag[],
   suche: string,
   sortierung: Sortierung,
+  sprachfilter: Sprachfilter = 'alle',
 ): ProjektEintrag[] {
   const filter = suche.trim().toLocaleLowerCase('de');
   return projekte
-    .filter((p) => `${p.name} ${p.pfad}`.toLocaleLowerCase('de').includes(filter))
+    .filter(
+      (p) =>
+        `${p.name} ${p.pfad}`.toLocaleLowerCase('de').includes(filter) &&
+        (sprachfilter === 'alle' || p.skriptsprache === sprachfilter),
+    )
     .sort((a, b) =>
       sortierung === 'name'
         ? nameVergleichen(a, b)
@@ -103,10 +111,15 @@ export function entwuerfeFiltern(
   entwuerfe: readonly EntwurfEintrag[],
   suche: string,
   sortierung: Sortierung,
+  sprachfilter: Sprachfilter = 'alle',
 ): EntwurfEintrag[] {
   const filter = suche.trim().toLocaleLowerCase('de');
   return entwuerfe
-    .filter((e) => `${e.name} ${e.ausgangspfad ?? ''}`.toLocaleLowerCase('de').includes(filter))
+    .filter(
+      (e) =>
+        `${e.name} ${e.ausgangspfad ?? ''}`.toLocaleLowerCase('de').includes(filter) &&
+        (sprachfilter === 'alle' || e.skriptsprache === sprachfilter),
+    )
     .sort((a, b) =>
       sortierung === 'name'
         ? nameVergleichen(a, b)
@@ -149,8 +162,11 @@ export function Startbereich(props: StartbereichEigenschaften) {
   const [seite, setSeite] = useState<Seite>(props.ziel ?? 'start');
   const [projektSuche, setProjektSuche] = useState('');
   const [projektSortierung, setProjektSortierung] = useState<Sortierung>('zuletzt');
+  const [projektSprache, setProjektSprache] = useState<Sprachfilter>('alle');
   const [entwurfSuche, setEntwurfSuche] = useState('');
   const [entwurfSortierung, setEntwurfSortierung] = useState<Sortierung>('zuletzt');
+  const [entwurfSprache, setEntwurfSprache] = useState<Sprachfilter>('alle');
+  const [beispielSprache, setBeispielSprache] = useState<Sprachfilter>('alle');
   const [hilfeSuche, setHilfeSuche] = useState('');
   const [artikelId, setArtikelId] = useState<string | null>(null);
   const [sprungziel, setSprungziel] = useState<string | null>(null);
@@ -200,9 +216,11 @@ export function Startbereich(props: StartbereichEigenschaften) {
   const gesperrt = Boolean(props.verarbeitung);
   const artikel = hilfeArtikel.find((a) => a.id === artikelId);
   const treffer = hilfeDurchsuchen(hilfeSuche);
-  const projekte = props.daten ? projekteFiltern(props.daten.projekte, projektSuche, projektSortierung) : [];
+  const projekte = props.daten
+    ? projekteFiltern(props.daten.projekte, projektSuche, projektSortierung, projektSprache)
+    : [];
   const entwuerfe = props.daten
-    ? entwuerfeFiltern(props.daten.entwuerfe, entwurfSuche, entwurfSortierung)
+    ? entwuerfeFiltern(props.daten.entwuerfe, entwurfSuche, entwurfSortierung, entwurfSprache)
     : [];
   const letzteProjekte = props.daten ? zuletztGeoeffnete(props.daten.projekte) : [];
 
@@ -248,6 +266,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
       >
         <div className="start-eintrag-kopf">
           <h3>{projekt.name}</h3>
+          <span className="skriptsprache-kennzeichen">{sprachdaten[projekt.skriptsprache].bezeichnung}</span>
           <span
             className={`start-dateistatus ${fehlt ? 'start-dateistatus--fehler' : zustand === 'geaendert' ? 'start-dateistatus--hinweis' : ''}`}
           >
@@ -424,6 +443,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
               {props.aktiveInfo && (
                 <p className="start-aktiver-workflow">
                   Aktueller Workflow: <strong>{props.aktiveInfo.name}</strong> ·{' '}
+                  {sprachdaten[props.aktiveInfo.skriptsprache].bezeichnung} ·{' '}
                   {props.aktiveInfo.geaendert
                     ? 'Ungespeicherte Änderungen'
                     : props.aktiveInfo.dateiname
@@ -514,6 +534,15 @@ export function Startbereich(props: StartbereichEigenschaften) {
                   placeholder="Name oder Dateipfad"
                 />
                 <Auswahlfeld
+                  beschriftung="Projekte nach Sprache filtern"
+                  value={projektSprache}
+                  onChange={(e) => setProjektSprache(e.target.value as Sprachfilter)}
+                >
+                  <option value="alle">Alle Sprachen</option>
+                  <option value="python">Python</option>
+                  <option value="vbs">VBScript (VBS)</option>
+                </Auswahlfeld>
+                <Auswahlfeld
                   beschriftung="Projekte sortieren"
                   value={projektSortierung}
                   onChange={(e) => setProjektSortierung(e.target.value as Sortierung)}
@@ -536,7 +565,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
                   : props.daten?.hinweis
                     ? 'Anzeige möglicherweise unvollständig'
                     : props.daten
-                      ? `${projekte.length} ${projekte.length === 1 ? 'Projekt' : 'Projekte'}${projektSuche.trim() ? ' gefunden' : ''}`
+                      ? `${projekte.length} ${projekte.length === 1 ? 'Projekt' : 'Projekte'}${projektSuche.trim() || projektSprache !== 'alle' ? ' gefunden' : ''}`
                       : 'Bibliothek noch nicht geladen'}
               </p>
               {projekte.length ? (
@@ -544,11 +573,14 @@ export function Startbereich(props: StartbereichEigenschaften) {
               ) : (
                 <div className="start-leerzustand">
                   {datenStatus(
-                    projektSuche.trim()
-                      ? 'Keine Projekte gefunden. Ändere die Suche oder leere sie.'
+                    projektSuche.trim() || projektSprache !== 'alle'
+                      ? 'Keine passenden Projekte gefunden. Ändere die Suche oder den Sprachfilter.'
                       : 'Noch keine Projektdateien bekannt. Öffne eine .scriptlab-Datei oder speichere einen eigenen Workflow.',
                   )}
                   {projektSuche && <Knopf onClick={() => setProjektSuche('')}>Suche leeren</Knopf>}
+                  {projektSprache !== 'alle' && (
+                    <Knopf onClick={() => setProjektSprache('alle')}>Sprachfilter zurücksetzen</Knopf>
+                  )}
                   <Knopf
                     symbol="oeffnen"
                     disabled={gesperrt}
@@ -577,6 +609,15 @@ export function Startbereich(props: StartbereichEigenschaften) {
                   placeholder="Name oder zugehöriger Dateipfad"
                 />
                 <Auswahlfeld
+                  beschriftung="Entwürfe nach Sprache filtern"
+                  value={entwurfSprache}
+                  onChange={(e) => setEntwurfSprache(e.target.value as Sprachfilter)}
+                >
+                  <option value="alle">Alle Sprachen</option>
+                  <option value="python">Python</option>
+                  <option value="vbs">VBScript (VBS)</option>
+                </Auswahlfeld>
+                <Auswahlfeld
                   beschriftung="Entwürfe sortieren"
                   value={entwurfSortierung}
                   onChange={(e) => setEntwurfSortierung(e.target.value as Sortierung)}
@@ -599,7 +640,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
                   : props.daten?.hinweis
                     ? 'Anzeige möglicherweise unvollständig'
                     : props.daten
-                      ? `${entwuerfe.length} ${entwuerfe.length === 1 ? 'Entwurf' : 'Entwürfe'}${entwurfSuche.trim() ? ' gefunden' : ''}`
+                      ? `${entwuerfe.length} ${entwuerfe.length === 1 ? 'Entwurf' : 'Entwürfe'}${entwurfSuche.trim() || entwurfSprache !== 'alle' ? ' gefunden' : ''}`
                       : 'Bibliothek noch nicht geladen'}
               </p>
               {entwuerfe.length ? (
@@ -612,6 +653,9 @@ export function Startbereich(props: StartbereichEigenschaften) {
                       data-entwurf-id={entwurf.id}
                     >
                       <h3>{entwurf.name}</h3>
+                      <span className="skriptsprache-kennzeichen">
+                        {sprachdaten[entwurf.skriptsprache].bezeichnung}
+                      </span>
                       <p>
                         {entwurf.ausgangspfad
                           ? 'Gesicherte Änderungen zu einer Projektdatei'
@@ -664,11 +708,14 @@ export function Startbereich(props: StartbereichEigenschaften) {
               ) : (
                 <div className="start-leerzustand">
                   {datenStatus(
-                    entwurfSuche.trim()
-                      ? 'Keine Entwürfe gefunden. Ändere die Suche oder leere sie.'
+                    entwurfSuche.trim() || entwurfSprache !== 'alle'
+                      ? 'Keine passenden Entwürfe gefunden. Ändere die Suche oder den Sprachfilter.'
                       : 'Keine gesicherten Entwürfe vorhanden.',
                   )}
                   {entwurfSuche && <Knopf onClick={() => setEntwurfSuche('')}>Suche leeren</Knopf>}
+                  {entwurfSprache !== 'alle' && (
+                    <Knopf onClick={() => setEntwurfSprache('alle')}>Sprachfilter zurücksetzen</Knopf>
+                  )}
                 </div>
               )}
             </section>
@@ -676,38 +723,54 @@ export function Startbereich(props: StartbereichEigenschaften) {
 
           {seite === 'beispiele' && (
             <section data-testid="beispiele" aria-label="Lokale Beispielworkflows">
+              <Auswahlfeld
+                beschriftung="Beispiele nach Sprache filtern"
+                value={beispielSprache}
+                onChange={(e) => setBeispielSprache(e.target.value as Sprachfilter)}
+              >
+                <option value="alle">Alle Sprachen</option>
+                <option value="python">Python</option>
+                <option value="vbs">VBScript (VBS)</option>
+              </Auswahlfeld>
               <p className="start-einleitung">
                 Öffne ein Beispiel als eigene bearbeitbare Kopie. Das Original bleibt erhalten. Öffnen und
                 Exportieren lösen keine beschriebenen Dateiaktionen aus.
               </p>
               <div className="start-liste">
-                {beispiele.map((beispiel) => (
-                  <article
-                    className="start-listeneintrag start-beispiel"
-                    key={beispiel.id}
-                    aria-label={beispiel.name}
-                  >
-                    <h2>{beispiel.name}</h2>
-                    <p>{beispiel.beschreibung}</p>
-                    <ul>
-                      {beispiel.lernziele.map((ziel) => (
-                        <li key={ziel}>{ziel}</li>
-                      ))}
-                    </ul>
-                    <p className="start-hilfetext">{beispiel.vorbereitung}</p>
-                    <p className="start-metadaten">Vorlage: {beispiel.dateiname}</p>
-                    <div>
-                      <Knopf
-                        symbol="neu"
-                        onClick={() => props.beispielOeffnen(beispiel.id)}
-                        disabled={gesperrt}
-                        grundId="start-verarbeitung"
-                      >
-                        Als Vorlage öffnen
-                      </Knopf>
-                    </div>
-                  </article>
-                ))}
+                {beispiele
+                  .filter(
+                    (beispiel) => beispielSprache === 'alle' || beispiel.skriptsprache === beispielSprache,
+                  )
+                  .map((beispiel) => (
+                    <article
+                      className="start-listeneintrag start-beispiel"
+                      key={beispiel.id}
+                      aria-label={`${beispiel.name} – ${sprachdaten[beispiel.skriptsprache].bezeichnung}`}
+                    >
+                      <h2>{beispiel.name}</h2>
+                      <span className="skriptsprache-kennzeichen">
+                        {sprachdaten[beispiel.skriptsprache].bezeichnung}
+                      </span>
+                      <p>{beispiel.beschreibung}</p>
+                      <ul>
+                        {beispiel.lernziele.map((ziel) => (
+                          <li key={ziel}>{ziel}</li>
+                        ))}
+                      </ul>
+                      <p className="start-hilfetext">{beispiel.vorbereitung}</p>
+                      <p className="start-metadaten">Vorlage: {beispiel.dateiname}</p>
+                      <div>
+                        <Knopf
+                          symbol="neu"
+                          onClick={() => props.beispielOeffnen(beispiel.id)}
+                          disabled={gesperrt}
+                          grundId="start-verarbeitung"
+                        >
+                          Als Vorlage öffnen
+                        </Knopf>
+                      </div>
+                    </article>
+                  ))}
               </div>
             </section>
           )}
@@ -773,7 +836,9 @@ export function Startbereich(props: StartbereichEigenschaften) {
                 <article className="start-hilfeartikel">
                   <p className="start-einleitung">{artikel.beschreibung}</p>
                   {artikel.abschnitte.map((abschnitt) => {
-                    const beispiel = beispiele.find((b) => b.id === abschnitt.beispiel);
+                    const verknuepfteBeispiele = beispiele.filter(
+                      (b) => b.id === abschnitt.beispiel || b.id === `${abschnitt.beispiel}-python`,
+                    );
                     return (
                       <section key={abschnitt.id} aria-labelledby={`hilfe-${abschnitt.id}`}>
                         <h2 id={`hilfe-${abschnitt.id}`} tabIndex={-1}>
@@ -789,16 +854,18 @@ export function Startbereich(props: StartbereichEigenschaften) {
                             ))}
                           </ol>
                         )}
-                        {beispiel && (
+                        {verknuepfteBeispiele.map((beispiel) => (
                           <Knopf
+                            key={beispiel.id}
                             symbol="neu"
                             onClick={() => props.beispielOeffnen(beispiel.id)}
                             disabled={gesperrt}
                             grundId="start-verarbeitung"
                           >
-                            Beispiel als Vorlage öffnen: {beispiel.name}
+                            Beispiel als Vorlage öffnen: {beispiel.name} ·{' '}
+                            {sprachdaten[beispiel.skriptsprache].kurzbezeichnung}
                           </Knopf>
-                        )}
+                        ))}
                       </section>
                     );
                   })}

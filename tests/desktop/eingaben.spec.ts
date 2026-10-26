@@ -1,3 +1,4 @@
+import { sprachwahlBestaetigen } from './sprache';
 import { test as basisTest, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, readFile, writeFile, mkdir, stat, rm } from 'node:fs/promises';
@@ -32,6 +33,7 @@ test.beforeEach(async ({ profilEinstellungen }) => {
   seite = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+  await sprachwahlBestaetigen(seite);
   await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
   await seite.evaluate(
     () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
@@ -369,6 +371,8 @@ test.describe('vorhandenes Profil aus der bisherigen Anwendung', () => {
 
 test('weist ungültige UI-Einstellungen über IPC ab und erhält den gespeicherten Stand', async () => {
   const bestaetigt: Einstellungen = {
+    letzteSkriptsprache: 'vbs',
+    pythonInterpreter: null,
     automatischeUpdates: false,
     vorabversionen: false,
     palettenBreite: 300,
@@ -486,7 +490,7 @@ for (const beispiel of beispiele) {
     await app.evaluate(({ dialog }, ziel) => {
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: ziel });
     }, exportDatei);
-    await seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).click();
+    await seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
     await expect(seite.getByRole('status', { name: 'Export abgeschlossen', exact: true })).toBeVisible();
     const bytes = await readFile(exportDatei);
     expect([...bytes.subarray(0, 2)]).toEqual([0xff, 0xfe]);

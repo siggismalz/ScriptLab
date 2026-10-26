@@ -3,7 +3,8 @@ import * as Blockly from 'blockly/core';
 import { registriereBausteine } from '../editor/bausteine';
 import { bausteinDefinitionen } from '../kern/katalog';
 import { neuesProjekt, type Projekt } from '../kern/projekt';
-import { vbsErzeugen } from '../kern/generator';
+import { skriptErzeugen } from '../kern/skript';
+import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
 import { scriptlabThema } from '../gestaltung/blocklyThema';
 import { farben, masse } from '../gestaltung/tokens';
 import {
@@ -33,10 +34,14 @@ import { Palette, type PlatzierungsAuftrag } from './Palette';
 import { Eigenschaften } from './Eigenschaften';
 import { EinstellungenDialog } from './EinstellungenDialog';
 import { ProjektDialog } from './ProjektDialog';
+import { SprachwahlDialog } from './SprachwahlDialog';
+import { Variablendialoge } from './Variablendialoge';
+import type { BeispielKennung } from './hilfe';
 import { Menue } from './komponenten/Menue';
 import { Startbereich } from './Startbereich';
 import { Testbereich } from './Testbereich';
 import { testAktiv, testBereit, type TestZustand, type TestOptionen } from '../gemeinsam/testlauf';
+import type { PythonStatus } from '../gemeinsam/python';
 
 registriereBausteine();
 const vorgaben: Einstellungen = {
@@ -46,6 +51,8 @@ const vorgaben: Einstellungen = {
   paletteEingeklappt: false,
   eigenschaftenAngeheftet: false,
   textSkalierung: 1,
+  letzteSkriptsprache: null,
+  pythonInterpreter: null,
 };
 function antwort<T>(r: Antwort<T>): T {
   if (!r.ok) throw new Error(r.meldung);
@@ -112,13 +119,18 @@ export function Anwendung() {
   const [statusArt, setStatusArt] = useState<'neutral' | 'erfolg' | 'hinweis' | 'fehler'>('neutral');
   const [dauerfehler, setDauerfehler] = useState<string | null>(null);
   const [verarbeitung, setVerarbeitung] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<'einstellungen' | 'ueber' | 'projekt' | null>(null);
+  const [dialog, setDialog] = useState<'einstellungen' | 'ueber' | 'projekt' | 'sprache' | null>(null);
   const [version, setVersion] = useState('0.1.0');
   const [zertifikate, setZertifikate] = useState<Zertifikat[]>([]);
   const [zertifikatMeldung, setZertifikatMeldung] = useState('');
   const [update, setUpdate] = useState<UpdateZustand | null>(null);
   const [exportiert, setExportiert] = useState<ExportErgebnis | null>(null);
-  const ergebnis = useMemo(() => vbsErzeugen(projekt), [projekt.editor, projekt.exportOptionen]);
+  const [pythonStatus, setPythonStatus] = useState<PythonStatus | null>(null);
+  const ergebnis = useMemo(
+    () => skriptErzeugen(projekt),
+    [projekt.editor, projekt.exportOptionen, projekt.skriptsprache],
+  );
+  const sprache = sprachdaten[projekt.skriptsprache];
   const sichtbareHinweise = ergebnis.meldungen.filter(
     (m) => pruefungAngefordert || (m.blockId && beruehrt.has(m.blockId)),
   );
@@ -432,22 +444,31 @@ export function Anwendung() {
     }
   }
   async function projektAktion(
-    art: 'neu' | 'oeffnen' | 'speichern' | 'unter' | 'begruessung' | 'backup' | 'dateiliste',
+    art: 'neu' | 'oeffnen' | 'speichern' | 'unter' | BeispielKennung,
+    neueSprache?: Skriptsprache,
   ) {
+    if (art === 'neu' && !neueSprache) {
+      setDialog('sprache');
+      return;
+    }
     await aktion(
       art === 'speichern' || art === 'unter' ? 'Projekt wird gespeichert …' : 'Projekt wird geöffnet …',
       async () => {
         const stand = standLesen();
         const r =
           art === 'neu'
-            ? await window.scriptlab.neu(stand)
+            ? await window.scriptlab.neu(stand, neueSprache!)
             : art === 'oeffnen'
               ? await window.scriptlab.oeffnen(stand)
-              : ['begruessung', 'backup', 'dateiliste'].includes(art)
-                ? await window.scriptlab.beispielOeffnen(
-                    stand,
-                    art as 'begruessung' | 'backup' | 'dateiliste',
-                  )
+              : [
+                    'begruessung',
+                    'backup',
+                    'dateiliste',
+                    'begruessung-python',
+                    'backup-python',
+                    'dateiliste-python',
+                  ].includes(art)
+                ? await window.scriptlab.beispielOeffnen(stand, art as BeispielKennung)
                 : await window.scriptlab.speichern(stand, art === 'unter');
         const neu = antwort(r);
         if (neu) {
@@ -466,6 +487,11 @@ export function Anwendung() {
           } else {
             await dokumentLaden(neu);
             editorZeigen();
+            if (art === 'neu') {
+              const aktuell = antwort(await window.scriptlab.laden()).einstellungen;
+              einstellungenRef.current = aktuell;
+              setEinstellungen(aktuell);
+            }
             melden(art === 'neu' ? 'Füge links einen Baustein hinzu.' : 'Projekt geöffnet.');
           }
         } else {
@@ -488,7 +514,7 @@ export function Anwendung() {
   async function exportieren() {
     setExportiert(null);
     setDauerfehler(null);
-    const p = vbsErzeugen(standLesen());
+    const p = skriptErzeugen(standLesen());
     if (!p.code || p.meldungen.some((m) => m.stufe === 'fehler')) {
       setPruefungAngefordert(true);
       setHinweiseOffen(true);
@@ -496,11 +522,11 @@ export function Anwendung() {
       blockAnzeigen(p.meldungen.find((m) => m.stufe === 'fehler')?.blockId);
       return;
     }
-    await aktion('VBS-Datei wird gespeichert …', async () => {
+    await aktion(`${sprache.kurzbezeichnung}-Script wird gespeichert …`, async () => {
       const neu = antwort(await window.scriptlab.exportieren(standLesen()));
       if (neu) {
         setExportiert(neu);
-        melden('Script gespeichert.', neu.signatur.status === 'vertrauen-offen' ? 'hinweis' : 'erfolg');
+        melden('Script gespeichert.', neu.signatur?.status === 'vertrauen-offen' ? 'hinweis' : 'erfolg');
       }
     });
   }
@@ -529,7 +555,7 @@ export function Anwendung() {
     setExportiert(null);
     setDauerfehler(null);
     const stand = structuredClone(standLesen());
-    const pruefung = vbsErzeugen(stand);
+    const pruefung = skriptErzeugen(stand);
     if (!pruefung.code) {
       setPruefungAngefordert(true);
       setHinweiseOffen(true);
@@ -558,6 +584,7 @@ export function Anwendung() {
       ...testBereit(),
       phase: 'vorbereitung',
       projektName: stand.name,
+      skriptsprache: stand.skriptsprache,
       projektKennung: stand.projektKennung ?? null,
       optionen: testOptionen,
       meldung: 'Der aktuelle Editorstand wird geprüft.',
@@ -574,6 +601,11 @@ export function Anwendung() {
       });
     } finally {
       testAnfrage.current = false;
+      if (stand.skriptsprache === 'python') {
+        void window.scriptlab.pythonStatus().then((r) => {
+          if (r.ok) setPythonStatus(r.wert);
+        });
+      }
     }
   }
   async function testStoppen() {
@@ -628,6 +660,34 @@ export function Anwendung() {
       );
     }
   }
+  async function pythonAktion(art: 'pruefen' | 'waehlen' | 'hilfe') {
+    await aktion(
+      art === 'hilfe' ? 'Python-Hilfe wird geöffnet …' : 'Python-Installation wird geprüft …',
+      async () => {
+        if (art === 'hilfe') {
+          antwort(await window.scriptlab.pythonHilfeOeffnen());
+          return;
+        }
+        const status = antwort(
+          await (art === 'waehlen' ? window.scriptlab.pythonWaehlen() : window.scriptlab.pythonPruefen()),
+        );
+        if (status) setPythonStatus(status);
+        const aktuell = antwort(await window.scriptlab.laden()).einstellungen;
+        einstellungenRef.current = aktuell;
+        setEinstellungen(aktuell);
+      },
+    );
+  }
+  useEffect(() => {
+    if (dialog !== 'einstellungen') return;
+    let aktiv = true;
+    void window.scriptlab.pythonStatus().then((r) => {
+      if (aktiv && r.ok) setPythonStatus(r.wert);
+    });
+    return () => {
+      aktiv = false;
+    };
+  }, [dialog]);
   function platzierungStarten(art: 'einfuegen' | 'verschieben', typOderId: string) {
     if (testSperre.current) return;
     const ws = wsRef.current;
@@ -799,7 +859,7 @@ export function Anwendung() {
         }
         return;
       }
-      if (dialog) return;
+      if (dialog || (event.target instanceof Element && event.target.closest('dialog[open]'))) return;
       if (
         testSperre.current &&
         ((event.ctrlKey && ['z', 'y', 's', 'v', 'x'].includes(event.key.toLowerCase())) ||
@@ -916,7 +976,11 @@ export function Anwendung() {
           }
           verarbeitung={verarbeitung}
           meldung={statusArt === 'erfolg' || statusArt === 'hinweis' ? status : null}
-          aktiveInfo={editorBegonnen ? { name: projekt.name, dateiname: datei, geaendert } : null}
+          aktiveInfo={
+            editorBegonnen
+              ? { name: projekt.name, dateiname: datei, geaendert, skriptsprache: projekt.skriptsprache }
+              : null
+          }
           verfuegbarkeiten={verfuegbarkeiten}
           ziel={startZiel}
           zielAnfrage={startAnfrage}
@@ -949,6 +1013,13 @@ export function Anwendung() {
           <Knopf variante="leise" onClick={() => startseiteZeigen()}>
             Startseite
           </Knopf>
+          <span
+            className="skriptsprache-kennzeichen"
+            data-testid="editor-sprache"
+            aria-label="Skriptsprache des Workflows"
+          >
+            {sprache.bezeichnung}
+          </span>
           <div className="knopfgruppe">
             <Knopf
               symbol="neu"
@@ -1099,12 +1170,12 @@ export function Anwendung() {
             <Knopf
               variante="standard"
               symbol="exportieren"
-              verarbeitung={verarbeitung === 'VBS-Datei wird gespeichert …'}
+              verarbeitung={verarbeitung === `${sprache.kurzbezeichnung}-Script wird gespeichert …`}
               disabled={!!verarbeitung || testAktiv(test.phase)}
               grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
               onClick={() => void exportieren()}
             >
-              Als VBS exportieren
+              {sprache.exportAktion}
             </Knopf>
             <Menue
               beschriftung="Weitere Funktionen"
@@ -1260,13 +1331,15 @@ export function Anwendung() {
                     <p>
                       Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.
                     </p>
-                    <p
-                      className={
-                        exportiert.signatur.status === 'vertrauen-offen' ? 'text-hinweis' : 'text-sekundaer'
-                      }
-                    >
-                      {exportiert.signatur.meldung}
-                    </p>
+                    {projekt.skriptsprache === 'vbs' && exportiert.signatur && (
+                      <p
+                        className={
+                          exportiert.signatur.status === 'vertrauen-offen' ? 'text-hinweis' : 'text-sekundaer'
+                        }
+                      >
+                        {exportiert.signatur.meldung}
+                      </p>
+                    )}
                     <Knopf
                       onClick={() =>
                         void aktion('Speicherordner wird angezeigt …', async () => {
@@ -1327,6 +1400,9 @@ export function Anwendung() {
                   }}
                 />
                 <Testbereich
+                  sprache={projekt.skriptsprache}
+                  pythonStatus={pythonStatus}
+                  pythonEinrichten={() => setDialog('einstellungen')}
                   zustand={test}
                   optionen={testOptionen}
                   veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
@@ -1364,7 +1440,7 @@ export function Anwendung() {
               <section
                 className="code-panel"
                 data-testid="code-panel"
-                aria-label="VBS-Codevorschau"
+                aria-label={sprache.vorschauTitel}
                 style={{ height: codeHoehe }}
               >
                 <div
@@ -1390,7 +1466,7 @@ export function Anwendung() {
                   }}
                 />
                 <header className="panel-kopf">
-                  <h2>VBS-Codevorschau</h2>
+                  <h2>{sprache.vorschauTitel}</h2>
                   <div className="knopfgruppe">
                     <Knopf
                       variante="leise"
@@ -1423,7 +1499,7 @@ export function Anwendung() {
                 <pre
                   tabIndex={0}
                   className={`code ${codeUmbruch ? 'mit-umbruch' : ''}`}
-                  aria-label="Schreibgeschützte VBS-Codevorschau"
+                  aria-label={`Schreibgeschützter ${sprache.vorschauTitel}`}
                 >
                   {ergebnis.code ??
                     "' Vervollständige den Entwurf. Die Hinweise erklären fehlende Verbindungen."}
@@ -1551,6 +1627,16 @@ export function Anwendung() {
           </Knopf>
         </footer>
       </div>
+      <Variablendialoge />
+      <SprachwahlDialog
+        offen={dialog === 'sprache'}
+        vorauswahl={einstellungen.letzteSkriptsprache}
+        abbrechen={() => setDialog(null)}
+        erstellen={(wahl) => {
+          setDialog(null);
+          void projektAktion('neu', wahl);
+        }}
+      />
       <ProjektDialog
         offen={dialog === 'projekt'}
         name={projekt.name}
@@ -1559,6 +1645,8 @@ export function Anwendung() {
         speichern={(name, beschreibung) => aendern({ ...projektRef.current, name, beschreibung })}
       />
       <EinstellungenDialog
+        pythonStatus={pythonStatus}
+        pythonAktion={(art) => void pythonAktion(art)}
         projektOptionenAnzeigen={editorBegonnen}
         offen={dialog === 'einstellungen'}
         schliessen={() => setDialog(null)}

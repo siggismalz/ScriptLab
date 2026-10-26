@@ -55,6 +55,36 @@ function lauf(angaben: Partial<TestZustand> = {}): TestZustand {
 }
 
 describe('Kontrollierte Darstellung des Testbereichs', () => {
+  it('bietet für ungeprüftes Python einen Einrichtungsweg und zeigt eine alte Version nur aus dem Teststand', () => {
+    const ungeprueft = darstellung(testBereit(), {
+      sprache: 'python',
+      pythonStatus: null,
+      pythonEinrichten: () => {},
+    });
+    expect(ungeprueft).toContain('Python einrichten');
+    const vorherigerTest = darstellung(
+      lauf({ phase: 'beendet', skriptsprache: 'python', pythonVersion: '3.12.8', exitcode: 0 }),
+      {
+        sprache: 'vbs',
+        pythonStatus: {
+          zustand: 'bereit',
+          auswahl: 'C:\\Python315\\python.exe',
+          installation: {
+            pfad: 'C:\\Python315\\python.exe',
+            version: '3.15.0',
+            architektur: 'x64',
+            implementierung: 'CPython',
+            tkinter: true,
+          },
+          meldung: 'Aktuelle Installation geprüft.',
+        },
+        pythonEinrichten: () => {},
+      },
+    );
+    expect(vorherigerTest).toContain('3.12.8');
+    expect(vorherigerTest).not.toContain('3.15.0');
+    expect(vorherigerTest).toContain('Skriptsprache</dt><dd>Python');
+  });
   it('erklärt reale Auswirkungen und verlangt vor dem ersten Test einen Basisordner', () => {
     const html = darstellung(testBereit(), { optionen: { basisVerzeichnis: null, zeitlimitSekunden: 120 } });
     expect(html).toContain(

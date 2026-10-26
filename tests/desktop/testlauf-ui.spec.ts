@@ -1,3 +1,4 @@
+import { sprachwahlBestaetigen } from './sprache';
 import { test, expect, type Locator } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
@@ -63,6 +64,7 @@ async function starten(): Promise<Sitzung> {
     }
     await expect(seite.getByRole('button', { name: 'Neuer Workflow', exact: true })).toBeVisible();
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+    await sprachwahlBestaetigen(seite);
     await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
     await app.evaluate(({ dialog }, datei) => {
       dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [datei] });
@@ -241,7 +243,7 @@ for (const textgroesse of [100, 200] as const) {
       await ausgabe.scrollIntoViewIfNeeded();
       const testenKnopf = await knopfImFenster(seite.getByRole('button', { name: 'Testen', exact: true }));
       const exportKnopf = await knopfImFenster(
-        seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }),
+        seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }),
       );
       const geometrie = await seite.evaluate(() => ({
         breite: innerWidth,

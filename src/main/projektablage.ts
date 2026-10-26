@@ -20,6 +20,7 @@ const eintragSchema = z
     projektKennung: uuid,
     name: z.string().min(1).max(160),
     beschreibung: z.string().max(10000),
+    skriptsprache: z.enum(['python', 'vbs']),
     pfad,
     zuletztGeoeffnet: zeit.nullable(),
     geaendertAm: zeit,
@@ -28,9 +29,11 @@ const eintragSchema = z
     verfuegbarkeit: z.literal('unbekannt'),
   })
   .strict();
-const indexSchema = z
-  .object({ schemaVersion: z.literal(1), projekte: z.array(eintragSchema).max(2000) })
-  .strict();
+const alterEintragSchema = eintragSchema.extend({ skriptsprache: z.enum(['python', 'vbs']).default('vbs') });
+const indexSchema = z.union([
+  z.object({ schemaVersion: z.literal(2), projekte: z.array(eintragSchema).max(2000) }).strict(),
+  z.object({ schemaVersion: z.literal(1), projekte: z.array(alterEintragSchema).max(2000) }).strict(),
+]);
 const entwurfSchema = z
   .object({
     schemaVersion: z.literal(1),
@@ -212,7 +215,7 @@ export class Projektindex extends SerielleAblage {
   }
   private async schreiben(projekte: ProjektEintrag[]): Promise<void> {
     if (this.gesperrt) throw new Error(this.hinweis!);
-    const daten = indexSchema.parse({ schemaVersion: 1, projekte });
+    const daten = indexSchema.parse({ schemaVersion: 2, projekte });
     await atomarSchreiben(this.datei, `${JSON.stringify(daten, null, 2)}\n`);
     this.projekte = daten.projekte;
   }
@@ -234,6 +237,7 @@ export class Projektindex extends SerielleAblage {
           this.kennungFuerPfad(dateipfad, stand.projekt.projektKennung ?? randomUUID()),
         name: stand.projekt.name,
         beschreibung: stand.projekt.beschreibung,
+        skriptsprache: stand.projekt.skriptsprache,
         pfad: dateipfad,
         zuletztGeoeffnet: geoeffnet ? new Date().toISOString() : (alt?.zuletztGeoeffnet ?? null),
         geaendertAm: stand.geaendertAm,
@@ -369,6 +373,7 @@ export class Entwurfspeicher extends SerielleAblage {
           projektKennung: e.projektKennung,
           name: e.projekt.name,
           beschreibung: e.projekt.beschreibung,
+          skriptsprache: e.projekt.skriptsprache,
           gesichertAm: e.gesichertAm,
           ausgangspfad: e.ausgangspfad,
           baselineHash: e.baselineHash,

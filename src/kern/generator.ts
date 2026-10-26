@@ -1,5 +1,6 @@
+import { vbsKodierungsHelfer } from './vbs-kodierung';
 import { projektPruefen, type Projekt } from './projekt';
-import { workflowPruefen, variablenSchluessel, type Anweisung, type Ausdruck, type Meldung } from './modell';
+import { workflowPruefen, type Anweisung, type Ausdruck, type Meldung } from './modell';
 
 export type GeneratorOptionen = { modus: 'export' } | { modus: 'test'; token: string };
 /** Zeilennummern sind einsbasiert und einschließlich beider Grenzen, bezogen auf den vollständigen Code. */
@@ -74,13 +75,21 @@ export function vbsErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): Gen
       ],
     };
   }
+  if (geprueft.skriptsprache !== 'vbs')
+    return {
+      code: null,
+      zeilenZuordnung: [],
+      meldungen: [
+        { stufe: 'fehler', text: 'Dieses Projekt verwendet Python. Verwende den Python-Generator.' },
+      ],
+    };
   const { workflow, meldungen } = workflowPruefen(geprueft);
   if (!workflow) return { code: null, meldungen, zeilenZuordnung: [] };
   const variablen = new Map(workflow.variablen.map((name, i) => [name, `v_${i + 1}`]));
   const helfer = new Set<string>();
   const interneVariablen: string[] = [];
   let zaehler = 0;
-  const variable = (name: string): string => variablen.get(variablenSchluessel(name))!;
+  const variable = (id: string): string => variablen.get(id)!;
   const neu = (): string => {
     const name = `sl_intern_${++zaehler}`;
     interneVariablen.push(name);
@@ -269,6 +278,7 @@ export function vbsErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): Gen
   }
   // Abhängigkeiten werden geschlossen, bevor die Helfer in fester Reihenfolge ausgegeben werden.
   if (helfer.has('SL_Schreiben')) helfer.add('SL_Lesen');
+  if (helfer.has('SL_Lesen')) helfer.add('SL_Kodierungsfehler');
   if (helfer.has('SL_Umbenennen')) helfer.add('SL_Kopieren');
   if (helfer.has('SL_Eintrag') || helfer.has('SL_Anhaengen')) helfer.add('SL_Liste');
   const benutztDateien = [...helfer].some((name) =>
@@ -414,6 +424,7 @@ End Function`;
 }
 
 const helferTexte: Record<string, string> = {
+  SL_Kodierungsfehler: vbsKodierungsHelfer,
   SL_Ausgabe: `Sub SL_Ausgabe(text)
   ' Standardausgabe nur unter dem Konsolenhost; wscript stellt keinen Ausgabestream bereit.
   If LCase(Right(WScript.FullName, 11)) = "cscript.exe" Then
@@ -526,7 +537,7 @@ End Sub`,
   SL_Dateien = liste
 End Function`,
   SL_Lesen: `Function SL_Lesen(wert, kodierung)
-  Dim pfad, strom, text, nummer, beschreibung, zeichensatz
+  Dim pfad, strom, text, nummer, beschreibung, zeichensatz, daten, laenge, kodierungsfehler
   pfad = SL_Pfad(wert)
   If Not sl_fso.FileExists(pfad) Then SL_Fehler "Die Textdatei fehlt: " & pfad
   If kodierung = "ANSI" Then
@@ -544,12 +555,33 @@ End Function`,
     Else
       SL_Fehler "Die Textkodierung wird nicht unterstützt."
     End If
+    ' Erst die unveränderten Bytes prüfen. Ungültiger Altinhalt darf beim Anhängen nicht verloren gehen.
     On Error Resume Next
     Set strom = CreateObject("ADODB.Stream")
-    If Err.Number = 0 Then strom.Type = 2
-    If Err.Number = 0 Then strom.Charset = zeichensatz
+    If Err.Number = 0 Then strom.Type = 1
     If Err.Number = 0 Then strom.Open
     If Err.Number = 0 Then strom.LoadFromFile pfad
+    If Err.Number = 0 Then laenge = strom.Size
+    If Err.Number = 0 And laenge > 0 Then daten = strom.Read
+    nummer = Err.Number : beschreibung = Err.Description
+    On Error GoTo 0
+    If nummer <> 0 Then
+      On Error Resume Next
+      If IsObject(strom) Then strom.Close
+      On Error GoTo 0
+      SL_Systemfehler nummer, beschreibung, "Textdatei lesen"
+    End If
+    kodierungsfehler = SL_Kodierungsfehler(daten, laenge, kodierung)
+    If Len(kodierungsfehler) > 0 Then
+      On Error Resume Next
+      strom.Close
+      On Error GoTo 0
+      SL_Fehler kodierungsfehler
+    End If
+    On Error Resume Next
+    strom.Position = 0
+    If Err.Number = 0 Then strom.Type = 2
+    If Err.Number = 0 Then strom.Charset = zeichensatz
     If Err.Number = 0 Then text = strom.ReadText
     nummer = Err.Number : beschreibung = Err.Description
     If IsObject(strom) Then strom.Close

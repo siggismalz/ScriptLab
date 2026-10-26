@@ -15,7 +15,8 @@ import { join, resolve, extname, dirname, basename, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { neuesProjekt, projektPruefen, type Projekt } from '../kern/projekt';
-import { vbsErzeugen } from '../kern/generator';
+import { skriptErzeugen } from '../kern/skript';
+import { sprachdaten } from '../kern/sprachen';
 import { farben } from '../gestaltung/tokens';
 import {
   Projektindex,
@@ -26,12 +27,14 @@ import {
   windowsPfadSchluessel,
   type Dateistand,
 } from './projektablage';
-import { atomarSchreiben, dateiFehler, projektLesen, projektSchreiben, vbsKodieren } from './dateien';
+import { atomarSchreiben, dateiFehler, projektLesen, projektSchreiben, skriptKodieren } from './dateien';
 import { SignaturDienst } from '../windows/signatur';
 import { AktualisierungsDienst } from '../windows/updates';
 import { TestlaufDienst, testOptionenSchema, testStandHash } from '../windows/testlauf';
 import type { TestOptionen } from '../gemeinsam/testlauf';
 import type { Antwort, Dokument, Einstellungen } from '../gemeinsam/bruecke';
+import type { PythonInstallation, PythonStatus } from '../gemeinsam/python';
+import { pythonKandidatenSuchen, pythonPruefen, pythonDateipfadPruefen } from '../windows/python';
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'scriptlab', privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -41,6 +44,8 @@ if (!app.isPackaged && process.env.SCRIPTLAB_TESTDATEN)
   app.setPath('userData', resolve(process.env.SCRIPTLAB_TESTDATEN));
 const einstellungenSchema = z
   .object({
+    letzteSkriptsprache: z.enum(['python', 'vbs']).nullable().default(null),
+    pythonInterpreter: z.string().min(1).max(32768).nullable().default(null),
     automatischeUpdates: z.boolean(),
     vorabversionen: z.boolean(),
     palettenBreite: z.number().int().min(240).max(400).default(272),
@@ -71,6 +76,13 @@ let signaturDienst: SignaturDienst;
 let aktualisierungen: AktualisierungsDienst;
 let testDienst: TestlaufDienst;
 let testOptionen: TestOptionen = { basisVerzeichnis: null, zeitlimitSekunden: 120 };
+let pythonPruefAuftrag: Promise<PythonInstallation> | null = null;
+let pythonZustand: PythonStatus = {
+  zustand: 'ungeprueft',
+  auswahl: null,
+  installation: null,
+  meldung: 'Python wurde noch nicht geprüft. Zum Bearbeiten und Exportieren ist keine Laufzeit erforderlich.',
+};
 let wartetAufDarstellung = true;
 let standAnfrage: { kennung: string; uebernehmen: (daten: unknown) => void } | null = null;
 
@@ -93,6 +105,10 @@ function dokument(): Dokument {
 function uebernehmen(daten: unknown, sicherungPlanen = true): Projekt {
   const vorher = projektHash(projekt);
   const geprueft = projektPruefen(daten);
+  if (geprueft.skriptsprache !== projekt.skriptsprache)
+    throw new Error(
+      'Die Sprache dieses Workflows ist festgelegt. Erstelle für eine andere Sprache einen neuen Workflow.',
+    );
   if (testDienst?.aktiv() && testStandHash(geprueft) !== testStandHash(projekt))
     throw new Error('Während des Tests sind Änderungen am Workflow gesperrt. Stoppe den Test zuerst.');
   if (geprueft.projektKennung && geprueft.projektKennung !== projekt.projektKennung)
@@ -126,6 +142,82 @@ function fensterStatusAktualisieren(): void {
 }
 function einstellungsPfad(): string {
   return join(app.getPath('userData'), 'einstellungen.json');
+}
+
+function testWerkzeugPfad(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'ScriptLab.Testhost.exe')
+    : join(app.getAppPath(), 'artifacts/native/ScriptLab.Testhost.exe');
+}
+
+async function lokaleEinstellungenSpeichern(neu: Einstellungen): Promise<void> {
+  await atomarSchreiben(einstellungsPfad(), `${JSON.stringify(neu, null, 2)}\n`);
+  einstellungen = neu;
+}
+
+async function pythonErmitteln(tkinter = false, signal?: AbortSignal): Promise<PythonInstallation> {
+  if (pythonPruefAuftrag) throw new Error('Python wird bereits geprüft. Warte kurz auf das Ergebnis.');
+  const auswahl = einstellungen.pythonInterpreter;
+  pythonZustand = {
+    zustand: 'prueft',
+    auswahl,
+    installation: null,
+    meldung: 'Die lokale Python-Installation wird geprüft.',
+  };
+  const pruefen = async () => {
+    const kandidaten = auswahl ? [{ pfad: auswahl }] : await pythonKandidatenSuchen();
+    if (!kandidaten.length) {
+      pythonZustand = {
+        zustand: 'fehlt',
+        auswahl,
+        installation: null,
+        meldung:
+          'Es wurde keine Python-Installation gefunden. Wähle in den Einstellungen eine vorhandene python.exe aus. Bearbeiten und Exportieren bleiben möglich.',
+      };
+      throw new Error(pythonZustand.meldung);
+    }
+    let letzterFehler = '';
+    for (const kandidat of kandidaten.slice(0, 20)) {
+      if (signal?.aborted) throw new Error('Die Python-Prüfung wurde abgebrochen.');
+      try {
+        const installation = await pythonPruefen(kandidat.pfad, {
+          helper: testWerkzeugPfad(),
+          technischeOrdner: join(app.getPath('userData'), 'python-pruefungen'),
+          tkinter,
+          signal,
+        });
+        pythonZustand = {
+          zustand: 'bereit',
+          auswahl,
+          installation,
+          meldung: `CPython ${installation.version} (64 Bit) wurde erfolgreich geprüft.${tkinter ? ' Tcl/Tk ist verfügbar.' : ' Dialogunterstützung wird bei Bedarf geprüft.'}`,
+        };
+        return installation;
+      } catch (fehler) {
+        if (signal?.aborted) throw new Error('Die Python-Prüfung wurde abgebrochen.');
+        letzterFehler = fehler instanceof Error && !('code' in fehler) ? fehler.message : dateiFehler(fehler);
+      }
+    }
+    pythonZustand = {
+      zustand: 'fehler',
+      auswahl,
+      installation: null,
+      meldung: `Keine geeignete Python-Laufzeit verfügbar. ${letzterFehler} Bearbeiten und Exportieren bleiben möglich.`,
+    };
+    throw new Error(pythonZustand.meldung);
+  };
+  pythonPruefAuftrag = pruefen();
+  try {
+    return await pythonPruefAuftrag;
+  } finally {
+    pythonPruefAuftrag = null;
+    if (pythonZustand.zustand === 'prueft')
+      pythonZustand = {
+        ...pythonZustand,
+        zustand: 'ungeprueft',
+        meldung: 'Die Python-Prüfung wurde nicht abgeschlossen. Prüfe die Installation erneut.',
+      };
+  }
 }
 
 export function absenderPruefen(event: IpcMainInvokeEvent | IpcMainEvent): void {
@@ -368,6 +460,7 @@ function ipcEinrichten(): void {
   registrieren('test-starten', (daten) => {
     if (dialogAktiv) throw new Error('Schließe zuerst den geöffneten Dialog.');
     if (testDienst.aktiv()) throw new Error('Es läuft bereits ein Test.');
+    if (pythonPruefAuftrag) throw new Error('Python wird gerade geprüft. Warte kurz auf das Ergebnis.');
     const auswahl = z.object({ projekt: z.unknown(), optionen: testOptionenSchema }).strict().parse(daten);
     const stand = structuredClone(uebernehmen(auswahl.projekt));
     testOptionen = auswahl.optionen;
@@ -422,10 +515,15 @@ function ipcEinrichten(): void {
   });
   registrieren('neu', (daten) =>
     mitDialog(async () => {
-      uebernehmen(daten);
+      const auswahl = z
+        .object({ projekt: z.unknown(), sprache: z.enum(['python', 'vbs']) })
+        .strict()
+        .parse(daten);
+      uebernehmen(auswahl.projekt);
       if (!(await aenderungenSichern())) return null;
+      await lokaleEinstellungenSpeichern({ ...einstellungen, letzteSkriptsprache: auswahl.sprache });
       await verworfenenEntwurfBereinigen();
-      projektAktivieren(neuesProjekt(), null, null);
+      projektAktivieren(neuesProjekt(auswahl.sprache), null, null);
       return dokument();
     }),
   );
@@ -454,7 +552,17 @@ function ipcEinrichten(): void {
   registrieren('beispiel', (daten) =>
     mitDialog(async () => {
       const auswahl = z
-        .object({ projekt: z.unknown(), beispiel: z.enum(['begruessung', 'backup', 'dateiliste']) })
+        .object({
+          projekt: z.unknown(),
+          beispiel: z.enum([
+            'begruessung',
+            'backup',
+            'dateiliste',
+            'begruessung-python',
+            'backup-python',
+            'dateiliste-python',
+          ]),
+        })
         .strict()
         .parse(daten);
       uebernehmen(auswahl.projekt);
@@ -462,6 +570,9 @@ function ipcEinrichten(): void {
         begruessung: '01-Begruessung.scriptlab',
         backup: '02-Datei-Backup.scriptlab',
         dateiliste: '03-Dateinamenliste.scriptlab',
+        'begruessung-python': '04-Python-Begruessung.scriptlab',
+        'backup-python': '05-Python-Datei-Backup.scriptlab',
+        'dateiliste-python': '06-Python-Dateinamenliste.scriptlab',
       } as const;
       const basis = app.isPackaged
         ? join(process.resourcesPath, 'beispiele')
@@ -628,29 +739,39 @@ function ipcEinrichten(): void {
   registrieren('exportieren', (daten) =>
     mitDialog(async () => {
       const stand = structuredClone(uebernehmen(daten));
-      const ergebnis = vbsErzeugen(stand);
+      const ergebnis = skriptErzeugen(stand);
       if (!ergebnis.code || ergebnis.meldungen.some((m) => m.stufe === 'fehler'))
         throw new Error('Der Export ist noch nicht möglich. Bitte korrigiere die markierten Bausteine.');
       const auswahl = await dialog.showSaveDialog(fenster, {
-        title: 'Als VBS exportieren',
-        defaultPath: `${dateiname(stand.name)}.vbs`,
-        filters: [{ name: 'VBScript', extensions: ['vbs'] }],
+        title: sprachdaten[stand.skriptsprache].exportAktion,
+        defaultPath: `${dateiname(stand.name)}.${sprachdaten[stand.skriptsprache].dateiendung}`,
+        filters: [
+          {
+            name: sprachdaten[stand.skriptsprache].bezeichnung,
+            extensions: [sprachdaten[stand.skriptsprache].dateiendung],
+          },
+        ],
       });
       if (auswahl.canceled || !auswahl.filePath) return null;
       const ziel = auswahl.filePath;
-      if (extname(ziel).toLowerCase() !== '.vbs')
-        throw new Error('Bitte verwende die Endung .vbs für den Export.');
-      const zwischenpfad = join(dirname(ziel), `.scriptlab-${randomUUID()}.vbs`);
+      const endung = `.${sprachdaten[stand.skriptsprache].dateiendung}`;
+      if (extname(ziel).toLowerCase() !== endung)
+        throw new Error(`Bitte verwende die Endung ${endung} für den Export.`);
+      const zwischenpfad = join(dirname(ziel), `.scriptlab-${randomUUID()}${endung}`);
       try {
-        await atomarSchreiben(zwischenpfad, vbsKodieren(ergebnis.code));
-        const signatur = stand.exportOptionen.signieren
-          ? await signaturDienst.exportSignieren(zwischenpfad, stand.exportOptionen)
-          : { status: 'nicht-signiert' as const, meldung: 'Nicht signiert', zeitstempel: false };
-        if (stand.exportOptionen.signieren && !['gueltig', 'vertrauen-offen'].includes(signatur.status))
+        await atomarSchreiben(zwischenpfad, skriptKodieren(ergebnis.code, stand.skriptsprache));
+        const signieren = stand.skriptsprache === 'vbs' && stand.exportOptionen.signieren;
+        const signatur =
+          stand.skriptsprache === 'python'
+            ? null
+            : signieren
+              ? await signaturDienst.exportSignieren(zwischenpfad, stand.exportOptionen)
+              : { status: 'nicht-signiert' as const, meldung: 'Nicht signiert', zeitstempel: false };
+        if (signieren && signatur && !['gueltig', 'vertrauen-offen'].includes(signatur.status))
           throw new Error(signatur.meldung);
         await rename(zwischenpfad, ziel);
         exportPfad = ziel;
-        return { dateiname: basename(ziel), signatur };
+        return { dateiname: basename(ziel), skriptsprache: stand.skriptsprache, signatur };
       } finally {
         await unlink(zwischenpfad).catch(() => {});
       }
@@ -663,10 +784,44 @@ function ipcEinrichten(): void {
   registrieren('zertifikate', () => signaturDienst.zertifikateAuflisten());
   registrieren('einstellungen', async (daten) => {
     const neu = einstellungenSchema.parse(daten);
-    await atomarSchreiben(einstellungsPfad(), `${JSON.stringify(neu, null, 2)}\n`);
-    einstellungen = neu;
+    if (neu.pythonInterpreter !== einstellungen.pythonInterpreter)
+      throw new Error('Wähle die Python-Installation über „python.exe auswählen“.');
+    await lokaleEinstellungenSpeichern(neu);
     aktualisierungen.vorabversionenSetzen(neu.vorabversionen);
     return einstellungen;
+  });
+  registrieren('python-status', () => pythonZustand);
+  registrieren('python-pruefen', async () => {
+    if (testDienst.aktiv()) throw new Error('Stoppe den laufenden Test vor einer neuen Laufzeitprüfung.');
+    try {
+      await pythonErmitteln();
+    } catch {
+      /* Der geprüfte Status enthält die verständliche Meldung. */
+    }
+    return pythonZustand;
+  });
+  registrieren('python-waehlen', () =>
+    mitDialog(async () => {
+      if (testDienst.aktiv() || pythonPruefAuftrag)
+        throw new Error('Warte bis zum Ende des Tests oder der Python-Prüfung.');
+      const auswahl = await dialog.showOpenDialog(fenster, {
+        title: 'Vorhandene python.exe auswählen',
+        properties: ['openFile'],
+        filters: [{ name: 'Python-Interpreter', extensions: ['exe'] }],
+      });
+      if (auswahl.canceled || auswahl.filePaths.length !== 1) return null;
+      const pfad = pythonDateipfadPruefen(auswahl.filePaths[0]);
+      await lokaleEinstellungenSpeichern({ ...einstellungen, pythonInterpreter: pfad });
+      try {
+        await pythonErmitteln();
+      } catch {
+        /* Ein ungeeigneter Pfad bleibt sichtbar, kein stiller Wechsel. */
+      }
+      return pythonZustand;
+    }),
+  );
+  registrieren('python-hilfe', async () => {
+    await shell.openExternal('https://docs.python.org/3.15/using/windows.html');
   });
   registrieren('update', (daten) => {
     const aktion = z.enum(['status', 'pruefen', 'laden', 'installieren']).parse(daten);
@@ -806,16 +961,16 @@ else {
       } catch {
         /* Fehlende oder beschädigte Einstellungen verwenden sichere Vorgaben. */
       }
+      pythonZustand.auswahl = einstellungen.pythonInterpreter;
       signaturDienst = new SignaturDienst(
         app.isPackaged
           ? join(process.resourcesPath, 'signatur-helper.ps1')
           : join(app.getAppPath(), 'scripts/signatur-helper.ps1'),
       );
       testDienst = new TestlaufDienst(
-        app.isPackaged
-          ? join(process.resourcesPath, 'ScriptLab.Testhost.exe')
-          : join(app.getAppPath(), 'artifacts/native/ScriptLab.Testhost.exe'),
+        testWerkzeugPfad(),
         join(app.getPath('userData'), 'testlaeufe'),
+        (tkinter, signal) => pythonErmitteln(tkinter, signal),
       );
       aktualisierungen = new AktualisierungsDienst({
         installierteVersion: app.getVersion(),

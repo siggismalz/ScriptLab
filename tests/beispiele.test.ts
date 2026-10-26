@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import * as Blockly from 'blockly/core';
 import { projektPruefen, type Projekt } from '../src/kern/projekt';
 import { vbsErzeugen } from '../src/kern/generator';
+import { skriptErzeugen } from '../src/kern/skript';
 import { registriereBausteine } from '../src/editor/bausteine';
 
 const beispiele = readdirSync(resolve('beispiele'))
@@ -13,14 +14,17 @@ const beispiele = readdirSync(resolve('beispiele'))
   .sort();
 const testdatenVorherVorhanden = existsSync(resolve('ScriptLab-Testdaten'));
 registriereBausteine();
-describe('Drei sichere Beispielprojekte', () => {
-  it('liefert die drei geforderten Beispiele ausschließlich als Projektdateien', () => {
+describe('Sechs sichere Beispielprojekte', () => {
+  it('liefert die drei Aufgaben in beiden Sprachen ausschließlich als Projektdateien', () => {
     expect(beispiele).toEqual([
       '01-Begruessung.scriptlab',
       '02-Datei-Backup.scriptlab',
       '03-Dateinamenliste.scriptlab',
+      '04-Python-Begruessung.scriptlab',
+      '05-Python-Datei-Backup.scriptlab',
+      '06-Python-Dateinamenliste.scriptlab',
     ]);
-    expect(readdirSync(resolve('beispiele')).some((name) => name.endsWith('.vbs'))).toBe(false);
+    expect(readdirSync(resolve('beispiele')).some((name) => /\.(?:vbs|py)$/.test(name))).toBe(false);
   });
   for (const datei of beispiele)
     it(`${datei} lässt sich prüfen, laden und ausschließlich als Text erzeugen`, () => {
@@ -29,19 +33,19 @@ describe('Drei sichere Beispielprojekte', () => {
       try {
         Blockly.serialization.workspaces.load(p.editor, workspace);
         const geladen = { ...p, editor: Blockly.serialization.workspaces.save(workspace) } as Projekt;
-        const ergebnis = vbsErzeugen(geladen);
+        const ergebnis = skriptErzeugen(geladen);
         expect(ergebnis.meldungen).toEqual([]);
         expect(ergebnis.code).not.toBeNull();
-        expect(ergebnis.code).toContain('Option Explicit');
-        expect(vbsErzeugen(geladen).code).toBe(ergebnis.code);
-        expect(vbsErzeugen(p).code).toBe(ergebnis.code);
+        expect(ergebnis.code).toContain(p.skriptsprache === 'vbs' ? 'Option Explicit' : 'def sl_haupt():');
+        expect(skriptErzeugen(geladen).code).toBe(ergebnis.code);
+        expect(skriptErzeugen(p).code).toBe(ergebnis.code);
         expect(p.exportOptionen.signieren).toBe(false);
       } finally {
         workspace.dispose();
       }
     });
   it('verwendet für Backup und Dateiliste ausschließlich eindeutige relative Testpfade', () => {
-    for (const datei of beispiele.slice(1)) {
+    for (const datei of beispiele.filter((datei) => !datei.includes('Begruessung'))) {
       const quelle = readFileSync(resolve('beispiele', datei), 'utf8');
       expect(quelle).toContain('ScriptLab-Testdaten');
       expect(quelle).not.toMatch(/[A-Z]:\\\\/);
@@ -63,6 +67,7 @@ describe.skipIf(process.platform !== 'win32')(
       try {
         for (const datei of beispiele) {
           const p = projektPruefen(JSON.parse(readFileSync(resolve('beispiele', datei), 'utf8')));
+          if (p.skriptsprache !== 'vbs') continue;
           const erzeugt = vbsErzeugen(p);
           expect(erzeugt.code).not.toBeNull();
           const ausgabe = join(ordner, datei.replace('.scriptlab', '.vbs'));

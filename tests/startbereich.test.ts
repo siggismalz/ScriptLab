@@ -29,6 +29,7 @@ const projekt = (
   groesse: 1024,
   hash: 'a'.repeat(64),
   verfuegbarkeit: 'unbekannt',
+  skriptsprache: 'vbs',
 });
 const entwurf = (
   id: string,
@@ -43,6 +44,7 @@ const entwurf = (
   projektKennung: `kennung-${id}`,
   beschreibung: '',
   baselineHash: null,
+  skriptsprache: 'vbs',
 });
 
 describe('Bibliotheksansicht ohne zweite Datenwahrheit', () => {
@@ -115,7 +117,7 @@ describe('Bibliotheksansicht ohne zweite Datenwahrheit', () => {
         ...props,
         laden: false,
         daten: { projekte: [], entwuerfe: [], hinweis: null },
-        aktiveInfo: { name: 'Testentwurf', dateiname: null, geaendert: true },
+        aktiveInfo: { name: 'Testentwurf', dateiname: null, geaendert: true, skriptsprache: 'vbs' },
       }),
     );
     expect(geladen).toContain('0 Projekte bekannt');
@@ -170,8 +172,15 @@ describe('Lokale Hilfe und vorhandene Vorlagen', () => {
     expect(hilfeDurchsuchen('<script>keinehilfe</script>')).toEqual([]);
   });
 
-  it('verweist ausschließlich auf die drei echten Beispielprojekte und gültige Vorlagenlinks', async () => {
-    expect(beispiele.map((b) => b.id)).toEqual(['begruessung', 'backup', 'dateiliste']);
+  it('verweist auf die sechs echten Beispielprojekte und gültige Vorlagenlinks', async () => {
+    expect(beispiele.map((b) => b.id)).toEqual([
+      'begruessung',
+      'backup',
+      'dateiliste',
+      'begruessung-python',
+      'backup-python',
+      'dateiliste-python',
+    ]);
     for (const beispiel of beispiele) {
       const text = await readFile(new URL(`../beispiele/${beispiel.dateiname}`, import.meta.url), 'utf8');
       expect(projektPruefen(JSON.parse(text)).name).toBeTruthy();

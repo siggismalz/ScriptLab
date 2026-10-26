@@ -4,10 +4,12 @@ import { mkdir, writeFile, stat, unlink, rmdir } from 'node:fs/promises';
 import { join, isAbsolute } from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import { z } from 'zod';
-import { projektPruefen, type Projekt } from '../kern/projekt';
-import { vbsErzeugen } from '../kern/generator';
+import { projektPruefen, type Projekt, type EditorBlock } from '../kern/projekt';
+import { skriptErzeugen } from '../kern/skript';
 import { vbsKodieren } from '../main/dateien';
 import { testAktiv, testBereit, type TestZustand, type TestOptionen } from '../gemeinsam/testlauf';
+import type { PythonInstallation } from '../gemeinsam/python';
+import { pythonDateipfadPruefen } from './python';
 
 export const testOptionenSchema = z
   .object({
@@ -34,12 +36,30 @@ interface Lauf {
   beenden: (() => void) | null;
   abbruch: AbortController;
   fehlerText: string | null;
+  sprache: 'vbs' | 'python';
+  python: Readonly<PythonInstallation> | null;
+  dialogeNoetig: boolean;
 }
 interface ProzessErgebnis {
   code: number | null;
   signal: string | null;
   text: string;
   fehler: string | null;
+}
+
+export function pythonDialogeNoetig(projekt: Projekt): boolean {
+  const besuchen = (block?: EditorBlock): boolean => {
+    if (!block) return false;
+    const aktiv = block.enabled !== false && !block.disabledReasons?.length;
+    return (
+      (aktiv &&
+        (['sl_message', 'sl_input', 'sl_question'].includes(block.type) ||
+          (block.type === 'sl_delete' && (block.fields?.RUECKFRAGE ?? 'JA') === 'JA') ||
+          Object.values(block.inputs ?? {}).some((eingang) => besuchen(eingang.block ?? eingang.shadow)))) ||
+      besuchen(block.next?.block)
+    );
+  };
+  return projekt.editor.blocks?.blocks.some(besuchen) ?? false;
 }
 
 /** Ausschließlich geprüfte Workflows; Host und Argumentstruktur sind nicht vom Renderer wählbar. */
@@ -50,6 +70,10 @@ export class TestlaufDienst {
   constructor(
     private readonly helper: string,
     private readonly technischeOrdner: string,
+    private readonly pythonErmitteln?: (
+      tkinterNoetig: boolean,
+      signal: AbortSignal,
+    ) => Promise<PythonInstallation>,
   ) {}
 
   lesen(): TestZustand {
@@ -69,7 +93,7 @@ export class TestlaufDienst {
     const kontext = testOptionenSchema.parse(optionen);
     const id = randomUUID(),
       token = randomBytes(24).toString('hex');
-    const erzeugt = vbsErzeugen(projekt, { modus: 'test', token });
+    const erzeugt = skriptErzeugen(projekt, { modus: 'test', token });
     if (!erzeugt.code)
       throw new Error('Vervollständige den Workflow. Die Hinweise nennen die betroffenen Bausteine.');
     this.zustand = {
@@ -78,6 +102,8 @@ export class TestlaufDienst {
       laufId: id,
       projektKennung: projekt.projektKennung ?? null,
       projektName: projekt.name,
+      skriptsprache: projekt.skriptsprache,
+      pythonVersion: null,
       standHash: testStandHash(projekt),
       vorbereitetAm: new Date().toISOString(),
       optionen: kontext,
@@ -95,6 +121,9 @@ export class TestlaufDienst {
       beenden: null,
       abbruch: new AbortController(),
       fehlerText: null,
+      sprache: projekt.skriptsprache,
+      python: null,
+      dialogeNoetig: pythonDialogeNoetig(projekt),
     };
     this.lauf = lauf;
     lauf.fertig = this.ausfuehren(lauf, erzeugt.code, kontext);
@@ -158,7 +187,18 @@ export class TestlaufDienst {
         throw new Error('Wähle einen erreichbaren Basisordner aus.');
       await pruefen(mkdir(lauf.ordner, { recursive: true }));
       if (lauf.grund) return;
-      if (!this.laufzeitGeprueft) {
+      if (lauf.sprache === 'python') {
+        if (!this.pythonErmitteln)
+          throw new Error('Wähle in den Einstellungen eine geeignete Python-Installation aus.');
+        this.zustand.meldung = lauf.dialogeNoetig
+          ? 'Python und die benötigten Tk-Dialoge werden geprüft.'
+          : 'Die gewählte Python-Installation wird geprüft.';
+        const python = await this.pythonErmitteln(lauf.dialogeNoetig, lauf.abbruch.signal);
+        if (lauf.grund) return;
+        // Dieser Lauf behält genau die geprüfte Datei, auch wenn später Einstellungen geändert werden.
+        lauf.python = Object.freeze({ ...python, pfad: pythonDateipfadPruefen(python.pfad) });
+        this.zustand.pythonVersion = python.version;
+      } else if (!this.laufzeitGeprueft) {
         const probe = join(lauf.ordner, 'laufzeitprobe.vbs');
         await pruefen(
           writeFile(
@@ -186,8 +226,13 @@ export class TestlaufDienst {
         this.laufzeitGeprueft = true;
       }
       if (lauf.grund) return;
-      const datei = join(lauf.ordner, 'workflow.vbs');
-      await pruefen(writeFile(datei, vbsKodieren(code), { flag: 'wx', signal: lauf.abbruch.signal }));
+      const datei = join(lauf.ordner, lauf.sprache === 'python' ? 'workflow.py' : 'workflow.vbs');
+      await pruefen(
+        writeFile(datei, lauf.sprache === 'python' ? Buffer.from(code, 'utf8') : vbsKodieren(code), {
+          flag: 'wx',
+          signal: lauf.abbruch.signal,
+        }),
+      );
       if (lauf.grund) return;
       const ergebnis = await this.prozessStarten(lauf, datei, optionen, false);
       this.zustand.exitcode = ergebnis.code;
@@ -218,7 +263,7 @@ export class TestlaufDienst {
       // Das abgeschlossene Prozessende hängt nicht von einem eventuell unerreichbaren Datenträger ab.
       // Die separate Bereinigung schreibt niemals erneut in den globalen Laufzustand.
       void (async () => {
-        for (const name of ['workflow.vbs', 'laufzeitprobe.vbs'])
+        for (const name of ['workflow.vbs', 'workflow.py', 'laufzeitprobe.vbs'])
           await unlink(join(lauf.ordner, name)).catch(() => {});
         await rmdir(lauf.ordner).catch(() => {});
       })();
@@ -254,6 +299,7 @@ export class TestlaufDienst {
           String(optionen.zeitlimitSekunden * 1000),
           '--token',
           lauf.token,
+          ...(lauf.sprache === 'python' ? ['--sprache', 'python', '--interpreter', lauf.python!.pfad] : []),
         ],
         {
           shell: false,
@@ -275,7 +321,7 @@ export class TestlaufDienst {
         waechter = setTimeout(() => {
           if (vorStart)
             fehler = 'Der feste Windows-Testhost hat den Scriptstart nicht rechtzeitig bestätigt.';
-          else if (probe) fehler = 'Die feste VBScript-Laufzeitprüfung wurde nicht rechtzeitig beendet.';
+          else if (probe) fehler = 'Die feste Laufzeitprüfung wurde nicht rechtzeitig beendet.';
           else lauf.grund ??= 'zeitlimit';
           if (!probe) {
             this.zustand.phase = 'stoppt';
@@ -286,7 +332,8 @@ export class TestlaufDienst {
           lauf.beenden?.();
         }, dauer);
       };
-      const dekoder = [new StringDecoder('utf16le'), new StringDecoder('utf16le')];
+      const kodierung = lauf.sprache === 'python' ? 'utf8' : 'utf16le';
+      const dekoder = [new StringDecoder(kodierung), new StringDecoder(kodierung)];
       const protokoll = (text: string) => {
         if (text.startsWith('SLHOST|GESTARTET|')) {
           const zeit = Date.parse(text.split('|')[2]);
@@ -306,7 +353,7 @@ export class TestlaufDienst {
           return true;
         }
         if (text === 'SLHOST|ZEITLIMIT') {
-          if (probe) fehler = 'Die feste VBScript-Laufzeitprüfung hat ihr Zeitlimit erreicht.';
+          if (probe) fehler = 'Die feste Laufzeitprüfung hat ihr Zeitlimit erreicht.';
           else {
             lauf.grund ??= 'zeitlimit';
             this.zustand.phase = 'stoppt';
@@ -372,9 +419,27 @@ export class TestlaufDienst {
         if (!probe && stderr) {
           this.zustand.technischeMeldung = stderr;
           const dateiname = datei.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const nummer = new RegExp(`^${dateiname}\\s*\\((\\d+),\\s*\\d+\\)\\s`, 'im').exec(stderr);
-          if (nummer) {
-            const n = Number(nummer[1]);
+          const nummern = [
+            ...stderr.matchAll(
+              lauf.sprache === 'python'
+                ? new RegExp(`File "${dateiname}", line (\\d+)`, 'gim')
+                : new RegExp(`^${dateiname}\\s*\\((\\d+),\\s*\\d+\\)\\s`, 'gim'),
+            ),
+          ]
+            .map((treffer) => Number(treffer[1]))
+            .reverse();
+          // Python nennt zuerst den Hauptaufruf und zuletzt interne Hilfsfunktionen.
+          // Vorrang hat die tatsächliche Workflowzeile zum bestätigten Fehlerbaustein.
+          const zuordnung = this.zustand.zeilenZuordnung;
+          const n =
+            nummern.find((zeile) =>
+              zuordnung.some(
+                (z) => z.blockId === this.zustand.fehlerBlockId && zeile >= z.von && zeile <= z.bis,
+              ),
+            ) ??
+            nummern.find((zeile) => zuordnung.some((z) => zeile >= z.von && zeile <= z.bis)) ??
+            nummern[0];
+          if (n !== undefined) {
             this.zustand.fehlerZeile = n;
             this.zustand.fehlerBlockId ??=
               this.zustand.zeilenZuordnung.find((z) => n >= z.von && n <= z.bis)?.blockId ?? null;

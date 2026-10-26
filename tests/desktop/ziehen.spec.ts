@@ -1,3 +1,4 @@
+import { sprachwahlBestaetigen } from './sprache';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
@@ -18,6 +19,7 @@ async function starten(): Promise<Sitzung> {
   const seite = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+  await sprachwahlBestaetigen(seite);
   await expect(seite.getByTestId('statusleiste')).toContainText('Neues Projekt');
   await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
   await seite.evaluate(

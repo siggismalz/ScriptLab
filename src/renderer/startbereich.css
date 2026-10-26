@@ -212,7 +212,7 @@
 }
 .start-listenfilter {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 200px) minmax(160px, 220px) auto;
   gap: var(--abstand-16);
   align-items: end;
 }
