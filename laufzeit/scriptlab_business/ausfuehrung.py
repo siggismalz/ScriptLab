@@ -3,11 +3,16 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from datetime import datetime, timezone
+from importlib.metadata import version, PackageNotFoundError
 import json
+import os
 from pathlib import Path
+import re
 import sys
+import tempfile
 
-from .kontext import BusinessFehler, Kontext, UnklarerZustand, daten_hash
+from .kontext import AbbruchFehler, BusinessFehler, Kontext, UnklarerZustand, daten_hash
 
 REINE_OPERATIONEN = {
     "daten.importieren", "daten.spalten", "daten.werte", "daten.filtern", "daten.sortieren",
@@ -52,11 +57,11 @@ def schritt(kontext: Kontext, id: str, operation: str, konfiguration: dict, eing
     if not isinstance(id, str) or not id or len(id) > 160 or not isinstance(konfiguration, dict) or not isinstance(eingaben, dict):
         raise BusinessFehler("Der Business-Schritt enthält ungültige Angaben.")
     handler = _handler()
-    if operation not in handler:
+    if not isinstance(operation, str) or operation not in handler:
         raise BusinessFehler(f"Die Business-Operation wird nicht unterstützt: {operation}")
     k = _aufloesen(konfiguration, kontext)
     e = _aufloesen(eingaben, kontext, True)
-    kontext.beginn_schritt(id, k, e)
+    kontext.beginn_schritt(id, k, e, operation)
     kontext.ereignis("schritt", operation=operation, status="begonnen")
     try:
         if kontext.modus == "vorschau" and operation not in REINE_OPERATIONEN:
@@ -64,6 +69,8 @@ def schritt(kontext: Kontext, id: str, operation: str, konfiguration: dict, eing
             kontext.geplante_schritte.append({"id": id, "operation": operation})
         else:
             ergebnis = handler[operation](kontext, k, e)
+        if operation.startswith("daten."):
+            kontext.tabellenherkunft_merke(ergebnis)
         kontext.ergebnisse[id] = ergebnis
         if isinstance(ergebnis, dict) and ergebnis.get("gueltig") is False:
             kontext.fehler.append({"block_id": id, "meldung": "Eine fachliche Datenprüfung enthält Fehler."})
@@ -84,9 +91,11 @@ def ausfuehren(plan: dict, kontext: Kontext):
     kontext.workflow_hash = kontext.workflow_hash or daten_hash(plan)
     ids = set()
     for eintrag in schritte:
-        if not isinstance(eintrag, dict) or set(eintrag) != {"id", "operation", "konfiguration", "eingaben"} or eintrag["id"] in ids:
+        if (not isinstance(eintrag, dict) or set(eintrag) != {"id", "operation", "konfiguration", "eingaben"}
+                or not isinstance(eintrag["id"], str) or not eintrag["id"] or len(eintrag["id"]) > 160 or eintrag["id"] in ids):
             raise BusinessFehler("Ein Planschritt ist ungültig oder seine Kennung doppelt.")
         ids.add(eintrag["id"])
+    for eintrag in schritte:
         schritt(kontext, **eintrag)
     return {"status": "mit_fehlern" if kontext.fehler else "erfolgreich", "ergebnisse": kontext.ergebnisse, "ausgaben": kontext.ausgaben}
 
@@ -115,10 +124,9 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
         daten = json.loads(pfad.read_text(encoding="utf-8"))
         if not isinstance(daten, dict) or daten.pop("version", None) != 1:
             raise BusinessFehler("Die technische Business-Kontextdatei ist ungültig.")
-        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id"}
+        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei"}
         if set(daten) - erlaubt:
             raise BusinessFehler("Die technische Kontextdatei enthält unbekannte Angaben.")
-        daten.pop("lauf_id", None)
         kontext = Kontext(**daten)
     else:
         parser = argparse.ArgumentParser(description="ScriptLab-Business-Workflow")
@@ -128,7 +136,12 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
         parser.add_argument("--journal", type=Path)
         parser.add_argument("--fortsetzen", action="store_true")
         parser.add_argument("--zeitlimit", type=int, default=7200)
+        parser.add_argument("--speicher-mb", type=int, default=512)
+        parser.add_argument("--temp-gb", type=int, default=4)
+        parser.add_argument("--max-datei-mib", type=int, default=16384)
         optionen = parser.parse_args()
+        if not 64 <= optionen.speicher_mb <= 8192 or not 1 <= optionen.temp_gb <= 100 or not 1 <= optionen.max_datei_mib <= 65536:
+            raise BusinessFehler("Wähle 64–8192 MiB DuckDB-Speicher, 1–100 GiB Temp und höchstens 65536 MiB je Quelldatei.")
         parameter = dict(metadaten.get("standard_parameter", {}))
         if optionen.parameter_datei:
             if optionen.parameter_datei.stat().st_size > 1024 * 1024:
@@ -137,11 +150,16 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
             if not isinstance(benutzer, dict):
                 raise BusinessFehler("Die Parameterdatei muss ein JSON-Objekt enthalten.")
             parameter.update(benutzer)
-        kontext = Kontext(optionen.basis, optionen.modus, parameter, {"zeitlimit_sekunden": optionen.zeitlimit}, optionen.journal, optionen.fortsetzen, metadaten.get("workflow_hash", ""))
+        grenzen = {"zeitlimit_sekunden": optionen.zeitlimit, "duckdb_speicher": f"{optionen.speicher_mb}MB",
+                   "max_temp_bytes": optionen.temp_gb * 1024 ** 3, "max_datei_bytes": optionen.max_datei_mib * 1024 ** 2,
+                   "max_ausgaben": 100000, "max_zeilen": 1048575}
+        kontext = Kontext(optionen.basis, optionen.modus, parameter, grenzen, optionen.journal, optionen.fortsetzen, metadaten.get("workflow_hash", ""))
     _parameter_pruefen(metadaten.get("parameter", []), kontext.parameter)
     # Export-Wiederaufnahme ist an die tatsächlich gestartete Scriptfassung gebunden.
-    kontext.workflow_hash = kontext.workflow_hash or hashlib.sha256(Path(scriptdatei).resolve().read_bytes()).hexdigest()
+    if token is None or not kontext.workflow_hash:
+        kontext.workflow_hash = hashlib.sha256(Path(scriptdatei).resolve().read_bytes()).hexdigest()
     kontext.token = token
+    kontext.scriptdatei = str(Path(scriptdatei).resolve())
     def senden(ereignis):
         text = json.dumps(ereignis, ensure_ascii=True, default=str, separators=(",", ":"))
         if len(text.encode("utf-8")) > 256 * 1024:
@@ -153,6 +171,42 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
     return kontext
 
 
+def _unklare_schritte(kontext):
+    return [key for key, eintrag in (kontext._journal.eintraege.items() if kontext._journal else ())
+            if eintrag.get("zustand") in {"vorbereitet", "archiv_vorbereitet"}]
+
+
+def _bericht_speichern(kontext, status, fehler):
+    ordnername = kontext.workflow_hash if re.fullmatch(r"[a-fA-F0-9]{64}", kontext.workflow_hash) else daten_hash(kontext.workflow_hash)
+    ordner = kontext.journal_pfad.parent if kontext.journal_pfad else kontext.basis / ".scriptlab" / ordnername if kontext.modus == "ausfuehren" else Path(tempfile.gettempdir()) / "ScriptLab-Business-Berichte"
+    ordner.mkdir(parents=True, exist_ok=True)
+    pakete = {}
+    for name in ("duckdb", "openpyxl", "python-docx", "pypdf", "reportlab", "defusedxml"):
+        try:
+            pakete[name] = version(name)
+        except PackageNotFoundError:
+            pakete[name] = None
+    parameter = {name: "[nicht protokolliert]" if re.search(r"passwort|password|token|secret|credential|api.?key|privat", name, re.I) else wert for name, wert in kontext.parameter.items()}
+    unklar = _unklare_schritte(kontext)
+    bericht = {"version": 1, "quelle": kontext.scriptdatei, "workflow_hash": kontext.workflow_hash,
+               "lauf_id": kontext.lauf_id, "modus": kontext.modus, "gestartet_am": kontext.gestartet_am,
+               "beendet_am": datetime.now(timezone.utc).isoformat(), "status": status,
+               "runtime": {"python": sys.version.split()[0], "pakete": pakete}, "parameter": parameter,
+               "grenzen": vars(kontext.grenzen), "fehler": kontext.fehler, "hinweise": kontext.hinweise, "meldung": str(fehler) if fehler else None,
+               "ausgaben": kontext.ausgaben, "geplant": kontext.geplante_schritte, "unklare_schritte": unklar}
+    ziel = ordner / f"bericht-{kontext.lauf_id}.json"
+    fd, name = tempfile.mkstemp(prefix=".bericht-", suffix=".json", dir=ordner)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as datei:
+            json.dump(bericht, datei, ensure_ascii=True, default=str, indent=2)
+            datei.flush()
+            os.fsync(datei.fileno())
+        os.replace(name, ziel)
+    finally:
+        Path(name).unlink(missing_ok=True)
+    return ziel
+
+
 def abschliessen(kontext: Kontext, fehler=None):
     try:
         if kontext.modus == "vorschau" and not fehler:
@@ -160,8 +214,9 @@ def abschliessen(kontext: Kontext, fehler=None):
             if letzte:
                 vorschau = _handler()["daten.vorschau"](kontext, {"limit": 200}, {"tabelle": letzte})
                 kontext.ereignis("vorschau", **vorschau, abgeschnitten=vorschau.get("gekuerzt", False))
-        status = "unklar" if isinstance(fehler, UnklarerZustand) or any(e.get("unklar") for e in kontext.fehler) else "fehlgeschlagen" if fehler else "mit_fehlern" if kontext.fehler else "erfolgreich"
-        kontext.ereignis("abschluss", status=status, ausgaben=kontext.ausgaben, fehler=kontext.fehler, meldung=str(fehler) if fehler else None)
+        status = "unklar" if isinstance(fehler, UnklarerZustand) or _unklare_schritte(kontext) or any(e.get("unklar") for e in kontext.fehler) else "abgebrochen" if isinstance(fehler, AbbruchFehler) else "fehlgeschlagen" if fehler else "mit_fehlern" if kontext.fehler else "erfolgreich"
+        bericht = _bericht_speichern(kontext, status, fehler)
+        kontext.ereignis("abschluss", status=status, ausgaben=kontext.ausgaben, fehler=kontext.fehler, bericht_pfad=str(bericht), meldung=str(fehler) if fehler else None)
         return 1 if fehler or status == "unklar" else 2 if kontext.fehler else 0
     finally:
         kontext.schliessen()

@@ -11,7 +11,7 @@ from pathlib import Path
 import tempfile
 import time
 from typing import Any, Callable
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 
 class BusinessFehler(ValueError):
@@ -20,6 +20,10 @@ class BusinessFehler(ValueError):
 
 class UnklarerZustand(BusinessFehler):
     """Ein früherer Effekt lässt sich nicht sicher als abgeschlossen einordnen."""
+
+
+class AbbruchFehler(BusinessFehler):
+    """Kooperativer Abbruch vor dem nächsten fachlichen Verarbeitungsschritt."""
 
 
 def daten_hash(wert: Any) -> str:
@@ -34,6 +38,7 @@ class Grenzen:
     max_zip_eintraege: int = 5000
     max_zip_verhaeltnis: int = 200
     max_zeilen: int = 100000
+    max_dokument_zellen: int = 20000
     max_seiten: int = 2000
     max_ausgaben: int = 1000
     max_temp_bytes: int = 4 * 1024 ** 3
@@ -129,7 +134,9 @@ class Journal:
 class Kontext:
     def __init__(self, basis: str | Path, modus: str = "vorschau", parameter: dict | None = None,
                  grenzen: Grenzen | dict | None = None, journal_pfad: str | Path | None = None,
-                 fortsetzen: bool = False, workflow_hash: str = "", ereignis_callback: Callable | None = None):
+                 fortsetzen: bool = False, workflow_hash: str = "", ereignis_callback: Callable | None = None,
+                 lauf_id: str | None = None, technischer_ordner: str | Path | None = None,
+                 abbruch_datei: str | Path | None = None):
         if modus not in {"vorschau", "prueflauf", "ausfuehren"}:
             raise BusinessFehler("Der Business-Laufmodus ist ungültig.")
         self.basis = Path(basis).resolve()
@@ -143,10 +150,18 @@ class Kontext:
         self.journal_pfad = Path(journal_pfad).resolve() if journal_pfad else None
         self.fortsetzen = bool(fortsetzen)
         self.workflow_hash = workflow_hash
+        try:
+            self.lauf_id = str(UUID(lauf_id)) if lauf_id else str(uuid4())
+        except (ValueError, TypeError) as fehler:
+            raise BusinessFehler("Die Laufkennung ist ungültig.") from fehler
+        self.gestartet_am = datetime.now(timezone.utc).isoformat()
+        self.scriptdatei: str | None = None
         self.ereignis_callback = ereignis_callback
         self.dienste: dict[str, Any] = {}
         self.ergebnisse: dict[str, Any] = {}
+        self._tabellen_herkunft: dict[str, str] = {}
         self.fehler: list[dict] = []
+        self.hinweise: list[dict] = []
         self.geplante_schritte: list[dict] = []
         self.token: str | None = None
         self.ausgaben: list[dict] = []
@@ -155,8 +170,13 @@ class Kontext:
         self.aktion_hash = ""
         self._vorkommen: dict[str, int] = {}
         self._deadline = time.monotonic() + self.grenzen.zeitlimit_sekunden
-        self._temp = tempfile.TemporaryDirectory(prefix="ScriptLab-Business-")
+        technisch = Path(technischer_ordner).resolve() if technischer_ordner else None
+        if technisch:
+            technisch.mkdir(parents=True, exist_ok=True)
+        self._temp = tempfile.TemporaryDirectory(prefix="arbeitsdaten-" if technisch else "ScriptLab-Business-", dir=technisch)
         self.arbeitsordner = Path(self._temp.name)
+        self.abbruch_datei = Path(abbruch_datei).resolve() if abbruch_datei else None
+        self._abbruch_geprueft_am = 0.0
         self._journal: Journal | None = None
         self.abgebrochen = False
 
@@ -168,15 +188,20 @@ class Kontext:
         daten = json.loads(quelle.read_text(encoding="utf-8"))
         if not isinstance(daten, dict) or daten.pop("version", None) != 1:
             raise BusinessFehler("Die Business-Kontextdatei hat ein unbekanntes Format.")
-        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash"}
+        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei"}
         if set(daten) - erlaubt or "basis" not in daten:
             raise BusinessFehler("Die Business-Kontextdatei enthält ungültige Angaben.")
         return cls(**daten)
 
     def pruefen(self):
+        jetzt = time.monotonic()
+        if self.abbruch_datei and jetzt - self._abbruch_geprueft_am >= .1:
+            self._abbruch_geprueft_am = jetzt
+            if self.abbruch_datei.exists():
+                self.abgebrochen = True
         if self.abgebrochen:
-            raise BusinessFehler("Der Business-Lauf wurde abgebrochen.")
-        if time.monotonic() >= self._deadline:
+            raise AbbruchFehler("Der Business-Lauf wurde abgebrochen.")
+        if jetzt >= self._deadline:
             raise BusinessFehler("Das Business-Zeitlimit wurde erreicht.")
 
     def pfad(self, wert: str | Path, schreiben: bool = False) -> Path:
@@ -190,12 +215,28 @@ class Kontext:
             raise BusinessFehler("Symbolische Dateiverweise werden für Business-Dateien nicht verwendet.")
         return kandidat.resolve()
 
-    def beginn_schritt(self, block_id: str, konfiguration: dict, eingaben: dict):
+    def _fachliche_eingaben(self, wert):
+        if isinstance(wert, dict):
+            return {name: {"herkunft": self._tabellen_herkunft[inhalt]}
+                    if name == "tabelle" and isinstance(inhalt, str) and inhalt in self._tabellen_herkunft
+                    else self._fachliche_eingaben(inhalt) for name, inhalt in wert.items()}
+        if isinstance(wert, list):
+            return [self._fachliche_eingaben(eintrag) for eintrag in wert]
+        return wert
+
+    def tabellenherkunft_merke(self, ergebnis):
+        if isinstance(ergebnis, dict) and isinstance(ergebnis.get("tabelle"), str):
+            # Nur der feste Runner registriert tatsächlich erzeugte Tabellen. Zufällige
+            # Lauf-Handles werden durch ihre fachliche Operationskette ersetzt.
+            self._tabellen_herkunft[ergebnis["tabelle"]] = daten_hash({"aktion": self.aktion_hash, "spalten": ergebnis.get("spalten")})
+
+    def beginn_schritt(self, block_id: str, konfiguration: dict, eingaben: dict, operation: str = ""):
         self.pruefen()
         self.block_id = block_id
         self._vorkommen[block_id] = self._vorkommen.get(block_id, 0) + 1
         self.schritt_key = f"{block_id}:{self._vorkommen[block_id]}"
-        self.aktion_hash = daten_hash({"konfiguration": konfiguration, "eingaben": eingaben})
+        self.aktion_hash = daten_hash({"operation": operation, "konfiguration": konfiguration,
+                                      "eingaben": self._fachliche_eingaben(eingaben)})
 
     def ereignis(self, art: str, **daten):
         if self.ereignis_callback:
@@ -206,7 +247,8 @@ class Kontext:
         if self.modus != "ausfuehren":
             return None
         if self._journal is None:
-            pfad = self.journal_pfad or self.basis / ".scriptlab" / (self.workflow_hash or "workflow") / "journal.jsonl"
+            ordnername = self.workflow_hash if re.fullmatch(r"[a-fA-F0-9]{64}", self.workflow_hash) else daten_hash(self.workflow_hash)
+            pfad = self.journal_pfad or self.basis / ".scriptlab" / ordnername / "journal.jsonl"
             self._journal = Journal(pfad, self.workflow_hash, daten_hash(self.parameter), self.fortsetzen)
         return self._journal
 
