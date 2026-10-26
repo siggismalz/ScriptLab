@@ -1,0 +1,283 @@
+{
+  "version": 1,
+  "stand": "2026-10-26",
+  "synthetische_testdaten": true,
+  "umgebung": {
+    "windows": "Windows 11 Pro",
+    "version": "10.0.26200",
+    "build": 26200,
+    "architektur": "x64",
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13700",
+    "kerne": 16,
+    "logische_prozessoren": 24,
+    "physischer_speicher_bytes": 68333776896,
+    "python": "3.12.6",
+    "pakete": {
+      "duckdb": "2.0.0",
+      "openpyxl": "3.1.5",
+      "reportlab": "5.1.0",
+      "pypdf": "6.21.2",
+      "lxml": "6.1.3",
+      "defusedxml": "0.7.1"
+    }
+  },
+  "tests": {
+    "daten_voll": {
+      "bestanden": 49,
+      "fehlgeschlagen": 0,
+      "dauer_sekunden": 2.806
+    },
+    "bereich_null_nachtrag": {
+      "bestanden": 1,
+      "fehlgeschlagen": 0,
+      "dauer_sekunden": 0.052,
+      "prueft_beide_grenzen": true
+    },
+    "daten_definierte_faelle": 52,
+    "beispiele_a_b": {
+      "bestanden": 4,
+      "fehlgeschlagen": 0,
+      "dauer_sekunden": 0.969,
+      "skip": 0
+    },
+    "xlsx_bereich_nachtraege": [
+      {
+        "art": "in_range_header_und_ohne_header",
+        "bestanden": 1,
+        "fehlgeschlagen": 0,
+        "dauer_sekunden": 0.274
+      },
+      {
+        "art": "ungueltige_unvollstaendige_umgekehrte_bereiche",
+        "bestanden": 1,
+        "fehlgeschlagen": 0,
+        "dauer_sekunden": 0.258,
+        "unterfaelle": 8
+      }
+    ]
+  },
+  "letzte_lastproben": [
+    {
+      "artefakt_id": "daten-ee1577e360814b1f82281477499266a0",
+      "bericht_sha256": "d6741115c255783efe1181d03b389bd0f387fc2d998290855d590c8f23c34f17",
+      "schema": {
+        "quellspalten": 5,
+        "lookup_zeilen": 10000,
+        "lookup_spalten": 2,
+        "ergebnisspalten": 4,
+        "filter": "jede zweite Zeile",
+        "sortierung": "Bestellung DESC",
+        "alle_500000_exportierten_kennungen_geprueft": true
+      },
+      "ergebnis": {
+        "art": "CSV",
+        "profil": "schmal",
+        "status": "bestanden",
+        "eingabezeilen": 1000000,
+        "gefilterte_zeilen": 500000,
+        "gruppenzahl": 4,
+        "gesamtbetrag": "625000.00",
+        "quelle_bytes": 216000044,
+        "output_bytes": 526120,
+        "output_sha256": "72f98bec5920c9a4db6eada9b9313eafe1bbe4e762aa2c55f94c00d9654658a2",
+        "duckdb_speicher": "64MB",
+        "max_temp_bytes": 2147483648,
+        "pruefung": {
+          "gueltig": true,
+          "zeilen": 500000,
+          "regeln": [
+            {
+              "art": "ZEILENZAHL",
+              "fehler": 0,
+              "gueltig": true
+            }
+          ]
+        },
+        "dauer_sekunden": 4.788,
+        "peak_working_set_bytes": 127074304,
+        "private_bytes": 44343296,
+        "sampled_private_max_bytes": 107884544,
+        "sampled_temp_max_bytes": 72888320,
+        "sampled_context_temp_max_bytes": 72888320,
+        "sampled_library_temp_max_bytes": 72888320,
+        "sampled_staging_max_bytes": 526120,
+        "sampled_duckdb_spill_max_bytes": 72876032,
+        "sample_interval_ms": 25,
+        "temp_messumfang": "Privater Prozess-TEMP inklusive Kontext/DuckDB/openpyxl plus Zielstaging; Enginephase, Stichproben alle 25 ms",
+        "gesamt_dauer_sekunden": 6.228,
+        "exitcode": 0,
+        "controller_dauer_sekunden": 6.394
+      }
+    },
+    {
+      "artefakt_id": "daten-f585512c11854eb5bdcce551f780cff1",
+      "bericht_sha256": "1efec448030524d279af940d567f9ad5835b1b3f86e48e36e5ef79d60b4e4865",
+      "schema": {
+        "spalten": 6,
+        "zeilen": 50000,
+        "decimal_datum_text_geprueft": true,
+        "formelzeichen_als_text": true
+      },
+      "ergebnis": {
+        "art": "XLSX",
+        "status": "bestanden",
+        "eingabezeilen": 50000,
+        "outputzeilen": 50000,
+        "gesamtbetrag": "62500.00",
+        "quelle_bytes": 1224939,
+        "output_bytes": 1220649,
+        "output_sha256": "1197f1773b3f272f21a247d68d4c3ae22636a91fe6f169442cda4d005a3fa5c1",
+        "duckdb_speicher": "64MB",
+        "dauer_sekunden": 19.402,
+        "peak_working_set_bytes": 80809984,
+        "private_bytes": 60547072,
+        "sampled_private_max_bytes": 61501440,
+        "sampled_temp_max_bytes": 22508359,
+        "sampled_context_temp_max_bytes": 3806580,
+        "sampled_library_temp_max_bytes": 21369006,
+        "sampled_staging_max_bytes": 1139353,
+        "sampled_duckdb_spill_max_bytes": 0,
+        "sample_interval_ms": 25,
+        "temp_messumfang": "Privater Prozess-TEMP inklusive Kontext/DuckDB/openpyxl plus Zielstaging; Enginephase, Stichproben alle 25 ms",
+        "gesamt_dauer_sekunden": 21.835,
+        "exitcode": 0,
+        "controller_dauer_sekunden": 22.017
+      }
+    }
+  ],
+  "vorherige_oom_proben": [
+    {
+      "artefakt_id": "daten-a34babb04c6e4c65a3e4fc2d14a43d68",
+      "bericht_sha256": "d1dc3e338475437f1534bf2fc8436594d817b4f0e5ef12121e6473f2fcd1092e",
+      "ergebnis": {
+        "art": "CSV",
+        "status": "fehlgeschlagen",
+        "fehlerart": "OutOfMemoryException",
+        "meldung": "Out of Memory Error: could not allocate block of size 30.5 MiB (38.8 MiB/61.0 MiB used)\n\nPossible solutions:\n* Reducing the number of threads (SET threads=X)\n* Disabling insertion-order preservation (SET preserve_insertion_order=false)\n* Increasing the memory limit (SET memory_limit='...GB')\n\nSee also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads",
+        "peak_working_set_bytes": 109154304,
+        "private_bytes": 26169344,
+        "gesamt_dauer_sekunden": 1.965,
+        "exitcode": 1,
+        "controller_dauer_sekunden": 2.073
+      }
+    },
+    {
+      "artefakt_id": "daten-33aafba0e4f6455d9879350eb4df9881",
+      "bericht_sha256": "7912e9034c13a18112446e55bc39a17a7b8c4431deca229b380fca1a9a5dc3d9",
+      "ergebnis": {
+        "art": "CSV",
+        "status": "fehlgeschlagen",
+        "fehlerart": "OutOfMemoryException",
+        "meldung": "Out of Memory Error: failed to pin block of size 256.0 KiB (60.8 MiB/61.0 MiB used)\n\nPossible solutions:\n* Reducing the number of threads (SET threads=X)\n* Disabling insertion-order preservation (SET preserve_insertion_order=false)\n* Increasing the memory limit (SET memory_limit='...GB')\n\nSee also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads",
+        "peak_working_set_bytes": 135303168,
+        "private_bytes": 42541056,
+        "sampled_private_max_bytes": 115937280,
+        "sampled_temp_max_bytes": 68825088,
+        "sampled_duckdb_spill_max_bytes": 68812800,
+        "sample_interval_ms": 25,
+        "phase": "sortierter_export",
+        "gesamt_dauer_sekunden": 4.299,
+        "exitcode": 1,
+        "controller_dauer_sekunden": 4.491
+      }
+    },
+    {
+      "artefakt_id": "daten-258a1cb3d908460e83ec06b3200c1700",
+      "bericht_sha256": "4e8a3345d635f906700605ed65ad5249858057c98ebd980d2be1046db81ee99e",
+      "ergebnis": {
+        "art": "CSV",
+        "status": "fehlgeschlagen",
+        "fehlerart": "OutOfMemoryException",
+        "meldung": "Out of Memory Error: could not allocate block of size 256.0 KiB (60.9 MiB/61.0 MiB used)\n\nPossible solutions:\n* Reducing the number of threads (SET threads=X)\n* Disabling insertion-order preservation (SET preserve_insertion_order=false)\n* Increasing the memory limit (SET memory_limit='...GB')\n\nSee also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads",
+        "peak_working_set_bytes": 126197760,
+        "private_bytes": 38928384,
+        "sampled_private_max_bytes": 106573824,
+        "sampled_temp_max_bytes": 71086080,
+        "sampled_duckdb_spill_max_bytes": 71073792,
+        "sample_interval_ms": 25,
+        "phase": "sortierter_export",
+        "gesamt_dauer_sekunden": 4.29,
+        "exitcode": 1,
+        "controller_dauer_sekunden": 4.474
+      }
+    },
+    {
+      "artefakt_id": "daten-0b48d603d5e44cacbf43fee6b100e7ff",
+      "bericht_sha256": "3fc03be6e129def65f6d5d17979041979e18f6e52b7c50263f329dc5ccc2c0e9",
+      "ergebnis": {
+        "art": "CSV",
+        "status": "fehlgeschlagen",
+        "fehlerart": "OutOfMemoryException",
+        "meldung": "Out of Memory Error: could not allocate block of size 256.0 KiB (60.9 MiB/61.0 MiB used)\n\nPossible solutions:\n* Reducing the number of threads (SET threads=X)\n* Disabling insertion-order preservation (SET preserve_insertion_order=false)\n* Increasing the memory limit (SET memory_limit='...GB')\n\nSee also https://duckdb.org/docs/current/guides/performance/how_to_tune_workloads",
+        "peak_working_set_bytes": 124637184,
+        "private_bytes": 41553920,
+        "sampled_private_max_bytes": 106717184,
+        "sampled_temp_max_bytes": 74362880,
+        "sampled_duckdb_spill_max_bytes": 74350592,
+        "sample_interval_ms": 25,
+        "phase": "sortierter_export",
+        "gesamt_dauer_sekunden": 4.305,
+        "exitcode": 1,
+        "controller_dauer_sekunden": 4.493
+      }
+    }
+  ],
+  "xlsx_vor_importtransaktion": {
+    "artefakt_id": "daten-a34babb04c6e4c65a3e4fc2d14a43d68",
+    "temp_messumfang": "Nur Kontextarbeitsordner; nicht mit neuer Gesamt-TEMP-Messung gleichsetzen",
+    "ergebnis": {
+      "art": "XLSX",
+      "status": "bestanden",
+      "eingabezeilen": 50000,
+      "outputzeilen": 50000,
+      "gesamtbetrag": "62500.00",
+      "quelle_bytes": 1224939,
+      "output_bytes": 1220651,
+      "output_sha256": "e6d877c2d51e76015ee798409cc66a23a8f387f8c7929fdf2d554c60e8a9d310",
+      "duckdb_speicher": "64MB",
+      "dauer_sekunden": 104.32,
+      "peak_working_set_bytes": 106823680,
+      "private_bytes": 84889600,
+      "sampled_private_max_bytes": 88612864,
+      "sampled_temp_max_bytes": 15952117,
+      "sampled_duckdb_spill_max_bytes": 0,
+      "sample_interval_ms": 25,
+      "gesamt_dauer_sekunden": 106.457,
+      "exitcode": 0,
+      "controller_dauer_sekunden": 106.655
+    }
+  },
+  "beispiele": [
+    {
+      "beispiel": "A-Monatsauswertung",
+      "status": "erfolgreich",
+      "xlsx_sha256": "eb8f990870f1d406a3b9c9ba03e5066d8af90df7932e36282c8e847e4fc25dc1",
+      "summen": {
+        "Nord": "150.00",
+        "Süd": "80.00",
+        "Gesamt": "230.00"
+      },
+      "pdf_sha256": "83e956eada0943a79f20b65913d48baee98dfa2e056dc47041adfb8d54978312",
+      "pdf_seiten": 1,
+      "pdf_text_geprueft": true
+    },
+    {
+      "beispiel": "B-Bestellungen",
+      "status": "mit_fehlern",
+      "xlsx_sha256": "28c1e4e7cad46a67905ddb85c7ca8529eec87eecb2c366d843308636fa9ff153",
+      "summen": {
+        "Nord": "45.00",
+        "Süd": "40.00",
+        "Gesamt": "85.00"
+      }
+    }
+  ],
+  "messgrenzen": [
+    "PeakWorkingSetSize ist der Windows-Hoechststand des Python-Engineprozesses, ohne Electron/Controller/Jobhelper.",
+    "Private Bytes und Tempdateien sind Stichproben im 25-ms-Abstand, keine mathematisch exakten Hoechststaende.",
+    "Die letzte Tempmessung umfasst privaten Prozess-TEMP inklusive Kontext, DuckDB und openpyxl sowie bekannte Zielstagingdateien waehrend der Enginephase.",
+    "64MB bezeichnet DuckDBs Pufferbudget, kein gesamtes Prozess-RAM-Limit.",
+    "max_temp_bytes begrenzt DuckDB-Spill, kein Betriebssystem-Datentraegerkontingent.",
+    "Die breite Ergebnistabelle ueberschreitet 64MB weiterhin; das spaetere schmale Profil ist ein eigener Szenariovertrag."
+  ]
+}

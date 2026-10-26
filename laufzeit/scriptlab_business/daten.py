@@ -122,7 +122,7 @@ class DatenEngine:
             raise DatenFehler("Die Speichergrenze der Datenengine ist ungültig.")
         self._verbindung = duckdb.connect(str(ordner / f"daten-{uuid.uuid4().hex}.duckdb"), config={
             "autoinstall_known_extensions": "false", "autoload_known_extensions": "false",
-            "allow_unsigned_extensions": "false", "threads": "2", "memory_limit": speicher,
+            "allow_unsigned_extensions": "false", "threads": "1", "memory_limit": speicher,
         })
         self._verbindung.execute("SET temp_directory = ?", [str(ordner / "duckdb-temp")])
         temp_limit = self._grenze("max_temp_bytes",4*1024**3)
@@ -289,7 +289,10 @@ class DatenEngine:
         if namen is not None and (len({n.casefold() for n in namen}) != len(namen) or any(not n.strip() for n in namen)):
             raise DatenFehler("CSV-Spaltennamen müssen gefüllt und eindeutig sein.")
         parameter = [str(eingang), trenner, header, nullwert, policy != "STOPP", {n:"VARCHAR" for n in namen}]
-        sql = "SELECT * FROM read_csv(?,delim=?,header=?,nullstr=?,ignore_errors=?,strict_mode=true,auto_detect=false,quote='\"',escape='\"',columns=?)"
+        # Der DuckDB-Standardpuffer kann pro parallelem Leser rund 32 MiB
+        # beanspruchen. Ein fester einzelner 8-MiB-Leser lässt auch unter einem
+        # bewusst gewählten 64-MB-DB-Budget noch Platz für die Verarbeitung.
+        sql = "SELECT * FROM read_csv(?,delim=?,header=?,nullstr=?,ignore_errors=?,strict_mode=true,auto_detect=false,quote='\"',escape='\"',columns=?,parallel=false,buffer_size=8388608,max_line_size=2097152)"
         if policy == "STOPP":
             return self._neu(sql, parameter, [finger])
         # Fehlerberichte müssen zur tatsächlichen einmaligen Einlesung passen.
@@ -304,9 +307,28 @@ class DatenEngine:
 
     def _xlsx_lesen(self, quelle: Path, optionen: dict, finger: _Quelle) -> Tabelle:
         from openpyxl import load_workbook
+        from openpyxl.utils.cell import range_boundaries
         from .dateien import zip_pruefen
         zip_pruefen(self.kontext, quelle)
         auswahl(optionen.get("formeln", "STOPP"), ("STOPP", "WERTE"), "Formeln")
+        bereich = optionen.get("bereich", "")
+        if bereich is None:
+            bereich = ""
+        text(bereich,"Zellbereich",leer=True)
+        grenzen = {}
+        if bereich.strip():
+            try:
+                min_spalte,min_zeile,max_spalte,max_zeile = range_boundaries(bereich.strip())
+                if (any(type(v) is not int for v in (min_spalte,min_zeile,max_spalte,max_zeile))
+                        or not 1 <= min_spalte <= max_spalte <= 16384
+                        or not 1 <= min_zeile <= max_zeile <= 1048576):
+                    raise ValueError()
+                grenzen = {"min_col":min_spalte,"min_row":min_zeile,"max_col":max_spalte,"max_row":max_zeile}
+            except (ValueError,TypeError):
+                raise DatenFehler("Gib einen vollständigen Zellbereich wie B2:D100 an. Ganze Spalten, Blattnamen und umgekehrte Grenzen sind nicht erlaubt.") from None
+        kopfzeile = optionen.get("kopfzeile", True)
+        if type(kopfzeile) is not bool:
+            raise DatenFehler("Die Einstellung Kopfzeile muss Ja oder Nein sein.")
         wb = load_workbook(quelle, read_only=True, data_only=optionen.get("formeln", "STOPP") == "WERTE", keep_links=False)
         try:
             blatt = optionen.get("blatt") or wb.sheetnames[0]
@@ -314,11 +336,13 @@ class DatenEngine:
                 raise DatenFehler("Das gewählte Tabellenblatt ist nicht vorhanden.")
             ws = wb[blatt]
             ws.reset_dimensions()
-            zeilen = ws.iter_rows()
+            zeilen = ws.iter_rows(**grenzen)
             erste = next(zeilen, None)
             if not erste:
                 raise DatenFehler("Das Tabellenblatt ist leer.")
-            if optionen.get("kopfzeile", True):
+            if kopfzeile:
+                if optionen.get("formeln","STOPP") == "STOPP" and any(z.data_type == "f" for z in erste):
+                    raise DatenFehler("Die XLSX-Kopfzeile enthält Formeln. Verwende feste Spaltennamen.")
                 namen = [text(z.value, "XLSX-Spaltenname") for z in erste]
             else:
                 namen = [f"Spalte{i+1}" for i in range(len(erste))]
@@ -332,20 +356,26 @@ class DatenEngine:
             self._verbindung.execute(f"CREATE TABLE {_bezeichner(tname)} ({','.join(_bezeichner(n)+' VARCHAR' for n in namen)})")
             insert = f"INSERT INTO {_bezeichner(tname)} VALUES ({','.join('?' for _ in namen)})"
             paket = []
-            for nr, zeile in enumerate(zeilen, 1):
-                self._pruefen()
-                if nr > self._grenze("max_zeilen", 100000):
-                    raise DatenFehler("Das Tabellenblatt überschreitet die eingestellte Zeilengrenze.")
-                if len(zeile) != len(namen):
-                    raise DatenFehler("Eine XLSX-Zeile hat eine abweichende Spaltenzahl.")
-                if optionen.get("formeln", "STOPP") == "STOPP" and any(z.data_type == "f" for z in zeile):
-                    raise DatenFehler("Das Tabellenblatt enthält Formeln. Wähle bewusst gespeicherte Werte oder eine Quelle ohne Formeln.")
-                paket.append(tuple(None if z.value is None else _xlsx_text(z.value) for z in zeile))
-                if len(paket) == 1000:
+            self._verbindung.execute("BEGIN TRANSACTION")
+            try:
+                for nr, zeile in enumerate(zeilen, 1):
+                    self._pruefen()
+                    if nr > self._grenze("max_zeilen", 100000):
+                        raise DatenFehler("Das Tabellenblatt überschreitet die eingestellte Zeilengrenze.")
+                    if len(zeile) != len(namen):
+                        raise DatenFehler("Eine XLSX-Zeile hat eine abweichende Spaltenzahl.")
+                    if optionen.get("formeln", "STOPP") == "STOPP" and any(z.data_type == "f" for z in zeile):
+                        raise DatenFehler("Das Tabellenblatt enthält Formeln. Wähle bewusst gespeicherte Werte oder eine Quelle ohne Formeln.")
+                    paket.append(tuple(None if z.value is None else _xlsx_text(z.value) for z in zeile))
+                    if len(paket) == 1000:
+                        self._verbindung.executemany(insert, paket)
+                        paket.clear()
+                if paket:
                     self._verbindung.executemany(insert, paket)
-                    paket.clear()
-            if paket:
-                self._verbindung.executemany(insert, paket)
+                self._verbindung.execute("COMMIT")
+            except BaseException:
+                self._verbindung.execute("ROLLBACK")
+                raise
             return self._neu(f"SELECT * FROM {_bezeichner(tname)}", [], [finger])
         finally:
             wb.close()
@@ -667,6 +697,9 @@ class DatenEngine:
                     teile = []
                     for grenze, operator in (("minimum", "<"), ("maximum", ">")):
                         if grenze in regel:
+                            grenzwert = objekt(regel[grenze],"Bereichsgrenze")
+                            if grenzwert.get("wert") is None:
+                                raise DatenFehler("Eine Bereichsgrenze darf nicht leer sein. Entferne die Grenze oder gib einen passenden Wert an.")
                             sql, ps = _literal(regel[grenze])
                             teile.append(f"{spalte}{operator}{sql}")
                             parameter.extend(ps)
@@ -767,7 +800,7 @@ class DatenEngine:
             self._pruefe_quellen(plan)
             # DuckDB erhält den Pfad über seine Parameterbindung; kein SQL-Literal
             # aus einem Benutzerfeld wird in einen COPY-Befehl eingesetzt.
-            self._verbindung.execute(f"COPY ({plan.sql}) TO ? (FORMAT PARQUET, COMPRESSION ZSTD)", [*plan.parameter, str(pfad)])
+            self._verbindung.execute(f"COPY ({plan.sql}) TO ? (FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 8192)", [*plan.parameter, str(pfad)])
 
     def _xlsx_schreiben(self, tabelle: Tabelle, pfad: Path, optionen: dict) -> None:
         from openpyxl import Workbook

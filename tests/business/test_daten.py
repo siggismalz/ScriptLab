@@ -417,6 +417,57 @@ class DatenTests(unittest.TestCase):
         self.assertLessEqual(len(bericht["zeilen"][0][0]),4097)
         self.assertEqual(len(self.zeilen(t)[0][0]),10000)
 
+    def test_64mb_csv_reader_verarbeitet_groessere_quelle_und_join(self):
+        self.engine.schliessen()
+        self.kontext.grenzen=Grenzen(duckdb_speicher="64MB")
+        self.engine=DatenEngine(self.kontext);self.kontext.dienste["daten"]=self.engine
+        t=self.csv("ID;Text\n"+"".join(f"{i%2};{'Textdaten'*20}\n" for i in range(100000)),name="groesser.csv")
+        r=self.csv("ID;Name\n0;Nord\n1;Süd\n",name="lookup.csv")
+        t=self.engine.verknuepfen(t,r,{"schluessel":[{"links":"ID","rechts":"ID"}],"kardinalitaet":"n:1"})
+        g=self.engine.gruppieren(t,["Name"],[{"funktion":"ANZAHL","name":"N"}])
+        self.assertEqual(set(self.zeilen(g)),{("Nord",50000),("Süd",50000)})
+
+    def test_xlsx_import_rollt_bei_spaeter_formel_alle_pakete_zurueck(self):
+        from openpyxl import Workbook
+        wb=Workbook(write_only=True);ws=wb.create_sheet("Daten");ws.append(["ID"])
+        for i in range(1001): ws.append([str(i)])
+        ws.append(["=1+1"]);wb.save(self.basis/"spaet.xlsx");wb.close()
+        with self.assertRaises(DatenFehler): self.engine.importieren("XLSX","spaet.xlsx")
+        # Kein teilweise eingelesener Tabellenhandle darf sichtbar werden.
+        self.assertEqual(len(self.engine._tabellen),0)
+        con=self.engine._verbindung
+        self.assertEqual(con.execute("SELECT sum(estimated_size) FROM duckdb_tables() WHERE table_name LIKE 'sl_xlsx_%'").fetchone()[0],0)
+        self.assertEqual(self.zeilen(self.csv("ID\nweiter\n")),[("weiter",)])
+
+    def test_leere_bereichsgrenzen_duerfen_nicht_falsch_gueltig_sein(self):
+        t=self.typ(self.csv("N\n1\n100\n"),"N","GANZZAHL")
+        for grenze in ("minimum","maximum"):
+            with self.subTest(grenze=grenze):
+                with self.assertRaisesRegex(DatenFehler,"Bereichsgrenze darf nicht leer"):
+                    self.engine.pruefen(t,[{"art":"BEREICH","spalte":"N",grenze:wert(None,"GANZZAHL")}])
+
+    def test_xlsx_bereich_verwendet_eigene_kopfzeile_und_nur_ausgewaehlte_zellen(self):
+        from openpyxl import Workbook
+        wb=Workbook();ws=wb.active
+        ws["A1"]="Nicht Teil der Tabelle";ws["E3"]="Auch nicht Teil"
+        ws["B2"]="ID";ws["C2"]="Name";ws["D2"]="Betrag"
+        ws["B3"]="001";ws["C3"]="Äpfel";ws["D3"]="12.50"
+        ws["B4"]="002";ws["C4"]="Birnen";ws["D4"]="7.25"
+        ws["B6"]="=1+1";wb.save(self.basis/"bereich.xlsx");wb.close()
+        t=self.engine.importieren("XLSX","bereich.xlsx",{"bereich":"$B$2:$D$4"})
+        self.assertEqual([s.name for s in t.spalten],["ID","Name","Betrag"])
+        self.assertEqual(self.zeilen(t),[("001","Äpfel","12.50"),("002","Birnen","7.25")])
+        ohne_kopf=self.engine.importieren("XLSX","bereich.xlsx",{"bereich":"B3:D3","kopfzeile":False})
+        self.assertEqual(self.zeilen(ohne_kopf),[("001","Äpfel","12.50")])
+
+    def test_xlsx_ungueltige_unvollstaendige_und_umgekehrte_bereiche_stoppen(self):
+        from openpyxl import Workbook
+        wb=Workbook();wb.active.append(["ID"]);wb.active.append(["1"]);wb.save(self.basis/"bereich.xlsx");wb.close()
+        for bereich in ("A:A","1:3","B4:A1","A0:C3","XFE1:XFE2","A1:B1048577","Daten!A1:B2","A1:B2:C3"):
+            with self.subTest(bereich=bereich):
+                with self.assertRaisesRegex(DatenFehler,"vollständigen Zellbereich"):
+                    self.engine.importieren("XLSX","bereich.xlsx",{"bereich":bereich})
+
 
 if __name__ == "__main__":
     unittest.main()
