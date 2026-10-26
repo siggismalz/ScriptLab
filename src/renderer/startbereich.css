@@ -1,0 +1,360 @@
+.startbereich {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--farbe-arbeitsflaeche);
+  color: var(--farbe-text);
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+}
+.start-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--abstand-8) var(--abstand-24);
+  min-height: var(--hoehe-werkzeugleiste);
+  padding: var(--abstand-8) var(--abstand-24);
+  border-bottom: 1px solid var(--farbe-trennung);
+  background: var(--farbe-grundflaeche);
+  flex: 0 0 auto;
+}
+.start-marke {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--abstand-8);
+  min-height: var(--hoehe-bedienfeld);
+  padding: var(--abstand-4) var(--abstand-8);
+  color: var(--farbe-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-normal);
+  font-weight: var(--gewicht-semibold);
+  cursor: pointer;
+}
+.start-marke:hover {
+  background: var(--farbe-erhoeht);
+  border-color: var(--farbe-kontur);
+}
+.start-kopf nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--abstand-8);
+}
+.start-scrollbereich {
+  min-height: 0;
+  overflow: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scroll-padding: var(--abstand-24);
+  flex: 1;
+}
+.start-inhalt {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding: var(--abstand-24);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--abstand-24);
+}
+.start-seitenkopf {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--abstand-8);
+}
+.start-seitenkopf h1 {
+  font-size: calc(var(--schrift-dialog) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.start-seitenkopf > p,
+.start-einleitung,
+.start-hilfetext,
+.start-aktiver-workflow {
+  color: var(--farbe-text-sekundaer);
+}
+.start-einleitung {
+  margin-bottom: var(--abstand-24);
+  max-width: 90ch;
+}
+.start-hauptaktionen,
+.start-eintrag-aktionen,
+.start-rueckmeldung {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--abstand-8);
+  align-items: center;
+}
+.start-aktiver-workflow {
+  margin-top: calc(-1 * var(--abstand-12));
+}
+.start-entwurfshinweis {
+  align-items: flex-start;
+}
+.start-entwurfshinweis .sl-status {
+  flex: 1 1 32ch;
+}
+.start-karten {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--abstand-16);
+}
+.start-karte {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--abstand-16);
+  min-width: 0;
+  min-height: 148px;
+  padding: var(--abstand-24);
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-dialog);
+  background: var(--farbe-grundflaeche);
+  color: var(--farbe-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--dauer-uebergang),
+    border-color var(--dauer-uebergang);
+}
+.start-karte:hover {
+  background: var(--farbe-erhoeht);
+  border-color: var(--farbe-text-sekundaer);
+}
+.start-karte:active {
+  background: var(--farbe-arbeitsflaeche);
+}
+.start-karte > .sl-symbol:last-child {
+  align-self: center;
+}
+.start-karte-inhalt {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--abstand-8);
+  overflow-wrap: anywhere;
+}
+.start-karte-titel {
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+}
+.start-karte-beschreibung,
+.start-karte-metadaten {
+  color: var(--farbe-text-sekundaer);
+}
+.start-karte-metadaten,
+.start-metadaten {
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+  color: var(--farbe-text-sekundaer);
+}
+.start-abschnitt-kopf,
+.start-eintrag-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--abstand-8) var(--abstand-16);
+}
+.start-abschnitt-kopf {
+  margin-bottom: var(--abstand-12);
+}
+.start-liste {
+  display: flex;
+  flex-direction: column;
+}
+.start-listeneintrag {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--abstand-12);
+  padding-block: var(--abstand-24);
+  border-bottom: 1px solid var(--farbe-trennung);
+}
+.start-listeneintrag:first-child {
+  border-top: 1px solid var(--farbe-trennung);
+}
+.start-listeneintrag h2,
+.start-listeneintrag h3 {
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  overflow-wrap: anywhere;
+}
+.start-pfad {
+  max-width: 100%;
+  min-width: 0;
+}
+.start-pfad .sl-feld-eingabe {
+  min-height: calc(var(--hoehe-bedienfeld) + var(--abstand-16));
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  resize: vertical;
+  user-select: text;
+}
+.start-dateistatus {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--abstand-8);
+  color: var(--farbe-text-sekundaer);
+}
+.start-dateistatus--fehler,
+.start-fehlertext {
+  color: var(--farbe-fehler);
+}
+.start-dateistatus--hinweis {
+  color: var(--farbe-hinweis);
+}
+.start-listenfilter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px) auto;
+  gap: var(--abstand-16);
+  align-items: end;
+}
+.start-ergebniszahl {
+  margin-block: var(--abstand-16);
+  color: var(--farbe-text-sekundaer);
+}
+.start-leerzustand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--abstand-16);
+  padding-block: var(--abstand-24);
+}
+.start-beispiel ul,
+.start-hilfeartikel ol {
+  margin: 0;
+  padding-left: var(--abstand-24);
+}
+.start-beispiel li,
+.start-hilfeartikel li {
+  margin-block: var(--abstand-4);
+}
+.start-hilfesuche {
+  display: flex;
+  align-items: end;
+  gap: var(--abstand-12);
+  max-width: 760px;
+}
+.start-hilfesuche .sl-feld {
+  flex: 1;
+}
+.start-themen {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--abstand-24);
+}
+.start-themen > button,
+.start-hilfe-treffer > button {
+  display: flex;
+  min-width: 0;
+  min-height: var(--hoehe-bedienfeld);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--abstand-16);
+  padding: var(--abstand-16);
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-normal);
+  background: var(--farbe-grundflaeche);
+  color: var(--farbe-text);
+  text-align: left;
+  cursor: pointer;
+}
+.start-themen > button + button,
+.start-hilfe-treffer > button + button {
+  margin-top: var(--abstand-8);
+}
+.start-themen > button:hover,
+.start-hilfe-treffer > button:hover {
+  background: var(--farbe-erhoeht);
+}
+.start-themen > button > span,
+.start-hilfe-treffer > button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--abstand-4);
+  overflow-wrap: anywhere;
+}
+.start-themen > button > span > span,
+.start-hilfe-treffer > button > span:last-child {
+  color: var(--farbe-text-sekundaer);
+}
+.start-treffertitel {
+  font-weight: var(--gewicht-semibold);
+}
+.start-hilfe-treffer mark {
+  color: var(--farbe-auf-akzent);
+  background: var(--farbe-akzent);
+}
+.start-hilfeartikel {
+  max-width: 82ch;
+}
+.start-hilfeartikel > section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--abstand-12);
+  margin-top: var(--abstand-32);
+}
+.start-hilfeartikel h2 {
+  scroll-margin-top: var(--abstand-24);
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+}
+.start-verarbeitung {
+  color: var(--farbe-text-sekundaer);
+}
+@media (max-width: 899px) {
+  .start-karten {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .start-listenfilter {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
+  }
+  .start-hilfesuche {
+    flex-wrap: wrap;
+  }
+  .start-hilfesuche .sl-feld {
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-karte {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .startbereich {
+    color: CanvasText;
+    background: Canvas;
+  }
+  .start-karte,
+  .start-themen > button,
+  .start-hilfe-treffer > button,
+  .start-marke {
+    color: ButtonText;
+    border-color: ButtonText;
+    background: ButtonFace;
+  }
+  .start-karte span,
+  .start-themen span,
+  .start-hilfe-treffer span,
+  .start-aktiver-workflow,
+  .start-hilfetext,
+  .start-metadaten,
+  .start-dateistatus,
+  .start-fehlertext {
+    color: CanvasText;
+  }
+  .start-hilfe-treffer mark {
+    color: HighlightText;
+    background: Highlight;
+  }
+}

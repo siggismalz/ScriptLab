@@ -13,6 +13,10 @@ export interface Dokument {
   projekt: Projekt;
   dateiname: string | null;
   geaendert: boolean;
+  projektKennung: string;
+  entwurfStatus: EntwurfStatus;
+  konflikt: boolean;
+  darstellungNoetig: boolean;
 }
 export type VerfuegbarkeitsZustand =
   'unbekannt' | 'prueft' | 'verfuegbar' | 'geaendert' | 'fehlt' | 'nicht-erreichbar' | 'ungueltig';
@@ -74,6 +78,16 @@ export interface ScriptLabBruecke {
   zertifikate(): Promise<Antwort<Zertifikat[]>>;
   einstellungenSpeichern(einstellungen: Einstellungen): Promise<Antwort<Einstellungen>>;
   updateAktion(aktion: 'status' | 'pruefen' | 'laden' | 'installieren'): Promise<Antwort<unknown>>;
+  bibliothekLesen(): Promise<Antwort<ProjektBibliothek>>;
+  projektVerfuegbarkeit(id: string): Promise<Antwort<Verfuegbarkeit>>;
+  bekanntesOeffnen(projekt: Projekt, id: string): Promise<Antwort<Dokument | null>>;
+  bekanntesNeuZuordnen(projekt: Projekt, id: string): Promise<Antwort<Dokument | null>>;
+  projektVerweisEntfernen(id: string): Promise<Antwort<boolean>>;
+  projektOrdnerAnzeigen(id: string): Promise<Antwort<void>>;
+  entwurfOeffnen(projekt: Projekt, id: string): Promise<Antwort<Dokument | null>>;
+  entwurfSpeichernAls(projekt: Projekt, id: string): Promise<Antwort<Dokument | null>>;
+  entwurfLoeschen(id: string): Promise<Antwort<boolean>>;
+  entwurfSichern(projekt: Projekt): Promise<Antwort<Dokument>>;
 }
 
 declare global {

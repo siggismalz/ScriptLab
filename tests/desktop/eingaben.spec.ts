@@ -32,6 +32,10 @@ test.beforeEach(async ({ profilEinstellungen }) => {
   seite = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+  await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await seite.evaluate(
+    () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
+  );
   await expect(seite.getByTestId('statusleiste')).toBeVisible();
 });
 test.afterEach(async () => {
@@ -441,7 +445,8 @@ function bausteineSammeln(projekt: Projekt): EditorBlock[] {
 
 for (const beispiel of beispiele) {
   test(`öffnet und exportiert das feste Beispiel „${beispiel.name}“ ohne dessen Dateiaktionen`, async () => {
-    const vorlage = JSON.parse(await readFile(resolve('beispiele', beispiel.datei), 'utf8')) as Projekt;
+    const quellbytes = await readFile(resolve('beispiele', beispiel.datei));
+    const vorlage = JSON.parse(quellbytes.toString('utf8')) as Projekt;
     expect(vorlage.name).toBe(beispiel.name);
     // Vorhandene Testquellen verhindern, dass ein verbotener Testlauf nur an fehlenden Quellen scheitern könnte.
     const testdaten = join(ordner, 'ScriptLab-Testdaten');
@@ -462,8 +467,10 @@ for (const beispiel of beispiele) {
     await zieleUnveraendert();
     await seite.getByRole('button', { name: 'Projektmenü', exact: true }).click();
     await seite.getByRole('menuitem', { name: beispiel.menue, exact: true }).click();
-    await expect.poll(async () => (await projektLesen()).name).toBe(beispiel.name);
+    await expect.poll(async () => (await projektLesen()).name).toBe(`${beispiel.name} (Kopie)`);
     const geladen = await projektLesen();
+    expect(geladen.projektKennung).toMatch(/^[a-f0-9-]{36}$/i);
+    expect(geladen.projektKennung).not.toBe(vorlage.projektKennung);
     expect(geladen.beschreibung).toBe(vorlage.beschreibung);
     expect(geladen.editor.blocks!.blocks).toMatchObject(vorlage.editor.blocks!.blocks);
     const bloecke = bausteineSammeln(geladen);
@@ -485,6 +492,7 @@ for (const beispiel of beispiele) {
     expect([...bytes.subarray(0, 2)]).toEqual([0xff, 0xfe]);
     expect(bytes.subarray(2).toString('utf16le')).toBe(generiert.code);
     await zieleUnveraendert();
+    expect(await readFile(resolve('beispiele', beispiel.datei))).toEqual(quellbytes);
   });
 }
 

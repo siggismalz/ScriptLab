@@ -46,6 +46,10 @@ async function starten(faktor = 1, breite = 1280, hoehe = 720): Promise<Sitzung>
       );
     }
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+    await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+    await seite.evaluate(
+      () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
+    );
     await expect(seite.getByTestId('statusleiste')).toBeVisible();
     await expect(seite.getByTestId('palette')).toBeVisible();
     const wirklich = await seite.evaluate(() => ({ breite: innerWidth, hoehe: innerHeight }));
@@ -81,7 +85,7 @@ async function oeffnen(s: Sitzung, dateiname: keyof typeof uiTestprojekte): Prom
   await writeFile(datei, JSON.stringify(uiTestprojekte[dateiname]), 'utf8');
   await s.app.evaluate(({ dialog }, ziel) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [ziel] });
-    dialog.showMessageBox = async () => ({ response: 1, checkboxChecked: false });
+    dialog.showMessageBox = async () => ({ response: 2, checkboxChecked: false });
   }, datei);
   await s.seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
   await expect.poll(async () => (await projektLesen(s.seite)).name).toBe(uiTestprojekte[dateiname].name);
@@ -91,6 +95,19 @@ async function oeffnen(s: Sitzung, dateiname: keyof typeof uiTestprojekte): Prom
   await expect
     .poll(() => s.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle()))
     .toContain('ScriptLab');
+  await expect(s.seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await expect
+    .poll(async () => {
+      const r = await s.seite.evaluate(() => window.scriptlab.laden());
+      return r.ok ? r.wert.dokument.darstellungNoetig : true;
+    })
+    .toBe(false);
+  await expect(s.seite.locator('.blocklyBlockCanvas g[data-id]')).toHaveCount(
+    alleBausteine(uiTestprojekte[dateiname]).length,
+  );
+  await s.seite.evaluate(
+    () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
+  );
 }
 
 async function speicherziel(s: Sitzung, ziel: string | null): Promise<void> {
@@ -475,7 +492,7 @@ test('UX: vollständiger Aufgabenweg mit einzelnen Klicks, Umordnen, Rückgängi
     );
     await s.app.evaluate(({ dialog }, datei) => {
       dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [datei] });
-      dialog.showMessageBox = async () => ({ response: 1, checkboxChecked: false });
+      dialog.showMessageBox = async () => ({ response: 2, checkboxChecked: false });
     }, projektdatei);
     await s.seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
     await expect
@@ -732,7 +749,9 @@ test('UX: prozessweise simulierte Kontrastfarben und reduzierte Bewegung behalte
     await s.seite.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
     expect(await s.seite.evaluate(() => matchMedia('(forced-colors: active)').matches)).toBe(true);
     expect(await s.seite.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
-    await s.seite.getByRole('button', { name: 'Als VBS exportieren', exact: true }).focus();
+    await s.seite.getByRole('button', { name: 'Weitere Funktionen', exact: true }).focus();
+    await s.seite.keyboard.press('Shift+Tab');
+    await expect(s.seite.getByRole('button', { name: 'Als VBS exportieren', exact: true })).toBeFocused();
     const stil = await s.seite
       .getByRole('button', { name: 'Als VBS exportieren', exact: true })
       .evaluate((el) => ({

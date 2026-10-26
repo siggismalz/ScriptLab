@@ -9,6 +9,7 @@ import { Auswahlfeld, Feld } from './komponenten/Feld';
 import { Statusanzeige } from './komponenten/Statusanzeige';
 
 export function EinstellungenDialog({
+  projektOptionenAnzeigen = true,
   offen,
   schliessen,
   einstellungen,
@@ -24,6 +25,7 @@ export function EinstellungenDialog({
   verarbeitung,
   fehlerMeldung,
 }: {
+  projektOptionenAnzeigen?: boolean;
   offen: boolean;
   schliessen: () => void;
   einstellungen: Einstellungen;
@@ -190,77 +192,81 @@ export function EinstellungenDialog({
           </section>
         )}
       </section>
-      <section className="einstellungs-abschnitt">
-        <h3>Signatur für dieses Projekt</h3>
-        <label className="schalter">
-          <input
-            type="checkbox"
-            checked={projekt.exportOptionen.signieren}
-            onChange={(e) => exportOptionenSetzen({ ...projekt.exportOptionen, signieren: e.target.checked })}
-          />
-          <span>Exportierte Datei signieren</span>
-        </label>
-        <p>Der normale Export funktioniert ohne Zertifikat.</p>
-        {projekt.exportOptionen.signieren && (
-          <>
-            <p>
-              Für die optionale Signatur benötigst du ein gültiges Code-Signing-Zertifikat mit privatem
-              Schlüssel im Windows-Zertifikatspeicher.
-            </p>
-            <Knopf
-              onClick={zertifikateLaden}
-              disabled={Boolean(verarbeitung)}
-              verarbeitung={verarbeitung?.startsWith('Zertifikate') ?? false}
-              grundId="einstellungen-vorgang"
-            >
-              Zertifikate laden
-            </Knopf>
-            {zertifikatMeldung && (
-              <Statusanzeige art={zertifikate.length ? 'neutral' : 'hinweis'}>
-                {zertifikatMeldung}
-              </Statusanzeige>
-            )}
-            <Auswahlfeld
-              beschriftung="Zertifikat"
-              value={projekt.exportOptionen.zertifikatFingerabdruck}
+      {projektOptionenAnzeigen && (
+        <section className="einstellungs-abschnitt">
+          <h3>Signatur für dieses Projekt</h3>
+          <label className="schalter">
+            <input
+              type="checkbox"
+              checked={projekt.exportOptionen.signieren}
               onChange={(e) =>
-                exportOptionenSetzen({ ...projekt.exportOptionen, zertifikatFingerabdruck: e.target.value })
+                exportOptionenSetzen({ ...projekt.exportOptionen, signieren: e.target.checked })
               }
-            >
-              <option value="">Bitte auswählen</option>
-              {projekt.exportOptionen.zertifikatFingerabdruck &&
-                !zertifikate.some(
-                  (z) => z.fingerabdruck === projekt.exportOptionen.zertifikatFingerabdruck,
-                ) && (
-                  <option value={projekt.exportOptionen.zertifikatFingerabdruck}>
-                    Gespeicherte Auswahl: {projekt.exportOptionen.zertifikatFingerabdruck}
+            />
+            <span>Exportierte Datei signieren</span>
+          </label>
+          <p>Der normale Export funktioniert ohne Zertifikat.</p>
+          {projekt.exportOptionen.signieren && (
+            <>
+              <p>
+                Für die optionale Signatur benötigst du ein gültiges Code-Signing-Zertifikat mit privatem
+                Schlüssel im Windows-Zertifikatspeicher.
+              </p>
+              <Knopf
+                onClick={zertifikateLaden}
+                disabled={Boolean(verarbeitung)}
+                verarbeitung={verarbeitung?.startsWith('Zertifikate') ?? false}
+                grundId="einstellungen-vorgang"
+              >
+                Zertifikate laden
+              </Knopf>
+              {zertifikatMeldung && (
+                <Statusanzeige art={zertifikate.length ? 'neutral' : 'hinweis'}>
+                  {zertifikatMeldung}
+                </Statusanzeige>
+              )}
+              <Auswahlfeld
+                beschriftung="Zertifikat"
+                value={projekt.exportOptionen.zertifikatFingerabdruck}
+                onChange={(e) =>
+                  exportOptionenSetzen({ ...projekt.exportOptionen, zertifikatFingerabdruck: e.target.value })
+                }
+              >
+                <option value="">Bitte auswählen</option>
+                {projekt.exportOptionen.zertifikatFingerabdruck &&
+                  !zertifikate.some(
+                    (z) => z.fingerabdruck === projekt.exportOptionen.zertifikatFingerabdruck,
+                  ) && (
+                    <option value={projekt.exportOptionen.zertifikatFingerabdruck}>
+                      Gespeicherte Auswahl: {projekt.exportOptionen.zertifikatFingerabdruck}
+                    </option>
+                  )}
+                {zertifikate.map((z) => (
+                  <option key={z.fingerabdruck} value={z.fingerabdruck}>
+                    {z.betreff} · {z.fingerabdruck}
                   </option>
-                )}
-              {zertifikate.map((z) => (
-                <option key={z.fingerabdruck} value={z.fingerabdruck}>
-                  {z.betreff} · {z.fingerabdruck}
-                </option>
-              ))}
-            </Auswahlfeld>
-            <details>
-              <summary>Zeitstempel einrichten</summary>
-              <Feld
-                beschriftung="Zeitstempeldienst (optional)"
-                placeholder="http://…"
-                value={zeitstempelEntwurf}
-                onChange={(e) => setZeitstempelEntwurf(e.target.value)}
-                onBlur={zeitstempelUebernehmen}
-                fehler={zeitstempelFehler}
-                hilfe="Dieser Windows-Signaturweg unterstützt für Authenticode-Zeitstempel nur HTTP."
-              />
-            </details>
-            <p>
-              Eine Signatur hilft, Herausgeber und Änderungen zu prüfen. Sie garantiert keine Ungefährlichkeit
-              und verhindert keine Windows-Warnungen.
-            </p>
-          </>
-        )}
-      </section>
+                ))}
+              </Auswahlfeld>
+              <details>
+                <summary>Zeitstempel einrichten</summary>
+                <Feld
+                  beschriftung="Zeitstempeldienst (optional)"
+                  placeholder="http://…"
+                  value={zeitstempelEntwurf}
+                  onChange={(e) => setZeitstempelEntwurf(e.target.value)}
+                  onBlur={zeitstempelUebernehmen}
+                  fehler={zeitstempelFehler}
+                  hilfe="Dieser Windows-Signaturweg unterstützt für Authenticode-Zeitstempel nur HTTP."
+                />
+              </details>
+              <p>
+                Eine Signatur hilft, Herausgeber und Änderungen zu prüfen. Sie garantiert keine
+                Ungefährlichkeit und verhindert keine Windows-Warnungen.
+              </p>
+            </>
+          )}
+        </section>
+      )}
     </Dialog>
   );
 }

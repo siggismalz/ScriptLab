@@ -19,6 +19,10 @@ async function starten(): Promise<Sitzung> {
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
   await expect(seite.getByTestId('statusleiste')).toContainText('Neues Projekt');
+  await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await seite.evaluate(
+    () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
+  );
   return { app, seite, ordner };
 }
 async function beenden(s: Sitzung): Promise<void> {
@@ -65,7 +69,7 @@ async function laden(s: Sitzung, projekt: Projekt) {
   await writeFile(pfad, JSON.stringify(projekt), 'utf8');
   await s.app.evaluate(({ dialog }, datei) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [datei] });
-    dialog.showMessageBox = async () => ({ response: 1, checkboxChecked: false });
+    dialog.showMessageBox = async () => ({ response: 2, checkboxChecked: false });
   }, pfad);
   await s.seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
   await expect(s.seite.getByTestId('statusleiste')).toContainText('Projekt gespeichert');

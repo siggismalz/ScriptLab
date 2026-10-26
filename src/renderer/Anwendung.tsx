@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import * as Blockly from 'blockly/core';
 import { registriereBausteine } from '../editor/bausteine';
 import { bausteinDefinitionen } from '../kern/katalog';
@@ -15,7 +15,15 @@ import {
   ScriptLabBlockDragger,
   type Einfuegestelle,
 } from '../editor/bedienung';
-import type { Antwort, Dokument, Einstellungen, ExportErgebnis } from '../gemeinsam/bruecke';
+import type {
+  Antwort,
+  Dokument,
+  Einstellungen,
+  ExportErgebnis,
+  ProjektBibliothek,
+  Verfuegbarkeit,
+  EntwurfStatus,
+} from '../gemeinsam/bruecke';
 import type { Zertifikat } from '../windows/signatur';
 import type { UpdateZustand } from '../windows/updates';
 import { Knopf } from './komponenten/Knopf';
@@ -26,6 +34,7 @@ import { Eigenschaften } from './Eigenschaften';
 import { EinstellungenDialog } from './EinstellungenDialog';
 import { ProjektDialog } from './ProjektDialog';
 import { Menue } from './komponenten/Menue';
+import { Startbereich } from './Startbereich';
 
 registriereBausteine();
 const vorgaben: Einstellungen = {
@@ -44,11 +53,23 @@ function antwort<T>(r: Antwort<T>): T {
 export function Anwendung() {
   const [ansicht, setAnsicht] = useState<'start' | 'editor'>('start');
   const [editorBegonnen, setEditorBegonnen] = useState(false);
+  const [startZiel, setStartZiel] = useState<'start' | 'hilfe'>('start');
+  const [startAnfrage, setStartAnfrage] = useState(0);
+  const [bibliothek, setBibliothek] = useState<ProjektBibliothek | null>(null);
+  const [bibliothekLaedt, setBibliothekLaedt] = useState(false);
+  const [bibliothekFehler, setBibliothekFehler] = useState<string | null>(null);
+  const [verfuegbarkeiten, setVerfuegbarkeiten] = useState<Record<string, Verfuegbarkeit>>({});
+  const [entwurfStatus, setEntwurfStatus] = useState<EntwurfStatus | null>(null);
+  const [dateikonflikt, setDateikonflikt] = useState(false);
+  const bibliotheksAnfrage = useRef(0);
+  const metadatenCache = useRef(new Map<string, string>());
   const editorSichtbar = useRef(false);
   const editorFokus = useRef<Element | null>(null);
+  const aktionsFokus = useRef<Element | null>(null);
   editorSichtbar.current = ansicht === 'editor';
   const element = useRef<HTMLDivElement>(null);
   const wsRef = useRef<Blockly.WorkspaceSvg | null>(null);
+  const arbeitsbereichGeladen = useRef(false);
   const [workspace, setWorkspace] = useState<Blockly.WorkspaceSvg | null>(null);
   const projektRef = useRef(neuesProjekt());
   const gespeichertRef = useRef(JSON.stringify(projektRef.current));
@@ -96,11 +117,163 @@ export function Anwendung() {
     setEditorBegonnen(true);
     setAnsicht('editor');
   }
-  function startseiteZeigen() {
+  function startseiteZeigen(ziel: 'start' | 'hilfe' = 'start') {
     editorFokus.current = document.activeElement;
     aendern(standLesen());
     setAnsicht('start');
+    setStartZiel(ziel);
+    setStartAnfrage((n) => n + 1);
+    metadatenCache.current.clear();
   }
+
+  async function bibliothekAktualisieren() {
+    const anfrage = ++bibliotheksAnfrage.current;
+    setBibliothekLaedt(true);
+    setBibliothekFehler(null);
+    try {
+      const daten = antwort(await window.scriptlab.bibliothekLesen());
+      if (anfrage !== bibliotheksAnfrage.current) return;
+      setBibliothek(daten);
+      // Der Index erscheint sofort. Langsame Speicherorte werden davon getrennt geprueft.
+      const offen = daten.projekte.filter((p) => {
+        const signatur = `${p.pfad}:${p.hash}`;
+        return metadatenCache.current.get(p.id) !== signatur;
+      });
+      void Promise.all(
+        Array.from({ length: Math.min(3, offen.length) }, async () => {
+          while (offen.length && anfrage === bibliotheksAnfrage.current) {
+            const eintrag = offen.shift()!;
+            setVerfuegbarkeiten((alt) => ({
+              ...alt,
+              [eintrag.id]: { zustand: 'prueft', meldung: 'Verfügbarkeit wird geprüft …' },
+            }));
+            const r = await window.scriptlab.projektVerfuegbarkeit(eintrag.id);
+            if (anfrage === bibliotheksAnfrage.current) {
+              // Erst ein wirklich abgeschlossenes Ergebnis darf weitere Abfragen ersetzen.
+              metadatenCache.current.set(eintrag.id, `${eintrag.pfad}:${eintrag.hash}`);
+              setVerfuegbarkeiten((alt) => ({
+                ...alt,
+                [eintrag.id]: r.ok ? r.wert : { zustand: 'nicht-erreichbar', meldung: r.meldung },
+              }));
+            }
+          }
+        }),
+      );
+    } catch (e) {
+      if (anfrage === bibliotheksAnfrage.current)
+        setBibliothekFehler(
+          e instanceof Error ? e.message : 'Die lokalen Arbeitsstände konnten nicht geladen werden.',
+        );
+    } finally {
+      if (anfrage === bibliotheksAnfrage.current) setBibliothekLaedt(false);
+    }
+  }
+
+  function dokumentStatusUebernehmen(daten: Dokument) {
+    setEntwurfStatus(daten.entwurfStatus);
+    setDateikonflikt(daten.konflikt);
+  }
+
+  async function abgebrocheneAktionAbgleichen() {
+    const aktuell = antwort(await window.scriptlab.laden()).dokument;
+    // Auch eine vorgelagerte Speicherentscheidung kann bereits eine neue Kopie angelegt haben.
+    projektRef.current = { ...projektRef.current, projektKennung: aktuell.projekt.projektKennung };
+    setProjekt(projektRef.current);
+    setDatei(aktuell.dateiname);
+    setGeaendert(aktuell.geaendert);
+    dokumentStatusUebernehmen(aktuell);
+    if (!aktuell.geaendert) gespeichertRef.current = JSON.stringify(aktuell.projekt);
+  }
+
+  async function bibliotheksProjektOeffnen(
+    art: 'projekt' | 'zuordnen' | 'entwurf' | 'entwurf-speichern',
+    id: string,
+  ) {
+    await aktion(
+      art === 'entwurf-speichern' ? 'Entwurf wird als Workflow gespeichert …' : 'Workflow wird geöffnet …',
+      async () => {
+        const aufrufe = {
+          projekt: window.scriptlab.bekanntesOeffnen,
+          zuordnen: window.scriptlab.bekanntesNeuZuordnen,
+          entwurf: window.scriptlab.entwurfOeffnen,
+          'entwurf-speichern': window.scriptlab.entwurfSpeichernAls,
+        };
+        const neu = antwort(await aufrufe[art](standLesen(), id));
+        if (neu) {
+          if (neu.darstellungNoetig) await dokumentLaden(neu);
+          else {
+            dokumentStatusUebernehmen(neu);
+            setGeaendert(neu.geaendert);
+          }
+          editorZeigen();
+          melden(art === 'entwurf-speichern' ? 'Projekt gespeichert.' : 'Workflow zum Bearbeiten geöffnet.');
+        } else await abgebrocheneAktionAbgleichen();
+        await bibliothekAktualisieren();
+      },
+    );
+  }
+
+  async function eintragAktion(art: 'entfernen' | 'loeschen' | 'ordner', id: string) {
+    await aktion(
+      art === 'ordner' ? 'Speicherordner wird angezeigt …' : 'Lokale Übersicht wird aktualisiert …',
+      async () => {
+        if (art === 'ordner') antwort(await window.scriptlab.projektOrdnerAnzeigen(id));
+        else {
+          const erledigt = antwort(
+            await (art === 'entfernen'
+              ? window.scriptlab.projektVerweisEntfernen(id)
+              : window.scriptlab.entwurfLoeschen(id)),
+          );
+          if (erledigt)
+            melden(
+              art === 'entfernen'
+                ? 'Der Verweis wurde aus der Liste entfernt. Die Projektdatei bleibt erhalten.'
+                : 'Der lokale Entwurf wurde gelöscht.',
+              'erfolg',
+            );
+          await bibliothekAktualisieren();
+        }
+      },
+    );
+  }
+
+  async function entwurfJetztSichern() {
+    await aktion('Entwurf wird lokal gesichert …', async () => {
+      const neu = antwort(await window.scriptlab.entwurfSichern(standLesen()));
+      dokumentStatusUebernehmen(neu);
+      melden(
+        neu.entwurfStatus.phase === 'gesichert'
+          ? 'Entwurf lokal gesichert. Die Projektdatei bleibt unverändert.'
+          : 'Ein unveränderter leerer Workflow benötigt keinen Entwurf.',
+        'hinweis',
+      );
+      await bibliothekAktualisieren();
+    });
+  }
+
+  useEffect(() => {
+    if (ansicht === 'start') void bibliothekAktualisieren();
+  }, [ansicht]);
+  useEffect(() => {
+    if (!editorBegonnen) return;
+    let aktiv = true;
+    let letzterStand = '';
+    const lesen = async () => {
+      const r = await window.scriptlab.laden();
+      if (!aktiv || !r.ok) return;
+      const neu = r.wert.dokument;
+      dokumentStatusUebernehmen(neu);
+      const statuskennung = `${neu.entwurfStatus.phase}:${neu.entwurfStatus.gesichertAm}`;
+      if (letzterStand && letzterStand !== statuskennung && !editorSichtbar.current)
+        void bibliothekAktualisieren();
+      letzterStand = statuskennung;
+    };
+    const timer = setInterval(() => void lesen(), 900);
+    return () => {
+      aktiv = false;
+      clearInterval(timer);
+    };
+  }, [editorBegonnen]);
   useEffect(() => {
     if (ansicht !== 'editor') return;
     const frame = requestAnimationFrame(() => {
@@ -122,6 +295,7 @@ export function Anwendung() {
   }
   async function aktion(name: string, funktion: () => Promise<void>) {
     if (busy.current) return;
+    aktionsFokus.current = document.activeElement;
     busy.current = true;
     setVerarbeitung(name);
     setDauerfehler(null);
@@ -134,9 +308,19 @@ export function Anwendung() {
       setVerarbeitung(null);
     }
   }
+  useLayoutEffect(() => {
+    if (verarbeitung) return;
+    const fokus = aktionsFokus.current;
+    aktionsFokus.current = null;
+    if (document.activeElement !== document.body) return;
+    if (fokus?.isConnected && fokus.getClientRects().length && 'focus' in fokus)
+      (fokus as HTMLElement).focus({ preventScroll: true });
+    else if (ansicht === 'editor')
+      document.querySelector<HTMLInputElement>('.palette-suche input')?.focus({ preventScroll: true });
+  }, [verarbeitung]);
   function standLesen(): Projekt {
     const ws = wsRef.current;
-    return ws
+    return ws && arbeitsbereichGeladen.current
       ? ({
           ...projektRef.current,
           editor: Blockly.serialization.workspaces.save(ws),
@@ -170,24 +354,42 @@ export function Anwendung() {
     setEigenschaftenOffen(false);
     rueckfokus.current?.focus?.({ preventScroll: true });
   }
-  async function dokumentLaden(neu: Dokument) {
+  async function dokumentLaden(neu: Dokument, nurDaten = false) {
     laedt.current = true;
     try {
       const ws = wsRef.current!;
+      if (nurDaten) {
+        // Auf der Startseite existiert noch kein sichtbarer Canvas. Erst im Editor rendern,
+        // damit Blockly die gespeicherte Ansicht nicht gegen einen Null-Pixel-Bereich klemmt.
+        projektRef.current = neu.projekt;
+        gespeichertRef.current = JSON.stringify(neu.projekt);
+        setProjekt(neu.projekt);
+        setDatei(neu.dateiname);
+        setGeaendert(neu.geaendert);
+        dokumentStatusUebernehmen(neu);
+        return;
+      }
+      editorZeigen();
+      await new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig())));
+      Blockly.svgResize(ws);
       Blockly.serialization.workspaces.load(neu.projekt.editor, ws);
+      await Blockly.renderManagement.finishQueuedRenders();
+      Blockly.svgResize(ws);
       ws.setScale(Math.max(0.25, Math.min(2, neu.projekt.ansicht.zoom)));
       ws.scroll(neu.projekt.ansicht.x, neu.projekt.ansicht.y);
       ws.clearUndo();
+      arbeitsbereichGeladen.current = true;
       const stand = {
         ...neu.projekt,
         editor: Blockly.serialization.workspaces.save(ws),
         ansicht: { zoom: ws.scale, x: ws.scrollX, y: ws.scrollY },
       } as Projekt;
       projektRef.current = stand;
-      gespeichertRef.current = JSON.stringify(stand);
+      gespeichertRef.current = neu.geaendert ? '' : JSON.stringify(stand);
       setProjekt(stand);
       setDatei(neu.dateiname);
-      setGeaendert(false);
+      setGeaendert(neu.geaendert);
+      dokumentStatusUebernehmen(neu);
       auswaehlen(null);
       setBeruehrt(new Set());
       setPruefungAngefordert(false);
@@ -196,7 +398,7 @@ export function Anwendung() {
       setRevision((n) => n + 1);
       setPlatzierung(null);
       platzierungRef.current = null;
-      antwort(await window.scriptlab.darstellungBereit(stand));
+      dokumentStatusUebernehmen(antwort(await window.scriptlab.darstellungBereit(stand)));
     } finally {
       laedt.current = false;
     }
@@ -222,9 +424,14 @@ export function Anwendung() {
         const neu = antwort(r);
         if (neu) {
           if (art === 'speichern' || art === 'unter') {
-            gespeichertRef.current = JSON.stringify(stand);
+            const kennung = neu.projekt.projektKennung;
+            const gespeichertStand = { ...stand, projektKennung: kennung };
+            projektRef.current = { ...projektRef.current, projektKennung: kennung };
+            setProjekt(projektRef.current);
+            gespeichertRef.current = JSON.stringify(gespeichertStand);
             setDatei(neu.dateiname);
             setGeaendert(JSON.stringify(projektRef.current) !== gespeichertRef.current);
+            dokumentStatusUebernehmen(neu);
             melden('Projekt gespeichert.', 'erfolg');
           } else {
             await dokumentLaden(neu);
@@ -232,11 +439,9 @@ export function Anwendung() {
             melden(art === 'neu' ? 'Füge links einen Baustein hinzu.' : 'Projekt geöffnet.');
           }
         } else {
-          const aktuell = antwort(await window.scriptlab.laden()).dokument;
-          setDatei(aktuell.dateiname);
-          setGeaendert(aktuell.geaendert);
-          if (!aktuell.geaendert) gespeichertRef.current = JSON.stringify(aktuell.projekt);
+          await abgebrocheneAktionAbgleichen();
         }
+        await bibliothekAktualisieren();
       },
     );
   }
@@ -368,7 +573,7 @@ export function Anwendung() {
     wsRef.current = ws;
     setWorkspace(ws);
     const aenderung = (event: Blockly.Events.Abstract) => {
-      if (laedt.current) return;
+      if (laedt.current || !arbeitsbereichGeladen.current) return;
       if (event.type === Blockly.Events.SELECTED) {
         const id = (event as Blockly.Events.Selected).newElementId;
         if (id && ws.getBlockById(id)) auswaehlen(id);
@@ -400,7 +605,7 @@ export function Anwendung() {
       setEinstellungen(start.einstellungen);
       einstellungenRef.current = start.einstellungen;
       setVersion(start.version);
-      await dokumentLaden(start.dokument);
+      await dokumentLaden(start.dokument, true);
     });
     return () => {
       abmelden();
@@ -436,6 +641,17 @@ export function Anwendung() {
   }, [dialog]);
   useEffect(() => {
     const tasten = (event: KeyboardEvent) => {
+      if (busy.current) {
+        if (
+          (event.ctrlKey &&
+            ['n', 'o', 's', 'z', 'y', '+', '=', '-', '0'].includes(event.key.toLowerCase())) ||
+          ['Delete', 'F4'].includes(event.key)
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+        return;
+      }
       if (dialog) return;
       const ziel = event.target as HTMLElement;
       if (event.ctrlKey && ['n', 'o', 's'].includes(event.key.toLowerCase())) {
@@ -527,43 +743,54 @@ export function Anwendung() {
   } as CSSProperties;
   return (
     <div className="anwendung" style={style}>
-      <section className="start-einstieg" hidden={ansicht !== 'start'} aria-label="Startseite">
-        <header className="start-kopf">
-          <span>ScriptLab</span>
-          <div className="knopfgruppe">
-            <Knopf onClick={() => setDialog('einstellungen')}>Einstellungen</Knopf>
-            <Knopf onClick={() => setDialog('ueber')}>Über ScriptLab</Knopf>
-          </div>
-        </header>
-        <main className="start-inhalt">
-          <h1>Startseite</h1>
-          <p>Erstelle einen neuen Ablauf oder arbeite an einem vorhandenen weiter.</p>
-          <div className="knopfgruppe umbrechen">
-            <Knopf
-              variante="primaer"
-              symbol="neu"
-              disabled={!!verarbeitung}
-              grund={verarbeitung ?? undefined}
-              onClick={() => void projektAktion('neu')}
-            >
-              Neuer Workflow
-            </Knopf>
-            <Knopf
-              symbol="oeffnen"
-              disabled={!!verarbeitung}
-              grund={verarbeitung ?? undefined}
-              onClick={() => void projektAktion('oeffnen')}
-            >
-              Workflow öffnen
-            </Knopf>
-          </div>
-          {editorBegonnen && <Knopf onClick={editorZeigen}>Weiterbearbeiten: {projekt.name}</Knopf>}
-          {dauerfehler && <p role="alert">{dauerfehler}</p>}
-        </main>
-      </section>
-      <div className="editor-ansicht" hidden={ansicht !== 'editor'}>
+      <div className="start-ansicht" hidden={ansicht !== 'start'}>
+        <Startbereich
+          daten={bibliothek}
+          laden={bibliothekLaedt}
+          fehler={bibliothekFehler ?? dauerfehler}
+          fehlerErneutLaden={bibliothekFehler ? () => void bibliothekAktualisieren() : undefined}
+          fehlerSchliessen={
+            !bibliothekFehler && dauerfehler
+              ? () => {
+                  setDauerfehler(null);
+                  setStatus('');
+                  setStatusArt('neutral');
+                }
+              : undefined
+          }
+          verarbeitung={verarbeitung}
+          meldung={statusArt === 'erfolg' || statusArt === 'hinweis' ? status : null}
+          aktiveInfo={editorBegonnen ? { name: projekt.name, dateiname: datei, geaendert } : null}
+          verfuegbarkeiten={verfuegbarkeiten}
+          ziel={startZiel}
+          zielAnfrage={startAnfrage}
+          neuerWorkflow={() => void projektAktion('neu')}
+          workflowOeffnen={() => void projektAktion('oeffnen')}
+          weiterbearbeiten={editorZeigen}
+          einstellungenOeffnen={() => setDialog('einstellungen')}
+          ueberOeffnen={() => setDialog('ueber')}
+          aktualisieren={() => {
+            metadatenCache.current.clear();
+            void bibliothekAktualisieren();
+          }}
+          projektOeffnen={(id) => void bibliotheksProjektOeffnen('projekt', id)}
+          projektNeuZuordnen={(id) => void bibliotheksProjektOeffnen('zuordnen', id)}
+          projektEntfernen={(id) => void eintragAktion('entfernen', id)}
+          projektOrdnerAnzeigen={(id) => void eintragAktion('ordner', id)}
+          entwurfFortsetzen={(id) => void bibliotheksProjektOeffnen('entwurf', id)}
+          entwurfSpeichernUnter={(id) => void bibliotheksProjektOeffnen('entwurf-speichern', id)}
+          entwurfLoeschen={(id) => void eintragAktion('loeschen', id)}
+          beispielOeffnen={(id) => void projektAktion(id)}
+        />
+      </div>
+      {ansicht === 'editor' && verarbeitung && (
+        <p className="verarbeitung-editor" role="status">
+          {verarbeitung}
+        </p>
+      )}
+      <div className="editor-ansicht" hidden={ansicht !== 'editor'} inert={!!verarbeitung}>
         <nav className="werkzeugleiste" aria-label="Projektaktionen">
-          <Knopf variante="leise" onClick={startseiteZeigen}>
+          <Knopf variante="leise" onClick={() => startseiteZeigen()}>
             Startseite
           </Knopf>
           <div className="knopfgruppe">
@@ -599,6 +826,11 @@ export function Anwendung() {
               symbol="unten"
               eintraege={[
                 { text: 'Speichern unter', symbol: 'speichern', aktion: () => void projektAktion('unter') },
+                {
+                  text: 'Als Entwurf sichern',
+                  symbol: 'speichern',
+                  aktion: () => void entwurfJetztSichern(),
+                },
                 { text: 'Projektangaben', symbol: 'info', aktion: () => setDialog('projekt') },
                 { text: 'Beispiel: Begrüßung', aktion: () => void projektAktion('begruessung') },
                 { text: 'Beispiel: Datei-Backup', aktion: () => void projektAktion('backup') },
@@ -658,6 +890,7 @@ export function Anwendung() {
               symbol="mehr"
               eintraege={[
                 { text: 'Einstellungen', symbol: 'einstellungen', aktion: () => setDialog('einstellungen') },
+                { text: 'Hilfe und Anleitungen', symbol: 'info', aktion: () => startseiteZeigen('hilfe') },
                 { text: 'Über ScriptLab', symbol: 'info', aktion: () => setDialog('ueber') },
                 { text: 'Kopieren', symbol: 'kopieren', aktion: () => blockAktion('kopieren') },
                 { text: 'Einfügen', symbol: 'einfuegen', aktion: () => blockAktion('einfuegen') },
@@ -959,10 +1192,43 @@ export function Anwendung() {
             />
           </section>
         )}
+        {entwurfStatus?.phase === 'fehler' && (
+          <section className="aufgabenfehler" role="alert">
+            <p>
+              {entwurfStatus.meldung ??
+                'Der Entwurf konnte nicht lokal gesichert werden. Dein Arbeitsstand bleibt im Editor.'}
+            </p>
+            <Knopf onClick={() => void entwurfJetztSichern()}>Erneut sichern</Knopf>
+          </section>
+        )}
+        {dateikonflikt && (
+          <section className="aufgabenfehler" role="alert">
+            <p>
+              Die Ausgangsdatei wurde außerhalb von ScriptLab geändert. Speichere deinen Arbeitsstand als
+              separate Kopie.
+            </p>
+            <Knopf onClick={() => void projektAktion('unter')}>Kopie speichern</Knopf>
+          </section>
+        )}
         <footer className="statusleiste" data-testid="statusleiste">
           <span className="projektstatus" aria-label="Projektstatus">
             {geaendert ? 'Ungespeicherte Änderungen' : datei ? 'Projekt gespeichert' : 'Neues Projekt'}
           </span>
+          {entwurfStatus?.phase === 'gesichert' && (
+            <span
+              className="entwurf-status"
+              aria-label="Entwurfstatus"
+              role="status"
+              title={`Lokal als Entwurf gesichert: ${entwurfStatus.gesichertAm ? new Date(entwurfStatus.gesichertAm).toLocaleString('de-DE') : ''}`}
+            >
+              Entwurf lokal gesichert
+            </span>
+          )}
+          {entwurfStatus?.phase === 'ausstehend' && (
+            <span className="entwurf-status" role="status">
+              Entwurfssicherung ausstehend
+            </span>
+          )}
           <span id="status-aktion" role="status" className={`status-aktion status-aktion--${statusArt}`}>
             {verarbeitung ?? status}
           </span>
@@ -986,6 +1252,7 @@ export function Anwendung() {
         speichern={(name, beschreibung) => aendern({ ...projektRef.current, name, beschreibung })}
       />
       <EinstellungenDialog
+        projektOptionenAnzeigen={editorBegonnen}
         offen={dialog === 'einstellungen'}
         schliessen={() => setDialog(null)}
         einstellungen={einstellungen}

@@ -25,6 +25,10 @@ test.beforeAll(async () => {
   seite = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+  await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await seite.evaluate(
+    () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
+  );
   await expect(seite.getByTestId('statusleiste')).toBeVisible();
   await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Neues Projekt');
 });
@@ -44,6 +48,18 @@ async function projektLesen(): Promise<Projekt> {
     if (!r.ok) throw new Error(r.meldung);
     return r.wert.dokument.projekt;
   });
+}
+async function editorBereit(): Promise<void> {
+  await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await expect
+    .poll(async () => {
+      const r = await seite.evaluate(() => window.scriptlab.laden());
+      return r.ok ? r.wert.dokument.darstellungNoetig : true;
+    })
+    .toBe(false);
+  await seite.evaluate(
+    () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
+  );
 }
 async function speicherziel(datei: string | null) {
   await app.evaluate(({ dialog }, ziel) => {
@@ -129,6 +145,16 @@ test('beginnt mit einem leeren Start und isoliert den Renderer', async () => {
       'zertifikate',
       'einstellungenSpeichern',
       'updateAktion',
+      'bibliothekLesen',
+      'projektVerfuegbarkeit',
+      'bekanntesOeffnen',
+      'bekanntesNeuZuordnen',
+      'projektVerweisEntfernen',
+      'projektOrdnerAnzeigen',
+      'entwurfOeffnen',
+      'entwurfSpeichernAls',
+      'entwurfLoeschen',
+      'entwurfSichern',
     ],
   });
   expect(
@@ -230,7 +256,7 @@ test('speichert den sofortigen Editorstand und erhält Namen, Verbindungen und Z
 
 test('verhindert Projektverlust bei Abbruch und schützt unbekannte Formate', async () => {
   await projektangaben(undefined, 'Letzte Änderung bleibt erhalten.');
-  await verlustAntwort(2);
+  await verlustAntwort(3);
   await seite.getByRole('button', { name: 'Neu', exact: true }).click();
   await expect.poll(async () => (await projektLesen()).beschreibung).toBe('Letzte Änderung bleibt erhalten.');
   expect(
@@ -239,7 +265,7 @@ test('verhindert Projektverlust bei Abbruch und schützt unbekannte Formate', as
         (globalThis as typeof globalThis & { scriptlabTestDialogKnoepfe?: string[] })
           .scriptlabTestDialogKnoepfe,
     ),
-  ).toEqual(['Speichern', 'Nicht speichern', 'Abbrechen']);
+  ).toEqual(['Speichern', 'Als Entwurf behalten', 'Änderungen verwerfen', 'Abbrechen']);
   await speicherziel(null);
   await menueAktion('Projektmenü', 'Speichern unter');
   await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Ungespeicherte Änderungen');
@@ -289,7 +315,8 @@ test('sucht mit und ohne Treffer und öffnet das lokale Beispiel über das Proje
   const beispiel = JSON.parse(
     await readFile(resolve('beispiele/01-Begruessung.scriptlab'), 'utf8'),
   ) as Projekt;
-  await expect.poll(async () => (await projektLesen()).name).toBe(beispiel.name);
+  await expect.poll(async () => (await projektLesen()).name).toBe(`${beispiel.name} (Kopie)`);
+  expect((await projektLesen()).projektKennung).toMatch(/^[a-f0-9-]{36}$/i);
   expect((await projektLesen()).editor.blocks!.blocks[0].next!.block.type).toBe('sl_message');
 });
 
@@ -316,7 +343,7 @@ test('prüft Credits, Zertifikatsauflistung und die gesperrten Entwicklerupdates
 });
 
 test('Schließen liest den letzten Stand und bricht bei ungespeicherten Änderungen ab', async () => {
-  await verlustAntwort(2);
+  await verlustAntwort(3);
   await projektangaben('Noch nicht gespeichert');
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].close());
   await expect.poll(async () => (await projektLesen()).name).toBe('Noch nicht gespeichert');
@@ -326,8 +353,11 @@ test('Schließen liest den letzten Stand und bricht bei ungespeicherten Änderun
 });
 
 test('fügt per Klick ein, meldet lose Anweisungen und erhält Kopieren sowie Rückgängig', async () => {
-  await verlustAntwort(1);
+  await verlustAntwort(2);
+  const alteKennung = (await projektLesen()).projektKennung;
   await seite.getByRole('button', { name: 'Neu', exact: true }).click();
+  await expect.poll(async () => (await projektLesen()).projektKennung).not.toBe(alteKennung);
+  await editorBereit();
   const palette = seite.getByTestId('palette');
   await palette.getByRole('searchbox', { name: 'Bausteine suchen' }).fill('Kommentar');
   await palette.getByRole('button', { name: `Baustein einfügen: ${kommentarName}`, exact: true }).click();
@@ -424,7 +454,7 @@ test('exportiert einen kombinierten Ablauf ohne dessen Dateiaktionen auszuführe
   p.editor.blocks!.blocks[0].next = { block: frage };
   const projektdatei = join(ordner, 'Kombiniert.scriptlab');
   await writeFile(projektdatei, JSON.stringify(p));
-  await verlustAntwort(1);
+  await verlustAntwort(2);
   await oeffnungsziel(projektdatei);
   await seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
   await expect.poll(async () => (await projektLesen()).name).toBe(p.name);

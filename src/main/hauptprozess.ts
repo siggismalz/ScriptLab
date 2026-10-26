@@ -16,6 +16,15 @@ import { z } from 'zod';
 import { neuesProjekt, projektPruefen, type Projekt } from '../kern/projekt';
 import { vbsErzeugen } from '../kern/generator';
 import { farben } from '../gestaltung/tokens';
+import {
+  Projektindex,
+  Entwurfspeicher,
+  dateistandLesen,
+  projektHash,
+  leererEntwurf,
+  windowsPfadSchluessel,
+  type Dateistand,
+} from './projektablage';
 import { atomarSchreiben, dateiFehler, projektLesen, projektSchreiben, vbsKodieren } from './dateien';
 import { SignaturDienst } from '../windows/signatur';
 import { AktualisierungsDienst } from '../windows/updates';
@@ -44,6 +53,13 @@ let einstellungen: Einstellungen = einstellungenSchema.parse({
 let projekt = neuesProjekt();
 let projektPfad: string | null = null;
 let gespeichert = JSON.stringify(projekt);
+let gespeichertInhalt = projektHash(projekt);
+let baselineHash: string | null = null;
+let wiederhergestellt = false;
+let konflikt = false;
+let nachWechselVerwerfen: string | null = null;
+let projektindex!: Projektindex;
+let entwuerfe!: Entwurfspeicher;
 let exportPfad: string | null = null;
 let fenster: BrowserWindow;
 let darfSchliessen = false;
@@ -57,11 +73,43 @@ function dokument(): Dokument {
   return {
     projekt,
     dateiname: projektPfad ? basename(projektPfad) : null,
-    geaendert: JSON.stringify(projekt) !== gespeichert,
+    geaendert: wiederhergestellt || JSON.stringify(projekt) !== gespeichert,
+    projektKennung: projekt.projektKennung!,
+    entwurfStatus: entwuerfe?.status(projekt.projektKennung!) ?? {
+      id: null,
+      phase: 'kein',
+      gesichertAm: null,
+      meldung: null,
+    },
+    konflikt,
+    darstellungNoetig: wartetAufDarstellung,
   };
 }
-function uebernehmen(daten: unknown): Projekt {
-  projekt = projektPruefen(daten);
+function uebernehmen(daten: unknown, sicherungPlanen = true): Projekt {
+  const vorher = projektHash(projekt);
+  const geprueft = projektPruefen(daten);
+  if (geprueft.projektKennung && geprueft.projektKennung !== projekt.projektKennung)
+    throw new Error(
+      'Dieser Bearbeitungsstand gehört zu einem anderen Projekt. Bitte verwende den aktuell geöffneten Workflow.',
+    );
+  // Nur Öffnen/Neu wechseln die Identität, keine vom Renderer übertragene Bearbeitung.
+  projekt = { ...geprueft, projektKennung: projekt.projektKennung };
+  if (entwuerfe && sicherungPlanen) {
+    if (
+      projektHash(projekt) !== vorher &&
+      !wiederhergestellt &&
+      projektHash(projekt) === gespeichertInhalt &&
+      entwuerfe.status(projekt.projektKennung!).phase !== 'kein'
+    )
+      void entwuerfe.aktivenEntwurfEntfernen(projekt.projektKennung!).catch(() => {});
+    if (
+      projektHash(projekt) !== vorher &&
+      projektHash(projekt) !== gespeichertInhalt &&
+      !leererEntwurf(projekt)
+    )
+      entwuerfe.planen(projekt, projektPfad, baselineHash);
+    else entwuerfe.ansichtAktualisieren(projekt);
+  }
   fensterStatusAktualisieren();
   return projekt;
 }
@@ -132,11 +180,23 @@ function registrieren(kanal: string, funktion: (daten: unknown) => unknown | Pro
 }
 
 async function speichern(unter: boolean): Promise<Dokument | null> {
+  try {
+    await entwurfAktuellSichern();
+  } catch {
+    /* Eine Projektdatei kann auch bei fehlgeschlagener lokaler Sicherung gespeichert werden. */
+  }
   let ziel = projektPfad;
-  if (!ziel || unter) {
+  if (projektPfad && baselineHash) {
+    try {
+      konflikt = (await dateistandLesen(projektPfad)).hash !== baselineHash;
+    } catch {
+      konflikt = true;
+    }
+  }
+  if (!ziel || unter || konflikt) {
     const auswahl = await dialog.showSaveDialog(fenster, {
-      title: 'ScriptLab-Projekt speichern',
-      defaultPath: `${dateiname(projekt.name)}.scriptlab`,
+      title: konflikt ? 'Separate Projektkopie speichern' : 'ScriptLab-Projekt speichern',
+      defaultPath: `${dateiname(projekt.name)}${konflikt ? '-Kopie' : ''}.scriptlab`,
       filters: [{ name: 'ScriptLab-Projekt', extensions: ['scriptlab'] }],
     });
     if (auswahl.canceled || !auswahl.filePath) return null;
@@ -144,12 +204,80 @@ async function speichern(unter: boolean): Promise<Dokument | null> {
     if (extname(ziel).toLowerCase() !== '.scriptlab')
       throw new Error('Bitte speichere Projekte mit der Endung .scriptlab.');
   }
-  const stand = projektPruefen(projekt);
+  if (konflikt && projektPfad && windowsPfadSchluessel(ziel) === windowsPfadSchluessel(projektPfad))
+    throw new Error(
+      'Die Ausgangsdatei wurde außerhalb von ScriptLab geändert oder ist nicht mehr erreichbar. Speichere deine Änderungen unter einem anderen Dateinamen.',
+    );
+  if (projektPfad && baselineHash && windowsPfadSchluessel(ziel) === windowsPfadSchluessel(projektPfad)) {
+    try {
+      konflikt = (await dateistandLesen(projektPfad)).hash !== baselineHash;
+    } catch {
+      konflikt = true;
+    }
+    if (konflikt)
+      throw new Error(
+        'Die Ausgangsdatei wurde inzwischen geändert. Speichere deine Änderungen als separate Projektkopie.',
+      );
+  }
+  const alteKennung = projekt.projektKennung!;
+  const kopie = projektPfad && windowsPfadSchluessel(ziel) !== windowsPfadSchluessel(projektPfad);
+  const stand = projektPruefen({
+    ...projekt,
+    projektKennung: projektindex.kennungFuerPfad(ziel, kopie ? randomUUID() : projekt.projektKennung!),
+  });
   await projektSchreiben(ziel, stand);
-  projektPfad = ziel;
-  gespeichert = JSON.stringify(stand);
-  fensterStatusAktualisieren();
+  const dateistand = await dateistandLesen(ziel);
+  await verweisMerken(ziel, { ...dateistand, projekt: stand }, false);
+  await entwuerfe.aktivenEntwurfEntfernen(alteKennung);
+  projektAktivieren(stand, ziel, dateistand.hash);
+  wartetAufDarstellung = false;
   return dokument();
+}
+
+async function verweisMerken(
+  pfad: string,
+  stand: Dateistand,
+  geoeffnet: boolean,
+  id?: string,
+): Promise<void> {
+  try {
+    const eintrag = await projektindex.merken(pfad, stand, geoeffnet, id);
+    stand.projekt.projektKennung = eintrag.projektKennung;
+  } catch {
+    projektindex.hinweis =
+      'Die Projektdatei wurde gelesen oder gespeichert, aber ihre Aufnahme in die lokale Projektliste ist fehlgeschlagen.';
+  }
+}
+
+function projektAktivieren(
+  neu: Projekt,
+  pfad: string | null,
+  hash: string | null,
+  ungespeichert = false,
+): void {
+  projekt = { ...neu, projektKennung: neu.projektKennung ?? randomUUID() };
+  entwuerfe.neueBearbeitung(projekt.projektKennung!);
+  projektPfad = pfad;
+  baselineHash = hash;
+  gespeichert = JSON.stringify(projekt);
+  gespeichertInhalt = ungespeichert ? '' : projektHash(projekt);
+  wiederhergestellt = ungespeichert;
+  konflikt = false;
+  exportPfad = null;
+  wartetAufDarstellung = true;
+  fensterStatusAktualisieren();
+}
+async function entwurfAktuellSichern(): Promise<void> {
+  if (
+    (!leererEntwurf(projekt) && (wiederhergestellt || projektHash(projekt) !== gespeichertInhalt)) ||
+    entwuerfe.status(projekt.projektKennung!).id
+  )
+    entwuerfe.planen(projekt, projektPfad, baselineHash);
+  await entwuerfe.flush();
+}
+async function verworfenenEntwurfBereinigen(): Promise<void> {
+  if (nachWechselVerwerfen) await entwuerfe.aktivenEntwurfEntfernen(nachWechselVerwerfen);
+  nachWechselVerwerfen = null;
 }
 
 function dateiname(name: string): string {
@@ -162,19 +290,35 @@ function dateiname(name: string): string {
 }
 
 async function aenderungenSichern(): Promise<boolean> {
+  if (!wiederhergestellt && projektHash(projekt) === gespeichertInhalt) {
+    if (entwuerfe.status(projekt.projektKennung!).phase !== 'kein')
+      await entwuerfe.aktivenEntwurfEntfernen(projekt.projektKennung!);
+    return true;
+  }
   if (!dokument().geaendert) return true;
+  // Der aktuellste Stand einschließlich Ansicht wird vor jeder Verlustentscheidung gesichert.
+  try {
+    await entwurfAktuellSichern();
+  } catch {
+    /* Speichern als Projektdatei bleibt als Alternative möglich. */
+  }
   const antwort = await dialog.showMessageBox(fenster, {
     type: 'question',
     title: 'Ungespeicherte Änderungen',
     message: 'Möchtest du deine Änderungen speichern?',
-    detail: 'Ohne Speichern gehen die Änderungen an diesem Projekt verloren.',
-    buttons: ['Speichern', 'Nicht speichern', 'Abbrechen'],
+    detail: 'Du kannst eine Projektdatei speichern oder den bearbeitbaren Stand lokal als Entwurf behalten.',
+    buttons: ['Speichern', 'Als Entwurf behalten', 'Änderungen verwerfen', 'Abbrechen'],
     defaultId: 0,
-    cancelId: 2,
+    cancelId: 3,
     noLink: true,
   });
-  if (antwort.response === 2) return false;
+  if (antwort.response === 3) return false;
   if (antwort.response === 0) return (await speichern(false)) !== null;
+  if (antwort.response === 1) {
+    await entwurfAktuellSichern();
+    return true;
+  }
+  nachWechselVerwerfen = projekt.projektKennung!;
   return true;
 }
 
@@ -185,6 +329,7 @@ async function mitDialog<T>(funktion: () => Promise<T>): Promise<T> {
     return await funktion();
   } finally {
     dialogAktiv = false;
+    nachWechselVerwerfen = null;
   }
 }
 
@@ -201,8 +346,11 @@ function ipcEinrichten(): void {
   registrieren('laden', () => ({ dokument: dokument(), einstellungen, version: app.getVersion() }));
   registrieren('darstellung-bereit', (daten) => {
     if (!wartetAufDarstellung) throw new Error('Der Editor wurde bereits geladen.');
-    uebernehmen(daten);
-    gespeichert = JSON.stringify(projekt);
+    uebernehmen(daten, false);
+    if (!wiederhergestellt) {
+      gespeichert = JSON.stringify(projekt);
+      gespeichertInhalt = projektHash(projekt);
+    } else if (!leererEntwurf(projekt)) entwuerfe.planen(projekt, projektPfad, baselineHash);
     wartetAufDarstellung = false;
     fensterStatusAktualisieren();
     return dokument();
@@ -214,19 +362,14 @@ function ipcEinrichten(): void {
     mitDialog(async () => {
       uebernehmen(daten);
       if (!(await aenderungenSichern())) return null;
-      projekt = neuesProjekt();
-      projektPfad = null;
-      gespeichert = JSON.stringify(projekt);
-      exportPfad = null;
-      wartetAufDarstellung = true;
-      fensterStatusAktualisieren();
+      await verworfenenEntwurfBereinigen();
+      projektAktivieren(neuesProjekt(), null, null);
       return dokument();
     }),
   );
   registrieren('oeffnen', (daten) =>
     mitDialog(async () => {
       uebernehmen(daten);
-      if (!(await aenderungenSichern())) return null;
       const auswahl = await dialog.showOpenDialog(fenster, {
         title: 'ScriptLab-Projekt öffnen',
         properties: ['openFile'],
@@ -236,13 +379,13 @@ function ipcEinrichten(): void {
       const ziel = auswahl.filePaths[0];
       if (extname(ziel).toLowerCase() !== '.scriptlab')
         throw new Error('Bitte wähle eine .scriptlab-Projektdatei.');
-      const geladen = await projektLesen(ziel);
-      projekt = geladen;
-      projektPfad = ziel;
-      gespeichert = JSON.stringify(projekt);
-      exportPfad = null;
-      wartetAufDarstellung = true;
-      fensterStatusAktualisieren();
+      let geladen = await dateistandLesen(ziel);
+      if (!(await aenderungenSichern())) return null;
+      // Der Schutzdialog kann genau diese Datei gespeichert haben. Erst danach den aktuellen Stand laden.
+      geladen = await dateistandLesen(ziel);
+      await verworfenenEntwurfBereinigen();
+      await verweisMerken(ziel, geladen, true);
+      projektAktivieren(geladen.projekt, ziel, geladen.hash);
       return dokument();
     }),
   );
@@ -253,7 +396,6 @@ function ipcEinrichten(): void {
         .strict()
         .parse(daten);
       uebernehmen(auswahl.projekt);
-      if (!(await aenderungenSichern())) return null;
       const dateien = {
         begruessung: '01-Begruessung.scriptlab',
         backup: '02-Datei-Backup.scriptlab',
@@ -263,12 +405,14 @@ function ipcEinrichten(): void {
         ? join(process.resourcesPath, 'beispiele')
         : join(app.getAppPath(), 'beispiele');
       const geladen = await projektLesen(join(basis, dateien[auswahl.beispiel]));
-      projekt = geladen;
-      projektPfad = null;
-      gespeichert = JSON.stringify(projekt);
-      exportPfad = null;
-      wartetAufDarstellung = true;
-      fensterStatusAktualisieren();
+      if (!(await aenderungenSichern())) return null;
+      await verworfenenEntwurfBereinigen();
+      projektAktivieren(
+        { ...geladen, projektKennung: randomUUID(), name: `${geladen.name} (Kopie)` },
+        null,
+        null,
+        true,
+      );
       return dokument();
     }),
   );
@@ -277,6 +421,138 @@ function ipcEinrichten(): void {
       const objekt = z.object({ projekt: z.unknown(), unter: z.boolean() }).strict().parse(daten);
       uebernehmen(objekt.projekt);
       return speichern(objekt.unter);
+    }),
+  );
+  const idPruefen = (daten: unknown) => z.string().uuid().parse(daten);
+  const auswahlPruefen = (daten: unknown) =>
+    z.object({ projekt: z.unknown(), id: z.string().uuid() }).strict().parse(daten);
+  registrieren('bibliothek', async () => {
+    const liste = await entwuerfe.liste();
+    return {
+      projekte: projektindex.lesen(),
+      entwuerfe: liste,
+      hinweis: [projektindex.hinweis, entwuerfe.hinweis].filter(Boolean).join(' ') || null,
+    };
+  });
+  registrieren('projekt-verfuegbarkeit', (daten) => projektindex.verfuegbarkeit(idPruefen(daten)));
+  registrieren('projekt-verweis-entfernen', async (daten) => {
+    await projektindex.entfernen(idPruefen(daten));
+    return true;
+  });
+  registrieren('projekt-ordner', async (daten) => {
+    const eintrag = projektindex.finden(idPruefen(daten));
+    const verfuegbarkeit = await projektindex.verfuegbarkeit(eintrag.id);
+    if (!['verfuegbar', 'geaendert'].includes(verfuegbarkeit.zustand))
+      throw new Error(verfuegbarkeit.meldung);
+    // Zeigt nur den Ordner. Eine Projekt- oder Workflowdatei wird niemals gestartet.
+    shell.showItemInFolder(eintrag.pfad);
+  });
+  for (const neuZuordnen of [false, true])
+    registrieren(neuZuordnen ? 'bekanntes-neu-zuordnen' : 'bekanntes-oeffnen', (daten) =>
+      mitDialog(async () => {
+        const auswahl = auswahlPruefen(daten);
+        const eintrag = projektindex.finden(auswahl.id);
+        uebernehmen(auswahl.projekt);
+        let ziel = eintrag.pfad;
+        if (neuZuordnen) {
+          const datei = await dialog.showOpenDialog(fenster, {
+            title: 'Neuen Projekt-Speicherort zuordnen',
+            properties: ['openFile'],
+            filters: [{ name: 'ScriptLab-Projekt', extensions: ['scriptlab'] }],
+          });
+          if (datei.canceled || datei.filePaths.length !== 1) return null;
+          ziel = datei.filePaths[0];
+          if (extname(ziel).toLowerCase() !== '.scriptlab')
+            throw new Error('Bitte wähle eine .scriptlab-Projektdatei.');
+        }
+        let stand = await dateistandLesen(ziel);
+        if (!(await aenderungenSichern())) return null;
+        stand = await dateistandLesen(ziel);
+        await verworfenenEntwurfBereinigen();
+        await verweisMerken(ziel, stand, true, eintrag.id);
+        projektAktivieren(stand.projekt, ziel, stand.hash);
+        return dokument();
+      }),
+    );
+  registrieren('entwurf-sichern', async (daten) => {
+    uebernehmen(daten);
+    await entwurfAktuellSichern();
+    return dokument();
+  });
+  registrieren('entwurf-oeffnen', (daten) =>
+    mitDialog(async () => {
+      const auswahl = auswahlPruefen(daten);
+      const entwurf = await entwuerfe.lesen(auswahl.id);
+      uebernehmen(auswahl.projekt);
+      if (entwurf.id === entwuerfe.status(projekt.projektKennung!).id) {
+        await entwurfAktuellSichern();
+        return dokument();
+      }
+      if (!(await aenderungenSichern())) return null;
+      await verworfenenEntwurfBereinigen();
+      projektAktivieren(entwurf.projekt, entwurf.ausgangspfad, entwurf.baselineHash, true);
+      entwuerfe.wiederaufnahme(entwurf);
+      if (entwurf.ausgangspfad) {
+        try {
+          konflikt = (await dateistandLesen(entwurf.ausgangspfad)).hash !== entwurf.baselineHash;
+        } catch {
+          konflikt = true;
+        }
+      }
+      return dokument();
+    }),
+  );
+  registrieren('entwurf-speichern-als', (daten) =>
+    mitDialog(async () => {
+      const auswahl = auswahlPruefen(daten);
+      let entwurf = await entwuerfe.lesen(auswahl.id);
+      uebernehmen(auswahl.projekt);
+      if (entwurf.id === entwuerfe.status(projekt.projektKennung!).id) {
+        await entwurfAktuellSichern();
+        entwurf = await entwuerfe.lesen(auswahl.id);
+      } else if (!(await aenderungenSichern())) return null;
+      const ziel = await dialog.showSaveDialog(fenster, {
+        title: 'Entwurf als Projektdatei speichern',
+        defaultPath: `${dateiname(entwurf.projekt.name)}.scriptlab`,
+        filters: [{ name: 'ScriptLab-Projekt', extensions: ['scriptlab'] }],
+      });
+      if (ziel.canceled || !ziel.filePath) return null;
+      if (extname(ziel.filePath).toLowerCase() !== '.scriptlab')
+        throw new Error('Bitte speichere Projekte mit der Endung .scriptlab.');
+      if (
+        entwurf.ausgangspfad &&
+        windowsPfadSchluessel(ziel.filePath) === windowsPfadSchluessel(entwurf.ausgangspfad)
+      )
+        throw new Error('Wähle für diese Entwurfskopie einen anderen Dateinamen als die Ausgangsdatei.');
+      const stand = {
+        ...entwurf.projekt,
+        projektKennung: projektindex.kennungFuerPfad(ziel.filePath, randomUUID()),
+      };
+      await projektSchreiben(ziel.filePath, stand);
+      const gelesen = await dateistandLesen(ziel.filePath);
+      await verweisMerken(ziel.filePath, gelesen, false);
+      await entwuerfe.entfernen(entwurf.id);
+      await verworfenenEntwurfBereinigen();
+      projektAktivieren(stand, ziel.filePath, gelesen.hash);
+      return dokument();
+    }),
+  );
+  registrieren('entwurf-loeschen', (daten) =>
+    mitDialog(async () => {
+      const entwurf = await entwuerfe.lesen(idPruefen(daten));
+      const antwort = await dialog.showMessageBox(fenster, {
+        type: 'warning',
+        title: 'Entwurf löschen',
+        message: `Entwurf „${entwurf.projekt.name}“ löschen?`,
+        detail: 'Die lokale Sicherung geht verloren. Eine zugehörige Projektdatei bleibt erhalten.',
+        buttons: ['Entwurf löschen', 'Abbrechen'],
+        defaultId: 1,
+        cancelId: 1,
+        noLink: true,
+      });
+      if (antwort.response !== 0) return false;
+      await entwuerfe.entfernen(entwurf.id);
+      return true;
     }),
   );
   registrieren('exportieren', (daten) =>
@@ -341,6 +617,7 @@ function ipcEinrichten(): void {
         noLink: true,
       });
       if (antwort.response !== 0 || !(await aenderungenSichern())) return aktualisierungen.zustandLesen();
+      await verworfenenEntwurfBereinigen();
       darfSchliessen = true;
       try {
         aktualisierungen.installieren();
@@ -398,7 +675,7 @@ async function fensterErstellen(): Promise<void> {
   fenster = new BrowserWindow({
     width: 1440,
     height: 900,
-    minWidth: 960,
+    minWidth: 800,
     minHeight: 600,
     backgroundColor: farben.arbeitsflaeche,
     title: 'ScriptLab',
@@ -423,6 +700,7 @@ async function fensterErstellen(): Promise<void> {
     void mitDialog(async () => {
       await aktuellenStandAnfordern();
       if (await aenderungenSichern()) {
+        await verworfenenEntwurfBereinigen();
         darfSchliessen = true;
         fenster.close();
       }
@@ -450,6 +728,9 @@ else {
         return;
       }
       await mkdir(app.getPath('userData'), { recursive: true });
+      projektindex = new Projektindex(join(app.getPath('userData'), 'projektbibliothek.json'));
+      await projektindex.initialisieren();
+      entwuerfe = new Entwurfspeicher(join(app.getPath('userData'), 'entwuerfe'));
       try {
         einstellungen = einstellungenSchema.parse(JSON.parse(await readFile(einstellungsPfad(), 'utf8')));
       } catch {

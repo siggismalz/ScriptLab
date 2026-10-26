@@ -818,30 +818,27 @@ progress {
   overflow: hidden;
 }
 .editor-ansicht[hidden],
-.start-einstieg[hidden] {
+.start-ansicht[hidden] {
   display: none;
 }
-.start-einstieg {
-  overflow-y: auto;
+.start-ansicht {
+  display: flex;
   flex: 1;
   min-height: 0;
-  background: var(--farbe-arbeitsflaeche);
 }
-.start-kopf {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--abstand-12) var(--abstand-24);
+.entwurf-status {
+  max-width: 20rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--farbe-text-sekundaer);
+}
+.verarbeitung-editor {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  padding: var(--abstand-8) var(--abstand-16);
   background: var(--farbe-grundflaeche);
-  border-bottom: 1px solid var(--farbe-trennung);
-}
-.start-inhalt {
-  max-width: 1120px;
-  margin: auto;
-  padding: var(--abstand-24);
-  display: grid;
-  gap: var(--abstand-24);
-}
-.start-inhalt h1 {
-  font-size: calc(var(--schrift-dialog) * var(--text-skala, 1));
+  border-top: 1px solid var(--farbe-kontur);
+  z-index: 70;
 }

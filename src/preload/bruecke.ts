@@ -29,5 +29,17 @@ const bruecke: ScriptLabBruecke = {
   zertifikate: () => ipcRenderer.invoke('scriptlab:zertifikate'),
   einstellungenSpeichern: (einstellungen) => ipcRenderer.invoke('scriptlab:einstellungen', einstellungen),
   updateAktion: (aktion) => ipcRenderer.invoke('scriptlab:update', aktion),
+  bibliothekLesen: () => ipcRenderer.invoke('scriptlab:bibliothek'),
+  projektVerfuegbarkeit: (id) => ipcRenderer.invoke('scriptlab:projekt-verfuegbarkeit', id),
+  bekanntesOeffnen: (projekt, id) => ipcRenderer.invoke('scriptlab:bekanntes-oeffnen', { projekt, id }),
+  bekanntesNeuZuordnen: (projekt, id) =>
+    ipcRenderer.invoke('scriptlab:bekanntes-neu-zuordnen', { projekt, id }),
+  projektVerweisEntfernen: (id) => ipcRenderer.invoke('scriptlab:projekt-verweis-entfernen', id),
+  projektOrdnerAnzeigen: (id) => ipcRenderer.invoke('scriptlab:projekt-ordner', id),
+  entwurfOeffnen: (projekt, id) => ipcRenderer.invoke('scriptlab:entwurf-oeffnen', { projekt, id }),
+  entwurfSpeichernAls: (projekt, id) =>
+    ipcRenderer.invoke('scriptlab:entwurf-speichern-als', { projekt, id }),
+  entwurfLoeschen: (id) => ipcRenderer.invoke('scriptlab:entwurf-loeschen', id),
+  entwurfSichern: (projekt) => ipcRenderer.invoke('scriptlab:entwurf-sichern', projekt),
 };
 contextBridge.exposeInMainWorld('scriptlab', Object.freeze(bruecke));

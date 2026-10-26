@@ -46,6 +46,23 @@ const formen = {
       <path d="m16 16 5 5" />
     </>
   ),
+  entwurf: (
+    <>
+      <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8M14 3v6h6M14 3l6 6v4" />
+      <path d="m14 17 5-5 3 3-5 5-4 1Z" />
+    </>
+  ),
+  bausteine: (
+    <>
+      <path d="M4 8h5V5a3 3 0 0 1 6 0v3h5v5h-3a3 3 0 0 0 0 6h3v3H4v-5H2a3 3 0 0 1 0-6h2Z" />
+    </>
+  ),
+  buch: (
+    <>
+      <path d="M12 6C9 3 5 3 2 4v16c3-1 7-1 10 2 3-3 7-3 10-2V4c-3-1-7-1-10 2Zm0 0v16" />
+      <path d="M6 8h2M6 12h2m8-4h2m-2 4h2" />
+    </>
+  ),
   schliessen: (
     <>
       <path d="m6 6 12 12M18 6 6 18" />
