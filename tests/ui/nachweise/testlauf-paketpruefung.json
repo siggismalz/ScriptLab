@@ -1,0 +1,523 @@
+{
+  "schemaVersion": 1,
+  "erstelltAm": "2026-10-26T17:57:17.973Z",
+  "version": "0.1.0",
+  "ausgabeordner": "artifacts/testlauf-build-final",
+  "quellstand": {
+    "head": "681d48a08f1d0328c9cfd8f4fdfe406580c4c450",
+    "unveroeffentlichteAenderungen": false,
+    "status": [],
+    "einordnung": "Sauberer Git-Arbeitsstand."
+  },
+  "pruefungen": [
+    {
+      "name": "Git-Stand",
+      "bestanden": true
+    },
+    {
+      "name": "NSIS-Installer und Update-Metadaten",
+      "bestanden": true,
+      "details": {
+        "metadatenDatei": "latest.yml",
+        "version": "0.1.0",
+        "bytes": 125108090,
+        "sha512Passt": true
+      }
+    },
+    {
+      "name": "Blockmap",
+      "bestanden": true,
+      "details": {
+        "version": "2",
+        "chunks": 5989,
+        "abgedeckteBytes": 125108090
+      }
+    },
+    {
+      "name": "Gepackter Renderer, Hauptprozess und Preload",
+      "bestanden": true,
+      "details": {
+        "dateien": 21,
+        "alleBytegleich": true
+      }
+    },
+    {
+      "name": "Paketversion und Entwicklerangabe",
+      "bestanden": true,
+      "details": {
+        "version": "0.1.0",
+        "autor": "Leon Stolz",
+        "einstieg": "dist/main/hauptprozess.cjs"
+      }
+    },
+    {
+      "name": "Beispiele und Windows-Helfer",
+      "bestanden": true
+    },
+    {
+      "name": "Dokumentation und Lizenzhinweise",
+      "bestanden": true
+    },
+    {
+      "name": "Updatequelle",
+      "bestanden": true
+    },
+    {
+      "name": "Windows-Metadaten: ScriptLab-0.1.0-Setup-x64.exe",
+      "bestanden": true,
+      "details": {
+        "signaturStatus": "NotSigned",
+        "produktVersion": "0.1.0"
+      }
+    },
+    {
+      "name": "Windows-Metadaten: ScriptLab.exe",
+      "bestanden": true,
+      "details": {
+        "signaturStatus": "NotSigned",
+        "produktVersion": "0.1.0.0"
+      }
+    },
+    {
+      "name": "Windows-Metadaten: ScriptLab.Testhost.exe",
+      "bestanden": true,
+      "details": {
+        "signaturStatus": "NotSigned",
+        "produktVersion": "0.1.0.0"
+      }
+    }
+  ],
+  "dateien": [
+    {
+      "pfad": "artifacts/testlauf-build-final/ScriptLab-0.1.0-Setup-x64.exe",
+      "bytes": 125108090,
+      "sha256": "b4125f906e6e0906089f0f345374343c72e073c0a8a43ed9608754539be557b7",
+      "sha512": "zTneyfvZDwH2EGb+VL+IFT0tbh2V+tMRoCVLzIXE/nBKOPvKi5GXWLKg7+rlA+yDWeTtHgqy4LvNAcK93ZDPMA=="
+    },
+    {
+      "pfad": "artifacts/testlauf-build-final/latest.yml",
+      "bytes": 355,
+      "sha256": "06c9ce51d579f96117eaffaead2d2034ef900b90367e6a59faf0010618d4d360",
+      "sha512": "J8usdZXUneapVWbbRSlq0E5RPv3OE2K3zUWKkLoG13KHoHAMn0B2LomIyUmAIJzrdxbDwHHhwi8kkDFfflf5uw=="
+    },
+    {
+      "pfad": "artifacts/testlauf-build-final/ScriptLab-0.1.0-Setup-x64.exe.blockmap",
+      "bytes": 132250,
+      "sha256": "1eae977b2d4adf054cfe9939f4d93f56a41e26b0c2c94bd85053dc4f11001f7c",
+      "sha512": "5Al4hFukXxhGFHgoqclQCA+HMLNWuCspu2WcgxR6nnP1onJS1lzEPvC6u59Qf4vL3KIy1GpltWqCLwU96mXctg=="
+    },
+    {
+      "pfad": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar",
+      "bytes": 36872055,
+      "sha256": "7366f6f2e309e3b479b385c66f1ae088cb409e1e13ed710d99cc9f90e3c81851",
+      "sha512": "7qGSDTgeBvy5fBkCd9fJHeh33x1gG7vlGRrInV7fq/2N4SXBMdES2Wgi9VCup4484xP8sCuvDxvq45ALy2ebHw=="
+    }
+  ],
+  "bytevergleiche": [
+    {
+      "quelle": "dist/main/hauptprozess.cjs",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/main/hauptprozess.cjs",
+      "bytes": 1000018,
+      "sha256Quelle": "36bb4db0b6e47799d4c1789b3ce83dc6ae320377e25cb0aceb8f3bb30346f605",
+      "sha256Paket": "36bb4db0b6e47799d4c1789b3ce83dc6ae320377e25cb0aceb8f3bb30346f605",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/main/preload.cjs",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/main/preload.cjs",
+      "bytes": 3608,
+      "sha256Quelle": "a58e7799b53a5aaec9b4b90d017529ae8c38bb83c738c618d9a42b00299d7eba",
+      "sha256Paket": "a58e7799b53a5aaec9b4b90d017529ae8c38bb83c738c618d9a42b00299d7eba",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/assets/index-CRycKW8W.css",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/assets/index-CRycKW8W.css",
+      "bytes": 35179,
+      "sha256Quelle": "2245b3773372b013f2fde44ab93405f0c00b54e0f23f040da5c5d73777312f3a",
+      "sha256Paket": "2245b3773372b013f2fde44ab93405f0c00b54e0f23f040da5c5d73777312f3a",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/assets/index-CYvjaUyU.js",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/assets/index-CYvjaUyU.js",
+      "bytes": 1123848,
+      "sha256Quelle": "10eff0f2612876487ba876c755462d1c5307e4a9c92605823a2d8acf441ecb1c",
+      "sha256Paket": "10eff0f2612876487ba876c755462d1c5307e4a9c92605823a2d8acf441ecb1c",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/index.html",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/index.html",
+      "bytes": 677,
+      "sha256Quelle": "83c8065beb7e0f6e6a7d396da2f2087660076af2d3247e87606984a3fc52107d",
+      "sha256Paket": "83c8065beb7e0f6e6a7d396da2f2087660076af2d3247e87606984a3fc52107d",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/1x1.gif",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/1x1.gif",
+      "bytes": 43,
+      "sha256Quelle": "a1d88b2c952b790f5f23473c63ef99473327d02e11ebe174799ad912db08f629",
+      "sha256Paket": "a1d88b2c952b790f5f23473c63ef99473327d02e11ebe174799ad912db08f629",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/click.mp3",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/click.mp3",
+      "bytes": 2304,
+      "sha256Quelle": "1048f2539ac47e4eaa4bd1688968c0d7b9956bd6fef507644ee5131924c6517c",
+      "sha256Paket": "1048f2539ac47e4eaa4bd1688968c0d7b9956bd6fef507644ee5131924c6517c",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/delete-icon.svg",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/delete-icon.svg",
+      "bytes": 315,
+      "sha256Quelle": "3eee02b06f476ce746566808178543389e53cd4e9d7fd32b69e329eff4fc71ef",
+      "sha256Paket": "3eee02b06f476ce746566808178543389e53cd4e9d7fd32b69e329eff4fc71ef",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/delete.mp3",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/delete.mp3",
+      "bytes": 3123,
+      "sha256Quelle": "6ea0afab062cb3ba5409dc65d7a9fdf85d602b1870d231d80bdf3cc5b32432b6",
+      "sha256Paket": "6ea0afab062cb3ba5409dc65d7a9fdf85d602b1870d231d80bdf3cc5b32432b6",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/disconnect.mp3",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/disconnect.mp3",
+      "bytes": 1586,
+      "sha256Quelle": "849465a8968836ab5b24b68a7289ee76ca1a6a50ba87a295a32efe1e507e3451",
+      "sha256Paket": "849465a8968836ab5b24b68a7289ee76ca1a6a50ba87a295a32efe1e507e3451",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/drop.mp3",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/drop.mp3",
+      "bytes": 5434,
+      "sha256Quelle": "6c76cac85b42494683549938729f9994eec9ce03a940e5b4e1ef18279dea01ff",
+      "sha256Paket": "6c76cac85b42494683549938729f9994eec9ce03a940e5b4e1ef18279dea01ff",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/dropdown-arrow.svg",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/dropdown-arrow.svg",
+      "bytes": 569,
+      "sha256Quelle": "bc3873b086b25a01c417cb3b5fe61fd7eef360b8f7c85c2c7f7b802a2626faf9",
+      "sha256Paket": "bc3873b086b25a01c417cb3b5fe61fd7eef360b8f7c85c2c7f7b802a2626faf9",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/foldout-icon.svg",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/foldout-icon.svg",
+      "bytes": 150,
+      "sha256Quelle": "0ac7478b56f5e5cc583c26710cb7ee5edcedb563cde65cd2385f4dd3e9e08c64",
+      "sha256Paket": "0ac7478b56f5e5cc583c26710cb7ee5edcedb563cde65cd2385f4dd3e9e08c64",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/handclosed.cur",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/handclosed.cur",
+      "bytes": 326,
+      "sha256Quelle": "4a1637e16f33e1b02f96f699ada695edededfd089530372126d375ad9ed2f0a5",
+      "sha256Paket": "4a1637e16f33e1b02f96f699ada695edededfd089530372126d375ad9ed2f0a5",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/handdelete.cur",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/handdelete.cur",
+      "bytes": 766,
+      "sha256Quelle": "e53ef200d76fef617bd2e307a100d778834ad49784f80c1abc6da547e50b8040",
+      "sha256Paket": "e53ef200d76fef617bd2e307a100d778834ad49784f80c1abc6da547e50b8040",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/handopen.cur",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/handopen.cur",
+      "bytes": 198,
+      "sha256Quelle": "d2ec9a81d9a76b0f64b7168e5f05ee660ffb6ba7e35695caaf9851e6b01a04fd",
+      "sha256Paket": "d2ec9a81d9a76b0f64b7168e5f05ee660ffb6ba7e35695caaf9851e6b01a04fd",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/pilcrow.png",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/pilcrow.png",
+      "bytes": 1010,
+      "sha256Quelle": "4e4aa37ce0c162b0239203e538a7ae8eee706554514ff611cfb3a94baaa66167",
+      "sha256Paket": "4e4aa37ce0c162b0239203e538a7ae8eee706554514ff611cfb3a94baaa66167",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/quote0.png",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/quote0.png",
+      "bytes": 771,
+      "sha256Quelle": "a06f7a05d9c86851266e55357090d3af37ff24e116258c94d52c4f436c614c7c",
+      "sha256Paket": "a06f7a05d9c86851266e55357090d3af37ff24e116258c94d52c4f436c614c7c",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/quote1.png",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/quote1.png",
+      "bytes": 738,
+      "sha256Quelle": "56c52fc75cf7d2926d7502aaa7e95efb46c229aa266306d932795325722aba35",
+      "sha256Paket": "56c52fc75cf7d2926d7502aaa7e95efb46c229aa266306d932795325722aba35",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/resize-handle.svg",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/resize-handle.svg",
+      "bytes": 218,
+      "sha256Quelle": "c95d07b3fb3aaa088e6665061b01952e7ea9dda462b7032a85e095bf8a12855b",
+      "sha256Paket": "c95d07b3fb3aaa088e6665061b01952e7ea9dda462b7032a85e095bf8a12855b",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/sprites.svg",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/app.asar!/dist/renderer/media/sprites.svg",
+      "bytes": 1775,
+      "sha256Quelle": "862de0ee081fa9baf504e673736d7446439c15246452258cab964a82566ef40f",
+      "sha256Paket": "862de0ee081fa9baf504e673736d7446439c15246452258cab964a82566ef40f",
+      "identisch": true
+    },
+    {
+      "quelle": "beispiele/01-Begruessung.scriptlab",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/beispiele/01-Begruessung.scriptlab",
+      "bytes": 1144,
+      "sha256Quelle": "fb0fa6a613494e0e7cc21b6bfff2817fe7cfda88b13f5c602d66a8e270af30ad",
+      "sha256Paket": "fb0fa6a613494e0e7cc21b6bfff2817fe7cfda88b13f5c602d66a8e270af30ad",
+      "identisch": true
+    },
+    {
+      "quelle": "beispiele/02-Datei-Backup.scriptlab",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/beispiele/02-Datei-Backup.scriptlab",
+      "bytes": 4894,
+      "sha256Quelle": "78fcd76524392a10745f8adf41cde33d3de02c720a9508166f797ae9c69a2a7c",
+      "sha256Paket": "78fcd76524392a10745f8adf41cde33d3de02c720a9508166f797ae9c69a2a7c",
+      "identisch": true
+    },
+    {
+      "quelle": "beispiele/03-Dateinamenliste.scriptlab",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/beispiele/03-Dateinamenliste.scriptlab",
+      "bytes": 6561,
+      "sha256Quelle": "d9b00ecb4d03743a2664b1155c7d79d06029eeae7422d652cdeca460ea72af77",
+      "sha256Paket": "d9b00ecb4d03743a2664b1155c7d79d06029eeae7422d652cdeca460ea72af77",
+      "identisch": true
+    },
+    {
+      "quelle": "scripts/signatur-helper.ps1",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/signatur-helper.ps1",
+      "bytes": 7324,
+      "sha256Quelle": "59bb133f642f7e07e34d867b2f90aa0ddef99b924abb98c91f4bbc97bc3ca88b",
+      "sha256Paket": "59bb133f642f7e07e34d867b2f90aa0ddef99b924abb98c91f4bbc97bc3ca88b",
+      "identisch": true
+    },
+    {
+      "quelle": "artifacts/native/ScriptLab.Testhost.exe",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/ScriptLab.Testhost.exe",
+      "bytes": 15360,
+      "sha256Quelle": "6183ba6743a3bc9d5c5f83cb1c7b41e2d15045559cb32ba4433d05c0ae16db84",
+      "sha256Paket": "6183ba6743a3bc9d5c5f83cb1c7b41e2d15045559cb32ba4433d05c0ae16db84",
+      "identisch": true
+    },
+    {
+      "quelle": "README.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/README.md",
+      "bytes": 10798,
+      "sha256Quelle": "df88fdcfea8e65a0d9c0d033877ee798163e24bef981999180f768926ae1056e",
+      "sha256Paket": "df88fdcfea8e65a0d9c0d033877ee798163e24bef981999180f768926ae1056e",
+      "identisch": true
+    },
+    {
+      "quelle": "THIRD_PARTY_NOTICES.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/THIRD_PARTY_NOTICES.md",
+      "bytes": 131221,
+      "sha256Quelle": "96399bb47e52ad4dad1b3f8c8acb8a8cc7ad66ddcf21c5bad50e4ca9453e7910",
+      "sha256Paket": "96399bb47e52ad4dad1b3f8c8acb8a8cc7ad66ddcf21c5bad50e4ca9453e7910",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/ABNAHME.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/ABNAHME.md",
+      "bytes": 29015,
+      "sha256Quelle": "05c2a14c33ab5f52f7ff2a9d8bd340329ba9f50e85ac5229220a642c3aba891f",
+      "sha256Paket": "05c2a14c33ab5f52f7ff2a9d8bd340329ba9f50e85ac5229220a642c3aba891f",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/ARCHITEKTUR.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/ARCHITEKTUR.md",
+      "bytes": 12115,
+      "sha256Quelle": "09b68e0d4734b5c88bfabef72dd00f76ecd55854adbb10729fe5b7fa53c3eeaf",
+      "sha256Paket": "09b68e0d4734b5c88bfabef72dd00f76ecd55854adbb10729fe5b7fa53c3eeaf",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/BAUSTEINE.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/BAUSTEINE.md",
+      "bytes": 15608,
+      "sha256Quelle": "975b47f3ec6e9d06b2e0ad7a6d3b7948f6de0b78d46791a2cd355ded2cd202de",
+      "sha256Paket": "975b47f3ec6e9d06b2e0ad7a6d3b7948f6de0b78d46791a2cd355ded2cd202de",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/BEDIENUNG.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/BEDIENUNG.md",
+      "bytes": 22355,
+      "sha256Quelle": "3859c1cfda0b0dab43e0efee32377610289ccbc52df218e59bf345b2296cd60b",
+      "sha256Paket": "3859c1cfda0b0dab43e0efee32377610289ccbc52df218e59bf345b2296cd60b",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/DESIGNNOTIZ.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/DESIGNNOTIZ.md",
+      "bytes": 25234,
+      "sha256Quelle": "b294c91987dda9dbecb5064a8ae7afc73c7ebab632a43038b7dda1efee0e8091",
+      "sha256Paket": "b294c91987dda9dbecb5064a8ae7afc73c7ebab632a43038b7dda1efee0e8091",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/KOMPONENTEN.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/KOMPONENTEN.md",
+      "bytes": 6797,
+      "sha256Quelle": "a62e169bb3a56b77916c1fc505e8885dbb3adc8cc0e1f557718dd440d8d6695e",
+      "sha256Paket": "a62e169bb3a56b77916c1fc505e8885dbb3adc8cc0e1f557718dd440d8d6695e",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/PRUEFPLAN.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/PRUEFPLAN.md",
+      "bytes": 9883,
+      "sha256Quelle": "2e39ee3bad0023da6a4b7396108c34a75da1d36bafd842d646ef91d2b25aeb5c",
+      "sha256Paket": "2e39ee3bad0023da6a4b7396108c34a75da1d36bafd842d646ef91d2b25aeb5c",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/RELEASES.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/RELEASES.md",
+      "bytes": 9311,
+      "sha256Quelle": "2fc86a7f4b0357fbd6868da297a77b42d7e673623fc5027408f62c268438f5d3",
+      "sha256Paket": "2fc86a7f4b0357fbd6868da297a77b42d7e673623fc5027408f62c268438f5d3",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/SIGNATUR.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/SIGNATUR.md",
+      "bytes": 8621,
+      "sha256Quelle": "af85d36c5b30e1285fea50af85fe681ae5032f3d4edd007c721d633700875b47",
+      "sha256Paket": "af85d36c5b30e1285fea50af85fe681ae5032f3d4edd007c721d633700875b47",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/STARTSEITE.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/STARTSEITE.md",
+      "bytes": 18141,
+      "sha256Quelle": "16692d080fb958e5670d7d1b7207b10c129a53e79beaa3c925632cdab6c44096",
+      "sha256Paket": "16692d080fb958e5670d7d1b7207b10c129a53e79beaa3c925632cdab6c44096",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/STARTSEITEN-PLAN.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/STARTSEITEN-PLAN.md",
+      "bytes": 1827,
+      "sha256Quelle": "678484914de5b836181e61eb4121ab0b9bc509761fb35988851affcb9ba4fe73",
+      "sha256Paket": "678484914de5b836181e61eb4121ab0b9bc509761fb35988851affcb9ba4fe73",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/TESTLAUF-PLAN.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/TESTLAUF-PLAN.md",
+      "bytes": 1747,
+      "sha256Quelle": "eae85e7bb8b16eb148f785e35ee43f6e753f350746ec3cb08d27b7fcd5a72d9e",
+      "sha256Paket": "eae85e7bb8b16eb148f785e35ee43f6e753f350746ec3cb08d27b7fcd5a72d9e",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/TESTLAUF.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/TESTLAUF.md",
+      "bytes": 25817,
+      "sha256Quelle": "39a326d9300b6c188a07c4258951d6286dbf27033d6f201273217ac07ea49b05",
+      "sha256Paket": "39a326d9300b6c188a07c4258951d6286dbf27033d6f201273217ac07ea49b05",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/UI-PRUEFPLAN.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/UI-PRUEFPLAN.md",
+      "bytes": 15686,
+      "sha256Quelle": "4559a3ba85b81e5fa5aed5cb430a6be2359726c2ebc9f714bd8a15abf96bbdc5",
+      "sha256Paket": "4559a3ba85b81e5fa5aed5cb430a6be2359726c2ebc9f714bd8a15abf96bbdc5",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/UMSETZUNG.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/UMSETZUNG.md",
+      "bytes": 2049,
+      "sha256Quelle": "88564f7dbcb0a19d5a0ec493010c51714664bbdaa6da19d0b9a574b536b05666",
+      "sha256Paket": "88564f7dbcb0a19d5a0ec493010c51714664bbdaa6da19d0b9a574b536b05666",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/VERSIONEN.md",
+      "ziel": "artifacts/testlauf-build-final/win-unpacked/resources/docs/VERSIONEN.md",
+      "bytes": 1904,
+      "sha256Quelle": "7d2ac33b56dd7ecb0a16d3832ffae6bc3360e402c89bbe550dabbfb20a1e87a0",
+      "sha256Paket": "7d2ac33b56dd7ecb0a16d3832ffae6bc3360e402c89bbe550dabbfb20a1e87a0",
+      "identisch": true
+    }
+  ],
+  "windowsMetadaten": [
+    {
+      "pfad": "artifacts/testlauf-build-final/ScriptLab-0.1.0-Setup-x64.exe",
+      "geprueft": true,
+      "produkt": "ScriptLab",
+      "produktVersion": "0.1.0",
+      "dateiVersion": "0.1.0",
+      "firma": "Leon Stolz",
+      "signaturStatus": "NotSigned",
+      "zertifikat": null
+    },
+    {
+      "pfad": "artifacts/testlauf-build-final/win-unpacked/ScriptLab.exe",
+      "geprueft": true,
+      "produkt": "ScriptLab",
+      "produktVersion": "0.1.0.0",
+      "dateiVersion": "0.1.0",
+      "firma": "Leon Stolz",
+      "signaturStatus": "NotSigned",
+      "zertifikat": null
+    },
+    {
+      "pfad": "artifacts/testlauf-build-final/win-unpacked/resources/ScriptLab.Testhost.exe",
+      "geprueft": true,
+      "produkt": "ScriptLab",
+      "produktVersion": "0.1.0.0",
+      "dateiVersion": "0.1.0.0",
+      "firma": "Leon Stolz",
+      "signaturStatus": "NotSigned",
+      "zertifikat": null
+    }
+  ],
+  "pruefgrenzen": [
+    "Keine Installation, kein Anwendungsstart und keine Ausführung von Nutzerworkflows.",
+    "Verglichen wird das vorhandene dist mit win-unpacked. Ein frischer Build aus dem genannten Git-Stand wird dadurch nicht belegt.",
+    "Der im NSIS-Installer eingebettete Anwendungspayload wird nicht entpackt. Seine Identität mit win-unpacked wird hier nicht unabhängig nachgewiesen.",
+    "Blockmap-Struktur und Größenabdeckung werden geprüft; die einzelnen Blockmap-Chunk-Prüfsummen werden nicht unabhängig nachgerechnet. Der vollständige Installer wird gegen SHA-512 aus latest.yml geprüft.",
+    "Es werden weder Desktoptestergebnisse noch eine produktive Updatekette aus anderen Berichten übernommen.",
+    "Im Paket fehlt publisherName. Eine für produktive Updates geeignete Herausgeber-Signaturkonfiguration ist damit nicht belegt.",
+    "artifacts/testlauf-build-final/ScriptLab-0.1.0-Setup-x64.exe: Authenticode-Status NotSigned; kein Nachweis einer gültigen vertrauenswürdigen Anwendungssignatur.",
+    "artifacts/testlauf-build-final/win-unpacked/ScriptLab.exe: Authenticode-Status NotSigned; kein Nachweis einer gültigen vertrauenswürdigen Anwendungssignatur.",
+    "artifacts/testlauf-build-final/win-unpacked/resources/ScriptLab.Testhost.exe: Authenticode-Status NotSigned; kein Nachweis einer gültigen vertrauenswürdigen Anwendungssignatur."
+  ],
+  "updatequelle": {
+    "provider": "github",
+    "owner": "siggismalz",
+    "repo": "ScriptLab",
+    "private": false,
+    "updaterCacheDirName": "scriptlab-updater"
+  },
+  "bestanden": true,
+  "offenePruefungen": 0,
+  "fehler": []
+}
