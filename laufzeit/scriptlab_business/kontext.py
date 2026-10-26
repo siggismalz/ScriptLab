@@ -1,0 +1,231 @@
+"""Begrenzter Laufkontext und dauerhaftes Journal, ohne freie Befehlsausführung."""
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, fields
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+import re
+from pathlib import Path
+import tempfile
+import time
+from typing import Any, Callable
+from uuid import uuid4
+
+
+class BusinessFehler(ValueError):
+    """Eine verständliche fachliche Ablehnung des aktuellen Schritts."""
+
+
+class UnklarerZustand(BusinessFehler):
+    """Ein früherer Effekt lässt sich nicht sicher als abgeschlossen einordnen."""
+
+
+def daten_hash(wert: Any) -> str:
+    daten = json.dumps(wert, ensure_ascii=True, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(daten.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class Grenzen:
+    max_datei_bytes: int = 64 * 1024 * 1024
+    max_entpackt_bytes: int = 256 * 1024 * 1024
+    max_zip_eintraege: int = 5000
+    max_zip_verhaeltnis: int = 200
+    max_zeilen: int = 100000
+    max_seiten: int = 2000
+    max_ausgaben: int = 1000
+    max_temp_bytes: int = 4 * 1024 ** 3
+    max_vorschau_zeilen: int = 200
+    max_vorschau_bytes: int = 256 * 1024
+    zeitlimit_sekunden: int = 120
+    duckdb_speicher: str = "256MB"
+
+    def __post_init__(self):
+        for feld in fields(self):
+            wert = getattr(self, feld.name)
+            if feld.name == "duckdb_speicher":
+                if not isinstance(wert, str) or not re.fullmatch(r"[1-9][0-9]{0,4}(MB|GB)", wert):
+                    raise BusinessFehler("Die Speichergrenze muss beispielsweise 256MB lauten.")
+            elif type(wert) is not int or wert <= 0:
+                raise BusinessFehler("Alle Laufgrenzen müssen positive ganze Zahlen sein.")
+        if self.max_vorschau_zeilen > 200 or self.max_vorschau_bytes > 256 * 1024:
+            raise BusinessFehler("Die Vorschau darf höchstens 200 Zeilen und 256 KiB enthalten.")
+
+
+class Journal:
+    """JSONL unter exklusiver Betriebssystem-Dateisperre; nie Nutzdaten protokollieren."""
+    def __init__(self, pfad: Path, workflow_hash: str, parameter_hash: str, fortsetzen: bool):
+        self.pfad = pfad
+        self.eintraege: dict[str, dict] = {}
+        pfad.parent.mkdir(parents=True, exist_ok=True)
+        self._sperre = open(str(pfad) + ".lock", "a+b")
+        self._sperre.seek(0, 2)
+        if self._sperre.tell() == 0:
+            self._sperre.write(b"0")
+            self._sperre.flush()
+        self._sperre.seek(0)
+        try:
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(self._sperre.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(self._sperre.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as fehler:
+            self._sperre.close()
+            raise BusinessFehler("Dieses Laufjournal wird bereits von einem anderen Prozess verwendet.") from fehler
+        try:
+            alt = []
+            if pfad.exists():
+                if pfad.stat().st_size > 16 * 1024 * 1024:
+                    raise BusinessFehler("Das Laufjournal ist größer als 16 MiB.")
+                text = pfad.read_text(encoding="utf-8")
+                if text and not text.endswith("\n"):
+                    raise UnklarerZustand("Das Journal endet unvollständig. Prüfe den letzten Dateischritt vor dem Fortsetzen.")
+                try:
+                    alt = [json.loads(zeile) for zeile in text.splitlines()]
+                except (ValueError, TypeError) as fehler:
+                    raise UnklarerZustand("Das Laufjournal ist beschädigt und wird nicht überschrieben.") from fehler
+                if any(not isinstance(e, dict) or e.get("version") != 1 for e in alt):
+                    raise UnklarerZustand("Das Laufjournal hat ein unbekanntes Format.")
+            kopf = next((e for e in reversed(alt) if e.get("zustand") == "lauf"), None)
+            if fortsetzen:
+                if not kopf or kopf.get("workflow_hash") != workflow_hash or kopf.get("parameter_hash") != parameter_hash:
+                    raise UnklarerZustand("Workflow oder Parameter passen nicht zum fortzusetzenden Journal.")
+                self.lauf_id = kopf["lauf_id"]
+                for eintrag in alt:
+                    if eintrag.get("lauf_id") == self.lauf_id and "schluessel" in eintrag:
+                        self.eintraege[eintrag["schluessel"]] = eintrag
+                if any(e.get("zustand") in {"vorbereitet", "archiv_vorbereitet"} for e in self.eintraege.values()):
+                    raise UnklarerZustand("Eine frühere Publikation wurde nicht bestätigt. Prüfe Ziel und Quelle; kein automatischer Neustart.")
+            else:
+                self.lauf_id = str(uuid4())
+            self._datei = open(pfad, "a", encoding="utf-8", newline="\n")
+            if not fortsetzen:
+                self.schreiben("lauf", workflow_hash=workflow_hash, parameter_hash=parameter_hash)
+        except BaseException:
+            self._sperre.close()
+            raise
+
+    def schreiben(self, zustand: str, schluessel: str | None = None, **daten):
+        eintrag = {"version": 1, "lauf_id": self.lauf_id, "zeit": datetime.now(timezone.utc).isoformat(), "zustand": zustand, **daten}
+        if schluessel is not None:
+            eintrag["schluessel"] = schluessel
+        self._datei.write(json.dumps(eintrag, ensure_ascii=True, sort_keys=True) + "\n")
+        self._datei.flush()
+        os.fsync(self._datei.fileno())
+        if schluessel is not None:
+            self.eintraege[schluessel] = eintrag
+        return eintrag
+
+    def schliessen(self):
+        if hasattr(self, "_datei"):
+            self._datei.close()
+        self._sperre.close()
+
+
+class Kontext:
+    def __init__(self, basis: str | Path, modus: str = "vorschau", parameter: dict | None = None,
+                 grenzen: Grenzen | dict | None = None, journal_pfad: str | Path | None = None,
+                 fortsetzen: bool = False, workflow_hash: str = "", ereignis_callback: Callable | None = None):
+        if modus not in {"vorschau", "prueflauf", "ausfuehren"}:
+            raise BusinessFehler("Der Business-Laufmodus ist ungültig.")
+        self.basis = Path(basis).resolve()
+        if not self.basis.is_dir():
+            raise BusinessFehler("Der Business-Basisordner fehlt.")
+        if parameter is not None and not isinstance(parameter, dict):
+            raise BusinessFehler("Parameter müssen als benanntes Objekt übergeben werden.")
+        self.modus = modus
+        self.parameter = dict(parameter or {})
+        self.grenzen = grenzen if isinstance(grenzen, Grenzen) else Grenzen(**(grenzen or {}))
+        self.journal_pfad = Path(journal_pfad).resolve() if journal_pfad else None
+        self.fortsetzen = bool(fortsetzen)
+        self.workflow_hash = workflow_hash
+        self.ereignis_callback = ereignis_callback
+        self.dienste: dict[str, Any] = {}
+        self.ergebnisse: dict[str, Any] = {}
+        self.fehler: list[dict] = []
+        self.geplante_schritte: list[dict] = []
+        self.token: str | None = None
+        self.ausgaben: list[dict] = []
+        self.block_id = ""
+        self.schritt_key = ""
+        self.aktion_hash = ""
+        self._vorkommen: dict[str, int] = {}
+        self._deadline = time.monotonic() + self.grenzen.zeitlimit_sekunden
+        self._temp = tempfile.TemporaryDirectory(prefix="ScriptLab-Business-")
+        self.arbeitsordner = Path(self._temp.name)
+        self._journal: Journal | None = None
+        self.abgebrochen = False
+
+    @classmethod
+    def aus_datei(cls, pfad: str | Path):
+        quelle = Path(pfad)
+        if quelle.stat().st_size > 1024 * 1024:
+            raise BusinessFehler("Die Kontextdatei ist größer als 1 MiB.")
+        daten = json.loads(quelle.read_text(encoding="utf-8"))
+        if not isinstance(daten, dict) or daten.pop("version", None) != 1:
+            raise BusinessFehler("Die Business-Kontextdatei hat ein unbekanntes Format.")
+        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash"}
+        if set(daten) - erlaubt or "basis" not in daten:
+            raise BusinessFehler("Die Business-Kontextdatei enthält ungültige Angaben.")
+        return cls(**daten)
+
+    def pruefen(self):
+        if self.abgebrochen:
+            raise BusinessFehler("Der Business-Lauf wurde abgebrochen.")
+        if time.monotonic() >= self._deadline:
+            raise BusinessFehler("Das Business-Zeitlimit wurde erreicht.")
+
+    def pfad(self, wert: str | Path, schreiben: bool = False) -> Path:
+        self.pruefen()
+        if not isinstance(wert, (str, Path)) or not str(wert).strip() or "\0" in str(wert):
+            raise BusinessFehler("Gib einen vollständigen oder relativen Dateipfad an.")
+        kandidat = Path(wert)
+        if not kandidat.is_absolute():
+            kandidat = self.basis / kandidat
+        if kandidat.is_symlink():
+            raise BusinessFehler("Symbolische Dateiverweise werden für Business-Dateien nicht verwendet.")
+        return kandidat.resolve()
+
+    def beginn_schritt(self, block_id: str, konfiguration: dict, eingaben: dict):
+        self.pruefen()
+        self.block_id = block_id
+        self._vorkommen[block_id] = self._vorkommen.get(block_id, 0) + 1
+        self.schritt_key = f"{block_id}:{self._vorkommen[block_id]}"
+        self.aktion_hash = daten_hash({"konfiguration": konfiguration, "eingaben": eingaben})
+
+    def ereignis(self, art: str, **daten):
+        if self.ereignis_callback:
+            self.ereignis_callback({"art": art, "block_id": self.block_id, **daten})
+
+    @property
+    def journal(self):
+        if self.modus != "ausfuehren":
+            return None
+        if self._journal is None:
+            pfad = self.journal_pfad or self.basis / ".scriptlab" / (self.workflow_hash or "workflow") / "journal.jsonl"
+            self._journal = Journal(pfad, self.workflow_hash, daten_hash(self.parameter), self.fortsetzen)
+        return self._journal
+
+    def ausgabe(self, ziel, regel="FEHLER", **optionen):
+        from .dateien import ausgabe
+        return ausgabe(self, ziel, regel, **optionen)
+
+    def schliessen(self):
+        try:
+            for dienst in self.dienste.values():
+                if callable(getattr(dienst, "schliessen", None)):
+                    dienst.schliessen()
+        finally:
+            if self._journal:
+                self._journal.schliessen()
+            self._temp.cleanup()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *fehler):
+        self.schliessen()
