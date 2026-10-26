@@ -101,6 +101,22 @@ async function dateienSammeln(ordner, praefix = '') {
   return dateien.sort();
 }
 
+function laufzeitDateienAuswaehlen(dateien, filter) {
+  // Die tatsächlich konfigurierten Endungsfilter werden hier gespiegelt. Neue
+  // Filterformen brauchen eine bewusste Anpassung statt einer stillen Freigabe.
+  verlangen(Array.isArray(filter) && filter.length > 0, 'Die Dateifilter der Business-Laufzeit fehlen.');
+  const muster = filter.map((eintrag) => {
+    verlangen(
+      typeof eintrag === 'string' && /^(?:\*\*\/)?\*\.[A-Za-z]+$/.test(eintrag),
+      `Nicht unterstützter Ressourcenfilter für die Business-Laufzeit: ${String(eintrag)}`,
+    );
+    return { rekursiv: eintrag.startsWith('**/'), endung: eintrag.slice(eintrag.lastIndexOf('.')) };
+  });
+  return dateien.filter((pfad) =>
+    muster.some(({ rekursiv, endung }) => (rekursiv || !pfad.includes('/')) && pfad.endsWith(endung)),
+  );
+}
+
 async function byteVergleichen(quelle, ziel, gepackt = false) {
   const original = await readFile(quelle);
   const enthalten = gepackt ? asar.extractFile(archiv, ziel.replaceAll('/', sep)) : await readFile(ziel);
@@ -299,21 +315,44 @@ await pruefen('Paketversion und Entwicklerangabe', () => {
 
 await pruefen('Beispiele und Windows-Helfer', async () => {
   const dateien = await dateienSammeln(join(wurzel, 'beispiele'));
+  const basisProjekte = [
+    '01-Begruessung.scriptlab',
+    '02-Datei-Backup.scriptlab',
+    '03-Dateinamenliste.scriptlab',
+    '04-Python-Begruessung.scriptlab',
+    '05-Python-Datei-Backup.scriptlab',
+    '06-Python-Dateinamenliste.scriptlab',
+  ];
+  const businessOrdner = [
+    'A-Monatsauswertung',
+    'B-Bestellungen',
+    'C-Bestellvorschlag',
+    'D-Dokumenteingang',
+    'E-Dateistapel',
+  ];
+  const erwarteteProjekte = [
+    ...basisProjekte,
+    ...businessOrdner.map((name) => `business/${name}/workflow.scriptlab`),
+  ].sort();
   verlangen(
-    JSON.stringify(dateien) ===
-      JSON.stringify([
-        '01-Begruessung.scriptlab',
-        '02-Datei-Backup.scriptlab',
-        '03-Dateinamenliste.scriptlab',
-        '04-Python-Begruessung.scriptlab',
-        '05-Python-Datei-Backup.scriptlab',
-        '06-Python-Dateinamenliste.scriptlab',
-      ]),
-    'Die sechs festen Beispielprojekte fehlen oder es liegen zusätzliche Beispiele vor.',
+    JSON.stringify(dateien.filter((pfad) => pfad.endsWith('.scriptlab'))) ===
+      JSON.stringify(erwarteteProjekte),
+    'Es müssen genau die sechs Basisprojekte und fünf Business-Beispielprojekte vorhanden sein.',
   );
+  for (const name of businessOrdner) {
+    for (const beilage of ['README.md', 'parameter.json', 'plan.json'])
+      verlangen(
+        dateien.includes(`business/${name}/${beilage}`),
+        `Business-Beilage fehlt: ${name}/${beilage}`,
+      );
+    verlangen(
+      dateien.some((pfad) => pfad.startsWith(`business/${name}/eingaben/`)),
+      `Die synthetischen Eingabedateien für ${name} fehlen.`,
+    );
+  }
   verlangen(
     JSON.stringify(dateien) === JSON.stringify(await dateienSammeln(join(ressourcen, 'beispiele'))),
-    'Die Liste der gepackten Beispiele stimmt nicht.',
+    'Die vollständige Dateiliste der gepackten Beispiele samt Testdaten und Vorlagen stimmt nicht.',
   );
   for (const pfad of dateien)
     await byteVergleichen(join(wurzel, 'beispiele', pfad), join(ressourcen, 'beispiele', pfad));
@@ -325,6 +364,52 @@ await pruefen('Beispiele und Windows-Helfer', async () => {
     join(wurzel, 'artifacts/native/ScriptLab.Testhost.exe'),
     join(ressourcen, 'ScriptLab.Testhost.exe'),
   );
+  return {
+    basisProjekte: basisProjekte.length,
+    businessProjekte: businessOrdner.length,
+    beispielDateien: dateien.length,
+    alleBytegleich: true,
+  };
+});
+
+await pruefen('Business-Laufzeit, Schrift und Lizenzbeilagen', async () => {
+  const bau = load(await readFile(join(wurzel, 'electron-builder.yml'), 'utf8'));
+  const eintrag = bau.extraResources?.find(
+    (eintrag) =>
+      eintrag && typeof eintrag === 'object' && eintrag.from === 'laufzeit' && eintrag.to === 'laufzeit',
+  );
+  verlangen(eintrag, 'Der Ressourcenordner der Business-Laufzeit fehlt in electron-builder.yml.');
+  const dateien = laufzeitDateienAuswaehlen(await dateienSammeln(join(wurzel, 'laufzeit')), eintrag.filter);
+  for (const pfad of [
+    'scriptlab_business/__init__.py',
+    'scriptlab_business/ausfuehrung.py',
+    'scriptlab_business/dateien.py',
+    'scriptlab_business/daten.py',
+    'scriptlab_business/dokumente.py',
+    'scriptlab_business/kontext.py',
+    'scriptlab_business/typen.py',
+    'scriptlab_business/schriften/Vera.ttf',
+    'scriptlab_business/schriften/bitstream-vera-license.txt',
+    'scriptlab_business/schriften/HERKUNFT.md',
+    'requirements-business.in',
+    'requirements-business.lock',
+    'business-notices.md',
+  ])
+    verlangen(
+      dateien.includes(pfad),
+      `Erforderliche Business-Ressource fehlt oder wird nicht verpackt: ${pfad}`,
+    );
+  verlangen(
+    JSON.stringify(dateien) === JSON.stringify(await dateienSammeln(join(ressourcen, 'laufzeit'))),
+    'Die gepackte Business-Laufzeit ist unvollständig oder enthält zusätzliche Dateien.',
+  );
+  for (const pfad of dateien)
+    await byteVergleichen(join(wurzel, 'laufzeit', pfad), join(ressourcen, 'laufzeit', pfad));
+  return {
+    dateien: dateien.length,
+    pythonModule: dateien.filter((pfad) => pfad.endsWith('.py')).length,
+    alleBytegleich: true,
+  };
 });
 
 await pruefen('Dokumentation und Lizenzhinweise', async () => {

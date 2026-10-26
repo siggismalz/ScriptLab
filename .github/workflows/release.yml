@@ -83,6 +83,12 @@ jobs:
         run: node scripts/lizenzhinweise.mjs --check --strict
       - run: npm run check
       - run: node scripts/laufzeit-host-bauen.mjs
+      - name: Feste Business-Umgebung und echte Dateipruefungen
+        shell: pwsh
+        timeout-minutes: 8
+        env:
+          SCRIPTLAB_CI_PYTHON: ${{ steps.python.outputs.python-path }}
+        run: ./scripts/business-ci-vorbereiten.ps1
       - run: npm test
         env:
           SCRIPTLAB_RUNTIME_TESTS: '1'

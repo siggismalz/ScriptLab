@@ -1,7 +1,7 @@
 import { definitionNachTyp } from './katalog';
 import { sprachePruefen, type Skriptsprache } from './sprachen';
 import { businessProjektPruefen, leeresBusinessProjekt, type BusinessProjekt } from './business-modell';
-import paket from '../../package.json';
+import paket from '../../package.json' with { type: 'json' };
 
 /** Das Projekt speichert ausschließlich Daten. Es enthält niemals ausführbaren Anwendungscode. */
 export interface EditorBlock {

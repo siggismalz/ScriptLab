@@ -45,7 +45,7 @@ import { BusinessVorbereitung } from './BusinessVorbereitung';
 import { businessSchritte } from '../kern/business';
 import { testAktiv, testBereit, type TestZustand, type TestOptionen } from '../gemeinsam/testlauf';
 import type { PythonStatus } from '../gemeinsam/python';
-import paket from '../../package.json';
+import paket from '../../package.json' with { type: 'json' };
 
 registriereBausteine();
 const vorgaben: Einstellungen = {
