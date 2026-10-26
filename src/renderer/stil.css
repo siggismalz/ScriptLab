@@ -1,0 +1,505 @@
+:root {
+  font-family: 'Segoe UI', sans-serif;
+  color: #e7ecf6;
+  background: #10131c;
+  font-synthesis: none;
+  color-scheme: dark;
+  font-size: 14px;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  border: 1px solid #39445b;
+  background: #202838;
+  color: #e3e9f7;
+  border-radius: 7px;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+button:hover {
+  background: #303c52;
+  border-color: #7483a3;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+pre:focus-visible {
+  outline: 2px solid #b8b5ff;
+  outline-offset: 3px;
+}
+input,
+select,
+textarea {
+  border: 1px solid #42516b;
+  background: #111722;
+  color: #f0f3fb;
+  border-radius: 6px;
+  padding: 9px 10px;
+  min-width: 0;
+}
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #c8d1e3;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+h1 {
+  font-size: 28px;
+}
+h2 {
+  font-size: 19px;
+}
+h3 {
+  font-size: 15px;
+}
+p {
+  line-height: 1.65;
+  color: #bbc6da;
+}
+.anwendung {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 630px;
+}
+.kopf {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 19px 25px;
+  border-bottom: 1px solid #2c3445;
+  background: #141923;
+}
+.marke {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 267px;
+}
+.markensymbol {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 43px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #a5a1ff, #7266eb);
+  font-size: 27px;
+  font-weight: 800;
+  color: #16102e;
+  box-shadow: inset 0 0 0 1px #bdb7ff;
+}
+.marke strong {
+  font-size: 23px;
+  letter-spacing: -0.7px;
+}
+.marke small {
+  display: block;
+  color: #a3b0c7;
+  font-size: 11px;
+  margin-top: 2px;
+}
+.projekttitel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+.projekttitel label,
+.augenbraue {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.7px;
+  color: #aab5cc;
+}
+.projekttitel input {
+  background: transparent;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 17px;
+  width: 230px;
+  padding: 7px;
+}
+.projekttitel input:hover {
+  border-color: #47506a;
+}
+.speicherpunkt {
+  font-size: 11px;
+  color: #b5b0f9;
+}
+.leise {
+  border-color: transparent;
+  background: transparent;
+  color: #b7c2d8;
+}
+.werkzeuge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 22px;
+  background: #171d29;
+  border-bottom: 1px solid #333d50;
+}
+.knopfgruppe {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.werkzeuge button {
+  font-size: 12px;
+}
+.primaer {
+  background: #aaa1ff;
+  color: #19152d;
+  border-color: #c0b8ff;
+  font-weight: 700;
+}
+.primaer:hover {
+  background: #c2bbff;
+  color: #171128;
+}
+.inhalt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+.inhalt.mit-vorschau {
+  grid-template-columns: minmax(0, 1fr) 330px;
+}
+.editorbereich {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.editorleiste {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #30394d;
+  background: #161c28;
+  min-height: 56px;
+}
+.suche {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  min-width: 200px;
+  color: #a8b5cd;
+}
+.suche input {
+  width: 173px;
+  background: #101621;
+  padding: 8px;
+  font-size: 12px;
+}
+.hinweis {
+  font-size: 12px;
+  color: #9daec8;
+}
+.etikett {
+  margin-left: auto;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #89a4c3;
+  white-space: nowrap;
+}
+.blockly-editor {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+.blocklySvg {
+  border: none !important;
+}
+.blocklyToolbox {
+  border-right: 1px solid #344055 !important;
+}
+.blocklyToolboxCategory {
+  padding: 6px 4px !important;
+  border-radius: 4px;
+  margin: 2px 5px !important;
+}
+.blocklyTreeLabel {
+  font-family: 'Segoe UI', sans-serif !important;
+  font-size: 12px !important;
+}
+.blocklyText {
+  fill: #fff !important;
+}
+.blocklyEditableText > rect {
+  fill-opacity: 0.3 !important;
+}
+.blocklySelected > .blocklyPath {
+  stroke: #e6ddff !important;
+  stroke-width: 3px !important;
+}
+.editorfuss {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 13px;
+  border-top: 1px solid #333c50;
+  background: #171d29;
+  gap: 8px;
+}
+.editorfuss button {
+  font-size: 11px;
+  padding: 6px 9px;
+}
+.zoom button {
+  min-width: 29px;
+}
+.seitenpanel {
+  display: flex;
+  flex-direction: column;
+  background: #161c28;
+  border-left: 1px solid #354056;
+  min-height: 0;
+  overflow: hidden;
+}
+.panelkopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 19px 8px;
+}
+.panelkopf h2 {
+  margin-top: 5px;
+}
+.dateityp {
+  font:
+    12px Consolas,
+    monospace;
+  border: 1px solid #44516b;
+  border-radius: 5px;
+  padding: 5px;
+  color: #b6afd6;
+}
+.panelbeschreibung {
+  font-size: 12px;
+  margin: 0 19px 15px;
+}
+.code {
+  flex: 1;
+  min-height: 80px;
+  background: #10151f;
+  margin: 0 12px;
+  padding: 15px;
+  border: 1px solid #303a4e;
+  border-radius: 8px;
+  overflow: auto;
+  font:
+    11px/1.75 Consolas,
+    monospace;
+  color: #b6c7e7;
+  tab-size: 2;
+  white-space: pre;
+}
+.blockhilfe {
+  padding: 17px 19px;
+  max-height: 250px;
+  overflow: auto;
+}
+.blockhilfe h3 {
+  margin-bottom: 5px;
+  color: #d0c8ff;
+}
+.blockhilfe p {
+  font-size: 12px;
+}
+.blockhilfe label {
+  font-size: 11px;
+  margin-top: 12px;
+}
+.blockhilfe textarea {
+  font-size: 12px;
+}
+.meldungen {
+  padding: 10px 21px;
+  background: #1a2632;
+  border-top: 1px solid #3a5267;
+  color: #c9dced;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 39px;
+}
+.meldungen.fehler {
+  background: #3b2a22;
+  border-color: #815c43;
+  color: #ffdec8;
+}
+.meldungen button {
+  font-size: 11px;
+  padding: 4px 9px;
+}
+.validierung {
+  max-height: 100px;
+  overflow: auto;
+  background: #26202a;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 18px;
+}
+.validierung button {
+  text-align: left;
+  font-size: 12px;
+  background: transparent;
+  border: 0;
+  padding: 5px;
+  color: #ffd1bc;
+  white-space: normal;
+}
+.validierung button.hinweis {
+  color: #c4d1f3;
+}
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 10px 21px;
+  background: #10151e;
+  color: #a2b0c8;
+  font-size: 10px;
+  border-top: 1px solid #2a3445;
+}
+.modalhintergrund {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #060a13b8;
+  display: grid;
+  place-items: center;
+  padding: 30px;
+}
+.modal {
+  position: relative;
+  width: 640px;
+  max-height: 90vh;
+  overflow: auto;
+  border: 1px solid #505d79;
+  border-radius: 15px;
+  box-shadow: 0 24px 100px #0009;
+  background: #1b2332;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.modal h2 {
+  margin-top: 8px;
+}
+.modal p {
+  font-size: 13px;
+}
+.modal select {
+  max-width: 100%;
+}
+.modal .schliessen {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  padding: 2px 10px;
+  font-size: 23px;
+}
+.schalter {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.schalter input {
+  accent-color: #b3a8ff;
+  width: 16px;
+  height: 16px;
+}
+.modal .klein {
+  font-size: 11px;
+  color: #a9b7cd;
+}
+.aenderungen {
+  font:
+    12px/1.6 'Segoe UI',
+    sans-serif;
+  white-space: pre-wrap;
+  background: #101722;
+  padding: 12px;
+  border-radius: 6px;
+}
+progress {
+  width: 100%;
+  accent-color: #afa5ff;
+}
+@media (max-width: 1250px) {
+  .inhalt.mit-vorschau {
+    grid-template-columns: minmax(0, 1fr) 285px;
+  }
+  .marke {
+    min-width: 210px;
+  }
+  .marke small,
+  .etikett,
+  .speicherpunkt {
+    display: none;
+  }
+  .kopf {
+    gap: 8px;
+    padding: 14px 18px;
+  }
+  .projekttitel input {
+    width: 200px;
+  }
+  .werkzeuge {
+    padding: 10px;
+  }
+  .werkzeuge button {
+    padding: 7px 8px;
+  }
+  .hinweis {
+    font-size: 10px;
+  }
+  .editorfuss {
+    padding: 8px;
+  }
+  .editorfuss button {
+    padding: 5px 6px;
+  }
+}
+.blocklyEditableText > rect,
+.blocklyFieldRect {
+  fill: #20273a !important;
+  fill-opacity: 1 !important;
+}
+.blocklyEditableText .blocklyText {
+  fill: #f2f4fc !important;
+}
