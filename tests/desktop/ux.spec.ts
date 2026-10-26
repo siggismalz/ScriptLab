@@ -509,7 +509,14 @@ test('UX: vollständiger Aufgabenweg mit einzelnen Klicks, Umordnen, Rückgängi
     const exportdatei = join(s.ordner, 'Eigene Klickprüfung.vbs');
     await speicherziel(s, exportdatei);
     await s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
-    await expect(s.seite.getByTestId('statusleiste')).toContainText('Script');
+    await expect(s.seite.getByRole('heading', { name: 'Script gespeichert', exact: true })).toBeVisible();
+    await expect
+      .poll(() =>
+        stat(exportdatei)
+          .then((datei) => datei.isFile())
+          .catch(() => false),
+      )
+      .toBe(true);
     const bytes = await readFile(exportdatei);
     expect([...bytes.subarray(0, 2)]).toEqual([255, 254]);
     expect(bytes.subarray(2).toString('utf16le')).toContain('Hallo aus der eigenen Klickprüfung.');

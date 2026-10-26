@@ -474,8 +474,10 @@ export function Anwendung() {
         if (neu) {
           if (art === 'speichern' || art === 'unter') {
             const kennung = neu.projekt.projektKennung;
-            const gespeichertStand = { ...stand, projektKennung: kennung };
-            projektRef.current = { ...projektRef.current, projektKennung: kennung };
+            // Blockly kann seine Änderungsereignisse erst nach der schnellen Dateiantwort liefern.
+            // Der aktuelle Workspace und der bestätigte Dateistand bestimmen den Speicherstatus.
+            const gespeichertStand = neu.projekt;
+            projektRef.current = { ...standLesen(), projektKennung: kennung };
             setProjekt(projektRef.current);
             gespeichertRef.current = JSON.stringify(gespeichertStand);
             setDatei(neu.dateiname);

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "zweck": "Reproduzierter Renderer-Speicherstatusfehler und tatsächlicher Gegenlauf.",
+  "vorher": {
+    "quelle": "artifacts/python/desktop-ci-dpr1-ergebnis.json",
+    "quellHash": "2480fd0c200e27a55e039aa8503820acb49303dc055f4615fcd2b06c852920b7",
+    "startTime": "2026-10-26T20:22:35.996Z",
+    "duration": 31282.88,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0,
+    "pythonFehler": 3,
+    "uxBestanden": 3
+  },
+  "nachher": {
+    "quelle": "artifacts/python/desktop-ci-dpr1-nach-fix.json",
+    "quellHash": "b4d59959e0dbcdad1668cbe9ce9ee537cf6a062d8a7e3a092a5af702602a09cc",
+    "startTime": "2026-10-26T20:25:42.257Z",
+    "duration": 27321.403,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0,
+    "pythonBestanden": 3,
+    "uxBestanden": 3
+  },
+  "fehlerbeobachtung": {
+    "quelle": "artifacts/python/python-speicherstatus-dpr1-fehler.json",
+    "quellHash": "d4284f3ad4c96ab17bbeeaadcfeea720e3b4278e5af3dfbb503def9efbb5fd8d",
+    "dateiVorhanden": true,
+    "dateiUndMainIdentisch": true,
+    "mainGeaendert": false,
+    "rendererStatus": "Ungespeicherte Änderungen",
+    "breite": 1280,
+    "hoehe": 720,
+    "dpr": 1
+  },
+  "erfolge": [
+    {
+      "quelle": "artifacts/python/python-speicherstatus-dpr1-erfolg-1.json",
+      "quellHash": "8288b85e0bac16104dbc4f815556a6c8d5c1cc748725216b6aff79b6810c31aa",
+      "dateiVorhanden": true,
+      "dateiUndMainIdentisch": true,
+      "mainGeaendert": false,
+      "rendererStatus": "Projekt gespeichert",
+      "breite": 1280,
+      "hoehe": 720,
+      "dpr": 1
+    },
+    {
+      "quelle": "artifacts/python/python-speicherstatus-dpr1-erfolg-2.json",
+      "quellHash": "4b4139a6a6f51edb92658eb38957fe02c253bb80c8db27caa466ddfa06cb0265",
+      "dateiVorhanden": true,
+      "dateiUndMainIdentisch": true,
+      "mainGeaendert": false,
+      "rendererStatus": "Projekt gespeichert",
+      "breite": 1280,
+      "hoehe": 720,
+      "dpr": 1
+    },
+    {
+      "quelle": "artifacts/python/python-speicherstatus-dpr1-erfolg-3.json",
+      "quellHash": "d9ce9ebaf52ed57840e070acce978c4332f06daef9ea1a43b83f78b626d6f037",
+      "dateiVorhanden": true,
+      "dateiUndMainIdentisch": true,
+      "mainGeaendert": false,
+      "rendererStatus": "Projekt gespeichert",
+      "breite": 1280,
+      "hoehe": 720,
+      "dpr": 1
+    }
+  ],
+  "grenzen": [
+    "DPR 1 durch festes Electron-Testargument; keine Änderung der Windows-Systemskalierung.",
+    "Die gleiche bestehende Python-Desktopprüfung wurde dreimal wiederholt; diese Wiederholungen sind keine sechs unterschiedlichen neuen Testfälle.",
+    "Testdiagnosen enthalten ausschließlich eigene Testdaten. Keine absoluten Benutzer- oder Interpreterpfade im Archiv."
+  ]
+}

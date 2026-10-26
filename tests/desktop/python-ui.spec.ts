@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { basename, join, resolve, sep } from 'node:path';
@@ -10,7 +10,7 @@ interface Sitzung {
   seite: Page;
   ordner: string;
 }
-async function starten(): Promise<Sitzung> {
+async function starten(dpi?: number): Promise<Sitzung> {
   const ordner = await mkdtemp(join(tmpdir(), 'ScriptLab-Python-UI-'));
   const profil = join(ordner, 'Profil');
   if (process.env.SCRIPTLAB_TEST_PYTHON) {
@@ -27,7 +27,7 @@ async function starten(): Promise<Sitzung> {
     );
   }
   const app = await electron.launch({
-    args: [resolve('.')],
+    args: [resolve('.'), ...(dpi === undefined ? [] : [`--force-device-scale-factor=${dpi}`])],
     cwd: ordner,
     env: { ...process.env, SCRIPTLAB_TESTDATEN: profil },
   });
@@ -70,9 +70,74 @@ async function einstellungen(seite: Page) {
   await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
   return seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
 }
+function unterschiedeLesen(
+  a: unknown,
+  b: unknown,
+  pfad = '',
+): { pfad: string; datei: unknown; hauptprozess: unknown }[] {
+  if (Object.is(a, b)) return [];
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    const links = a as Record<string, unknown>,
+      rechts = b as Record<string, unknown>;
+    return [...new Set([...Object.keys(links), ...Object.keys(rechts)])].flatMap((name) =>
+      unterschiedeLesen(links[name], rechts[name], `${pfad}/${name}`),
+    );
+  }
+  return [{ pfad, datei: a, hauptprozess: b }];
+}
+async function speicherDiagnose(s: Sitzung, dateipfad: string, vorschau: Locator, art: string) {
+  const datei = await readFile(dateipfad, 'utf8').then(
+    (inhalt) => {
+      try {
+        return { vorhanden: true as const, projekt: JSON.parse(inhalt) };
+      } catch {
+        return { vorhanden: true as const, ungueltigesJson: inhalt };
+      }
+    },
+    (fehler: NodeJS.ErrnoException) => ({ vorhanden: false as const, fehler: fehler.code }),
+  );
+  const aktuell = await dokument(s.seite);
+  const dateiprojekt = 'projekt' in datei ? datei.projekt : null;
+  await test.info().attach(`python-speicherdiagnose-${art}`, {
+    body: JSON.stringify(
+      {
+        datei,
+        hauptprozess: aktuell.dokument,
+        unterschiede: dateiprojekt ? unterschiedeLesen(dateiprojekt, aktuell.dokument.projekt) : null,
+        jsonGleich: dateiprojekt
+          ? JSON.stringify(dateiprojekt) === JSON.stringify(aktuell.dokument.projekt)
+          : null,
+        renderer: {
+          vorschau: await vorschau.textContent(),
+          geometrie: await s.seite.evaluate(() => ({
+            breite: innerWidth,
+            hoehe: innerHeight,
+            dpr: devicePixelRatio,
+            canvas: document.querySelector('.blockly-editor')?.getBoundingClientRect().toJSON(),
+            vorschau: document.querySelector('.code-panel')?.getBoundingClientRect().toJSON(),
+            canvasTransform: document.querySelector('.blocklyBlockCanvas')?.getAttribute('transform'),
+          })),
+          bloecke: await s.seite.locator('.blocklyBlockCanvas g[data-id]').evaluateAll((bloecke) =>
+            bloecke.map((block) => ({
+              id: block.getAttribute('data-id'),
+              text: block.textContent,
+              position: block.getAttribute('transform'),
+            })),
+          ),
+          status: await s.seite.getByTestId('statusleiste').innerText(),
+          fehler: await s.seite.getByRole('alert').allTextContents(),
+        },
+      },
+      null,
+      2,
+    ),
+    contentType: 'application/json',
+  });
+}
 
 test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und tatsächlicher Laufzeitstatus', async () => {
-  const s = await starten();
+  // DPR 1 reproduzierte den falschen Speicherstatus vor dem Produktfix zuverlässig.
+  const s = await starten(1);
   try {
     const { seite } = s;
     const vorher = (await dokument(seite)).dokument;
@@ -115,7 +180,13 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: datei });
     }, projektdatei);
     await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
-    await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+    try {
+      await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+    } catch (fehler) {
+      await speicherDiagnose(s, projektdatei, vorschau, 'fehler');
+      throw fehler;
+    }
+    await speicherDiagnose(s, projektdatei, vorschau, 'erfolg');
     const gespeichert = JSON.parse(await readFile(projektdatei, 'utf8'));
     expect(gespeichert).toMatchObject({ schemaVersion: 2, skriptsprache: 'python' });
     const exportdatei = join(s.ordner, 'Python-Export.py');

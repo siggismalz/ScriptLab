@@ -12,6 +12,8 @@ Der vollständige Electron-Durchlauf bestand mit **96/96 Desktopfällen in 248,1
 
 Die älteren Installer-, Commit-, Test- und Bildschirmangaben in den folgenden Abschnitten gehören ausschließlich zum damaligen Umfang. Sie belegen keinen Python-Installer. Insbesondere bleiben die produktive Entwicklersignatur, Veröffentlichung und Updateprüfung mit zwei installierten signierten Versionen gesonderte Einrichtungsschritte.
 
+Ein erster Python-/VBS-NSIS-Testinstaller wurde aus dem sauberen Quellstand `b6d442c04038ae45138b55780b91f276953726c4` gebaut und mit **11/11 Paketprüfungen** geprüft: `artifacts/python-build-final/ScriptLab-0.1.0-Setup-x64.exe`, 125.340.232 Bytes. [Sein Paketbericht](../tests/ui/nachweise/python-paketpruefung.json) enthält die echten Hashes, Produkt- und `NotSigned`-Signaturzustände sowie Prüfgrenzen. Dieser erste Bau enthält die später korrigierte Renderer-Speicherstatusanzeige noch nicht. Ein korrekter Dateistand war bei DPR 1 als ungespeichert angezeigt worden; vor der Korrektur war dies 3/3 reproduziert, danach bestand derselbe Fall 3/3 und zusätzlich der UX-Export 3/3. Die Details stehen in [PYTHON.md](PYTHON.md). Ein Paketbau ist keine Veröffentlichung und ersetzt keine praktische Installation/Deinstallation.
+
 ## Historischer Nachweis: bewusste VBS-Testläufe vom 26.10.2026
 
 Der neue Entwicklungsauftrag erlaubt ausdrücklich gestartete Workflowtests. Die frühere globale Grenze „ScriptLab führt keine Nutzerworkflows aus“ gilt damit nicht mehr für **Testen**. Öffnen, Wiederherstellen, Bearbeiten, Vorschau, Strukturprüfung, Speichern, Export und Signaturprüfung bleiben ohne Workflowausführung. Die neue Bedienung, der kontrollierte Host und die gesonderten Nachweise stehen in [TESTLAUF.md](TESTLAUF.md).

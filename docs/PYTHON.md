@@ -96,12 +96,25 @@ Native Eingabefenster wurden mit Unicode `Grüße aus Python 😀`, leerem OK un
 
 Die GitHub-Windows-Prüfung stellt für ihre ausdrücklich gestarteten Tests CPython 3.15.2 x64 bereit. Der absolute Testinterpreter wird ausschließlich im Testharness übergeben und über die normale produktive Prüfung bestätigt. Die Anwendung selbst liest keinen allgemeinen Interpreter-Umgebungspfad. Ein lokaler grüner Lauf ersetzt keinen bestätigten GitHub-Lauf.
 
+## Erster Windows-Testinstaller vor der Speicherstatuskorrektur
+
+Aus dem sauberen Quellstand `b6d442c04038ae45138b55780b91f276953726c4` wurden Typprüfung, Produktionsbuild und NSIS-Bau mit `--publish never` ausgeführt. Der neue lokale Installer liegt unter `artifacts/python-build-final/ScriptLab-0.1.0-Setup-x64.exe`, **125.340.232 Bytes**, SHA-256 `d4df02c88b7ef1f707b9dd68b33bcca602b66814f26254d43e4cd60f1310a9d7`. Blockmap und `latest.yml` liegen im selben Ordner. Dies ist der neue Testbuild mit Python und VBS; die ältere Datei unter `artifacts/testlauf-build-final` enthält diese Erweiterung nicht.
+
+Die [Paketprüfung](../tests/ui/nachweise/python-paketpruefung.json) bestand mit **11/11 Prüfungen**: Metadaten und SHA-512 des Installers, Blockmap-Struktur, bytegleicher Renderer/Hauptprozess/Preload, sechs Beispiele, fester Testhelper, Beilagen und tatsächliche Windows-Produktangaben. Installer, Anwendung und Helper sind `NotSigned`. Eine Installation/Deinstallation und der im NSIS eingebettete Payload wurden damit nicht unabhängig praktisch geprüft. Der normale Updater bleibt ohne verifizierbaren Herausgeber gesperrt. Die anschließende Renderer-Speicherstatuskorrektur ist in diesem ersten Paket noch nicht enthalten. Dieser spätere Dokumentationsnachtrag verändert das gebaute Paket nicht und ist kein veröffentlichtes Release.
+
+### Speicherstatus bei schnellen Änderungen
+
+Die unabhängige Windows-CI bestand mit CPython 3.15.2 bereits **335/335 Kern-/Windowsfällen in 39,48 Sekunden**, meldete jedoch zwei Desktopfehler. Der UX-Dateiexporttest wartete nur auf einen allgemeinen bereits vorhandenen Statustext; er wartet jetzt auf die tatsächliche Erfolgsmeldung vor dem Lesen der Datei. Der zweite Befund war ein echter Rendererfehler: Bei exakt 1280 × 720 CSS-Pixeln und erzwungenem Electron-DPR 1 wurde eine korrekt geschriebene Datei als ungespeichert angezeigt. Datei und Hauptprozess waren unverändert identisch und der Hauptprozess meldete `geaendert=false`.
+
+Nach erfolgreichem Speichern liest die Oberfläche jetzt den aktuellen Blockly-Workspace und verwendet das vom Hauptprozess bestätigte Projekt als gespeicherten Bezug. Dadurch bleibt ein verzögertes Blockly-Ereignis kein falscher Ungespeichert-Vergleich. Die gezielte Gegenprüfung reproduzierte den Fehler vor der Änderung **3/3** und bestand danach **3/3**; der UX-Exportweg bestand zusätzlich **3/3**, gemeinsam 6/6 nach dem Fix. Die feste DPR-1-Bedingung bleibt im Python-Rundlauftest. Das ist eine Prozess-DPR-Prüfung und keine Änderung der Windows-Systemskalierung. Die Radiokartenaufnahmen bleiben ihrem tatsächlichen DPR 1,75 zugeordnet.
+
 ## Noch einzurichten oder gesondert zu prüfen
 
 - Die vollständige praktische Versionsmatrix einschließlich CPython 3.13/3.14 und weitere Windows-Regionseinstellungen.
 - Die oben konkret offenen nativen Python-Dialogentscheidungen mit Ja/Nein, Nachrichtenbox-OK und abgelehnter Löschrückfrage in einer interaktiven Windows-Sitzung.
 - Eine vollständige Abnahme mit Windows-Screenreader und erneute native Skalierungsdurchläufe aller verlangten Stufen für die neue Auswahlansicht.
 - Eine echte Nutzerstudie mit Personen ohne Programmierkenntnisse.
+- Eine praktische Installation/Deinstallation des neuen Testinstallers in einer vorgesehenen Windows-Testumgebung.
 - Produktive Entwicklersignatur, Releaseveröffentlichung und die Updatekette mit zwei tatsächlich installierten signierten Versionen. Diese Infrastruktur wird durch die Python-Erweiterung nicht vorgetäuscht.
 - Die Projektlizenz bleibt Leon Stolz vorbehalten; der öffentliche Quellcode ist keine erfundene Lizenzfreigabe.
 
