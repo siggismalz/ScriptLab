@@ -341,7 +341,7 @@ describe.skipIf(!freigegeben)('Freigegebene feste Python-Proben im Windows-Job',
       fehlerBlockId: 'lesefehler',
     });
     expect(ende.technischeMeldung).toContain('Traceback');
-    expect(ende.fehlerZeile).not.toBeNull();
+    expect(ende.fehlerZeile, ende.technischeMeldung ?? '').not.toBeNull();
     expect(
       ende.zeilenZuordnung.some(
         (z) => z.blockId === 'lesefehler' && ende.fehlerZeile! >= z.von && ende.fehlerZeile! <= z.bis,
@@ -349,4 +349,98 @@ describe.skipIf(!freigegeben)('Freigegebene feste Python-Proben im Windows-Job',
     ).toBe(true);
     expect(await readdir(basis)).toEqual([]);
   }, 15000);
+
+  test('ordnet Python-Tracebacks auch bei einem technischen Windows-Kurzpfad der Workflowzeile zu', async (kontext) => {
+    const lang = join(technisch, 'Technischer Quellordner mit langem Namen');
+    await mkdir(lang);
+    const system = process.env.SystemRoot ?? 'C:\\Windows';
+    const antwort = await promisify(execFile)(
+      join(system, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
+      [
+        '-NoLogo',
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        String.raw`
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+Add-Type -TypeDefinition 'using System; using System.Text; using System.Runtime.InteropServices; public static class ScriptLabKurzpfad { [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] public static extern uint GetShortPathName(string pfad, StringBuilder ziel, uint laenge); }'
+$ziel = [Text.StringBuilder]::new(32768)
+$laenge = [ScriptLabKurzpfad]::GetShortPathName($env:SCRIPTLAB_KURZPFAD_PROBE, $ziel, 32768)
+if ($laenge -eq 0 -or $laenge -ge 32768) { throw 'Der feste Testkurzpfad konnte nicht gelesen werden.' }
+[Console]::Write($ziel.ToString())`,
+      ],
+      {
+        windowsHide: true,
+        timeout: 4000,
+        maxBuffer: 65536,
+        encoding: 'utf8',
+        env: { ...process.env, SCRIPTLAB_KURZPFAD_PROBE: lang },
+      },
+    );
+    const kurz = antwort.stdout.trim().replace(/^\uFEFF/, '');
+    expect(await realpath(kurz)).toBe(await realpath(lang));
+    if (kurz.toLowerCase() === lang.toLowerCase()) {
+      kontext.skip();
+      return;
+    }
+    const p = neuesProjekt('python');
+    p.editor.blocks!.blocks[0].next = {
+      block: {
+        type: 'sl_output',
+        id: 'ausgabe',
+        inputs: {
+          TEXT: {
+            block: {
+              type: 'sl_read_text',
+              id: 'kurzpfad-lesefehler',
+              fields: { KODIERUNG: 'UTF8' },
+              inputs: {
+                PFAD: {
+                  block: { type: 'sl_text', id: 'kurzpfad-datei', fields: { TEXT: 'Nicht vorhanden.txt' } },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    dienst = new TestlaufDienst(helper, kurz, (tkinter, signal) =>
+      pythonPruefen(installation.pfad, { helper, technischeOrdner: technisch, tkinter, signal }),
+    );
+    dienst.starten(p, { basisVerzeichnis: basis, zeitlimitSekunden: 4 });
+    await expect.poll(() => testAktiv(dienst!.lesen().phase), { timeout: 10000 }).toBe(false);
+    const ende = dienst.lesen();
+    let traceback = ende.technischeMeldung ?? '';
+    for (const [pfad, ersatz] of [
+      [lang, '<TECHNIK_LANG>'],
+      [kurz, '<TECHNIK_KURZ>'],
+      [ordner, '<TESTORDNER>'],
+      [process.env.USERPROFILE ?? '\0', '<BENUTZER>'],
+    ]) {
+      // Auch der strukturierte Fehlerkanal enthält den Dateipfad, dort URI-kodiert.
+      const kodiert = encodeURIComponent(pfad).replace(
+        /[!'()*]/g,
+        (zeichen) => `%${zeichen.charCodeAt(0).toString(16).toUpperCase()}`,
+      );
+      traceback = traceback.replaceAll(pfad, ersatz).replaceAll(kodiert, ersatz);
+    }
+    const diagnose = JSON.stringify({
+      phase: ende.phase,
+      block: ende.fehlerBlockId,
+      zeile: ende.fehlerZeile,
+      identischerOrdner: true,
+      traceback,
+    });
+    expect(ende.phase, diagnose).toBe('fehlgeschlagen');
+    expect(ende.fehlerBlockId, diagnose).toBe('kurzpfad-lesefehler');
+    expect(ende.fehlerZeile, diagnose).not.toBeNull();
+    expect(
+      ende.zeilenZuordnung.some(
+        (z) =>
+          z.blockId === 'kurzpfad-lesefehler' && ende.fehlerZeile! >= z.von && ende.fehlerZeile! <= z.bis,
+      ),
+      diagnose,
+    ).toBe(true);
+    expect(await readdir(basis)).toEqual([]);
+  }, 20000);
 });

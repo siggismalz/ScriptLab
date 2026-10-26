@@ -462,6 +462,15 @@ WScript.Quit 0
   });
 
   it('erhält Unicode-Codeeinheiten, Textregeln, Listenkopien und Datumsformatierung', async () => {
+    // Datumstext bewusst aus derselben Windows-Region gewinnen: ein deutscher
+    // Literalwert ist auf einem en-US-Runner kein gültiger regionenunabhängiger Test.
+    const lokaleDatumprobe = await ausfuehren(
+      'Option Explicit\r\nWScript.StdOut.WriteLine CStr(DateSerial(2024, 2, 29) + TimeSerial(12, 34, 56))\r\nWScript.Quit 0\r\n',
+      'vbs',
+    );
+    expect(lokaleDatumprobe.code, lokaleDatumprobe.stderr).toBe(0);
+    const lokalerDatumtext = lokaleDatumprobe.stdout.trim();
+    expect(lokalerDatumtext.length).toBeGreaterThan(0);
     const projekt = projektMit(
       ausgabe(block('sl_len', {}, { TEXT: text('ä😀') })),
       ausgabe(block('sl_contains', {}, { TEXT: text('Ab😀Cd'), SUCHEN: text('😀') })),
@@ -474,9 +483,10 @@ WScript.Quit 0
       ausgabe(block('sl_list_get', {}, { LISTE: lesen('A'), INDEX: zahl('1') })),
       ausgabe(block('sl_list_get', {}, { LISTE: lesen('B'), INDEX: zahl('2') })),
       ausgabe(block('sl_date_format', { FORMAT: 'DATUM' }, { WERT: block('sl_date') })),
-      ausgabe(block('sl_date_format', { FORMAT: 'BEIDES' }, { WERT: text('29.02.2024 12:34:56') })),
+      ausgabe(block('sl_date_format', { FORMAT: 'BEIDES' }, { WERT: text(lokalerDatumtext) })),
     );
-    await gleich(projekt);
+    const ausgabeText = await gleich(projekt);
+    expect(ausgabeText).toContain('2024-02-29 12:34:56\r\n');
   }, 20000);
 
   it('erhält Fehlerprotokoll und Originaltraceback bei einem einzelnen Surrogat im Fehlertext', async () => {

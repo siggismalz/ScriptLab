@@ -173,9 +173,8 @@ export async function pythonKandidatenSuchen(): Promise<PythonKandidat[]> {
   return vorhanden.filter((wert): wert is PythonKandidat => wert !== null);
 }
 
-async function laufzeitDateiPruefen(pfad: string, signal?: AbortSignal): Promise<string> {
-  const eindeutig = pythonDateipfadPruefen(await realpath(pythonDateipfadPruefen(pfad)));
-  const datei = await open(eindeutig, 'r');
+async function windowsX64DateiPruefen(pfad: string): Promise<void> {
+  const datei = await open(pfad, 'r');
   try {
     const kopf = Buffer.alloc(64);
     if ((await datei.read(kopf, 0, kopf.length, 0)).bytesRead < 64 || kopf.toString('ascii', 0, 2) !== 'MZ')
@@ -192,22 +191,62 @@ async function laufzeitDateiPruefen(pfad: string, signal?: AbortSignal): Promise
   } finally {
     await datei.close();
   }
+}
 
+function direktePythonMetadaten(meta: Record<string, unknown>): boolean {
+  return (
+    meta?.produkt === 'Python' &&
+    typeof meta.original === 'string' &&
+    /^python(?:3(?:\.[0-9]+)?)?\.exe$/i.test(meta.original) &&
+    !/install|manager|launcher/i.test(String(meta.beschreibung))
+  );
+}
+
+async function runtimeDllPruefen(ordner: string): Promise<boolean> {
+  const name = (await readdir(ordner).catch(() => [])).find((name) =>
+    /^python3(?:12|13|14|15)t?\.dll$/i.test(name),
+  );
+  if (!name) return false;
+  await windowsX64DateiPruefen(win32.join(ordner, name));
+  return true;
+}
+
+async function laufzeitDateiPruefen(pfad: string, signal?: AbortSignal): Promise<string> {
+  const eindeutig = pythonDateipfadPruefen(await realpath(pythonDateipfadPruefen(pfad)));
+  await windowsX64DateiPruefen(eindeutig);
   const ordner = win32.dirname(eindeutig);
-  const dllVorhanden = async (basis: string) =>
-    (await readdir(basis).catch(() => [])).some((name) => /^python3(?:12|13|14|15)t?\.dll$/i.test(name));
   let istVenv = false;
-  let hatLaufzeit = await dllVorhanden(ordner);
-  if (!hatLaufzeit) {
-    // Direkte venv-Pfade dürfen verwendet werden. Ihr Basisinterpreter wird ausschließlich gelesen.
+  let hatLaufzeit = await runtimeDllPruefen(ordner);
+  if (
+    !hatLaufzeit &&
+    win32.basename(ordner).toLowerCase() === 'scripts' &&
+    win32.basename(eindeutig).toLowerCase() === 'python.exe'
+  ) {
+    // Ein venv-Redirector ist kein allgemeiner py-Launcher: eigener Scripts-Pfad und eigene
+    // Konfiguration müssen auf eine ebenfalls lesend geprüfte echte Basisruntime verweisen.
     const cfg = win32.join(win32.dirname(ordner), 'pyvenv.cfg');
     const cfgDatei = await stat(cfg).catch(() => null);
-    if (cfgDatei?.isFile() && cfgDatei.size <= 16384) {
+    if (
+      cfgDatei?.isFile() &&
+      cfgDatei.size > 0 &&
+      cfgDatei.size <= 16384 &&
+      (await realpath(cfg)).toLowerCase() === cfg.toLowerCase()
+    ) {
       const inhalt = await readFile(cfg, 'utf8');
       const home = /^home\s*=\s*(.+)$/im.exec(inhalt)?.[1].trim();
       if (home && win32.isAbsolute(home) && !/\\WindowsApps\\/i.test(home)) {
-        hatLaufzeit = await dllVorhanden(home);
-        istVenv = hatLaufzeit;
+        const basis = pythonDateipfadPruefen(
+          await realpath(pythonDateipfadPruefen(win32.join(home, 'python.exe'))),
+        );
+        if (
+          basis.toLowerCase() !== eindeutig.toLowerCase() &&
+          (await runtimeDllPruefen(win32.dirname(basis)))
+        ) {
+          await windowsX64DateiPruefen(basis);
+          if (signal?.aborted) throw new Error('Die Python-Prüfung wurde abgebrochen.');
+          const basisMeta = (await powershellLesen(dateimetadaten, basis, signal)) as Record<string, unknown>;
+          if (direktePythonMetadaten(basisMeta)) hatLaufzeit = istVenv = true;
+        }
       }
     }
   }
@@ -217,13 +256,13 @@ async function laufzeitDateiPruefen(pfad: string, signal?: AbortSignal): Promise
     );
   if (signal?.aborted) throw new Error('Die Python-Prüfung wurde abgebrochen.');
   const meta = (await powershellLesen(dateimetadaten, eindeutig, signal)) as Record<string, unknown>;
-  if (
-    !meta ||
-    meta.produkt !== 'Python' ||
-    typeof meta.original !== 'string' ||
-    !/^(?:python(?:3(?:\.[0-9]+)?)?\.exe|venvlauncher\.exe)$/i.test(meta.original) ||
-    (!istVenv && /install|manager|launcher/i.test(String(meta.beschreibung)))
-  )
+  const venvRedirector =
+    istVenv &&
+    meta?.produkt === 'Python' &&
+    meta.beschreibung === 'Python' &&
+    typeof meta.original === 'string' &&
+    /^(?:py|venvlauncher)\.exe$/i.test(meta.original);
+  if (!direktePythonMetadaten(meta) && !venvRedirector)
     throw new Error(
       'Die Datei ist keine bestätigte CPython-Laufzeit. Launcher und Installationsmanager werden nicht ausgeführt.',
     );

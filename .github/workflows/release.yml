@@ -41,6 +41,35 @@ jobs:
           python-version: '3.15.2'
           architecture: x64
           update-environment: false
+      - name: Isolierten venv fuer den Exportnachweis vorbereiten
+        id: venv
+        shell: pwsh
+        timeout-minutes: 1
+        env:
+          SCRIPTLAB_CI_PYTHON: ${{ steps.python.outputs.python-path }}
+        run: |
+          $ziel = [IO.Path]::GetFullPath((Join-Path $env:RUNNER_TEMP 'ScriptLab-CI-Venv'))
+          if (Test-Path -LiteralPath $ziel) { throw 'Der CI-venv-Pfad ist bereits belegt.' }
+          $start = [Diagnostics.ProcessStartInfo]::new()
+          $start.FileName = $env:SCRIPTLAB_CI_PYTHON
+          $start.UseShellExecute = $false
+          $start.CreateNoWindow = $true
+          foreach ($argument in @('-I', '-m', 'venv', '--without-pip', $ziel)) { $start.ArgumentList.Add($argument) }
+          $prozess = [Diagnostics.Process]::Start($start)
+          try {
+            if (-not $prozess.WaitForExit(20000)) {
+              $prozess.Kill($true)
+              if (-not $prozess.WaitForExit(5000)) { throw 'Das Ende der venv-Vorbereitung wurde nicht bestaetigt.' }
+              throw 'Die venv-Vorbereitung hat das Zeitlimit von 20 Sekunden erreicht.'
+            }
+            if ($prozess.ExitCode -ne 0) { throw 'Die isolierte venv-Vorbereitung ist fehlgeschlagen.' }
+          } finally {
+            if (-not $prozess.HasExited) { $prozess.Kill($true); [void]$prozess.WaitForExit(5000) }
+            $prozess.Dispose()
+          }
+          $interpreter = Join-Path $ziel 'Scripts\python.exe'
+          if (-not (Test-Path -LiteralPath $interpreter -PathType Leaf)) { throw 'Der erzeugte venv-Interpreter fehlt.' }
+          [IO.File]::AppendAllText($env:GITHUB_OUTPUT, "python-path=$interpreter" + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
       - name: Tag und Paketversion vergleichen
         shell: pwsh
         run: |
@@ -59,6 +88,7 @@ jobs:
           SCRIPTLAB_RUNTIME_TESTS: '1'
           SCRIPTLAB_TEST_PYTHON: ${{ steps.python.outputs.python-path }}
           SCRIPTLAB_TEST_PYTHON_VERSION: '3.15.2'
+          SCRIPTLAB_TEST_VENV: ${{ steps.venv.outputs.python-path }}
       - run: npm run build
       - run: npm run test:e2e
         env:

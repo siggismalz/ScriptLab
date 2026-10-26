@@ -1,6 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { mkdir, writeFile, stat, unlink, rmdir } from 'node:fs/promises';
+import { mkdir, writeFile, stat, unlink, rmdir, realpath } from 'node:fs/promises';
 import { join, isAbsolute } from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import { z } from 'zod';
@@ -234,7 +234,11 @@ export class TestlaufDienst {
         }),
       );
       if (lauf.grund) return;
-      const ergebnis = await this.prozessStarten(lauf, datei, optionen, false);
+      // CPython normalisiert Windows-Kurzpfade im Traceback. Host und Fehlerzuordnung
+      // verwenden deshalb denselben tatsächlichen Pfad statt eines 8.3-Alias.
+      const ausgefuehrteDatei = await pruefen(realpath(datei));
+      if (lauf.grund) return;
+      const ergebnis = await this.prozessStarten(lauf, ausgefuehrteDatei, optionen, false);
       this.zustand.exitcode = ergebnis.code;
       if (lauf.grund) return;
       if (ergebnis.code === 0 && !ergebnis.fehler) {

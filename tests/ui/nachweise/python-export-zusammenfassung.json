@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "erstelltAm": "2026-10-26T19:46:11.414Z",
+  "testdatei": "tests/windows/python-export.test.ts",
+  "testdateiHash": "dae231ae8be418423a262c66567838c7066129bdcbf8f6a0419811c2eb54fd27",
+  "laeufe": [
+    {
+      "quelle": "artifacts/python-export-paar.json",
+      "quellHash": "7bae6bc50b572263629ba43e821128e6731f4dc57b0ed28a0401c1865fa76c36",
+      "status": "bestanden",
+      "gesamt": 2,
+      "bestanden": 2,
+      "fehlgeschlagen": 0,
+      "ausgelassen": 0,
+      "dauerMillisekunden": 2675,
+      "faelle": [
+        {
+          "name": "läuft bei geschlossener App ohne Testtoken und verwendet den Scriptordner statt des cwd",
+          "status": "passed",
+          "dauerMillisekunden": 399
+        },
+        {
+          "name": "prüft einen bereits vorhandenen venv-Interpreter und führt denselben eigenständigen Export aus",
+          "status": "passed",
+          "dauerMillisekunden": 1005
+        }
+      ]
+    },
+    {
+      "quelle": "artifacts/python-export-desktop-venv.json",
+      "quellHash": "8353cc4be3c33fd22a6bea257f19edaee2a3c841439141d955c27abf7d0d3ec6",
+      "status": "bestanden",
+      "gesamt": 2,
+      "bestanden": 1,
+      "fehlgeschlagen": 0,
+      "ausgelassen": 1,
+      "dauerMillisekunden": 2168,
+      "faelle": [
+        {
+          "name": "läuft bei geschlossener App ohne Testtoken und verwendet den Scriptordner statt des cwd",
+          "status": "skipped",
+          "dauerMillisekunden": null
+        },
+        {
+          "name": "prüft einen bereits vorhandenen venv-Interpreter und führt denselben eigenständigen Export aus",
+          "status": "passed",
+          "dauerMillisekunden": 996
+        }
+      ]
+    }
+  ],
+  "venvs": [
+    {
+      "bezeichnung": "vorhandener Projekt-venv",
+      "versionLautKonfiguration": "3.12.6",
+      "systemSitePakete": false,
+      "produktiveInterpreterpruefung": "bestanden",
+      "eigenstaendigerExport": "bestanden",
+      "neuAngelegt": false
+    },
+    {
+      "bezeichnung": "vorhandener Desktop-venv",
+      "versionLautKonfiguration": "3.12.6",
+      "systemSitePakete": true,
+      "produktiveInterpreterpruefung": "bestanden",
+      "eigenstaendigerExport": "bestanden",
+      "neuAngelegt": false
+    }
+  ],
+  "nachgewiesen": {
+    "appGeschlossen": true,
+    "aeussererFesterWindowsJob": true,
+    "aeussereProzessfristMillisekunden": 4000,
+    "kindFristSekunden": 3,
+    "ausgabegrenzeBytes": 65536,
+    "echterKindbefehl": "[geprüfter Interpreter, exportierte Pythondatei]",
+    "editorArgumenteImExportkind": 0,
+    "quelltextUTF8OhneBom": true,
+    "quelltextCRLF": true,
+    "abweichendesArbeitsverzeichnis": true,
+    "dateiAmScriptordner": true,
+    "dateiAmAbweichendenCwd": false,
+    "unicodeAusgabe": true,
+    "dateiUTF8BomUndCRLFBytegleich": true,
+    "venvDurchSysPrefixUnterschiedBestaetigt": true
+  },
+  "grenzen": [
+    "Zwei unterschiedliche QA-Fälle gemeinsam bestanden; der venv-Fall danach mit einem zweiten bestehenden venv wiederholt.",
+    "Der eine ausgelassene Fall im zweiten Bericht wurde nur wegen des gezielten Namensfilters nicht erneut ausgeführt.",
+    "Keine neue Python-Installation oder venv angelegt und keine Pakete installiert; vorhandene Konfigurationen blieben unverändert.",
+    "Ein früherer Versuch bestand nur den Exportfall; der vorhandene venv wurde vom zu engen OriginalFilename-Guard abgewiesen. Beide hier dokumentierten Läufe fanden nach dem Guardfix statt.",
+    "Die Kurzfassung enthält keine Interpreter-, Profil- oder Benutzerpfade und keine vollständigen Projektinhalte.",
+    "Dies ist ein eigenständiger Exportnachweis und kein Ersatz für native Dialog-, Installer- oder vollständige Versionsprüfungen."
+  ]
+}
