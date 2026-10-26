@@ -1,0 +1,8 @@
+# Bewusst festgelegte fachliche Pakete; alle transitiven Pins stehen in der Lockdatei.
+# defusedxml ergaenzt den empfohlenen XML-Schutz fuer openpyxl.
+duckdb==2.0.0
+openpyxl==3.1.5
+python-docx==1.2.0
+reportlab==5.1.0
+pypdf==6.21.2
+defusedxml==0.7.1
