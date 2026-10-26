@@ -76,8 +76,10 @@ export const bausteinBeispiele: Readonly<Record<string, string>> = {
     'Mit den Grenzen 1 und 6 erhältst du beim späteren eigenen Start eine ganze Zahl von 1 bis einschließlich 6, etwa für einen Würfel.',
   sl_message:
     'Mit dem Text „Hallo Leon“ zeigt das eigenständig gestartete VBS-Script eine Nachricht mit genau diesem Inhalt an.',
+  sl_output:
+    '„Hallo Leon“ erscheint beim bewusst gestarteten Test in der Testausgabe. Beim externen Start mit wscript.exe erscheint stattdessen ein Meldungsfenster; cscript.exe schreibt den Text in seine Ausgabe.',
   sl_input:
-    'Frage „Wie heißt du?“ und speichere das Ergebnis in „Name“. Erst das außerhalb von ScriptLab gestartete Script stellt diese Frage.',
+    'Frage „Wie heißt du?“ und speichere das Ergebnis in „Name“. Ein bewusst gestarteter Test oder ein extern gestartetes Script öffnet den echten Windows-Eingabedialog.',
   sl_question:
     'Frage „Mit der Sicherung fortfahren?“. Ja liefert wahr, Nein liefert falsch; eine Wenn-Bedingung kann den weiteren Ablauf auswählen.',
   sl_log:

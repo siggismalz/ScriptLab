@@ -45,7 +45,9 @@ function blockBauen(def: BausteinDefinition, abweichung: Record<string, string> 
 }
 
 describe.skipIf(process.platform !== 'win32')('Echter Windows-Parser fuer den Generator', () => {
-  it('akzeptiert jeden Katalogblock und jede Auswahlvariante ohne Ausfuehrung', ({ skip }) => {
+  it('akzeptiert alle 48 Katalogtypen und Auswahlvarianten in Export und Testfassung ohne Ausfuehrung', ({
+    skip,
+  }) => {
     naechsteId = 0;
     const projekt = neuesProjekt();
     const anweisungen: EditorBlock[] = [
@@ -92,10 +94,9 @@ describe.skipIf(process.platform !== 'win32')('Echter Windows-Parser fuer den Ge
     expect(erzeugt.meldungen.filter((m) => m.stufe === 'fehler')).toEqual([]);
     expect(erzeugt.code).not.toBeNull();
     expect(abgedeckt.size).toBe(bausteinDefinitionen.length);
+    expect(abgedeckt.size).toBe(48);
     const ordner = mkdtempSync(join(tmpdir(), 'ScriptLab-Generator-Parser-'));
     try {
-      const datei = join(ordner, 'Alle Bausteine.vbs');
-      writeFileSync(datei, Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(erzeugt.code!, 'utf16le')]));
       const powershell = join(
         process.env.SystemRoot ?? 'C:\\Windows',
         'System32',
@@ -103,34 +104,49 @@ describe.skipIf(process.platform !== 'win32')('Echter Windows-Parser fuer den Ge
         'v1.0',
         'powershell.exe',
       );
-      const prozess = spawnSync(
-        powershell,
-        [
-          '-NoProfile',
-          '-NonInteractive',
-          '-File',
-          resolve('scripts/vbs-syntax-pruefen.ps1'),
-          '-Datei',
-          datei,
-          '-AlsJson',
-        ],
+      for (const fassung of [
+        { name: 'Alle Bausteine Export.vbs', ergebnis: erzeugt },
         {
-          encoding: 'utf8',
-          timeout: 30_000,
-          windowsHide: true,
+          name: 'Alle Bausteine Test.vbs',
+          ergebnis: vbsErzeugen(projekt, { modus: 'test', token: 'Parserfreigabe_'.repeat(4) }),
         },
-      );
-      if (prozess.error) throw prozess.error;
-      expect(prozess.stderr).toBe('');
-      if (prozess.status === 2) skip('Die optionale Windows-VBScript-Komponente ist nicht verfuegbar.');
-      const daten = JSON.parse(prozess.stdout.trim());
-      expect(daten[0].ergebnis, prozess.stdout).toMatchObject({
-        Status: 'gueltig',
-        ZustandVorher: 5,
-        ZustandNachher: 5,
-        Ausfuehrungseintritte: 0,
-      });
-      expect(prozess.status).toBe(0);
+      ]) {
+        expect(fassung.ergebnis.meldungen.filter((m) => m.stufe === 'fehler')).toEqual([]);
+        expect(fassung.ergebnis.code).not.toBeNull();
+        const datei = join(ordner, fassung.name);
+        writeFileSync(
+          datei,
+          Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(fassung.ergebnis.code!, 'utf16le')]),
+        );
+        const prozess = spawnSync(
+          powershell,
+          [
+            '-NoProfile',
+            '-NonInteractive',
+            '-File',
+            resolve('scripts/vbs-syntax-pruefen.ps1'),
+            '-Datei',
+            datei,
+            '-AlsJson',
+          ],
+          {
+            encoding: 'utf8',
+            timeout: 30_000,
+            windowsHide: true,
+          },
+        );
+        if (prozess.error) throw prozess.error;
+        expect(prozess.stderr).toBe('');
+        if (prozess.status === 2) skip('Die optionale Windows-VBScript-Komponente ist nicht verfuegbar.');
+        const daten = JSON.parse(prozess.stdout.trim());
+        expect(daten[0].ergebnis, prozess.stdout).toMatchObject({
+          Status: 'gueltig',
+          ZustandVorher: 5,
+          ZustandNachher: 5,
+          Ausfuehrungseintritte: 0,
+        });
+        expect(prozess.status).toBe(0);
+      }
     } finally {
       rmSync(ordner, { recursive: true, force: true });
     }

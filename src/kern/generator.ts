@@ -1,6 +1,41 @@
 import { projektPruefen, type Projekt } from './projekt';
 import { workflowPruefen, variablenSchluessel, type Anweisung, type Ausdruck, type Meldung } from './modell';
 
+export type GeneratorOptionen = { modus: 'export' } | { modus: 'test'; token: string };
+/** Zeilennummern sind einsbasiert und einschließlich beider Grenzen, bezogen auf den vollständigen Code. */
+export interface ZeilenZuordnung {
+  von: number;
+  bis: number;
+  blockId: string;
+}
+export interface GeneratorErgebnis {
+  code: string | null;
+  meldungen: Meldung[];
+  zeilenZuordnung: ZeilenZuordnung[];
+}
+
+function testTokenPruefen(optionen: unknown): string | null {
+  if (optionen === undefined) return null;
+  if (!optionen || typeof optionen !== 'object' || Array.isArray(optionen))
+    throw new Error('Die Generatoroptionen sind ungültig.');
+  if (
+    ![Object.prototype, null].includes(Object.getPrototypeOf(optionen)) ||
+    !Object.hasOwn(optionen, 'modus')
+  )
+    throw new Error('Die Generatoroptionen sind ungültig.');
+  const werte = optionen as Record<string, unknown>;
+  if (werte.modus === 'export' && Object.keys(werte).every((name) => name === 'modus')) return null;
+  if (
+    werte.modus === 'test' &&
+    Object.hasOwn(werte, 'token') &&
+    Object.keys(werte).every((name) => name === 'modus' || name === 'token') &&
+    typeof werte.token === 'string' &&
+    /^[A-Za-z0-9_-]{32,128}$/.test(werte.token)
+  )
+    return werte.token;
+  throw new Error('Der Generatormodus oder sein Testtoken ist ungültig.');
+}
+
 /** VBScript-Textliteral. Zeilenumbrüche werden als Daten zusammengesetzt. */
 export function vbsText(text: string): string {
   const teile = text.split(/(\r\n|[\u0000-\u001f\u007f\u2028\u2029])/);
@@ -24,20 +59,23 @@ export function vbsText(text: string): string {
   );
 }
 
-export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen: Meldung[] } {
+export function vbsErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): GeneratorErgebnis {
   let geprueft: Projekt;
+  let testToken: string | null;
   try {
+    testToken = testTokenPruefen(optionen);
     geprueft = projektPruefen(projekt);
   } catch (fehler) {
     return {
       code: null,
+      zeilenZuordnung: [],
       meldungen: [
         { text: fehler instanceof Error ? fehler.message : 'Das Projekt ist ungültig.', stufe: 'fehler' },
       ],
     };
   }
   const { workflow, meldungen } = workflowPruefen(geprueft);
-  if (!workflow) return { code: null, meldungen };
+  if (!workflow) return { code: null, meldungen, zeilenZuordnung: [] };
   const variablen = new Map(workflow.variablen.map((name, i) => [name, `v_${i + 1}`]));
   const helfer = new Set<string>();
   const interneVariablen: string[] = [];
@@ -116,12 +154,12 @@ export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen:
         throw new Error('Für einen Baustein fehlt der VBS-Generator.');
     }
   }
-  const zeilen: string[] = [];
+  const zeilen: { text: string; blockId: string }[] = [];
   function anweisungen(liste: Anweisung[], tiefe: number): void {
-    const ausgeben = (zeile: string): void => {
-      zeilen.push(`${'  '.repeat(tiefe)}${zeile}`);
-    };
     for (const a of liste) {
+      const ausgeben = (zeile: string, zusaetzlicheTiefe = 0): void => {
+        zeilen.push({ text: `${'  '.repeat(tiefe + zusaetzlicheTiefe)}${zeile}`, blockId: a.id });
+      };
       const w = (name: string): string => wert(a.werte[name]);
       ausgeben(`sl_block = ${vbsText(a.id)}`);
       switch (a.art) {
@@ -134,6 +172,9 @@ export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen:
           break;
         case 'sl_message':
           ausgeben(`MsgBox CStr(${w('TEXT')}), vbInformation, "ScriptLab"`);
+          break;
+        case 'sl_output':
+          ausgeben(`Call ${hilfe('SL_Ausgabe')}(${w('TEXT')})`);
           break;
         case 'sl_set':
           ausgeben(`${variable(a.felder.VAR)} = ${w('WERT')}`);
@@ -156,8 +197,8 @@ export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen:
         }
         case 'sl_while':
           ausgeben('Do');
-          zeilen.push(`${'  '.repeat(tiefe + 1)}sl_block = ${vbsText(a.id)}`);
-          zeilen.push(`${'  '.repeat(tiefe + 1)}If Not (${w('BEDINGUNG')}) Then Exit Do`);
+          ausgeben(`sl_block = ${vbsText(a.id)}`, 1);
+          ausgeben(`If Not (${w('BEDINGUNG')}) Then Exit Do`, 1);
           anweisungen(a.zweige.ABLAUF, tiefe + 1);
           ausgeben('Loop');
           break;
@@ -168,7 +209,7 @@ export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen:
           const inhalt = a.art === 'sl_foreach' ? w('LISTE') : `${hilfe('SL_Dateien')}(${w('PFAD')})`;
           ausgeben(`${liste} = ${hilfe('SL_Liste')}(${inhalt})`);
           ausgeben(`For ${index} = 0 To UBound(${liste})`);
-          zeilen.push(`${'  '.repeat(tiefe + 1)}${variable(a.felder.VAR)} = ${liste}(${index})`);
+          ausgeben(`${variable(a.felder.VAR)} = ${liste}(${index})`, 1);
           anweisungen(a.zweige.ABLAUF, tiefe + 1);
           ausgeben('Next');
           break;
@@ -219,6 +260,7 @@ export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen:
   } catch {
     return {
       code: null,
+      zeilenZuordnung: [],
       meldungen: [
         ...meldungen,
         { text: 'Der Workflow konnte nicht vollständig in VBS übersetzt werden.', stufe: 'fehler' },
@@ -243,37 +285,68 @@ export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen:
     ].includes(name),
   );
   const deklarationen = ['sl_block', ...variablen.values(), ...interneVariablen];
-  const code = [
+  const vollstaendigeZeilen: string[] = [];
+  const zeilenZuordnung: ZeilenZuordnung[] = [];
+  function quelltextHinzufuegen(text: string, blockId?: string): void {
+    for (const zeile of text.split(/\r\n|\r|\n/)) {
+      vollstaendigeZeilen.push(zeile);
+      if (!blockId) continue;
+      const nummer = vollstaendigeZeilen.length;
+      const vorher = zeilenZuordnung.at(-1);
+      if (vorher?.blockId === blockId && vorher.bis === nummer - 1) vorher.bis = nummer;
+      else zeilenZuordnung.push({ von: nummer, bis: nummer, blockId });
+    }
+  }
+  for (const zeile of [
     "' Erstellt mit ScriptLab. Entwickelt von Leon Stolz.",
-    "' Dieses Script wurde von ScriptLab nur erzeugt, niemals ausgeführt.",
-    "' Relative Pfade beziehen sich auf den Speicherort dieser VBS-Datei.",
+    "' Die Ausführung kann Dateien verändern.",
+    testToken
+      ? "' Testfassung: Relative Pfade beziehen sich auf den ausdrücklich übergebenen Basisordner."
+      : "' Relative Pfade beziehen sich auf den Speicherort dieser VBS-Datei.",
     'Option Explicit',
     '',
     ...deklarationen.map((name) => `Dim ${name}`),
     ...(benutztDateien ? ['Dim sl_fso'] : []),
+    ...(testToken ? ['Dim sl_basis'] : []),
     ...(helfer.has('SL_Zufall') ? ['Randomize'] : []),
-    'sl_block = "Start"',
-    'SL_Geschuetzt',
-    'WScript.Quit 0',
-    '',
-    'Sub SL_Haupt()',
-    ...(benutztDateien ? ['  Set sl_fso = CreateObject("Scripting.FileSystemObject")'] : []),
-    ...zeilen,
+  ])
+    quelltextHinzufuegen(zeile);
+  quelltextHinzufuegen(`sl_block = ${vbsText(workflow.startId)}`, workflow.startId);
+  quelltextHinzufuegen('SL_Geschuetzt', workflow.startId);
+  quelltextHinzufuegen('WScript.Quit 0');
+  quelltextHinzufuegen('');
+  quelltextHinzufuegen('Sub SL_Haupt()');
+  if (testToken) {
+    for (const zeile of [
+      '  If Not WScript.Arguments.Named.Exists("ScriptLabTestToken") Then SL_Fehler "Die Testfreigabe fehlt."',
+      `  If StrComp(WScript.Arguments.Named("ScriptLabTestToken"), ${vbsText(testToken)}, vbBinaryCompare) <> 0 Then SL_Fehler "Die Testfreigabe stimmt nicht überein."`,
+      '  If Not WScript.Arguments.Named.Exists("ScriptLabBasis") Then SL_Fehler "Der Basisordner für den Test fehlt."',
+      '  sl_basis = CStr(WScript.Arguments.Named("ScriptLabBasis"))',
+      '  If Not (Left(sl_basis, 2) = "\\\\" Or (Len(sl_basis) >= 3 And Mid(sl_basis, 2, 2) = ":\\")) Then SL_Fehler "Der Test benötigt einen vollständigen Basisordnerpfad."',
+    ])
+      quelltextHinzufuegen(zeile, workflow.startId);
+  }
+  if (benutztDateien)
+    quelltextHinzufuegen('  Set sl_fso = CreateObject("Scripting.FileSystemObject")', workflow.startId);
+  for (const zeile of zeilen) quelltextHinzufuegen(zeile.text, zeile.blockId);
+  for (const zeile of [
     'End Sub',
     '',
-    grundHelfer,
-    ...(benutztDateien ? [pfadHelfer] : []),
+    testToken ? testGrundHelfer(testToken) : grundHelfer,
+    ...(benutztDateien
+      ? [pfadHelfer(testToken ? 'sl_basis' : 'sl_fso.GetParentFolderName(WScript.ScriptFullName)')]
+      : []),
     ...Object.entries(helferTexte)
       .filter(([name]) => helfer.has(name))
       .map(([, text]) => text),
     '',
-  ]
-    .join('\n')
-    .replace(/\r?\n/g, '\r\n');
-  return { code, meldungen };
+  ])
+    quelltextHinzufuegen(zeile);
+  const code = vollstaendigeZeilen.join('\r\n');
+  return { code, meldungen, zeilenZuordnung };
 }
 
-const grundHelfer = `' Die Fehlerunterdrückung ist auf diesen einen Prozeduraufruf begrenzt.
+const geschuetzterAufruf = `' Die Fehlerunterdrückung ist auf diesen einen Prozeduraufruf begrenzt.
 ' Ein unerwarteter Fehler verlässt SL_Haupt und beendet das Script sofort.
 Sub SL_Geschuetzt()
   Dim nummer, beschreibung
@@ -282,18 +355,47 @@ Sub SL_Geschuetzt()
   nummer = Err.Number : beschreibung = Err.Description
   On Error GoTo 0
   SL_Systemfehler nummer, beschreibung, "Aktion ausführen"
-End Sub
+End Sub`;
+
+const systemfehlerHelfer = `Sub SL_Systemfehler(nummer, beschreibung, aktion)
+  If nummer <> 0 Then SL_Fehler aktion & ": " & beschreibung
+End Sub`;
+
+const grundHelfer = `${geschuetzterAufruf}
 
 Sub SL_Fehler(meldung)
   MsgBox "Der Workflow wurde beendet." & vbCrLf & CStr(meldung) & vbCrLf & "Baustein: " & sl_block, vbCritical, "ScriptLab"
   WScript.Quit 1
 End Sub
 
-Sub SL_Systemfehler(nummer, beschreibung, aktion)
-  If nummer <> 0 Then SL_Fehler aktion & ": " & beschreibung
-End Sub`;
+${systemfehlerHelfer}`;
 
-const pfadHelfer = `Function SL_Pfad(wert)
+/** Fehlerkanal nur für den ausdrücklich freigegebenen cscript-Test, nie für den normalen Export. */
+function testGrundHelfer(token: string): string {
+  return `${geschuetzterAufruf}
+
+Function SL_TestFeld(wert)
+  Dim text
+  text = Replace(CStr(wert), "%", "%25")
+  text = Replace(text, "|", "%7C")
+  text = Replace(text, vbCr, "%0D")
+  text = Replace(text, vbLf, "%0A")
+  SL_TestFeld = text
+End Function
+
+Sub SL_Fehler(meldung)
+  WScript.StdErr.WriteLine ${vbsText(`SLFEHLER|${token}|`)} & SL_TestFeld(sl_block) & "|" & SL_TestFeld(meldung)
+  WScript.Quit 1
+End Sub
+
+${systemfehlerHelfer}`;
+}
+
+/** Der Ausdruck für den Basisordner stammt ausschließlich aus den zwei festgelegten Generatormodi. */
+function pfadHelfer(
+  basisAusdruck: 'sl_basis' | 'sl_fso.GetParentFolderName(WScript.ScriptFullName)',
+): string {
+  return `Function SL_Pfad(wert)
   Dim pfad, nummer, beschreibung
   pfad = CStr(wert)
   If Len(Trim(pfad)) = 0 Or InStr(pfad, "*") > 0 Or InStr(pfad, "?") > 0 Or InStr(pfad, vbCr) > 0 Or InStr(pfad, vbLf) > 0 Then SL_Fehler "Der Dateipfad ist leer oder enthält unzulässige Platzhalter."
@@ -301,7 +403,7 @@ const pfadHelfer = `Function SL_Pfad(wert)
     ' Vollständiger Laufwerks- oder UNC-Pfad.
   Else
     If InStr(pfad, ":") > 0 Or Left(pfad, 1) = "\\" Or Left(pfad, 1) = "/" Then SL_Fehler "Bitte einen vollständigen oder zum Script relativen Pfad verwenden."
-    pfad = sl_fso.BuildPath(sl_fso.GetParentFolderName(WScript.ScriptFullName), pfad)
+    pfad = sl_fso.BuildPath(${basisAusdruck}, pfad)
   End If
   On Error Resume Next
   SL_Pfad = sl_fso.GetAbsolutePathName(pfad)
@@ -309,8 +411,17 @@ const pfadHelfer = `Function SL_Pfad(wert)
   On Error GoTo 0
   SL_Systemfehler nummer, beschreibung, "Pfad prüfen"
 End Function`;
+}
 
 const helferTexte: Record<string, string> = {
+  SL_Ausgabe: `Sub SL_Ausgabe(text)
+  ' Standardausgabe nur unter dem Konsolenhost; wscript stellt keinen Ausgabestream bereit.
+  If LCase(Right(WScript.FullName, 11)) = "cscript.exe" Then
+    WScript.StdOut.WriteLine CStr(text)
+  Else
+    WScript.Echo CStr(text)
+  End If
+End Sub`,
   SL_Dateiname: `Function SL_Dateiname(wert)
   SL_Dateiname = sl_fso.GetFileName(SL_Pfad(wert))
 End Function`,

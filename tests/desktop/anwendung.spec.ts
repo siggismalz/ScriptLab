@@ -196,6 +196,12 @@ test('beginnt mit einem leeren Start und isoliert den Renderer', async () => {
       'entwurfSpeichernAls',
       'entwurfLoeschen',
       'entwurfSichern',
+      'testLesen',
+      'testStarten',
+      'testStoppen',
+      'testAusgabeLeeren',
+      'testOrdnerWaehlen',
+      'testVerlassen',
     ],
   });
   expect(
@@ -211,8 +217,12 @@ test('beginnt mit einem leeren Start und isoliert den Renderer', async () => {
   await expect(
     seite
       .getByRole('navigation', { name: 'Projektaktionen' })
-      .getByRole('button', { name: /Starten|Testlauf|Ausführen/ }),
-  ).toHaveCount(0);
+      .getByRole('button', { name: 'Testen', exact: true }),
+  ).toBeVisible();
+  const testStand = await seite.evaluate(() => window.scriptlab.testLesen());
+  expect(testStand.ok).toBe(true);
+  if (!testStand.ok) throw new Error(testStand.meldung);
+  expect(testStand.wert.zustand).toMatchObject({ phase: 'bereit', laufId: null, gestartetAm: null, ausgabe: '' });
 });
 
 test('findet, fügt ein, konfiguriert und verbindet eine Nachricht ohne gehaltene Maustaste', async () => {
@@ -256,7 +266,7 @@ test('exportiert echte UTF16LE-BOM-Bytes mit CRLF, Umlauten und Dialogabbruch', 
   const code = bytes.subarray(2).toString('utf16le');
   expect(code).toContain('Option Explicit\r\n');
   expect(code).toContain('Grüße ""Leon""');
-  expect(code).toContain('niemals ausgeführt.');
+  expect(code).toContain('Die Ausführung kann Dateien verändern.');
   expect(code).toContain('C:\\Mein Ordner\\Datei.txt');
   expect(code).not.toMatch(/(?<!\r)\n/);
   await seite.getByRole('button', { name: 'Exportmeldung schließen' }).click();

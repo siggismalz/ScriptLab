@@ -108,7 +108,7 @@ bausteinHinzufuegen(
   'Workflow beenden',
   [],
   [],
-  'Beendet das später außerhalb von ScriptLab gestartete Script mit Erfolg.',
+  'Beendet das ausgeführte Script mit Erfolg.',
 );
 bausteinHinzufuegen(
   'if',
@@ -183,7 +183,7 @@ bausteinHinzufuegen(
       ['Ordner', 'ORDNER'],
     ]),
   ],
-  'Prüft beim späteren Start einen Pfad. Relative Pfade beziehen sich auf den Speicherort der VBS-Datei.',
+  'Prüft beim Scriptstart einen Pfad. Relative Pfade beziehen sich im Export auf den Speicherort der VBS-Datei und im ausdrücklich gestarteten Test auf den gewählten Basisordner.',
   'Boolean',
 );
 bausteinHinzufuegen(
@@ -573,6 +573,17 @@ bausteinHinzufuegen(
   'Number',
 );
 bausteinHinzufuegen(
+  'output',
+  'Text ausgeben',
+  'Ein- und Ausgaben',
+  farbeEingabenAusgaben,
+  'anweisung',
+  'Gib Text aus %1',
+  [eingabe('TEXT', 'String')],
+  [],
+  'Gibt Text mit einem Zeilenende aus: unter cscript.exe in der Textausgabe, unter wscript.exe als Windows-Nachricht. Der Script-Host wird vor dem Zugriff auf den Ausgabestream geprüft. Die Vorschau zeigt nur Code.',
+);
+bausteinHinzufuegen(
   'message',
   'Nachricht anzeigen',
   'Ein- und Ausgaben',
@@ -581,7 +592,7 @@ bausteinHinzufuegen(
   'Zeige eine Nachricht %1',
   [eingabe('TEXT', 'Any')],
   [],
-  'Zeigt beim späteren Start des exportierten Scripts eine Nachricht an. ScriptLab selbst führt sie niemals aus.',
+  'Zeigt beim Ausführen des Scripts eine Windows-Nachricht. Auch unter cscript.exe öffnet dieser Baustein einen Dialog; für reine Textausgabe eignet sich „Text ausgeben“.',
 );
 bausteinHinzufuegen(
   'input',

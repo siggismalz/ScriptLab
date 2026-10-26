@@ -21,6 +21,7 @@ export interface Anweisung {
   zweige: Record<string, Anweisung[]>;
 }
 export interface Workflow {
+  startId: string;
   anweisungen: Anweisung[];
   variablen: string[];
 }
@@ -284,7 +285,7 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
   return {
     workflow: meldungen.some((m) => m.stufe === 'fehler')
       ? null
-      : { anweisungen, variablen: [...variablen].sort() },
+      : { startId: start!.id, anweisungen, variablen: [...variablen].sort() },
     meldungen,
   };
 }
