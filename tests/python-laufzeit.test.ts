@@ -17,6 +17,14 @@ describe('Vertrauensgrenzen der Python-Auswahl ohne Prozessstart', () => {
     const p = neuesProjekt();
     const start = p.editor.blocks!.blocks[0];
     expect(pythonDialogeNoetig(p)).toBe(false);
+    p.editor.blocks!.blocks.push({
+      type: 'sl_input',
+      id: 'unbenutzte-eingabe',
+      inputs: {
+        TEXT: { block: { type: 'sl_text', id: 'unbenutzte-frage', fields: { TEXT: 'Nur ein loser Wert' } } },
+      },
+    });
+    expect(pythonDialogeNoetig(p)).toBe(false);
     start.next = {
       block: {
         type: 'sl_output',
@@ -304,6 +312,53 @@ describe.skipIf(!freigegeben)('Freigegebene feste Python-Proben im Windows-Job',
       pythonVersion: null,
     });
     expect(testAktiv(ende.phase)).toBe(false);
+    expect(await readdir(basis)).toEqual([]);
+  }, 15000);
+
+  test('führt den Hauptablauf trotz unbenutztem Dialogwert ohne Tk-Prüfung aus', async () => {
+    const p = neuesProjekt('python');
+    p.editor.blocks!.blocks[0].next = {
+      block: {
+        type: 'sl_output',
+        id: 'nur-ausgabe',
+        inputs: {
+          TEXT: {
+            block: {
+              type: 'sl_text',
+              id: 'ausgabetext',
+              fields: { TEXT: 'Ohne Tk tatsächlich ausgeführt ä' },
+            },
+          },
+        },
+      },
+    };
+    p.editor.blocks!.blocks.push({
+      type: 'sl_input',
+      id: 'loser-dialog',
+      x: 400,
+      y: 80,
+      inputs: {
+        TEXT: {
+          block: { type: 'sl_text', id: 'lose-frage', fields: { TEXT: 'Dieser Wert wird nicht verwendet.' } },
+        },
+      },
+    });
+    const bedarf: boolean[] = [];
+    dienst = new TestlaufDienst(helper, technisch, (tkinter, signal) => {
+      bedarf.push(tkinter);
+      return pythonPruefen(installation.pfad, { helper, technischeOrdner: technisch, tkinter, signal });
+    });
+    dienst.starten(p, { basisVerzeichnis: basis, zeitlimitSekunden: 5 });
+    await expect.poll(() => testAktiv(dienst!.lesen().phase), { timeout: 12000 }).toBe(false);
+    const ende = dienst.lesen();
+    expect(ende, ende.technischeMeldung ?? ende.meldung).toMatchObject({
+      phase: 'beendet',
+      exitcode: 0,
+      skriptsprache: 'python',
+    });
+    expect(bedarf).toEqual([false]);
+    expect(ende.ausgabe).toBe('Ohne Tk tatsächlich ausgeführt ä\r\n');
+    expect(ende.quelltext).not.toContain('import tkinter');
     expect(await readdir(basis)).toEqual([]);
   }, 15000);
 

@@ -59,7 +59,8 @@ export function pythonDialogeNoetig(projekt: Projekt): boolean {
       besuchen(block.next?.block)
     );
   };
-  return projekt.editor.blocks?.blocks.some(besuchen) ?? false;
+  // Lose Werte gehören nicht zum ausgeführten Hauptablauf und benötigen keine Laufzeitkomponenten.
+  return projekt.editor.blocks?.blocks.some((block) => block.type === 'sl_start' && besuchen(block)) ?? false;
 }
 
 /** Ausschließlich geprüfte Workflows; Host und Argumentstruktur sind nicht vom Renderer wählbar. */

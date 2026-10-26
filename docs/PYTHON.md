@@ -38,6 +38,8 @@ Eine fehlende oder ungeeignete Installation verhindert ausschließlich den betro
 
 Die Dialoge erscheinen als eigene echte Windows-/Tk-Fenster außerhalb des Testpanels. Texteingabe besitzt **OK** und **Abbrechen**; leeres OK und Abbrechen ergeben entsprechend der bisherigen VBS-Eingabe einen leeren Text. Ja/Nein bleiben Wahrheitswerte. Vor Datei-Löschen ist Nein vorbelegt. Eine Ordnerauswahl der Anwendung bestimmt nur den Testkontext und führt keine Workflowaktion aus.
 
+Unverbundene Werte werden gemäß der gemeinsamen Validierung nur als Hinweis angezeigt und gehören nicht zum ausgeführten Hauptablauf. Auch eine solche lose Texteingabe fordert deshalb kein Tk an. Die Komponentenprüfung folgt ausschließlich den Verbindungen ab dem Startbaustein. Ein Regressionstest scheiterte vor der Korrektur und bestand danach; die vollständige Laufzeitdatei bestand mit der tatsächlich Tk-losen CPython-3.15.2-Distribution mit **11/11 Fällen**, einschließlich echter Ausgabe trotz losem Dialogwert. [Der bereinigte Nachweis](../tests/ui/nachweise/python-laufzeit-ohne-tk-abschluss.json) zählt diesen eigenen Lauf getrennt.
+
 ## Testen, Ausgabe und Stoppen
 
 **Testen** erfasst den vollständigen aktuellen Editorstand einschließlich ungespeicherter Änderungen. Validierung, Generator, Teststandkennung, Quelltext und Zeilen-/Blockzuordnung gehören genau zu diesem Stand. Ein später geänderter Workflow macht die alte Ausgabe erkennbar veraltet. Ein Test speichert weder die Projektdatei noch eine vorhandene Exportdatei.

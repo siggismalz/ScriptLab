@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "quelle": "artifacts/python/laufzeit-315-ohne-tk-final.json",
+  "quellHash": "731d20768264ce361e52ed04d0e3e5d58be5495dabed533723f64657bec9dde4",
+  "pythonVersion": "3.15.2",
+  "distribution": "Offizielle embeddable Windows-x64-Distribution ohne Tk",
+  "anzahl": 11,
+  "bestanden": 11,
+  "fehlgeschlagen": 0,
+  "uebersprungen": 0,
+  "geprueft": [
+    "Strukturierte Laufzeitprobe",
+    "Argumente, Pfadbasis und Ausgabe",
+    "Stoppen und EOF im Windows-Job",
+    "Zeitlimit",
+    "Gemeinsamer Python/VBS-Laufplatz",
+    "Abbruch der Vorbereitung",
+    "Unbenutzter Dialogwert verlangt kein Tk und wird nicht ausgeführt",
+    "Echter Dateifehler mit Block- und Zeilenzuordnung",
+    "Windows-Kurzpfad"
+  ],
+  "grenze": "Eigene isolierte Testdaten, keine nativen Dialoge dieser Distribution."
+}
