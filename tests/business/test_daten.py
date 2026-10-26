@@ -34,7 +34,7 @@ def vergleich(spalte, operator, vergleichswert=None):
 class DatenTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="ScriptLab-Daten-Test-")
-        self.basis = Path(self.temp.name)
+        self.basis = Path(self.temp.name).resolve()
         self.meldungen = []
         self.kontext = Kontext(self.basis, "ausfuehren", workflow_hash="fester-datentest", ereignis_callback=self.meldungen.append)
         self.engine = DatenEngine(self.kontext)

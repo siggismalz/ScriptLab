@@ -47,7 +47,7 @@ class TabellenFixture:
 class DokumentTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="ScriptLab-Business-Dokumente-")
-        self.basis = Path(self.temp.name)
+        self.basis = Path(self.temp.name).resolve()
         self.addCleanup(self.temp.cleanup)
 
     def kontext(self, modus="ausfuehren", **optionen):
