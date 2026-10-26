@@ -1,0 +1,16 @@
+node_modules/
+dist/
+release/
+artifacts/
+test-results/
+playwright-report/
+*.log
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.key
+*.pem
+coverage/
+.DS_Store
