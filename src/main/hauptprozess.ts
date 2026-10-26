@@ -238,7 +238,7 @@ async function speichern(unter: boolean): Promise<Dokument | null> {
   const dateistand = await dateistandLesen(ziel);
   await verweisMerken(ziel, { ...dateistand, projekt: stand }, false);
   await entwuerfe.aktivenEntwurfEntfernen(alteKennung);
-  projektAktivieren(stand, ziel, dateistand.hash);
+  projektAktivieren(stand, ziel, dateistand.hash, false, testOptionen.basisVerzeichnis ?? dirname(ziel));
   wartetAufDarstellung = false;
   return dokument();
 }
@@ -263,13 +263,12 @@ function projektAktivieren(
   pfad: string | null,
   hash: string | null,
   ungespeichert = false,
+  basisVerzeichnis = pfad ? dirname(pfad) : null,
 ): void {
-  const gleicherWorkflow = neu.projektKennung === projekt.projektKennung;
   projekt = { ...neu, projektKennung: neu.projektKennung ?? randomUUID() };
   entwuerfe.neueBearbeitung(projekt.projektKennung!);
   projektPfad = pfad;
-  if (!gleicherWorkflow || (!testOptionen.basisVerzeichnis && pfad))
-    testOptionen = { ...testOptionen, basisVerzeichnis: pfad ? dirname(pfad) : null };
+  testOptionen = { ...testOptionen, basisVerzeichnis };
   baselineHash = hash;
   gespeichert = JSON.stringify(projekt);
   gespeichertInhalt = ungespeichert ? '' : projektHash(projekt);
@@ -571,7 +570,8 @@ function ipcEinrichten(): void {
       let entwurf = await entwuerfe.lesen(auswahl.id);
       if (!(await testBeendenVorWechsel())) return null;
       uebernehmen(auswahl.projekt);
-      if (entwurf.id === entwuerfe.status(projekt.projektKennung!).id) {
+      const aktiverEntwurf = entwurf.id === entwuerfe.status(projekt.projektKennung!).id;
+      if (aktiverEntwurf) {
         await entwurfAktuellSichern();
         entwurf = await entwuerfe.lesen(auswahl.id);
       } else if (!(await aenderungenSichern())) return null;
@@ -597,7 +597,13 @@ function ipcEinrichten(): void {
       await verweisMerken(ziel.filePath, gelesen, false);
       await entwuerfe.entfernen(entwurf.id);
       await verworfenenEntwurfBereinigen();
-      projektAktivieren(stand, ziel.filePath, gelesen.hash);
+      projektAktivieren(
+        stand,
+        ziel.filePath,
+        gelesen.hash,
+        false,
+        aktiverEntwurf ? (testOptionen.basisVerzeichnis ?? dirname(ziel.filePath)) : dirname(ziel.filePath),
+      );
       return dokument();
     }),
   );

@@ -172,6 +172,30 @@ test('zeigt einen neuen Testkontext vor dem tatsächlichen Start sichtbar an', a
   expect((await zustand()).ausgabe).toContain('KONTEXT BEWUSST GEPRÜFT');
 });
 
+test('erhält die gewählte Testbasis beim Speichern unter und schlägt beim erneuten Öffnen den Projektordner vor', async () => {
+  const datei = await oeffnen(projektMit(ausgabe('NUR BEWUSST TESTEN')));
+  await app.evaluate(({ dialog }, pfad) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
+  }, basis);
+  await seite.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
+  const ziel = join(ordner, 'Eigene Projektkopie.scriptlab');
+  await app.evaluate(({ dialog }, pfad) => {
+    dialog.showSaveDialog = async () => ({ canceled: false, filePath: pfad });
+  }, ziel);
+  await seite.getByRole('button', { name: 'Projektmenü', exact: true }).click();
+  await seite.getByRole('menuitem', { name: 'Speichern unter', exact: true }).click();
+  await expect.poll(async () => (await stat(ziel).catch(() => null))?.isFile()).toBe(true);
+  const feld = seite.getByRole('textbox', { name: 'Basisordner für den nächsten Test', exact: true });
+  await expect(feld).toHaveValue(basis);
+  await app.evaluate(({ dialog }, pfad) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
+  }, datei);
+  await seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
+  await bereit();
+  await expect(feld).toHaveValue(ordner);
+  expect((await zustand()).laufId).toBeNull();
+});
+
 test('sperrt Bearbeitung, erhält Auswahl und Zoom und stoppt auch mit zugeklapptem Testpanel', async () => {
   const a = ausgabe('VOR-STOPP');
   await oeffnen(projektMit(a, warten(), ausgabe('DARF NICHT ERSCHEINEN')));
@@ -243,7 +267,7 @@ test('lässt höchstens einen Start zu und leert während eines Laufs nur die Au
     ]);
   });
   expect(versuche.filter((r) => r.ok)).toHaveLength(1);
-  await expect.poll(async () => (await zustand()).ausgabe).toContain('EIN LAUF');
+  await ausgabeErwarten('EIN LAUF');
   await seite.getByRole('button', { name: 'Ausgabe leeren', exact: true }).click();
   await expect.poll(async () => (await zustand()).ausgabe).toBe('');
   expect(testAktiv((await zustand()).phase)).toBe(true);
@@ -276,7 +300,7 @@ test('ein ungültiger Workflow und fremde Testoptionen starten keinen Prozess', 
 test('Startseite fragt nach Testende und ersetzt keinen weiterlaufenden Workflow', async () => {
   await oeffnen(projektMit(ausgabe('VOR-WECHSEL'), warten()));
   await seite.getByRole('button', { name: 'Testen', exact: true }).click();
-  await expect.poll(async () => (await zustand()).ausgabe).toContain('VOR-WECHSEL');
+  await ausgabeErwarten('VOR-WECHSEL');
   await app.evaluate(({ dialog }) => {
     dialog.showMessageBox = async () => ({ response: 1, checkboxChecked: false });
   });
@@ -342,7 +366,7 @@ test('Schließen stoppt zuerst den Test und verwirft ungespeicherte Änderungen 
     .fill('SCHLIESSEN UNGESPEICHERT');
   await seite.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
   await seite.getByRole('button', { name: 'Testen', exact: true }).click();
-  await expect.poll(async () => (await zustand()).ausgabe).toContain('SCHLIESSEN UNGESPEICHERT');
+  await ausgabeErwarten('SCHLIESSEN UNGESPEICHERT');
   await app.evaluate(({ dialog }) => {
     dialog.showMessageBox = async (...args: unknown[]) => {
       const o = args.at(-1) as { buttons: string[] };
@@ -358,7 +382,7 @@ test('Schließen stoppt zuerst den Test und verwirft ungespeicherte Änderungen 
 test('ein unerwartetes Ende des eigenen Electron-Hauptprozesses lässt keinen Testprozess zurück', async () => {
   await oeffnen(projektMit(ausgabe('VOR ECHTEM MAIN-ABBRUCH'), warten(), ausgabe('NICHT ERREICHBAR')));
   await seite.getByRole('button', { name: 'Testen', exact: true }).click();
-  await expect.poll(async () => (await zustand()).ausgabe).toContain('VOR ECHTEM MAIN-ABBRUCH');
+  await ausgabeErwarten('VOR ECHTEM MAIN-ABBRUCH');
   await expect.poll(async () => (await zustand()).prozessId).not.toBeNull();
   const pid = (await zustand()).prozessId;
   expect(pid).not.toBeNull();
