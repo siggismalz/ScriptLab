@@ -1,6 +1,6 @@
 # Startseite und lokale Workflowbibliothek
 
-Prüfstand vom 26.10.2026. Die Startseite ist in das bestehende ScriptLab integriert. Der Editor und sein VBS-Export bleiben Bestandteil derselben Anwendung; kein Nutzerworkflow wird ausgeführt.
+Historischer Prüfstand vom 26.10.2026, vor Einführung der bewussten Workflowtests. Die Startseite ist in das bestehende ScriptLab integriert. Der Editor und sein VBS-Export bleiben Bestandteil derselben Anwendung; während der hier dokumentierten Startseitenprüfung wurde kein Nutzerworkflow ausgeführt. Die spätere Funktion **Testen** und ihre eigenen Nachweise stehen in [TESTLAUF.md](TESTLAUF.md).
 
 ## Bestandsaufnahme und Entscheidungen
 
@@ -58,7 +58,7 @@ Der Testlauf fand einen tatsächlich veralteten Verfügbarkeitsstatus nach exter
 
 Zusätzliche Schutzfälle prüfen eine vor dem Öffnen angelegte Konfliktkopie mit anschließender abgebrochener Entwurfsspeicherung sowie echtes verzögertes Schreiben. Während dieser Datei-I/O bleiben Eigenschaften, Blockly und verändernde Tastenkürzel gesperrt. Das erneute Öffnen derselben Datei nach „Speichern“ lädt den gerade geschriebenen Stand, sowohl über den Dateidialog als auch über die Projektbibliothek. Ausgangsdatei, neue Kennung, Index und sichtbare Werte werden unabhängig verglichen.
 
-Der Quellcode- und IPC-Review bestätigt die unveränderte Ausführungsgrenze. Die neuen Dateieinstiege akzeptieren bekannte Kennungen und geprüfte Projekte. Es gibt keine allgemeine Datei-, Shell- oder Prozessschnittstelle. Die beiden Exploreraufrufe zeigen ausschließlich Speicherorte an; der einzige feste Signaturprozess bleibt davon getrennt. Vorschau, Vorlagen, Wiederherstellung und Export starten keine Nutzerworkflows.
+Der damalige Quellcode- und IPC-Review bestätigte die Grenze gegen automatische Ausführung: Die neuen Dateieinstiege akzeptieren bekannte Kennungen und geprüfte Projekte. Es gibt keine allgemeine Datei-, Shell- oder Prozessschnittstelle. Die beiden Exploreraufrufe zeigen ausschließlich Speicherorte an; der feste Signaturprozess bleibt davon getrennt. Vorschau, Vorlagen, Wiederherstellung und Export starten auch nach Einführung des gesonderten Testhosts keine Nutzerworkflows.
 
 Ein vor dem Programmstart angelegter Index mit unbekanntem Schema 2 wird nicht als leerer Bestand ausgegeben. Die Startseite zeigt eine Warnung und „Bestand nicht vollständig geladen“. Die ursprünglichen Indexbytes bleiben unverändert; eine unabhängig gewählte gültige `.scriptlab`-Datei ließ sich trotzdem öffnen, ohne Index oder Projektdatei umzuschreiben.
 

@@ -1,6 +1,6 @@
 # ScriptLab bedienen
 
-ScriptLab erstellt, prüft und speichert Windows-Workflows als Bausteine. Beim Export schreibt die Anwendung eine eigenständige VBS-Datei. **ScriptLab führt den Workflow niemals aus.** Auch eine Vorschau, eine Prüfung, das Öffnen eines Beispiels und das Signieren lösen keine Workflowaktionen aus.
+ScriptLab erstellt, prüft und speichert Windows-Workflows als Bausteine. Beim Export schreibt die Anwendung eine eigenständige VBS-Datei. Nur ein bewusst gestarteter **Test** führt den vollständigen aktuellen Workflow in ScriptLab aus. Dabei werden Dateiaktionen tatsächlich vorgenommen. Bearbeiten, Vorschau, Strukturprüfung, Öffnen von Projekten oder Beispielen, Wiederherstellen, Speichern, Export und Signieren lösen keine Workflowaktionen aus.
 
 Entwickelt von Leon Stolz.
 
@@ -31,6 +31,16 @@ Die vier Bereiche stehen in dieser Reihenfolge:
 
 Der selbstständige Start außerhalb von ScriptLab ist deine eigene Entscheidung. Dafür muss Windows die optionale VBScript-Komponente bereitstellen und deine Richtlinie die Ausführung erlauben. ScriptLab aktiviert keine Windows-Features und ändert keine Sicherheitsrichtlinien.
 
+## Den aktuellen Workflow bewusst testen
+
+Über **Testausgabe** öffnest du das Testpanel, ohne einen Workflow zu starten. Wähle dort mit **Ordner auswählen** einen Basisordner und prüfe **Zeitlimit in Sekunden**. Der Standard ist 120 Sekunden; zulässig sind 1 bis 3600. **Testen** startet immer den vollständigen aktuellen Ablauf, nicht nur den ausgewählten Baustein.
+
+Wurden Basisordner und Zeitlimit für den aktuellen Kontext noch nicht angezeigt, öffnet der erste Startwunsch zunächst das Panel und führt noch nichts aus. Nach dem Prüfen startest du mit einem weiteren bewussten Klick. Wenn du **Testausgabe** bereits bewusst geöffnet, einen Ordner gewählt oder die Optionen geändert hast, ist der Kontext sichtbar gewesen und **Testen** startet direkt. Es gibt keinen zusätzlichen Bestätigungsdialog vor jedem Lauf. Das Speichern desselben Workflows erhält diesen Kontext.
+
+**Der Test führt deinen Workflow auf diesem Computer aus. Dateiänderungen werden tatsächlich vorgenommen.** Der Basisordner bestimmt die Auflösung relativer Pfade; er ist keine Sandbox und begrenzt absolute Pfade nicht. Verwende für einen ersten Dateitest einen eigenen Ordner mit entbehrlichen Testdateien. **Stoppen** beendet den Test und macht bereits erfolgte Änderungen nicht rückgängig.
+
+**Text ausgeben** schreibt in die Testausgabe. Nachrichten, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage bleiben native Windows-Dialoge. Beachte bei einem wartenden Test auch diese Dialoge. Status, Ausgabe, Laufkennung, geprüfter Stand und Fehlerzuordnung stehen im Testpanel. Ein Test ersetzt kein Speichern oder Exportieren. Einzelheiten und tatsächliche Prüfgrenzen stehen in [TESTLAUF.md](TESTLAUF.md).
+
 ## Bausteine verbinden und bearbeiten
 
 Wähle links eine beschriftete Kategorie. **Ein- und Ausgaben** ist anfangs geöffnet. Ziehe einen Baustein am Namen aus der aufgeklappten Liste in den Arbeitsbereich. Die Suchleiste durchsucht alle Kategorien anhand von Name, Kategorie und Hilfe. Treffer zeigen ihre Kategorie; bei „Keine Bausteine gefunden“ kannst du **Suche leeren** wählen. Danach erscheint wieder die zuvor geöffnete Kategorie.
@@ -41,7 +51,7 @@ Ziehe einen verbundenen Baustein heraus, um ihn zu lösen oder neu einzusetzen. 
 
 Das Mausrad, Ziehen am freien Arbeitsbereich, die Bildlaufleisten und die vier Ansichtspfeile verschieben den sichtbaren Ausschnitt. **Strg+Mausrad** zoomt nur über der Arbeitsfläche. In der Palette scrollt das Rad die Bausteinliste. Unten im Arbeitsbereich stehen **Verkleinern**, die aktuelle Prozentanzeige zum Zurücksetzen auf **100 %**, **Vergrößern** und **Alles anzeigen** bereit. Der Zoom reicht von 25 bis 200 Prozent; „Alles anzeigen“ passt den gesamten Workflow ein. Unter **Weitere Funktionen → Einstellungen → UI-Textgröße** lässt sich die Schrift der Bedienelemente getrennt davon vergrößern.
 
-Die Werkzeugleiste enthält **Startseite**, **Neu**, **Öffnen**, **Speichern**, das **Projektmenü**, **Rückgängig**, **Wiederholen**, **Eigenschaften**, **Codevorschau** und **Als VBS exportieren**. **Speichern unter** und **Als Entwurf sichern** liegen im Projektmenü. **Weitere Funktionen** neben dem Export öffnet unter anderem **Einstellungen**, **Hilfe und Anleitungen**, **Über ScriptLab**, **Kopieren** und **Einfügen**. **Duplizieren**, **Kopieren**, **Verschieben** und **Baustein löschen** findest du auch in den Eigenschaften des ausgewählten Bausteins. Blockly bietet zusätzlich das Kontextmenü per rechter Maustaste. Gelöschte Bausteine lassen sich mit **Rückgängig** wiederherstellen.
+Die Werkzeugleiste enthält **Startseite**, **Neu**, **Öffnen**, **Speichern**, das **Projektmenü**, **Rückgängig**, **Wiederholen**, **Eigenschaften**, **Codevorschau**, **Testen**, **Testausgabe** und **Als VBS exportieren**. Während eines Tests erscheint zusätzlich **Stoppen**. **Speichern unter** und **Als Entwurf sichern** liegen im Projektmenü. **Weitere Funktionen** neben dem Export öffnet unter anderem **Einstellungen**, **Hilfe und Anleitungen**, **Über ScriptLab**, **Kopieren** und **Einfügen**. **Duplizieren**, **Kopieren**, **Verschieben** und **Baustein löschen** findest du auch in den Eigenschaften des ausgewählten Bausteins. Blockly bietet zusätzlich das Kontextmenü per rechter Maustaste. Gelöschte Bausteine lassen sich mit **Rückgängig** wiederherstellen; bereits ausgeführte Dateiaktionen eines Tests nicht.
 
 ## Ohne Ziehen einfügen und umordnen
 
@@ -81,7 +91,7 @@ Unvollständige Entwürfe dürfen gespeichert werden. Beim Export müssen Pflich
 
 **Hinweise** in der Statusleiste öffnet die Übersicht. Nach der Prüfung erscheinen verständliche Meldungen sowie Markierungen direkt am zugehörigen Baustein. Ein Klick auf eine Meldung wählt den betroffenen Baustein aus und bringt ihn in den sichtbaren Bereich. Ein Exportversuch mit Fehlern öffnet die Übersicht und führt zum ersten betroffenen Baustein. Ein Hinweis auf eine möglicherweise noch nicht gesetzte Variable sollte vor dem späteren Start geprüft werden.
 
-Die angezeigten Prüfungen kontrollieren die Struktur und die Übersetzbarkeit. Sie prüfen nicht durch Ausprobieren, ob eine Quelldatei auf deinem Computer vorhanden ist. Dateioperationen werden erst beim eigenen Start der exportierten VBS-Datei ausgeführt.
+Die angezeigten Strukturprüfungen kontrollieren Verbindungen und Übersetzbarkeit. Sie probieren keine Dateiaktionen aus. Ob Quellen, Ziele oder Rechte passen, zeigt sich erst bei einer ausdrücklich gestarteten Ausführung: im Test oder außerhalb von ScriptLab. Ein Test mit Dateiaktionen verändert dabei echte Dateien.
 
 ## Projekte und Änderungen erhalten
 
@@ -122,17 +132,17 @@ Auf der Startseite bietet **Beispielworkflows** die Vorlagen **Eine Nachricht an
 | `02-Datei-Backup.scriptlab`    | Prüft eine Testquelle, legt einen Sicherungsordner an und kopiert eine einzelne Datei. Eine vorhandene Sicherungsdatei führt ausdrücklich zu einem Fehler.                                                        |
 | `03-Dateinamenliste.scriptlab` | Liest die Dateiliste eines Testordners und schreibt die Blattnamen einschließlich Endung zeilenweise in eine UTF-8-Textdatei. Unterordner werden nicht durchsucht. Eine vorhandene Ausgabetextdatei wird ersetzt. |
 
-Für einen späteren eigenständigen Start des Backupbeispiels legst du neben der exportierten VBS-Datei selbst `ScriptLab-Testdaten\Backup\Quelle\beispiel.txt` mit beliebigem Testinhalt an. Die Sicherung wird nach `ScriptLab-Testdaten\Backup\Sicherung\beispiel.txt` geschrieben. Wiederholtes Starten überschreibt diese Sicherung nicht.
+Für einen späteren eigenständigen Start des Backupbeispiels legst du neben der exportierten VBS-Datei selbst `ScriptLab-Testdaten\Backup\Quelle\beispiel.txt` mit beliebigem Testinhalt an. Bei einem bewussten Test legst du denselben relativen Pfad im gewählten Basisordner an. Die Sicherung wird nach `ScriptLab-Testdaten\Backup\Sicherung\beispiel.txt` geschrieben. Wiederholtes Starten überschreibt diese Sicherung nicht.
 
-Für das Listenbeispiel legst du neben der exportierten VBS-Datei selbst den Ordner `ScriptLab-Testdaten\Dateiliste\Eingang` mit einigen Testdateien an. Das Ergebnis wird in `ScriptLab-Testdaten\Dateiliste\Dateinamen.txt` geschrieben. Die Namen werden nach Dateiname sortiert. Ein leerer Eingangsordner ergibt nur die Überschrift.
+Für das Listenbeispiel legst du neben der exportierten VBS-Datei selbst den Ordner `ScriptLab-Testdaten\Dateiliste\Eingang` mit einigen Testdateien an. Bei einem bewussten Test verwendest du dafür den gewählten Basisordner. Das Ergebnis wird in `ScriptLab-Testdaten\Dateiliste\Dateinamen.txt` geschrieben. Die Namen werden nach Dateiname sortiert. Ein leerer Eingangsordner ergibt nur die Überschrift.
 
 ## Dateipfade und Textkodierung
 
-Relative Pfade beziehen sich auf den **Speicherort der exportierten VBS-Datei**, nicht auf den Projektordner und nicht auf ein zufälliges Arbeitsverzeichnis. Absolute Laufwerks- und UNC-Pfade sind ebenfalls möglich. Platzhalter wie `*` und `?` sind bei Dateioperationen nicht erlaubt.
+Relative Pfade beziehen sich beim Export auf den **Speicherort der exportierten VBS-Datei** und beim Test auf den im Testpanel sichtbaren **Basisordner**. Der Projektordner ist keine automatische Pfadbasis. Absolute Laufwerks- und UNC-Pfade sind ebenfalls möglich und können beim Test außerhalb des Basisordners wirken. Platzhalter wie `*` und `?` sind bei Dateioperationen nicht erlaubt.
 
 Der VBS-Quelltext wird als UTF-16LE mit BOM und CRLF gespeichert. Das ist unabhängig von der Kodierung der Textdateien, mit denen dein Workflow später arbeitet. Die Blöcke zum Lesen, Schreiben und Ergänzen bieten UTF-8, UTF-16LE und Windows-ANSI. Beim Ergänzen muss eine bestehende Datei bereits dieselbe Kodierung haben. UTF-8 und UTF-16LE werden mit BOM geschrieben; Windows-ANSI verwendet die lokale Windows-Codepage.
 
-Der Baustein „Datei löschen (erweitert)“ ist besonders gekennzeichnet. Standardmäßig fragt **das später gestartete Script** vor dem Löschen nach; „Nein“ ist in dieser Rückfrage vorausgewählt. Diese Rückfrage ist kein Testlauf in ScriptLab.
+Der Baustein „Datei löschen (erweitert)“ ist besonders gekennzeichnet. Standardmäßig fragt **das gestartete Script** vor dem Löschen nach; „Nein“ ist in dieser Rückfrage vorausgewählt. Die Rückfrage erscheint sowohl bei einem bewussten Test als auch beim eigenständigen Start der exportierten Datei. Beim Bearbeiten oder Exportieren wird nichts gelöscht.
 
 ## Optionale Signatur und Updates
 

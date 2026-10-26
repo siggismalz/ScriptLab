@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "quelle": "artifacts/desktop-ergebnis.json",
+  "quellHash": "5bfdcc3d372beb9c0040ae0d82e6a8053641d7ea73a39d7439dd6b05c23108dc",
+  "werkzeug": "Playwright",
+  "status": "bestanden",
+  "gestartetAm": "2026-10-26T17:46:38.060Z",
+  "dauerMillisekunden": 170457,
+  "anzahl": 86,
+  "bestanden": 86,
+  "fehlgeschlagen": 0,
+  "uebersprungen": 0,
+  "instabil": 0
+}

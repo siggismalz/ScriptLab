@@ -1,17 +1,17 @@
 # Architektur von ScriptLab
 
-ScriptLab ist ein Editor und Exportwerkzeug für Windows 11 x64. Die Anwendung führt keine Nutzerworkflows aus. Diese Grenze gilt ebenso für Vorschau, Validierung, Beispiele und Signaturprüfung.
+ScriptLab ist ein Editor und Exportwerkzeug für Windows 11 x64 mit ausdrücklich gestarteten Workflowtests. Nur **Testen** darf den vollständigen aktuellen Workflow ausführen. Öffnen, Wiederherstellen, Bearbeiten, Vorschau, Strukturprüfung, Speichern, Export und Signaturprüfung starten keinen Workflow. Es gibt keine Hintergrundausführung oder Zeitplanung.
 
 ## Aufteilung
 
-| Bereich         | Aufgabe                                                                            | Erlaubte Nebenwirkungen                                                                                                                         |
-| --------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hauptprozess    | Fenster, native Dialoge, Projekte, Index, Entwürfe, Einstellungen, Export          | Gewählte Projektdateien lesen/schreiben; Exportdatei schreiben; lokale Sicherungen, Dateiverweise und Einstellungen im Benutzerprofil verwalten |
-| Preload         | Kleine, fest benannte Brücke zwischen Oberfläche und Hauptprozess                  | Nur ausdrücklich angebotene IPC-Methoden aufrufen                                                                                               |
-| Renderer        | Deutsche React-Oberfläche, Blockly, reine Codevorschau                             | Editorzustand und Darstellung ändern                                                                                                            |
-| Workflowkern    | Projektformat prüfen, Bedeutung aus Verbindungen ableiten, Fehler Blöcken zuordnen | Keine Datei-, Netzwerk- oder Prozesszugriffe                                                                                                    |
-| Generator       | Validiertes Zwischenmodell deterministisch nach VBScript übersetzen                | Nur Text erzeugen                                                                                                                               |
-| Windows-Dienste | Festes Signaturwerkzeug und kontrollierter Anwendungsupdater                       | Zertifikate abfragen, Exportdatei signieren/prüfen; ausdrücklich bestätigtes Anwendungsupdate installieren                                      |
+| Bereich         | Aufgabe                                                                            | Erlaubte Nebenwirkungen                                                                                                                              |
+| --------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hauptprozess    | Fenster, native Dialoge, Projekte, Index, Entwürfe, Einstellungen, Export          | Gewählte Projektdateien lesen/schreiben; Exportdatei schreiben; lokale Sicherungen, Dateiverweise und Einstellungen im Benutzerprofil verwalten      |
+| Preload         | Kleine, fest benannte Brücke zwischen Oberfläche und Hauptprozess                  | Nur ausdrücklich angebotene IPC-Methoden aufrufen                                                                                                    |
+| Renderer        | Deutsche React-Oberfläche, Blockly, reine Codevorschau                             | Editorzustand und Darstellung ändern                                                                                                                 |
+| Workflowkern    | Projektformat prüfen, Bedeutung aus Verbindungen ableiten, Fehler Blöcken zuordnen | Keine Datei-, Netzwerk- oder Prozesszugriffe                                                                                                         |
+| Generator       | Validiertes Zwischenmodell deterministisch nach VBScript übersetzen                | Nur Text erzeugen                                                                                                                                    |
+| Windows-Dienste | Feste Werkzeuge für Signatur und bewusste Tests; kontrollierter Anwendungsupdater  | Zertifikate abfragen, Exportdatei signieren/prüfen; geprüften Workflow ausdrücklich ausführen und stoppen; bestätigtes Anwendungsupdate installieren |
 
 Die genaue Dateiaufteilung ist im Quellverzeichnis `src` nachvollziehbar. Bibliotheken und Blockly-Medien werden lokal ausgeliefert. Bearbeiten, Speichern, Öffnen und unsignierter Export benötigen keine Netzwerkverbindung.
 
@@ -21,7 +21,17 @@ Die `.scriptlab`-Datei enthält die Schemaversion, App-Version, den Namen und di
 
 Beim Prüfen wird aus diesem Zustand die Bedeutung des Workflows abgeleitet. Nur ein validierter Hauptablauf darf exportiert werden. Das Zwischenmodell wird nicht als zweite, unabhängig änderbare Wahrheit gespeichert. Unvollständige Entwürfe können als Projekt erhalten bleiben. Ein Export meldet fehlende Werte, unbekannte Typen, mehrere Startblöcke und unverbundene aktive Blöcke.
 
-Der reine Generator behandelt alle Nutzertexte als Daten. Er bildet Variablennamen auf sichere technische Namen ab, verhindert Kollisionen ohne Beachtung der Groß-/Kleinschreibung und trennt diese von internen Hilfsnamen. Hilfsfunktionen werden nur einmal ausgegeben. Gleicher Workflow und gleiche Optionen ergeben denselben unsignierten Quelltext.
+Der reine Generator behandelt alle Nutzertexte als Daten. Er bildet Variablennamen auf sichere technische Namen ab, verhindert Kollisionen ohne Beachtung der Groß-/Kleinschreibung und trennt diese von internen Hilfsnamen. Hilfsfunktionen werden nur einmal ausgegeben. Gleicher Workflow und gleiche Exportoptionen ergeben denselben unsignierten Exportquelltext. Die zusätzliche Testfassung enthält einen getrennten Laufkontext und ist kein Exportartefakt.
+
+## Bewusst gestarteter Testlauf
+
+`src/windows/testlauf.ts` besitzt den Laufzustand im Hauptprozess. Es übernimmt ausschließlich ein vollständig geprüftes Projekt und begrenzte Testoptionen. Der Renderer übergibt weder beliebigen Quelltext noch einen ausführbaren Programmpfad oder freie Prozessargumente. Das Preload bietet nur `testLesen`, `testStarten`, `testStoppen`, `testAusgabeLeeren`, `testAusgabeKopieren`, `testOrdnerWaehlen` und `testVerlassen`; die allgemeinen IPC-Absender- und Datenprüfungen gelten weiterhin.
+
+Vor dem Start wird der Editorstand kopiert und aus diesem unveränderlichen Stand eine VBS-Testfassung mit Zeilen-/Blockzuordnung erzeugt. Projektkennung, SHA-256-Standkennung, zufällige Lauf-ID, Start-/Endzeit und tatsächlich verwendete Optionen gehören zum Ergebnis. Ansichtsänderungen sind keine neue Workflowbedeutung. Die Testfassung erhält einen zufälligen Kontexttoken und einen ausdrücklich übergebenen absoluten Basisordner. Der normale Export verwendet weiterhin den Speicherordner seiner eigenen VBS-Datei. Der reine Generator führt in beiden Modi nichts aus.
+
+Der fest mitgelieferte Windows-Helper `scripts/laufzeit-host.cs` startet den festgelegten Windows-Host `cscript.exe` mit getrennten Argumenten, Unicodeausgabe und aktivierten nativen Scriptdialogen. Er verwendet keine Shell und ändert keine Dateizuordnung oder Sicherheitsrichtlinie. Windows-Jobobjekt und Kontrollpipe verbinden den Prozess mit seiner Lebensdauer. Stoppen und Zeitlimit warten auf den tatsächlichen Abschluss; das Jobobjekt ist keine Sicherheits-Sandbox. Ein Test läuft mit den Rechten der Anwendung und kann über absolute oder UNC-Pfade außerhalb seines Basisordners wirken.
+
+Die Oberfläche zeigt Status und Textausgabe an und sperrt inhaltliche Änderungen während Vorbereitung, Lauf und Stoppen. Eine Wechselentscheidung bei aktivem Test behandelt erst dessen Ende und anschließend den getrennten Projekt-/Entwurfsschutz. Ein normaler Teststart speichert weder das Projekt noch eine Exportdatei. Nur feste technische Dateien des Laufs werden bereinigt; Workflowergebnisse und der gewählte Basisordner gehören nicht zur Bereinigung. Die Bedienung und der gesonderte Prüfstand stehen in [TESTLAUF.md](TESTLAUF.md).
 
 ## Startseite und lokale Arbeitsstände
 
@@ -47,13 +57,13 @@ Das Signaturwerkzeug hat fest vorgegebene Operationen und Argumente. Es ist kein
 
 Projektdateien sind lesbares JSON in UTF-8. Ein Speichervorgang schreibt zuerst eine temporäre Datei im selben Ordner und ersetzt die Zieldatei erst nach erfolgreichem Schreiben. Abgebrochene Dialoge sind normale Abbrüche. Neuere unbekannte Schemaversionen werden nicht überschrieben.
 
-VBS-Exporte verwenden UTF-16LE mit BOM und CRLF. Die Kodierung von Textdateien, die ein später gestarteter Workflow liest oder schreibt, wird davon getrennt behandelt. Relative Workflowpfade beziehen sich auf den Ordner der exportierten VBS-Datei.
+VBS-Exporte und technische Testfassungen verwenden UTF-16LE mit BOM und CRLF. Die Kodierung von Textdateien, die ein gestarteter Workflow liest oder schreibt, wird davon getrennt behandelt. Relative Workflowpfade beziehen sich beim Export auf den Ordner der VBS-Datei und beim Test auf den sichtbaren Basisordner.
 
 ## Entwicklung und Prüfung
 
 Ein ausschließlich für die Entwicklung vorgesehenes Werkzeug kann den Windows-VBScript-Parser im nicht ausführbaren Zustand `SCRIPTSTATE_INITIALIZED` verwenden. Es wird nicht mit der Anwendung ausgeliefert. Es stellt keine Hostobjekte bereit, schaltet nie in einen ausführbaren Zustand und prüft auch nach dem Parsen den Zustand sowie null Ausführungseintritte. Die praktische Prüfung und ihre Grenzen stehen in [PRUEFPLAN.md](PRUEFPLAN.md).
 
-Der Einsatz der optionalen Windows-VBScript-Komponente ist keine Voraussetzung für ScriptLab. Die Anwendung aktiviert weder Windows-Features noch Sicherheitsrichtlinien. Microsoft hat VBScript abgekündigt; die spätere eigenständige Ausführung hängt von Windows, der verfügbaren Komponente und den Richtlinien ab.
+Die optionale Windows-VBScript-Komponente wird nur für tatsächliche Ausführung und Windows-Parserprüfungen benötigt, nicht für Bearbeiten, Speichern oder Export. Vor dem ersten Test prüft der Laufdienst die Laufzeit mit einer festen technischen Probe. Fehlt sie oder wird sie blockiert, erscheint eine verständliche Fehlermeldung; es werden weder Features aktiviert noch Sicherheitsrichtlinien geändert. Microsoft hat VBScript abgekündigt; Test und eigenständiger Start hängen von Windows, der verfügbaren Komponente und den Richtlinien ab.
 
 ## Offizielle Grundlagen
 

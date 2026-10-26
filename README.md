@@ -2,7 +2,7 @@
 
 Visueller Baukasten für Windows-Automatisierungen. **Entwickelt von Leon Stolz.**
 
-ScriptLab erstellt, prüft und speichert Workflows und exportiert VBScript-Dateien. Es führt keine Workflows aus. Die Codevorschau zeigt ausschließlich Text. Exportierte Dateien führt der Nutzer eigenständig außerhalb der Anwendung aus.
+ScriptLab erstellt, prüft und speichert Workflows und exportiert VBScript-Dateien. Mit **Testen** lässt sich der vollständige aktuelle Workflow bewusst auf diesem Computer ausführen. Dabei entstehen echte Dateiänderungen; der Test ist keine Sandbox. Bearbeiten, Öffnen, Wiederherstellen, Vorschau, Speichern, Export und Signaturprüfung starten keinen Workflow. Exportierte Dateien kannst du weiterhin eigenständig außerhalb der Anwendung ausführen.
 
 Zielsystem der ersten Version: Windows 11 x64. Weitere Windows-Versionen sind derzeit nicht freigegeben. Die Windows-VBScript-Komponente wird zum Bearbeiten und Exportieren nicht benötigt.
 
@@ -19,9 +19,9 @@ Der Windows-Build erzeugt `release/ScriptLab-0.1.0-Setup-x64.exe`. Der NSIS-Inst
 5. Mit **Speichern** ein bearbeitbares `.scriptlab`-Projekt sichern. **Codevorschau** öffnet bei Bedarf unten die schreibgeschützte VBS-Vorschau.
 6. Mit **Als VBS exportieren** eine `.vbs`-Datei speichern.
 
-Danach gilt: **„Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“** ScriptLab besitzt keinen Startknopf, Testlauf oder Zeitplan für Workflows. „Speicherordner anzeigen“ markiert die Datei im Explorer und startet sie nicht.
+Danach gilt: **„Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“** „Speicherordner anzeigen“ markiert die Datei im Explorer und startet sie nicht. Es gibt keine Zeitplanung oder automatische Workflowausführung.
 
-47 Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Die drei Beispiele sind auf der Startseite unter **Beispielworkflows** und im Projektmenü erreichbar. Sie öffnen sich als bearbeitbare Kopien mit dem Namenszusatz **(Kopie)**; die Vorlagen in [beispiele](beispiele) bleiben unverändert. Auch ihr Öffnen und Exportieren führt keine ihrer Aktionen aus.
+48 Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Die drei Beispiele sind auf der Startseite unter **Beispielworkflows** und im Projektmenü erreichbar. Sie öffnen sich als bearbeitbare Kopien mit dem Namenszusatz **(Kopie)**; die Vorlagen in [beispiele](beispiele) bleiben unverändert. Auch ihr Öffnen und Exportieren führt keine ihrer Aktionen aus.
 
 Die linke Palette verbindet Suche und Kategorien in einem verstellbaren Bereich. Eigenschaften und Codevorschau sind anfangs geschlossen. Neben Drag-and-drop gibt es anklickbare Einfügestellen zum Hinzufügen, Verbinden und Verschieben. Das Mausrad verschiebt die Arbeitsfläche; Strg+Mausrad zoomt dort. Die [Designnotiz](docs/DESIGNNOTIZ.md) enthält die tatsächlichen UI-Prüfungen, Bildschirmaufnahmen und offenen Punkte.
 
@@ -29,7 +29,7 @@ Die Startseite bietet **Meine gespeicherten Workflows**, **Entwürfe**, **Beispi
 
 ## Entwicklung
 
-Node.js 24 LTS und npm installieren. Danach im Projektordner:
+Node.js 24 LTS und npm installieren. Der Windows-Build benötigt außerdem den C#-Compiler des vorhandenen Windows-.NET-Frameworks 4; `scripts/laufzeit-host-bauen.mjs` verwendet ausschließlich dessen feste Windows-Pfade und installiert keine Komponenten. Der fertige Installer liefert den kompilierten Testhelper mit aus; Endnutzer benötigen keinen Compiler. Danach im Projektordner:
 
 ```powershell
 npm ci
@@ -54,13 +54,19 @@ npx electron-builder --win nsis --x64 --publish never --config.directories.outpu
 npm run verify:package -- artifacts/startseiten-build-final
 ```
 
+## Einen Workflow testen
+
+Öffne **Testausgabe**, wähle über **Ordner auswählen** einen Basisordner und prüfe das Zeitlimit (Standard: 120 Sekunden). **Testen** startet den vollständigen aktuellen Workflow, einschließlich Dateiaktionen und nativer Windows-Dialoge. **Text ausgeben** schreibt in die Testausgabe; **Nachricht anzeigen** öffnet weiterhin einen Windows-Dialog. Der [Testlaufleitfaden](docs/TESTLAUF.md) erklärt Vorbereitung, Ausgabe, Fehler und die noch offenen Prüfschritte.
+
+**Stoppen** beendet den Test, macht bereits erfolgte Änderungen aber nicht rückgängig. Relative Pfade beziehen sich beim Test auf den sichtbaren Basisordner. Absolute Pfade können auch außerhalb dieses Ordners wirken. Ein Test speichert weder das Projekt noch einen VBS-Export. Die optionale Windows-VBScript-Laufzeit ist für Testläufe erforderlich; ohne sie bleiben Bearbeiten, Speichern und Exportieren möglich.
+
 ## Projekt und Export
 
 `.scriptlab` enthält den bearbeitbaren JSON-Projektzustand. `.vbs` enthält erzeugten Quelltext und ist kein rückimportierbares Projektformat. Unvollständige Entwürfe dürfen gespeichert werden; Fehler verhindern den Export.
 
 Inhaltliche Änderungen werden nach kurzer Eingabepause zusätzlich als lokale Entwürfe gesichert. **Projektmenü → Als Entwurf sichern** stößt dies ausdrücklich an. Eine Entwurfssicherung lässt die Projektdatei unverändert: **Entwurf lokal gesichert** und **Ungespeicherte Änderungen** können gleichzeitig gelten. Vor einem möglichen Verlust stehen **Speichern**, **Als Entwurf behalten**, **Änderungen verwerfen** und **Abbrechen** zur Wahl. Wurde die Ausgangsdatei von außen verändert oder ist sie nicht erreichbar, muss der Arbeitsstand als separate Projektkopie gespeichert werden.
 
-VBS-Quelltext verwendet UTF-16LE mit BOM und CRLF; dies wurde vom Windows-VBScript-Parser ohne Ausführung bestätigt. Relative Dateipfade beziehen sich auf den Speicherort der exportierten VBS-Datei. Textdateien eines Workflows haben eine gesondert ausgewählte Kodierung. Dateiaktionen prüfen Quellen und vorhandene Ziele beim späteren eigenen Start; ihre Regeln stehen in der Bausteinhilfe.
+VBS-Quelltext verwendet UTF-16LE mit BOM und CRLF; dies wurde vom Windows-VBScript-Parser ohne Ausführung bestätigt. Relative Dateipfade beziehen sich beim Export auf den Speicherort der VBS-Datei und beim Test auf den gewählten Basisordner. Textdateien eines Workflows haben eine gesondert ausgewählte Kodierung. Dateiaktionen prüfen Quellen und vorhandene Ziele erst während einer ausdrücklich gestarteten Ausführung; ihre Regeln stehen in der Bausteinhilfe.
 
 Die spätere eigenständige Ausführung benötigt die Windows-VBScript-Komponente, Windows Script Host und die jeweils zugelassenen Windows-Komponenten (`Scripting.FileSystemObject`, für Textkodierungen `ADODB.Stream`). Windows- und Unternehmensrichtlinien können die Ausführung verhindern. VBScript ist von Microsoft abgekündigt. ScriptLab aktiviert keine Features und ändert keine Richtlinien.
 

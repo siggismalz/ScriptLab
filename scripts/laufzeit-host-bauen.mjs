@@ -64,7 +64,7 @@ async function bauen() {
   const metadaten = join(ziel, 'ScriptLab.Testhost.AssemblyInfo.cs');
   await writeFile(
     metadaten,
-    `using System.Reflection;\n[assembly: AssemblyTitle("ScriptLab-Testhost")]\n[assembly: AssemblyCompany("Leon Stolz")]\n[assembly: AssemblyVersion("${version.slice(1).join('.')}.0")]\n[assembly: AssemblyFileVersion("${version.slice(1).join('.')}.0")]\n`,
+    `using System.Reflection;\n[assembly: AssemblyTitle("ScriptLab-Testhost")]\n[assembly: AssemblyProduct("ScriptLab")]\n[assembly: AssemblyCompany("Leon Stolz")]\n[assembly: AssemblyCopyright("Entwickelt von Leon Stolz")]\n[assembly: AssemblyVersion("${version.slice(1).join('.')}.0")]\n[assembly: AssemblyFileVersion("${version.slice(1).join('.')}.0")]\n`,
     'utf8',
   );
   const ausgabe = await promisify(execFile)(

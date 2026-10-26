@@ -297,7 +297,7 @@ await pruefen('Paketversion und Entwicklerangabe', () => {
   return { version: enthalten.version, autor: enthalten.author, einstieg: enthalten.main };
 });
 
-await pruefen('Beispiele und Signaturhelper', async () => {
+await pruefen('Beispiele und Windows-Helfer', async () => {
   const dateien = await dateienSammeln(join(wurzel, 'beispiele'));
   verlangen(
     JSON.stringify(dateien) ===
@@ -317,6 +317,10 @@ await pruefen('Beispiele und Signaturhelper', async () => {
   await byteVergleichen(
     join(wurzel, 'scripts', 'signatur-helper.ps1'),
     join(ressourcen, 'signatur-helper.ps1'),
+  );
+  await byteVergleichen(
+    join(wurzel, 'artifacts/native/ScriptLab.Testhost.exe'),
+    join(ressourcen, 'ScriptLab.Testhost.exe'),
   );
 });
 
@@ -357,6 +361,7 @@ await pruefen('Updatequelle', async () => {
 for (const pfad of [
   join(release, `ScriptLab-${paket.version}-Setup-x64.exe`),
   join(release, 'win-unpacked', 'ScriptLab.exe'),
+  join(ressourcen, 'ScriptLab.Testhost.exe'),
 ]) {
   await pruefen(`Windows-Metadaten: ${basename(pfad)}`, async () => {
     verlangen((await stat(pfad)).isFile(), 'Die Windows-Anwendungsdatei fehlt.');

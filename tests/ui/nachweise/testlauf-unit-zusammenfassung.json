@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "quelle": "artifacts/testlauf/unit-ergebnis.json",
+  "quellHash": "f049d5ca08352aef4956d563d7932b2b88ae159a481641d99707008fa324f93e",
+  "werkzeug": "Vitest",
+  "status": "bestanden",
+  "gestartetAm": "2026-10-26T17:46:06.443Z",
+  "dauerMillisekunden": 25943,
+  "anzahl": 191,
+  "bestanden": 191,
+  "fehlgeschlagen": 0,
+  "uebersprungen": 0
+}

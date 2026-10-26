@@ -1,0 +1,59 @@
+{
+  "angefordert": {
+    "breite": 1280,
+    "hoehe": 720,
+    "uiTextProzent": 100
+  },
+  "geometrie": {
+    "breite": 1282,
+    "hoehe": 721,
+    "dpr": 1.75,
+    "dokumentBreite": 1282,
+    "dokumentHoehe": 721,
+    "canvasHoehe": 356.0000305175781,
+    "panelHoehe": 280,
+    "panelScrollTop": 86.85713958740234,
+    "uiTextskala": "1"
+  },
+  "scrollenVorher": {
+    "hoehe": 222,
+    "inhaltshoehe": 309,
+    "overflow": "auto"
+  },
+  "ausgabeSicht": {
+    "oben": 482.4285888671875,
+    "unten": 590.428596496582,
+    "panelOben": 466.2857360839844,
+    "panelUnten": 688.5714569091797,
+    "text": "Klare UI-Testausgabe ä\r\n"
+  },
+  "testenKnopf": {
+    "links": 841.732177734375,
+    "rechts": 935.3036117553711,
+    "oben": 8,
+    "unten": 44,
+    "fensterbreite": 1282,
+    "fensterhoehe": 721,
+    "textSichtbar": true,
+    "scrollBreite": 92,
+    "clientBreite": 92
+  },
+  "exportKnopf": {
+    "links": 1052.3304443359375,
+    "rechts": 1226.2858123779297,
+    "oben": 8,
+    "unten": 44,
+    "fensterbreite": 1282,
+    "fensterhoehe": 721,
+    "textSichtbar": true,
+    "scrollBreite": 173,
+    "clientBreite": 173
+  },
+  "ergebnis": {
+    "phase": "beendet",
+    "exitcode": 0,
+    "ausgabe": "Klare UI-Testausgabe ä\r\n",
+    "gestartetAm": "2026-10-26T17:48:12.037Z",
+    "beendetAm": "2026-10-26T17:48:12.435Z"
+  }
+}
