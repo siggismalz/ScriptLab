@@ -68,6 +68,8 @@ Dabei wurden zwei echte Fehler im zentralen Dateidienst korrigiert: Windows-Stat
 
 ## Offizielle Grundlagen
 
+Nachtrag vom 27. Oktober 2026: Die vollständige Datenengine-Prüfung besteht mit **57/57 Fällen** (4,091 s). CSV-, JSON- und Parquet-Pfade werden vor Übergabe an DuckDB mit `glob.escape` als wörtliche Pfade behandelt. Zuvor konnten eckige Klammern im gewählten Datei- oder Ordnernamen eine ähnlich benannte falsche Quelle auswählen. Vier zusätzliche Regressionen prüfen 60 Format-, Namens- und Kodierungsvarianten einschließlich technischer Ordner mit Klammern; Originalpfad und Quellenfingerabdruck bleiben unverändert. Lokale Windows-Pfade wurden praktisch geprüft, UNC-Freigaben nicht. Ganze Zahlen über der sicheren JavaScript-Grenze werden in der Vorschau als Text übertragen; XLSX erhält Ganzzahlen mit mehr als 15 Stellen ebenfalls als Text, damit Kennungen nicht gerundet werden.
+
 - [DuckDB 2.0: verzögerte Relations-API](https://duckdb.org/docs/2.0/clients/python/relational_api)
 - [DuckDB 2.0: CSV-Import](https://duckdb.org/docs/2.0/data/csv/overview)
 - [DuckDB 2.0: JSON](https://duckdb.org/docs/2.0/data/json/overview)

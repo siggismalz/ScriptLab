@@ -7,6 +7,7 @@ gebunden; Bezeichner werden gegen das jeweilige Schema geprüft und zitiert.
 from __future__ import annotations
 
 import csv
+import glob
 import json
 import math
 import re
@@ -42,6 +43,12 @@ class _Plan:
 
 def _bezeichner(name: str) -> str:
     return '"' + text(name, "Spaltenname").replace('"', '""') + '"'
+
+
+def _duckdb_literaler_pfad(pfad: Path) -> str:
+    # Die read_*-Funktionen interpretieren auch gebundene Dateipfade als Globs.
+    # Klammern gehören hier zum gewählten Namen, nicht zu einem Suchmuster.
+    return glob.escape(str(pfad))
 
 
 def _typ(wert: Any) -> str:
@@ -245,10 +252,10 @@ class DatenEngine:
             elif format == "CSV":
                 ergebnis = self._csv_lesen(quelle, optionen, finger)
             elif format == "PARQUET":
-                ergebnis = self._neu("SELECT * FROM read_parquet(?)", [str(quelle)], [finger])
+                ergebnis = self._neu("SELECT * FROM read_parquet(?)", [_duckdb_literaler_pfad(quelle)], [finger])
             else:
                 art = "newline_delimited" if optionen.get("zeilenformat", False) else "array"
-                ergebnis = self._neu("SELECT * FROM read_json(?,format=?,sample_size=-1,ignore_errors=false)", [str(quelle), art], [finger])
+                ergebnis = self._neu("SELECT * FROM read_json(?,format=?,sample_size=-1,ignore_errors=false)", [_duckdb_literaler_pfad(quelle), art], [finger])
                 if any(any(s in sp.typ for s in ("STRUCT", "MAP", "[]", "BLOB")) for sp in ergebnis.spalten):
                     raise DatenFehler("JSON muss eine Tabelle mit einfachen Werten enthalten.")
             self._pruefe_quellen(self._plan(ergebnis))
@@ -289,7 +296,7 @@ class DatenEngine:
             namen = [f"Spalte{i+1}" for i in range(len(erste))]
         if namen is not None and (len({n.casefold() for n in namen}) != len(namen) or any(not n.strip() for n in namen)):
             raise DatenFehler("CSV-Spaltennamen müssen gefüllt und eindeutig sein.")
-        parameter = [str(eingang), trenner, header, nullwert, policy != "STOPP", {n:"VARCHAR" for n in namen}]
+        parameter = [_duckdb_literaler_pfad(eingang), trenner, header, nullwert, policy != "STOPP", {n:"VARCHAR" for n in namen}]
         # Der DuckDB-Standardpuffer kann pro parallelem Leser rund 32 MiB
         # beanspruchen. Ein fester einzelner 8-MiB-Leser lässt auch unter einem
         # bewusst gewählten 64-MB-DB-Budget noch Platz für die Verarbeitung.

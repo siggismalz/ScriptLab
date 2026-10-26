@@ -485,5 +485,75 @@ class DatenTests(unittest.TestCase):
             self.assertEqual(wb.active["A2"].data_type,"s")
         finally: wb.close()
 
+    @staticmethod
+    def _pfad_fixture(format, pfad, herkunft):
+        pfad.parent.mkdir(parents=True, exist_ok=True)
+        if format == "CSV":
+            pfad.write_text(f"Herkunft\n{herkunft}\n",encoding="utf-8",newline="")
+        elif format == "JSON":
+            pfad.write_text(json.dumps([{"Herkunft":herkunft}]),encoding="utf-8")
+        else:
+            import duckdb
+            with duckdb.connect(config={"threads":"1"}) as con:
+                con.execute("COPY (SELECT ? AS Herkunft) TO ? (FORMAT PARQUET)",[herkunft,str(pfad)])
+
+    def _klammerpfade_pruefen(self, ordner):
+        muster = (("[1]","1"),("[Kunden]","K"),("[a-c]","b"),("[!a]","b"),
+                  ("[]",""),("[[1]]","1"),("[",""),("]",""),("'[1]","'1"))
+        for format,endung in (("CSV","csv"),("JSON","json"),("PARQUET","parquet")):
+            for nummer,(literal,ersatz) in enumerate(muster):
+                with self.subTest(format=format,literal=literal,ordner=ordner):
+                    if ordner:
+                        quelle=self.basis/f"Ordner{nummer}{literal}"/f"Daten.{endung}"
+                        koeder=self.basis/f"Ordner{nummer}{ersatz}"/f"Daten.{endung}"
+                    else:
+                        quelle=self.basis/f"Daten{nummer}{literal}.{endung}"
+                        koeder=self.basis/f"Daten{nummer}{ersatz}.{endung}"
+                    self._pfad_fixture(format,quelle,"RICHTIG")
+                    self._pfad_fixture(format,koeder,"FALSCH")
+                    vorher={p:p.read_bytes() for p in (quelle,koeder)}
+                    t=self.engine.importieren(format,str(quelle))
+                    self.assertEqual(self.zeilen(t),[("RICHTIG",)])
+                    self.assertEqual(self.engine.vorschau(t)["zeilen"],[["RICHTIG"]])
+                    self.assertEqual(self.engine.quellpfade(t),(quelle.resolve(),))
+                    self.assertEqual({p:p.read_bytes() for p in vorher},vorher)
+
+    def test_csv_json_parquet_dateinamen_mit_klammern_sind_keine_globs(self):
+        self._klammerpfade_pruefen(False)
+
+    def test_csv_json_parquet_ordnernamen_mit_klammern_sind_keine_globs(self):
+        self._klammerpfade_pruefen(True)
+
+    def test_technischer_root_mit_klammern_liest_nur_die_gewaehlte_quelle(self):
+        with Kontext(self.basis,"ausfuehren",technischer_ordner=self.basis/"Technik[1]") as k:
+            engine=DatenEngine(k)
+            k.dienste["daten"]=engine
+            for format,endung in (("CSV","csv"),("JSON","json"),("PARQUET","parquet")):
+                with self.subTest(format=format):
+                    quelle=k.arbeitsordner/f"Quelle.{endung}"
+                    koeder=Path(str(quelle).replace("Technik[1]","Technik1"))
+                    self._pfad_fixture(format,quelle,"RICHTIG")
+                    self._pfad_fixture(format,koeder,"FALSCH")
+                    t=engine.importieren(format,str(quelle))
+                    self.assertEqual(list(engine.zeilen(t)),[("RICHTIG",)])
+                    self.assertEqual(engine.quellpfade(t),(quelle.resolve(),))
+
+    def test_csv_umkodierung_und_fehlzeilen_bleiben_bei_klammerpfaden_korrekt(self):
+        with Kontext(self.basis,"ausfuehren",technischer_ordner=self.basis/"Umkodierung[Kunden]") as k:
+            engine=DatenEngine(k)
+            k.dienste["daten"]=engine
+            for kodierung,codec in (("CP1252","cp1252"),("UTF16","utf-16")):
+                with self.subTest(kodierung=kodierung):
+                    quelle=self.basis/f"Quelle[{kodierung}].csv"
+                    quelle.write_text("Name\nGrüße\n",encoding=codec,newline="")
+                    t=engine.importieren("CSV",str(quelle),{"kodierung":kodierung})
+                    self.assertEqual(list(engine.zeilen(t)),[("Grüße",)])
+            quelle=self.basis/"Fehlzeilen[1].csv"
+            koeder=self.basis/"Fehlzeilen1.csv"
+            quelle.write_text("Name;Wert\nRICHTIG;1\nzu;viele;Spalten\n",encoding="utf-8",newline="")
+            koeder.write_text("Name;Wert\nFALSCH;2\n",encoding="utf-8",newline="")
+            t=engine.importieren("CSV",str(quelle),{"fehlzeilen":"AUSLASSEN_MIT_BERICHT"})
+            self.assertEqual(list(engine.zeilen(t)),[("RICHTIG","1")])
+
 if __name__ == "__main__":
     unittest.main()
