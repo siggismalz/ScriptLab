@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "messart": "Isolierter synthetischer 1000-CSV-Dateistapel mit eigenem gebundenem Windows-Job",
+  "erstellt_am": "2026-10-26T22:48:59.8683886Z",
+  "originalbericht": "artifacts/business-beispiele/20261026-234840-ace9035a/pruefung.json",
+  "originalbericht_sha256": "bffd030f4780cac39fce04ddf80795fc5ebeb3c0413010613bd4a2c05a0cf16c",
+  "quell_sha256": {
+    "scripts/business-beispiele-pruefen.py": "1b0fc5ebf25a57228157f621ca7d65aadd8840e2d00939cdb40d2271a67f5e80",
+    "laufzeit/requirements-business.lock": "2eae08ad31ba0543dc3029c6d9167ad734ed990a536dd8f66c74ed600506d371",
+    "laufzeit/scriptlab_business/ausfuehrung.py": "fb732f3a3d1dbd94cbf668c6644fb277621920f2ab0fa2645de5fc863acfc66a",
+    "laufzeit/scriptlab_business/kontext.py": "b456f61e886e0779a13794a301d8e30cba70c830b555569b4f7b6a4f8cea41db",
+    "laufzeit/scriptlab_business/dateien.py": "e8489c9ddf35d207398ffbdfd61d71690c3d2ab7fc96cca5b26a602da5107890",
+    "laufzeit/scriptlab_business/daten.py": "214ffd78358441caf39f78ab41044d9b0dc47bf12b0dc9930a368f309cadecd4",
+    "laufzeit/scriptlab_business/dokumente.py": "b87600f946590008f48a4845cbf6a46d7aa36dbc38374f7d1bc9b4cdfb38045e",
+    "laufzeit/scriptlab_business/typen.py": "60f1c6c9a0686a82074040f0ec9f6b559bc668101e5c9112ed0ffcb9003cd2bd"
+  },
+  "benchmark": {
+    "dateien": 1000,
+    "publizierte_dateien": 2000,
+    "dauer_sekunden": 15.488,
+    "eingabebytes": 53000,
+    "alle_ausgaben_und_archive_hashgleich": true,
+    "zeitlimit_sekunden": 120,
+    "grenzen": {
+      "max_ausgaben": 3000,
+      "max_temp_bytes": 4294967296,
+      "duckdb_speicher": "256MB"
+    },
+    "rechner": {
+      "cpu": "13th Gen Intel(R) Core(TM) i7-13700",
+      "logische_prozessoren": 24,
+      "physischer_ram_bytes": 68333776896,
+      "windows": "10.0.26200",
+      "architektur": "x64",
+      "python": "3.12.6",
+      "pakete": {
+        "duckdb": "2.0.0",
+        "openpyxl": "3.1.5",
+        "python-docx": "1.2.0",
+        "reportlab": "5.1.0",
+        "pypdf": "6.21.2",
+        "et-xmlfile": "2.0.0",
+        "lxml": "6.1.3",
+        "typing-extensions": "4.16.0",
+        "pillow": "13.0.0",
+        "charset-normalizer": "3.5.2",
+        "defusedxml": "0.7.1"
+      }
+    },
+    "messung": {
+      "working_set_bytes": 44675072,
+      "os_peak_working_set_bytes": 44675072,
+      "private_bytes": 33857536,
+      "sampled_max_working_set_bytes": 44621824,
+      "sampled_max_private_bytes": 33910784,
+      "sampled_max_temp_und_staging_bytes": 53,
+      "sampled_max_context_temp_bytes": 0,
+      "sampled_max_staging_bytes": 53,
+      "stichproben": 443,
+      "soll_abstand_ms": 25,
+      "max_beobachteter_abstand_ms": 46.531,
+      "speicher_messumfang": "Eigener gebundener Prüfprozess; OS-Working-Set-Peak seit Prozessbeginn, Private Bytes als Stichprobe.",
+      "temp_messumfang": "Privater TEMP/TMP/TMPDIR des eigenen Jobs inklusive Bibliotheken und Kontext plus .scriptlab-Staging unter der eigenen Stapelkopie; keine fremden Tempordner.",
+      "grenze": "Stichproben können kurzlebige Spitzen übersehen; beobachtete Temp-/Private-Maxima sind keine garantierten absoluten Peaks."
+    },
+    "isolierter_benchmark_ohne_cde_vorlauf": true
+  },
+  "beispielquellen_unveraendert": true,
+  "pruefgrenze": "Dieser neue Job misst den Dateistapel; Dokumentinhalt und Bildpruefungen sind separat in BUSINESS-BEISPIELE-PRUEFUNG.md erfasst. Stichproben sind keine garantierten absoluten Temp-/Private-Peaks."
+}

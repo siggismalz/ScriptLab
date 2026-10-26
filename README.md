@@ -2,13 +2,15 @@
 
 Visueller Baukasten für Windows-Automatisierungen. **Entwickelt von Leon Stolz.**
 
-ScriptLab erstellt, prüft und speichert Workflows und exportiert Python- oder VBScript-Dateien. Die Sprache wird beim Erstellen gewählt und bleibt für das Projekt fest. Mit **Testen** lässt sich der vollständige aktuelle Workflow bewusst auf diesem Computer ausführen. Dabei entstehen echte Dateiänderungen; der Test ist keine Sandbox. Bearbeiten, Öffnen, Wiederherstellen, Vorschau, Speichern, Export und Signaturprüfung starten keinen Workflow. Exportierte Dateien kannst du weiterhin eigenständig außerhalb der Anwendung ausführen.
+ScriptLab erstellt, prüft und speichert Workflows für Windows. **Python ist die Hauptsprache für Geschäftsabläufe**; die 48 gemeinsamen Grundbausteine bleiben auch für VBScript verfügbar. Zusätzlich bietet Python 47 Business-Bausteintypen für Tabellen, Dateien, Excel, Word und PDF. Die Sprache wird beim Erstellen gewählt und bleibt für das Projekt fest.
+
+Ein bewusst gestarteter Test kann den vollständigen aktuellen Workflow auf diesem Computer ausführen und echte Dateien verändern. Er ist keine Sandbox. Für Business-Abläufe gibt es zusätzlich eine begrenzte **Datenvorschau** und einen **Prüflauf ohne fachliche Zieländerungen**. Öffnen, Wiederherstellen, Bearbeiten, Codevorschau, Speichern, Export und Signaturprüfung starten keine Verarbeitung. Exportierte Scripts kannst du eigenständig außerhalb der Anwendung ausführen.
 
 Zielsystem der ersten Version: Windows 11 x64. Weitere Windows-Versionen sind derzeit nicht freigegeben. Bearbeiten, Speichern und Exportieren benötigen weder eine Python-Installation noch die Windows-VBScript-Komponente.
 
 ## Installation
 
-Der Windows-Build erzeugt `release/ScriptLab-0.1.0-Setup-x64.exe`. Der NSIS-Installer installiert für den aktuellen Nutzer; Node.js ist auf dem Zielrechner nicht erforderlich. Die erste lokal gebaute Version ist ein unsignierter Testbuild. Ein produktives GitHub Release wird erst mit eingerichteter Entwickler-Signatur veröffentlicht. Der tatsächliche Prüfstand steht in [docs/ABNAHME.md](docs/ABNAHME.md).
+Der Windows-Build erzeugt `release/ScriptLab-<Paketversion>-Setup-x64.exe`; maßgeblich ist die Version in `package.json`. Der NSIS-Installer installiert für den aktuellen Nutzer; Node.js ist auf dem Zielrechner nicht erforderlich. Ein unsignierter Testinstaller ist kein produktives Release. Ein produktives GitHub Release wird erst mit eingerichteter Entwickler-Signatur veröffentlicht. Der aktuelle Business-Prüfstand steht in [docs/BUSINESS-ABNAHME.md](docs/BUSINESS-ABNAHME.md); [docs/ABNAHME.md](docs/ABNAHME.md) bewahrt die historischen 0.1.0-Nachweise.
 
 ## Ein erster Workflow
 
@@ -23,7 +25,17 @@ Bei der ersten Erstellung ist keine Sprache vorausgewählt. Später schlägt Scr
 
 Danach gilt: **„Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“** „Speicherordner anzeigen“ markiert die Datei im Explorer und startet sie nicht. Es gibt keine Zeitplanung oder automatische Workflowausführung.
 
-Alle 48 Bausteintypen stehen in beiden Sprachen zur Verfügung und decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Sechs Beispiele – drei je Sprache – sind auf der Startseite unter **Beispielworkflows** und im Projektmenü erreichbar. Sie öffnen sich als bearbeitbare Kopien mit dem Namenszusatz **(Kopie)**; die Vorlagen in [beispiele](beispiele) bleiben unverändert. Auch ihr Öffnen und Exportieren führt keine ihrer Aktionen aus.
+Die 48 gemeinsamen Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Die sechs Grundbeispiele – drei je Sprache – und fünf zusätzliche Python-Business-Beispiele sind auf der Startseite unter **Beispielworkflows** und im Projektmenü erreichbar. Sie öffnen sich als bearbeitbare Kopien mit neuer Kennung und **(Kopie)** im Namen. Die Vorlagen in [beispiele](beispiele) bleiben unverändert.
+
+## Ein erster Geschäftsablauf
+
+1. Unter **Einstellungen → Python-Installation** einen geeigneten CPython-Interpreter prüfen. Die Grundinstallation wird nicht automatisch installiert.
+2. Unter **Business-Laufzeit** entweder eine vorbereitete Umgebung prüfen, **Eigene Umgebung online einrichten** oder **Offline-Paketordner verwenden** wählen. Nur diese bewusste Einrichtung installiert den festen, hashgepinnten Paketsatz in eine neue eigene virtuelle Umgebung. Ein Workflowstart installiert niemals Pakete.
+3. Das Beispiel **Monatliche Auswertung** als Vorlage verwenden. ScriptLab kopiert ausschließlich seine synthetischen Testdateien in einen privaten Beispielordner und bindet die Pfadparameter absolut daran. Speichern, erneutes Öffnen und Entwurfwiederherstellung verlieren diesen Bezug nicht. Für produktive Daten musst du Quellen und Ziele bewusst ändern.
+4. **Testausgabe** öffnen, Parameter und **Quellen, Ziele und Umfang** prüfen. Zunächst **Datenvorschau**, danach **Prüflauf ohne Zieländerungen** wählen. Erst **Ausführen · echte Dateiänderungen** verarbeitet die gewählten Daten und schreibt die fachlichen Ergebnisse.
+5. Das bearbeitbare Projekt speichern. **Business-Paket exportieren** erzeugt ein eigenständiges ZIP mit Python-Script, Business-Modulen, fester Lockdatei, Parametervorlage, Anleitung und Vera-Schrift samt Lizenz. Eigene Vorlagen, Bilder oder Schriften werden nur nach ausdrücklicher Auswahl beigefügt; Geschäftsdaten und Laufprotokolle werden nicht automatisch kopiert.
+
+Die fünf Beispiele behandeln **Monatsauswertung**, **Bestellungen mit Stammdaten**, **Word-Bestellvorschlag**, **PDF-Dokumenteingang** und **CSV-Dateistapel mit Wiederaufnahme**. Die [Business-Bedienung](docs/BUSINESS-BEDIENUNG.md) führt durch Einrichtung, Modi und Parameter. [Tabellenverarbeitung](docs/BUSINESS-DATEN.md), [Dokumente und Dateisicherheit](docs/BUSINESS-DOKUMENTE.md) und [Business-Laufzeit](docs/BUSINESS-LAUFZEIT.md) beschreiben den tatsächlichen Umfang und seine Grenzen.
 
 Die linke Palette verbindet Suche und Kategorien in einem verstellbaren Bereich. Eigenschaften und Codevorschau sind anfangs geschlossen. Neben Drag-and-drop gibt es anklickbare Einfügestellen zum Hinzufügen, Verbinden und Verschieben. Das Mausrad verschiebt die Arbeitsfläche; Strg+Mausrad zoomt dort. Die [Designnotiz](docs/DESIGNNOTIZ.md) enthält die tatsächlichen UI-Prüfungen, Bildschirmaufnahmen und offenen Punkte.
 
@@ -64,7 +76,7 @@ npm run verify:package -- artifacts/startseiten-build-final
 
 ## Python einrichten und selbst ausführen
 
-Unter **Einstellungen → Python-Installation** lässt sich ein konkreter Interpreter auswählen und erneut prüfen. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. ScriptLab zeigt den tatsächlichen Status, die Version und den Interpreterpfad; es lädt oder installiert weder Python noch Pakete. Die 48 vorhandenen Bausteintypen benötigen keine zusätzlichen Python-Pakete. Dialogbausteine benötigen `tkinter`, dessen Verfügbarkeit erst bei Bedarf geprüft wird. Abläufe ohne Dialoge setzen `tkinter` nicht voraus.
+Unter **Einstellungen → Python-Installation** lässt sich ein konkreter Interpreter auswählen und erneut prüfen. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. ScriptLab zeigt den tatsächlichen Status, die Version und den Interpreterpfad; es installiert keine Python-Grundinstallation und keine Pakete automatisch. Die 48 gemeinsamen Grundbausteintypen benötigen keine zusätzlichen Python-Pakete. Die zusätzlichen Business-Bausteine verwenden den ausdrücklich eingerichteten festen Paketsatz. Dialogbausteine benötigen `tkinter`, dessen Verfügbarkeit erst bei Bedarf geprüft wird. Abläufe ohne Dialoge setzen `tkinter` nicht voraus.
 
 Ein exportiertes Python-Script kann in PowerShell mit dem vollständigen Pfad des eigenen Interpreters gestartet werden. Die folgenden Beispielpfade müssen durch die tatsächlich vorhandenen Pfade ersetzt werden:
 
@@ -76,13 +88,15 @@ Ein exportiertes Python-Script kann in PowerShell mit dem vollständigen Pfad de
 
 ## Projekt und Export
 
-`.scriptlab` enthält den bearbeitbaren JSON-Projektzustand in Schema 2 einschließlich `skriptsprache`, stabiler Variablen-IDs und Ansicht. Alte Projekte in Schema 1 werden beim Laden als VBS-Projekte übernommen; ihre Quelldateien werden dabei nicht überschrieben. `.py` und `.vbs` enthalten erzeugten Quelltext und sind keine rückimportierbaren Projektformate. Unvollständige Entwürfe dürfen gespeichert werden; Fehler verhindern den Export.
+`.scriptlab` enthält den bearbeitbaren JSON-Projektzustand in Schema 3 einschließlich `skriptsprache`, stabiler Variablen-IDs, Ansicht, Parameterdefinitionen und nicht geheimer Test-/Echt-Parametersätze. Alte Projekte in Schema 1 werden als VBS übernommen; Schema 2 behält seine Sprache und erhält die leeren Business-Angaben. Das Laden überschreibt keine Quelldatei. `.py`, `.vbs` und Business-ZIPs sind keine rückimportierbaren Projektformate. Unvollständige Entwürfe dürfen gespeichert werden; Fehler verhindern den Export.
 
 Inhaltliche Änderungen werden nach kurzer Eingabepause zusätzlich als lokale Entwürfe gesichert. **Projektmenü → Als Entwurf sichern** stößt dies ausdrücklich an. Eine Entwurfssicherung lässt die Projektdatei unverändert: **Entwurf lokal gesichert** und **Ungespeicherte Änderungen** können gleichzeitig gelten. Vor einem möglichen Verlust stehen **Speichern**, **Als Entwurf behalten**, **Änderungen verwerfen** und **Abbrechen** zur Wahl. Wurde die Ausgangsdatei von außen verändert oder ist sie nicht erreichbar, muss der Arbeitsstand als separate Projektkopie gespeichert werden.
 
 Python-Quelltext verwendet UTF-8 ohne BOM und CRLF. VBS-Quelltext verwendet UTF-16LE mit BOM und CRLF; die bisherige VBS-Kodierung wurde vom Windows-VBScript-Parser ohne Ausführung bestätigt. Relative Dateipfade beziehen sich beim Export auf den Speicherort der jeweiligen Scriptdatei und beim Test auf den gewählten Basisordner. Textdateien eines Workflows haben eine gesondert ausgewählte Kodierung. Dateiaktionen prüfen Quellen und vorhandene Ziele erst während einer ausdrücklich gestarteten Ausführung; ihre Regeln stehen in der Bausteinhilfe.
 
-Beide Exportformate funktionieren ohne ScriptLab oder Node.js beim Empfänger. VBS benötigt die Windows-VBScript-Komponente, Windows Script Host und die jeweils zugelassenen Windows-Komponenten (`Scripting.FileSystemObject`, für Textkodierungen `ADODB.Stream`). Python benötigt die passende CPython-Installation; seine Windows-Hilfen verwenden nur die Standardbibliothek und lokale Windows-APIs, keine VBScript-Engine und keinen COM-Server. Windows- und Unternehmensrichtlinien können die Ausführung verhindern. VBScript ist von Microsoft abgekündigt. ScriptLab aktiviert keine Features und ändert keine Richtlinien.
+Alle Exportvarianten funktionieren ohne ScriptLab oder Node.js beim Empfänger. Gewöhnliche Python-Workflows bleiben einzelne `.py`-Dateien mit Standardbibliothek und lokalen Windows-APIs. Ein Business-Workflow benötigt zusätzlich die Module aus seinem ZIP und eine vorbereitete Umgebung mit den festgelegten Paketen; sein Start installiert nichts. VBS benötigt die Windows-VBScript-Komponente, Windows Script Host und die jeweils zugelassenen Windows-Komponenten (`Scripting.FileSystemObject`, für Textkodierungen `ADODB.Stream`). Windows- und Unternehmensrichtlinien können die Ausführung verhindern. VBScript ist von Microsoft abgekündigt. ScriptLab aktiviert keine Features und ändert keine Richtlinien.
+
+Business-Ausgaben werden über eigene Zwischenfassungen und ausdrückliche Konfliktregeln veröffentlicht. Ein Journal hilft beim bewussten Fortsetzen, garantiert aber keine allgemeine Genau-einmal-Verarbeitung und keinen Rollback. Dokumenttabellen sind auf 20.000 Zellen begrenzt; Journale über 16 MiB werden beim erneuten Einlesen abgewiesen. DuckDBs Speicherbudget begrenzt nicht den gesamten Python-Prozess. Ein breites Millionen-CSV-Profil scheiterte im dokumentierten 64-MB-Profil; das schmalere Profil bestand. Excel-Formeln werden nicht berechnet, PDF-Scans nicht per OCR gelesen und Office-Dokumente nicht über Office konvertiert. Die [Lastnachweise](docs/BUSINESS-LEISTUNG-DATEN.md) und [Dokumentbeispiele](docs/BUSINESS-BEISPIELE-PRUEFUNG.md) trennen diese Prüfungen von UI- und Installerabnahme.
 
 ## Signaturen und Updates
 
@@ -98,12 +112,14 @@ Automatische Updateprüfung ist standardmäßig aus. Download und Installation e
 
 - [Architektur](docs/ARCHITEKTUR.md): geprüfte IPC-Schnittstellen, isolierter Renderer, Datenmodell und Generator.
 - [Versionen und offizielle Quellen](docs/VERSIONEN.md).
-- [Prüfplan](docs/PRUEFPLAN.md) und [tatsächlicher Abnahmestand](docs/ABNAHME.md).
+- [Prüfplan](docs/PRUEFPLAN.md), [Business-Abnahmestand](docs/BUSINESS-ABNAHME.md) und [historische Abnahme](docs/ABNAHME.md).
 
-Anwendungscode und Hilfen sind deutsch. Einstellungen, der bekannte Dateiverweise enthaltende Index `projektbibliothek.json` und lokale Sicherungen unter `entwuerfe\<UUID>.json` liegen außerhalb des Installationsordners im Electron-Nutzerverzeichnis (`%APPDATA%\ScriptLab`). Projektdateien werden an selbst gewählten Orten gespeichert. Die Bibliotheken und Anleitungen werden lokal ausgeliefert. Bearbeiten, Projektspeicherung, Hilfe und unsignierter Export benötigen kein Netzwerk.
+Anwendungscode und Hilfen sind deutsch. Einstellungen, der bekannte Dateiverweise enthaltende Index `projektbibliothek.json` und lokale Sicherungen unter `entwuerfe\<UUID>.json` liegen außerhalb des Installationsordners im Electron-Nutzerverzeichnis (`%APPDATA%\ScriptLab`). Dort liegen auch private Business-Beispielkopien, eigene Laufzeiten und lokale Business-Journale. Projektdateien werden an selbst gewählten Orten gespeichert. Die Bibliotheken und zehn lokalen Hilfethemen werden mitgeliefert. Bearbeiten, Projektspeicherung, Hilfe und unsignierter Export benötigen kein Netzwerk.
 
 ## Rechte und Drittanbieter
 
 Die Projektlizenz hat Leon Stolz noch nicht festgelegt. `UNLICENSED` kennzeichnet diese ausstehende Freigabe und erteilt keine Nutzungslizenz. Fremdbibliotheken behalten ihre jeweiligen Lizenzen. [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) inventarisiert die ausgelieferten Produktionsabhängigkeiten und enthält die vorhandenen Originalhinweise; der fehlende vollständige Originaltext des Pakets `lazy-val@1.0.5` ist ausdrücklich vermerkt. Die Originaldateien `LICENSE.electron.txt` und `LICENSES.chromium.html` liegen der Windows-Distribution bei.
+
+Der feste optionale Python-Paketsatz besitzt eigene [Business-Lizenzhinweise](laufzeit/business-notices.md). Die unverändert mitgelieferte Vera-Schrift liegt zusammen mit ihrer Original-Lizenz im Business-Paket; Windows-Schriften werden nicht weiterverteilt.
 
 Die Lizenzhinweise werden offline mit `node scripts/lizenzhinweise.mjs` erzeugt und mit `node scripts/lizenzhinweise.mjs --check` auf Aktualität geprüft. Die öffentliche Quellcodeablage ist keine zusätzliche Lizenzfreigabe.

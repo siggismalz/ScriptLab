@@ -1,20 +1,20 @@
 # Python und VBScript in ScriptLab
 
-Stand: 26.10.2026. Entwickelt von Leon Stolz. Diese Notiz beschreibt die zweite vollwertige Ausgabesprache und trennt praktische Prüfungen von noch offenen Einrichtungsschritten. Die älteren VBS-, Startseiten- und UI-Nachweise bleiben in ihren bisherigen Berichten erhalten.
+Stand: 27.10.2026. Entwickelt von Leon Stolz. Python ist die Hauptsprache für die zusätzlichen Daten- und Dokumentabläufe; VBS bleibt für die 48 gemeinsamen Grundbausteine erhalten. Diese Notiz trennt den aktuellen Funktionsumfang vom historischen Python-0.1.0-Prüfstand. Die älteren VBS-, Startseiten- und UI-Nachweise bleiben ihren tatsächlichen Quellständen zugeordnet und gelten nicht automatisch als Business-Abnahme.
 
 ## Sprache wählen und Projekte erhalten
 
-**Neuer Workflow**, **Neu** und Strg+N öffnen dieselbe Sprachauswahl. Beide Karten verwenden die vorhandenen Graphitflächen und dieselbe Informationsstruktur. Native Radiobuttons zeigen die Auswahl zusätzlich zur Kontur an; der Tastaturfokus bleibt davon unterscheidbar. Erst **Workflow erstellen** ersetzt nach dem üblichen Projekt-/Testschutz den aktiven Workflow. Beim ersten Aufruf ist keine Sprache gewählt. **Abbrechen** erzeugt weder Projekt noch Entwurf. Die letzte erfolgreich gewählte Sprache ist nur ein Vorschlag für die nächste Neuanlage.
+**Neuer Workflow**, **Neu** und Strg+N öffnen dieselbe Sprachauswahl. Python wird für Geschäftsprozesse empfohlen; VBS bleibt für kleine Windows-Automatisierungen wählbar. Beide Karten verwenden die vorhandenen Graphitflächen und dieselbe Informationsstruktur. Native Radiobuttons zeigen die Auswahl zusätzlich zur Kontur an; der Tastaturfokus bleibt davon unterscheidbar. Erst **Workflow erstellen** ersetzt nach dem üblichen Projekt-/Testschutz den aktiven Workflow. Beim ersten Aufruf ist keine Sprache gewählt. **Abbrechen** erzeugt weder Projekt noch Entwurf. Die letzte erfolgreich gewählte Sprache ist nur ein Vorschlag für die nächste Neuanlage.
 
 Ein Projekt besitzt genau eine feste `skriptsprache`: `python` oder `vbs`. Vorhandene Projekte, Entwürfe, Beispiele und Wiederherstellungen verwenden ihre eigene Sprache und öffnen ohne Auswahlfrage. In Editor, Vorschau, Listen und Testausgabe ist sie als Text erkennbar. Für eine andere Sprache wird ein neuer Workflow erstellt; eine ungeprüfte Konvertierung ist nicht eingebaut.
 
-Das Projektformat ist auf Schema **2** versioniert. Gültige alte Projekte mit Schema 1 ohne Sprachfeld werden im Arbeitsspeicher als VBS übernommen. Das bloße Öffnen schreibt die Quelldatei nicht um. Ein fehlendes Sprachfeld in Schema 2, eine unbekannte Sprache oder ein neueres unbekanntes Schema wird verständlich abgewiesen. Projektindex und lokale Entwürfe erhalten die Sprache ebenfalls. Die bisherige Ansicht, Blockkennungen, Verbindungen und Kommentare bleiben erhalten.
+Das Projektformat verwendet Schema **3**. Es ergänzt Parameterdefinitionen, nicht geheime Test-/Echt-Parametersätze und Ressourcenreferenzen. Gültige alte Projekte mit Schema 1 ohne Sprachfeld werden im Arbeitsspeicher als VBS übernommen; Schema 2 behält seine Sprache und erhält leere Business-Angaben. Das bloße Öffnen schreibt die Quelldatei nicht um. Ein fehlendes Sprachfeld ab Schema 2, eine unbekannte Sprache oder ein neueres unbekanntes Schema wird verständlich abgewiesen. Projektindex und lokale Entwürfe erhalten die Sprache ebenfalls. Ansicht, Blockkennungen, Verbindungen und Kommentare bleiben erhalten.
 
 Variablen verwenden stabile Blockly-Kennungen. Namen sind Beschriftungen und keine ausführbaren Bezeichner. Alte Namensfelder werden deterministisch auf Kennungen abgebildet; Umbenennen erhält die Bezüge. Ein leerer Variablenverweis eines unvollständigen Entwurfs wird nicht stillschweigend durch eine neue Variable ersetzt. Beide Generatoren verwenden intern eigene kollisionsfreie Namen.
 
 ## Umfang und gemeinsame Bedeutung
 
-Alle **48 vorhandenen Bausteintypen** sind in beiden Sprachen umgesetzt. Die vollständige Zuordnung von Bedeutung, Python-Umsetzung, Abhängigkeiten und Prüffall steht in [PYTHON-FUNKTIONSUMFANG.md](PYTHON-FUNKTIONSUMFANG.md). Es gibt im vorhandenen Katalog keine allgemeinen Shell-, Programmstart-, E-Mail-, Office- oder COM-Automationsblöcke. Solche Funktionen werden durch diese Erweiterung nicht eingeführt.
+Alle **48 gemeinsamen Grundbausteintypen** sind in beiden Sprachen umgesetzt. Die vollständige Zuordnung ihrer Bedeutung, Python-Umsetzung, Abhängigkeiten und Prüffälle steht in [PYTHON-FUNKTIONSUMFANG.md](PYTHON-FUNKTIONSUMFANG.md). Zusätzlich enthält der aktuelle Katalog **47 Python-Business-Bausteintypen** für Tabellen, Datenqualität, Geschäftsdateien, Excel, Word und PDF. Allgemeine Shell-, Programmstart-, E-Mail- und Office-COM-Automationsblöcke gibt es nicht. Die Dokumentadapter bearbeiten unterstützte Dateien über den festen Python-Paketsatz, ohne Office zu starten.
 
 Der Editor und die fachliche Validierung sind gemeinsam. `skriptErzeugen` wählt anhand des geprüften Projekts den VBS- oder Python-Generator. Python entsteht direkt aus dem typisierten Workflowmodell; erzeugter VBS-Text wird nicht übersetzt oder heimlich gestartet. Die tatsächlich eingesetzte Blockly-Version 13.4.0 liefert `PythonGenerator`, Literalregeln, Einrückung und Operatorrangfolge; ScriptLab ergänzt die vollständige Bedeutung seiner eigenen Blöcke.
 
@@ -31,6 +31,12 @@ ScriptLab liest geeignete lokale Installationsinformationen und prüft danach ei
 Die Programme `py` und `python` werden nicht auf Verdacht aus der Befehlsauflösung gestartet. Der ältere Launcher und der neue Python Install Manager können unterschiedlich reagieren; insbesondere können Manageraufrufe eine automatische Einrichtung auslösen. ScriptLab öffnet keinen Store und lädt weder Python noch Pakete automatisch. Die Hilfe führt sichtbar zur [offiziellen Windows-Anleitung](https://docs.python.org/3.15/using/windows.html).
 
 Eine fehlende oder ungeeignete Installation verhindert ausschließlich den betroffenen Test. Editor, lokale Hilfe, Projekte, Entwürfe, Vorschau und Export bleiben nutzbar. Vor jedem Python-Test wird die konkret verwendete Installation erneut geprüft und für diesen Lauf festgehalten. Eine danach entfernte oder geänderte Installation ergibt beim nächsten Test einen echten Fehler statt einer erfundenen Bereitschaftsanzeige.
+
+### Optionale Business-Pakete
+
+Die Grundbausteine bleiben ohne zusätzliche PyPI-Pakete nutzbar. Daten- und Dokumentbausteine verwenden den festen elfteiligen Paketsatz aus `laufzeit/requirements-business.lock`. Unter **Einstellungen → Business-Laufzeit** kann eine vorbereitete Umgebung geprüft oder bewusst eine neue eigene Umgebung online beziehungsweise aus einem IT-Offline-Wheelhouse eingerichtet werden. Weder Prüfen noch Workflowstart installieren Pakete. Es gibt keinen freien Paketmanager und keine automatische Python-Installation. Die [Business-Laufzeitdokumentation](BUSINESS-LAUFZEIT.md) beschreibt die gepinnten Wheels, Profile, Fristen und Lizenzen.
+
+Die Business-Datenvorschau liest begrenzte Ergebnisse, der Prüflauf verändert keine fachlichen Ziele, und erst **Ausführen** startet echte Dateiaktionen. Normale Aktionsblöcke werden nicht heimlich im Vorschau-/Prüflaufmodus ausgeführt. Parameter und **Quellen, Ziele und Umfang** vor jedem Lauf prüfen. Ein Parametersatz mit dem Namen Testdaten ist keine Sandbox. Die vollständigen Bedienwege stehen in [BUSINESS-BEDIENUNG.md](BUSINESS-BEDIENUNG.md).
 
 ### Dialoge und Tcl/Tk
 
@@ -56,15 +62,19 @@ Pythonfehler behalten ihren Originaltraceback. Ein tokengebundener Fehlerkanal u
 
 ## Export und eigenständige Ausführung
 
-Pythonprojekte besitzen **Python-Script exportieren** mit `.py`-Filter und UTF-8 ohne BOM, CRLF. VBS-Projekte besitzen **VBS-Script exportieren** mit `.vbs`-Filter und weiterhin UTF-16LE mit BOM, CRLF. Vorschau, Export und Test verwenden denselben Generator pro Sprache; nur der ausdrücklich angegebene Testkontext unterscheidet sich.
+Pythonprojekte ohne Business-Bausteine besitzen **Python-Script exportieren** mit `.py`-Filter und UTF-8 ohne BOM, CRLF. Business-Projekte besitzen **Business-Paket exportieren** und erzeugen ein eigenständiges ZIP. VBS-Projekte besitzen **VBS-Script exportieren** mit `.vbs`-Filter und weiterhin UTF-16LE mit BOM, CRLF. Codevorschau, Export und Test verwenden denselben Generator pro Sprache; der ausdrücklich angegebene Laufkontext bestimmt die technische Testfassung.
 
-Ein Python-Export enthält seine benötigten Hilfsfunktionen und erwartet weder ScriptLab noch Node.js, lokale Anwendungsdateien oder den Interpreterpfad des Entwicklungsrechners. Zum späteren Start wird die passende eigene CPython-Installation verwendet. Beispiel für PowerShell, mit selbst anzupassenden vorhandenen Pfaden:
+Ein gewöhnlicher Python-Export enthält seine benötigten Hilfsfunktionen und erwartet weder ScriptLab noch Node.js, lokale Anwendungsdateien oder den Interpreterpfad des Entwicklungsrechners. Zum späteren Start wird die passende eigene CPython-Installation verwendet. Beispiel für PowerShell, mit selbst anzupassenden vorhandenen Pfaden:
 
 ```powershell
 & "C:\Python315\python.exe" -I -u -X utf8 "C:\Meine Workflows\Begruessung.py"
 ```
 
 Ein Doppelklick ist von der vorhandenen Windows-Dateizuordnung abhängig und wird nicht garantiert. Dialogworkflows benötigen auch außerhalb von ScriptLab Tcl/Tk. Die Kodierung vom Workflow gelesener/geschriebener Textdateien wird gesondert am Dateiblock festgelegt und folgt nicht der Quelltext- oder Streamkodierung.
+
+Ein Business-ZIP ergänzt eigene Python-Module, Requirements mit festen Hashes, Parameterbeispiel, Anleitung und die unveränderte Vera-Schrift samt Original-Lizenz und Business-Lizenzhinweisen. Eigene Vorlagen, Bilder und TTF-Schriften werden nur ausdrücklich ausgewählt; Geschäftsdaten, Journale und Laufberichte werden nicht automatisch beigelegt. Der Empfänger bereitet bewusst eine passende Umgebung vor. Das Script selbst lädt oder installiert nichts. Mitgelieferte Module ersetzen die ScriptLab-Installation; die Anwendung muss nicht vorhanden sein. Die Konfiguration und sämtliche Pfadwerte vor einer Weitergabe prüfen.
+
+Wiederaufnahme prüft neben Workflow, Parametern, Quellen und bestätigten Ausgaben eine Laufzeitidentität aus eigenen Modulbytes, Python-Build, Paketversionen und Vera-Schrift. Sie ist keine allgemeine Genau-einmal-Garantie. Journale über 16 MiB werden beim Einlesen abgewiesen; Dokumenttabellen sind auf 20.000 Zellen begrenzt. Formeln werden nicht berechnet, PDF-Scans nicht per OCR gelesen und Office-Dateien nicht konvertiert. DuckDBs Speicherbudget ist kein Prozess-RAM-Limit; das dokumentierte breite Millionen-CSV-Profil scheiterte unter 64 MB, der schmalere Plan bestand. Die konkreten Grenzen stehen in den [Datenlastnachweisen](BUSINESS-LEISTUNG-DATEN.md) und der [Dokumentdokumentation](BUSINESS-DOKUMENTE.md).
 
 Relative Pfade beziehen sich beim eigenständigen Export auf den Ordner der Scriptdatei. Beim Test wird dagegen ausdrücklich der sichtbare fachliche Basisordner übergeben. Technischer Scriptordner, Prozess-Arbeitsverzeichnis und Basisordner sind getrennt. Absolute Pfade bleiben unverändert; ein später an anderem Ort ausgeführter Export kann deshalb andere relative Dateien verwenden als der Test.
 
@@ -74,9 +84,13 @@ Authenticode bleibt eine optionale Funktion ausschließlich für VBS. Für `.py`
 
 Die drei Aufgaben **Eine Nachricht anzeigen**, **Dateien in einen Sicherungsordner kopieren** und **Dateinamen in eine Textdatei schreiben** liegen für jede Sprache als echte Projektdateien vor, insgesamt sechs Vorlagen. Der Sprachfilter in der Beispielübersicht wählt ihre sichtbaren Varianten. **Als Vorlage verwenden** erstellt eine neue Projektkennung; die Vorlage bleibt unverändert. Bei Backup und Dateiliste müssen die ausdrücklich als Testpfade angegebenen Quell-/Zielordner bewusst angepasst werden.
 
+Dazu kommen die fünf Python-Business-Beispiele Monatsauswertung, Stammdatenzuordnung, Word-Bestellvorschlag, PDF-Dokumenteingang und CSV-Dateistapel. Deren synthetische Dateien werden in eine neue private Beispielkopie übernommen und ihre Pfadparameter absolut daran gebunden. Das erhält die Testdatenbezüge beim späteren Öffnen oder Wiederherstellen. Für produktive Quellen und Ziele sind die Werte bewusst zu ändern. Keine Vorlage läuft automatisch beim Öffnen. Erwartete Ergebnisse und getrennte Fach-/Bildnachweise stehen in [BUSINESS-BEDIENUNG.md](BUSINESS-BEDIENUNG.md).
+
 Die vorhandene lokale Hilfesuche erklärt Sprachwahl, Einrichtung, Laufzeit-/Tk-Probleme, Testkontext und beide Exportformate. Anleitungen werden als React-Text dargestellt und führen keinen beliebigen Hilfecode aus. Auch ein Beispielverweis schützt vorher die aktive Arbeit.
 
-## Tatsächlich geprüfter Stand
+## Historischer Prüfstand des gemeinsamen Python-Grundumfangs
+
+Die folgenden Lauf-, CI- und Installerzahlen gehören ausdrücklich zur Python-Erweiterung vor dem Business-Ausbau und ihren jeweils genannten Quellständen. Sie werden nicht mit neuen Modulprüfungen zu einer angeblichen vollständigen Business-UI-Abnahme addiert. Aktuelle Business-Nachweise und noch offene Gesamtprüfungen stehen in [BUSINESS-ABNAHME.md](BUSINESS-ABNAHME.md) sowie den verlinkten Business-Berichten. [ABNAHME.md](ABNAHME.md) bewahrt die historische Chronik.
 
 Der vollständige lokale Lauf bestand mit **334/334 Unit-, Generator-, Datei-, Windows-Prozess- und Komponententests in 85,69 Sekunden**. Anschließend bestand der separat ergänzte echte Dateiguard für fehlende/ungeeignete Pythondateien gemeinsam mit seinen 21 bisherigen Auswahlfällen (22/22, keine Prozessausführung). Diese getrennten Läufe werden nicht als gemeinsamer lokaler 335er-Lauf ausgegeben. Der vollständige Electron-Durchlauf nach der Speicherstatuskorrektur bestand mit **96/96 Desktopfällen in 254,86 Sekunden**, ohne übersprungene, instabile oder unerwartet fehlgeschlagene Fälle. Er umfasst die feste DPR-1-Regression, die sechs neuen Pythonfälle sowie sämtliche bisherigen VBS-, Speicher-, Schutz-, Fokus-, Zoom- und Ziehprüfungen. Der spätere Tk-Bedarfsfall wurde zusätzlich mit 11/11 echten Laufzeitfällen geprüft.
 
@@ -112,9 +126,9 @@ Die unabhängige Windows-CI bestand mit CPython 3.15.2 bereits **335/335 Kern-/W
 
 Nach erfolgreichem Speichern liest die Oberfläche jetzt den aktuellen Blockly-Workspace und verwendet das vom Hauptprozess bestätigte Projekt als gespeicherten Bezug. Dadurch bleibt ein verzögertes Blockly-Ereignis kein falscher Ungespeichert-Vergleich. Die gezielte Gegenprüfung reproduzierte den Fehler vor der Änderung **3/3** und bestand danach **3/3**; der UX-Exportweg bestand zusätzlich **3/3**, gemeinsam 6/6 nach dem Fix. Die feste DPR-1-Bedingung bleibt im Python-Rundlauftest. Das ist eine Prozess-DPR-Prüfung und keine Änderung der Windows-Systemskalierung. Die Radiokartenaufnahmen bleiben ihrem tatsächlichen DPR 1,75 zugeordnet.
 
-## Aktueller Windows-Abschlussbuild
+## Historischer Windows-Abschlussbuild 0.1.0
 
-Der aktuelle lokale Testinstaller mit beiden Korrekturen liegt unter **`artifacts/python-build-fertig/ScriptLab-0.1.0-Setup-x64.exe`**. Er wurde aus dem sauberen Quellstand `1a0ed2e5fd41ef38729e3acd1033f5f78eec7b38` mit erneut erfolgreicher Typprüfung und Produktionsbuild erzeugt. Größe: **125.342.651 Bytes**. SHA-256: `d4c2a5485c6b87f2386420633005e8b307f9e8eb0c192e8a3d9a5cb4ba1125eb`. Blockmap und `latest.yml` liegen daneben.
+Der damalige lokale Testinstaller mit beiden Korrekturen liegt unter **`artifacts/python-build-fertig/ScriptLab-0.1.0-Setup-x64.exe`**. Er wurde aus dem sauberen Quellstand `1a0ed2e5fd41ef38729e3acd1033f5f78eec7b38` mit erneut erfolgreicher Typprüfung und Produktionsbuild erzeugt. Größe: **125.342.651 Bytes**. SHA-256: `d4c2a5485c6b87f2386420633005e8b307f9e8eb0c192e8a3d9a5cb4ba1125eb`. Blockmap und `latest.yml` liegen daneben. Dieser Nachweis belegt keinen späteren Business-Installer; dessen tatsächlicher Stand wird gesondert dokumentiert.
 
 Die [abschließende Paketprüfung](../tests/ui/nachweise/python-paketpruefung-abschluss.json) bestand mit **11/11 Prüfungen**, einschließlich des bytegleichen neuen Hauptprozesses/Renderers, aller sechs Beispiele, des festen Helpers und der Beilagen. Der Wiederbau im vorigen Ausgabeordner war wegen einer gesperrten `app.asar` mit `EBUSY` abgebrochen; für den erfolgreichen Build wurde ein neues Verzeichnis verwendet. Es wurden weder fremde Prozesse beendet noch Prüfungen abgeschaltet. Die Zwischenstände in `python-build-final` und `python-build-abschluss` sind keine aktuellen Auslieferungen.
 

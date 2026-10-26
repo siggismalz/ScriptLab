@@ -1,4 +1,8 @@
-# Abnahmestand
+# Historische Abnahme: ScriptLab 0.1.0
+
+**Dieser Bericht beschreibt die frühere 0.1.0-Version und die damalige Python-Erweiterung vor dem Business-Ausbau.** Der aktuelle Business-Prüfstand für 0.2.0 steht in [BUSINESS-ABNAHME.md](BUSINESS-ABNAHME.md). Dort werden abgeschlossene Fachprüfungen, noch offene Gesamtläufe und die aktuellen Installer-/Releasegrenzen getrennt geführt.
+
+Die alten Testzahlen, Quellstände, Prüfsummen und Ergebnisse unten bleiben unverändert. Auch Formulierungen wie „aktueller Abschlussbuild“ innerhalb dieser historischen Chronik beziehen sich ausschließlich auf den dort genannten damaligen Stand und belegen keinen Business-Installer.
 
 Stand: 26.10.2026, ScriptLab 0.1.0. Die technische Erstprüfung unten dokumentiert den Stand **vor der anschließenden UI-Überarbeitung**. Ihre Testzahlen, Bildschirmgrößen, Commitverweise und Installerangaben gehören zu diesem Prüfzeitpunkt. Der UI-Nachtrag verweist auf die gesonderten aktuellen Bediennachweise. Ein vorhandener Prüfplan, ein erfolgreicher Build oder ein simulierter Updater ersetzt keine vollständig geprüfte produktive Installation und Updatekette.
 

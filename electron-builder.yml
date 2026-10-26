@@ -33,7 +33,9 @@ extraResources:
   - from: docs
     to: docs
     filter:
-      - '*.md'
+      - '**/*.md'
+      - '**/*.png'
+      - '**/*.json'
 win:
   icon: assets/scriptlab.ico
   target:

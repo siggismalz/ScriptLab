@@ -417,7 +417,9 @@ await pruefen('Dokumentation und Lizenzhinweise', async () => {
     await byteVergleichen(join(wurzel, name), join(ressourcen, name));
   // electron-builder schliesst extraResources beim Packen aus app.asar aus.
   // Die Lizenzbeilage wird deshalb am tatsaechlich ausgelieferten Ressourcenort verglichen.
-  const dokumente = (await readdir(join(wurzel, 'docs'))).filter((name) => name.endsWith('.md')).sort();
+  const dokumente = (await dateienSammeln(join(wurzel, 'docs'))).filter((name) =>
+    /\.(md|png|json)$/.test(name),
+  );
   verlangen(
     JSON.stringify(dokumente) === JSON.stringify((await dateienSammeln(join(ressourcen, 'docs'))).sort()),
     'Die Dokumentationsbeilagen sind nicht vollständig oder veraltet.',
