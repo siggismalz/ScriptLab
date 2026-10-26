@@ -2,6 +2,8 @@
 
 ScriptLab exportiert auch ohne Zertifikat vollstaendig offline. Die Signatur ist eine getrennte, optionale Windows-Funktion. Eine Signatur hilft, Herausgeber und spaetere Aenderungen zu pruefen. Sie garantiert weder einen ungefaehrlichen Workflow noch eine Ausfuehrung ohne Windows-, SmartScreen- oder Unternehmenswarnungen.
 
+Diese Funktion gilt ausschliesslich fuer **VBS-Projekte und `.vbs`-Exporte**. Fuer Python-Dateien ist kein Signaturverfahren implementiert. Bei Python-Projekten sind die VBS-Signaturoptionen ausgeblendet; der Export liefert kein Signaturpruefergebnis. Gegebenenfalls aus einer Projektdatei uebernommene VBS-Optionen werden dabei weder angewendet noch als erfolgreiche Python-Signatur angezeigt. Die Python-Laufzeitpruefung ist ebenfalls keine Signaturpruefung.
+
 ## Voraussetzungen und Auswahl
 
 - Windows 11 x64 mit Windows PowerShell 5.1, Authenticode/SIP-Unterstuetzung fuer `.vbs` und einer Richtlinie, die den fest installierten Signaturhelper zulaesst.
@@ -24,13 +26,13 @@ Ein fehlender angeforderter Zeitstempel ist ein Fehler. Die Anwendung darf ihn n
 
 ## Angezeigte Ergebnisse
 
-| Ergebnis | Bedeutung |
-| --- | --- |
-| Nicht signiert | Windows hat keine digitale Signatur gefunden. |
-| Signatur gueltig | Windows bestaetigt die Signatur und die gepruefte Zertifikatskette. |
-| Signatur ungueltig | Beispielsweise stimmt der signierte Dateihash nach einer Aenderung nicht mehr. |
+| Ergebnis                              | Bedeutung                                                                                                                                                           |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nicht signiert                        | Windows hat keine digitale Signatur gefunden.                                                                                                                       |
+| Signatur gueltig                      | Windows bestaetigt die Signatur und die gepruefte Zertifikatskette.                                                                                                 |
+| Signatur ungueltig                    | Beispielsweise stimmt der signierte Dateihash nach einer Aenderung nicht mehr.                                                                                      |
 | Zertifikatsvertrauen nicht bestaetigt | Eine Signatur ist vorhanden; die Vertrauenspruefung der Kette war nicht erfolgreich oder nicht vollstaendig moeglich. Dies ist keine gueltige Signaturbestaetigung. |
-| Pruefung nicht moeglich | Beispielsweise fehlen Windows-Werkzeuge, die VBS-SIP-Unterstuetzung oder eine Richtlinie blockiert den Helper. |
+| Pruefung nicht moeglich               | Beispielsweise fehlen Windows-Werkzeuge, die VBS-SIP-Unterstuetzung oder eine Richtlinie blockiert den Helper.                                                      |
 
 Wenn kein geeignetes Zertifikat vorhanden ist, die Signaturoption ausschalten und normal exportieren. ScriptLab installiert keine selbstsignierten Stammzertifikate, aktiviert keine Windows-Features und aendert keine Ausfuehrungsrichtlinien.
 

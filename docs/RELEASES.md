@@ -24,11 +24,17 @@ Ein lokaler Build ohne eingerichtetes Entwicklerzertifikat ist **unsigniert**. E
 
 Der Installer arbeitet pro Nutzer, fordert keine Administratorrechte und loescht Einstellungen nicht bei der Deinstallation. Projektdateien liegen an den vom Nutzer gewaehlten Orten. Einstellungen liegen im Electron-Nutzerverzeichnis, getrennt vom Installationsverzeichnis. Ein Update installiert nur die Anwendung.
 
+Der Installer enthaelt beide Generatoren, die lokale Hilfe und alle sechs Beispielprojekte. Er installiert oder laedt keine Python-Laufzeit, keine Python-Pakete und keine VBScript-Komponente. Bearbeiten, Projektspeicherung und beide unsignierten Exportformate funktionieren ohne diese Laufzeiten. Ein spaeterer Python-Test benoetigt eine separat vorhandene stabile CPython-Installation 3.12 bis 3.15 fuer Windows x64; die konkrete Interpreterauswahl bleibt im Nutzerprofil. Fuer produktive Releases ist die Anwendungssignatur unabhaengig davon erforderlich, ob Nutzer VBS- oder Python-Projekte erstellen. Die optionale Signatur eines Nutzerexports gilt weiterhin ausschliesslich fuer VBS.
+
 ## GitHub und automatisierte Pruefungen
 
 Das genehmigte oeffentliche Repository und die feste Releasequelle sind [siggismalz/ScriptLab](https://github.com/siggismalz/ScriptLab).
 
 `windows-pruefung.yml` laeuft bei Push auf `main` und bei Pull Requests auf einem Windows-Runner. Sie installiert mit `npm ci`, prueft TypeScript, Tests, Produktionsbuild und Electron-Oberflaechentests und erstellt einen nicht veroeffentlichten Testinstaller. Anschließend prüft `verify:package` dessen Metadaten und Paketinhalt. Installer, Updatemetadaten und Prüfbericht werden als Actions-Artefakt bereitgestellt. Gewoehnliche Commits erzeugen kein Release.
+
+Beide Windows-Workflows stellen CPython 3.15.2 x64 ueber die auf einen festen Commit gepinnte `setup-python`-Action bereit. Nur das Testharness erhaelt den konkreten Interpreterpfad. Zusaetzlich erzeugt genau diese Python-Datei mit `-I -m venv --without-pip` einen neuen venv unter `RUNNER_TEMP/ScriptLab-CI-Venv`; ein bereits belegtes Ziel wird abgewiesen. Die Vorbereitung hat eine Prozessfrist von 20 Sekunden und eine zusaetzliche Schrittfrist von einer Minute. Es gibt keine Aktivierung, Paketinstallation oder Netzwerkanfrage durch diesen venv-Schritt. `SCRIPTLAB_TEST_VENV` uebergibt den erzeugten `Scripts/python.exe` an den verpflichtenden eigenstaendigen Exportnachweis; ein fehlender oder ungeeigneter venv fuehrt dort zum Fehler statt zu einem optionalen Skip. Diese Konfiguration erweitert nicht die Interpretererkennung der ausgelieferten Anwendung.
+
+Vor einer Freigabe muessen die Tests beide Sprachen mit allen 48 Bausteintypen, Schema-1-Migration, stabilen Variablen-IDs, beiden Exportkodierungen und der Sprachwahl abdecken. Reine Generator-/Syntaxpruefungen sind von echten Laufzeitpruefungen zu unterscheiden. Ein Runner ohne geeignete CPython-Installation beweist keine Python-Laufzeitfunktion; ein begruendeter optionaler Skip ist kein Erfolg dieses Pruefschritts. Der konkrete Python-Pruefstand und die verwendeten Interpreter stehen in [PYTHON.md](PYTHON.md).
 
 `release.yml` wird bewusst durch einen Tag wie `v0.1.0` oder manuell fuer einen bereits vorhandenen Versionstag gestartet. Paketversion und Tag muessen uebereinstimmen. Eine manuelle Ausloesung baut ebenfalls den angegebenen Tag und kein beliebiges aktuelles `main`.
 
@@ -69,6 +75,8 @@ Bei bewusst bezeichneten Vorabversionen entstehen die entsprechenden Kanalmetada
 Es ist kein Entwicklertoken fuer private Releasequellen eingebaut. Eine spaetere Umstellung auf ein privates Quellrepository und ein getrenntes oeffentliches Release-Repository waere eine eigene, vorher abzustimmende Entscheidung.
 
 ## Noch praktisch nachzuweisen
+
+Die Python-Erweiterung allein erzeugt kein neues Installerartefakt und kein Release. Ein Paketnachweis muss den tatsaechlich gebauten aktuellen Quellstand einschliesslich aller sechs Beispiele pruefen. Fruehere Installer- und Updatepruefungen sind kein Nachweis fuer einen spaeter geaenderten Build.
 
 Die lokal getestete Logik deckt sichere Defaults, fehlende/falsche Konfiguration, Updatefehler, Fortschritt und den ausdruecklichen Installationsaufruf mit einem gemockten Updater ab. Das ist kein Nachweis einer produktiven Updatekette.
 
