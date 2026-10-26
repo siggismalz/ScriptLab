@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1.0",
+  "name": "UI-Test: Lange deutsche Texte und Pfade",
+  "beschreibung": "Bewusst lange Testtexte und Windows-Pfade. Die beschriebenen Dateien werden weder beim Öffnen noch beim Exportieren verändert.",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "ui-start",
+          "x": 72,
+          "y": 48,
+          "next": {
+            "block": {
+              "type": "sl_copy",
+              "id": "ui-lange-dateikopie",
+              "fields": {
+                "ZIELREGEL": "FEHLER"
+              },
+              "inputs": {
+                "QUELLE": {
+                  "block": {
+                    "type": "sl_text",
+                    "id": "ui-lange-quelle",
+                    "fields": {
+                      "TEXT": "C:\\ScriptLab-UI-Testdaten\\Abteilung für ausführliche deutsche Beschriftungen\\Monatsberichte und weitere gemeinsame Arbeitsunterlagen\\Noch ein bewusst langer Ordnername mit Leerzeichen\\Quelle mit Umlauten äöü und mehreren Wörtern.txt"
+                    }
+                  }
+                },
+                "ZIEL": {
+                  "block": {
+                    "type": "sl_text",
+                    "id": "ui-langes-ziel",
+                    "fields": {
+                      "TEXT": "C:\\ScriptLab-UI-Testdaten\\Sicherung für die ausschließlich visuelle Prüfung\\Archiv des aktuellen Arbeitsstands\\Berichte mit sehr ausführlichen Namen\\Zieldatei mit Leerzeichen und Umlauten äöü.txt"
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "sl_comment",
+                  "id": "ui-langer-kommentar",
+                  "fields": {
+                    "TEXT": "Dies ist ein bewusst ausführlicher deutscher Erklärungstext. Er dient ausschließlich dazu, Zeilenumbruch, Auswahl, sichtbaren Tastaturfokus und die vollständig erreichbare Bearbeitung im Eigenschaftenbereich zu prüfen. Die Oberfläche darf dafür keine Bedienelemente abschneiden."
+                  },
+                  "next": {
+                    "block": {
+                      "type": "sl_set",
+                      "id": "ui-langer-text-setzen",
+                      "fields": {
+                        "VAR": "Ausführliche Rückmeldung"
+                      },
+                      "inputs": {
+                        "WERT": {
+                          "block": {
+                            "type": "sl_text",
+                            "id": "ui-langer-textwert",
+                            "fields": {
+                              "TEXT": "Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. Eine sehr ausführliche Rückmeldung bleibt vollständig auswählbar und bearbeitbar. "
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "sl_message",
+                          "id": "ui-lange-nachricht",
+                          "inputs": {
+                            "TEXT": {
+                              "block": {
+                                "type": "sl_get",
+                                "id": "ui-langen-text-lesen",
+                                "fields": {
+                                  "VAR": "Ausführliche Rückmeldung"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1.0",
+  "name": "UI-Test: Fehlende Pflichtwerte",
+  "beschreibung": "Unvollständiger, speicherbarer Entwurf. Erwartet werden konkrete Hinweise erst passend zur Bearbeitung und beim Exportversuch.",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "ui-start",
+          "x": 72,
+          "y": 48,
+          "next": {
+            "block": {
+              "type": "sl_copy",
+              "id": "ui-fehlendes-ziel",
+              "fields": {
+                "ZIELREGEL": "FEHLER"
+              },
+              "inputs": {
+                "QUELLE": {
+                  "block": {
+                    "type": "sl_text",
+                    "id": "ui-fehlerquelle",
+                    "fields": {
+                      "TEXT": "ScriptLab-UI-Testdaten\\Quelle.txt"
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "sl_message",
+                  "id": "ui-fehlender-text"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "sl_comment",
+          "id": "ui-loser-kommentar",
+          "x": 520,
+          "y": 160,
+          "fields": {
+            "TEXT": "Dieser aktive Baustein ist absichtlich nicht verbunden."
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

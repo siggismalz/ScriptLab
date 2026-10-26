@@ -1,0 +1,69 @@
+{
+  "windowsSkalierung": 175,
+  "erzwungenerProzessMassstab": false,
+  "fenster": {
+    "scaleFactor": 1.75,
+    "displayBounds": {
+      "x": 2195,
+      "y": 0,
+      "width": 2195,
+      "height": 1235
+    },
+    "workArea": {
+      "x": 2195,
+      "y": 0,
+      "width": 2195,
+      "height": 1187
+    },
+    "contentSize": [
+      1280,
+      721
+    ],
+    "bounds": {
+      "x": 2219,
+      "y": 24,
+      "width": 1294,
+      "height": 758
+    },
+    "displays": [
+      {
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2195,
+          "height": 1235
+        },
+        "workArea": {
+          "x": 0,
+          "y": 0,
+          "width": 2195,
+          "height": 1187
+        },
+        "scaleFactor": 1.75
+      },
+      {
+        "bounds": {
+          "x": 2195,
+          "y": 0,
+          "width": 2195,
+          "height": 1235
+        },
+        "workArea": {
+          "x": 2195,
+          "y": 0,
+          "width": 2195,
+          "height": 1187
+        },
+        "scaleFactor": 1.75
+      }
+    ]
+  },
+  "renderer": {
+    "breite": 1280,
+    "hoehe": 721,
+    "devicePixelRatio": 1.75,
+    "dokumentBreite": 1280,
+    "dokumentHoehe": 721,
+    "zoom": "100 %Alles anzeigen"
+  }
+}

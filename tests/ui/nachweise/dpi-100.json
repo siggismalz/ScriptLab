@@ -1,0 +1,20 @@
+{
+  "typ": "Prozess-DPI, keine Änderung der Windows-Anzeigeeinstellungen",
+  "angefordert": {
+    "faktor": 1,
+    "breite": 1280,
+    "hoehe": 720
+  },
+  "displayScaleFactor": 1,
+  "inhalt": {
+    "x": 1212,
+    "y": 640,
+    "width": 1280,
+    "height": 720
+  },
+  "renderer": {
+    "breite": 1280,
+    "hoehe": 720,
+    "devicePixelRatio": 1
+  }
+}

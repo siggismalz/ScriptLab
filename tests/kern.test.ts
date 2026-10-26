@@ -53,6 +53,24 @@ function vorlage(def: BausteinDefinition): EditorBlock {
 }
 
 describe('Projektdateien', () => {
+  it('beginnt als speicherbarer Entwurf mit genau einem Start und ohne Aktionen', () => {
+    const p = neuesProjekt();
+    const bausteine = p.editor.blocks!.blocks;
+    expect(bausteine).toHaveLength(1);
+    expect(bausteine[0].type).toBe('sl_start');
+    expect(bausteine[0].next).toBeUndefined();
+    expect(bausteine[0].inputs).toBeUndefined();
+    expect(projektPruefen(JSON.parse(JSON.stringify(p)))).toEqual(p);
+    const entwurf = vbsErzeugen(p);
+    expect(entwurf.code).toBeNull();
+    expect(entwurf.meldungen).toContainEqual({
+      blockId: bausteine[0].id,
+      stufe: 'fehler',
+      text: expect.stringMatching(/Verbinde mindestens eine Anweisung/),
+    });
+    bausteine[0].next = { block: nachricht(text('Meine erste Anweisung')) };
+    expect(vbsErzeugen(p).code).toContain('MsgBox');
+  });
   it('prüft einen verlustfreien JSON-Rundlauf einschließlich Ansicht und IDs', () => {
     const p = neuesProjekt();
     p.ansicht = { zoom: 1.3, x: -234.5, y: 888 };
@@ -99,7 +117,7 @@ describe('Projektdateien', () => {
 
 describe('VBS-Erzeugung ohne Ausführung', () => {
   it('erzeugt die erste vollständige Nachricht mit stabilen CRLF-Zeilen', () => {
-    const p = neuesProjekt();
+    const p = projektMit(nachricht(text('Hallo! Erstellt mit ScriptLab.')));
     const ergebnis = vbsErzeugen(p);
     expect(ergebnis.meldungen).toEqual([]);
     expect(ergebnis.code).toContain('Option Explicit\r\n');
@@ -242,7 +260,7 @@ describe('VBS-Erzeugung ohne Ausführung', () => {
       ];
       const p =
         def.form === 'start'
-          ? neuesProjekt()
+          ? projektMit(nachricht(text('Hallo! Erstellt mit ScriptLab.')))
           : projektMit(...vorbereiten, def.form === 'wert' ? nachricht(ziel) : ziel);
       const ergebnis = vbsErzeugen(p);
       expect(ergebnis.meldungen.filter((m) => m.stufe === 'fehler')).toEqual([]);
@@ -292,7 +310,8 @@ describe('Blockly-Definitionen und gespeicherte Verbindungen', () => {
     const workspace = new Blockly.Workspace();
     const zweiter = new Blockly.Workspace();
     try {
-      Blockly.serialization.workspaces.load(neuesProjekt().editor, workspace);
+      const nachrichtenProjekt = projektMit(nachricht(text('Hallo! Erstellt mit ScriptLab.')));
+      Blockly.serialization.workspaces.load(nachrichtenProjekt.editor, workspace);
       const daten = Blockly.serialization.workspaces.save(workspace);
       const p = neuesProjekt();
       p.editor = daten as Projekt['editor'];

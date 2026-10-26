@@ -15,6 +15,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { neuesProjekt, projektPruefen, type Projekt } from '../kern/projekt';
 import { vbsErzeugen } from '../kern/generator';
+import { farben } from '../gestaltung/tokens';
 import { atomarSchreiben, dateiFehler, projektLesen, projektSchreiben, vbsKodieren } from './dateien';
 import { SignaturDienst } from '../windows/signatur';
 import { AktualisierungsDienst } from '../windows/updates';
@@ -27,9 +28,19 @@ app.setName('ScriptLab');
 if (!app.isPackaged && process.env.SCRIPTLAB_TESTDATEN)
   app.setPath('userData', resolve(process.env.SCRIPTLAB_TESTDATEN));
 const einstellungenSchema = z
-  .object({ automatischeUpdates: z.boolean(), vorabversionen: z.boolean() })
+  .object({
+    automatischeUpdates: z.boolean(),
+    vorabversionen: z.boolean(),
+    palettenBreite: z.number().int().min(240).max(400).default(272),
+    paletteEingeklappt: z.boolean().default(false),
+    eigenschaftenAngeheftet: z.boolean().default(false),
+    textSkalierung: z.union([z.literal(1), z.literal(1.25), z.literal(1.5), z.literal(2)]).default(1),
+  })
   .strict();
-let einstellungen: Einstellungen = { automatischeUpdates: false, vorabversionen: false };
+let einstellungen: Einstellungen = einstellungenSchema.parse({
+  automatischeUpdates: false,
+  vorabversionen: false,
+});
 let projekt = neuesProjekt();
 let projektPfad: string | null = null;
 let gespeichert = JSON.stringify(projekt);
@@ -51,8 +62,12 @@ function dokument(): Dokument {
 }
 function uebernehmen(daten: unknown): Projekt {
   projekt = projektPruefen(daten);
-  fenster.setDocumentEdited(dokument().geaendert);
+  fensterStatusAktualisieren();
   return projekt;
+}
+function fensterStatusAktualisieren(): void {
+  fenster.setDocumentEdited(dokument().geaendert);
+  fenster.setTitle(`${projekt.name}${dokument().geaendert ? ' *' : ''} – ScriptLab`);
 }
 function einstellungsPfad(): string {
   return join(app.getPath('userData'), 'einstellungen.json');
@@ -133,7 +148,7 @@ async function speichern(unter: boolean): Promise<Dokument | null> {
   await projektSchreiben(ziel, stand);
   projektPfad = ziel;
   gespeichert = JSON.stringify(stand);
-  fenster.setDocumentEdited(dokument().geaendert);
+  fensterStatusAktualisieren();
   return dokument();
 }
 
@@ -153,7 +168,7 @@ async function aenderungenSichern(): Promise<boolean> {
     title: 'Ungespeicherte Änderungen',
     message: 'Möchtest du deine Änderungen speichern?',
     detail: 'Ohne Speichern gehen die Änderungen an diesem Projekt verloren.',
-    buttons: ['Speichern', 'Verwerfen', 'Abbrechen'],
+    buttons: ['Speichern', 'Nicht speichern', 'Abbrechen'],
     defaultId: 0,
     cancelId: 2,
     noLink: true,
@@ -189,7 +204,7 @@ function ipcEinrichten(): void {
     uebernehmen(daten);
     gespeichert = JSON.stringify(projekt);
     wartetAufDarstellung = false;
-    fenster.setDocumentEdited(false);
+    fensterStatusAktualisieren();
     return dokument();
   });
   registrieren('aendern', (daten) => {
@@ -204,7 +219,7 @@ function ipcEinrichten(): void {
       gespeichert = JSON.stringify(projekt);
       exportPfad = null;
       wartetAufDarstellung = true;
-      fenster.setDocumentEdited(false);
+      fensterStatusAktualisieren();
       return dokument();
     }),
   );
@@ -227,7 +242,33 @@ function ipcEinrichten(): void {
       gespeichert = JSON.stringify(projekt);
       exportPfad = null;
       wartetAufDarstellung = true;
-      fenster.setDocumentEdited(false);
+      fensterStatusAktualisieren();
+      return dokument();
+    }),
+  );
+  registrieren('beispiel', (daten) =>
+    mitDialog(async () => {
+      const auswahl = z
+        .object({ projekt: z.unknown(), beispiel: z.enum(['begruessung', 'backup', 'dateiliste']) })
+        .strict()
+        .parse(daten);
+      uebernehmen(auswahl.projekt);
+      if (!(await aenderungenSichern())) return null;
+      const dateien = {
+        begruessung: '01-Begruessung.scriptlab',
+        backup: '02-Datei-Backup.scriptlab',
+        dateiliste: '03-Dateinamenliste.scriptlab',
+      } as const;
+      const basis = app.isPackaged
+        ? join(process.resourcesPath, 'beispiele')
+        : join(app.getAppPath(), 'beispiele');
+      const geladen = await projektLesen(join(basis, dateien[auswahl.beispiel]));
+      projekt = geladen;
+      projektPfad = null;
+      gespeichert = JSON.stringify(projekt);
+      exportPfad = null;
+      wartetAufDarstellung = true;
+      fensterStatusAktualisieren();
       return dokument();
     }),
   );
@@ -355,11 +396,11 @@ async function fensterErstellen(): Promise<void> {
     antwort({ cancel: !details.url.startsWith('scriptlab://app/') && !details.url.startsWith('data:') });
   });
   fenster = new BrowserWindow({
-    width: 1500,
-    height: 940,
-    minWidth: 1060,
-    minHeight: 680,
-    backgroundColor: '#10131c',
+    width: 1440,
+    height: 900,
+    minWidth: 960,
+    minHeight: 600,
+    backgroundColor: farben.arbeitsflaeche,
     title: 'ScriptLab',
     autoHideMenuBar: true,
     webPreferences: {
@@ -389,6 +430,7 @@ async function fensterErstellen(): Promise<void> {
   });
   ipcEinrichten();
   await fenster.loadURL('scriptlab://app/index.html');
+  fensterStatusAktualisieren();
 }
 
 if (!app.requestSingleInstanceLock()) app.quit();

@@ -310,22 +310,7 @@ export function neuesProjekt(): Projekt {
             type: 'sl_start',
             id: 'start',
             x: 80,
-            y: 70,
-            next: {
-              block: {
-                type: 'sl_message',
-                id: 'nachricht',
-                inputs: {
-                  TEXT: {
-                    block: {
-                      type: 'sl_text',
-                      id: 'begruessung',
-                      fields: { TEXT: 'Hallo! Erstellt mit ScriptLab.' },
-                    },
-                  },
-                },
-              },
-            },
+            y: 96,
           },
         ],
       },

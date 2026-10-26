@@ -1,0 +1,14 @@
+{
+  "block": {
+    "aktiveTastatur": true,
+    "knotenfarbe": "#F1F3F5",
+    "baumfarbe": "#88B4FF",
+    "konturbreite": "2px",
+    "kontur": "rgb(241, 243, 245)",
+    "tatsaechlicheBreite": "2px"
+  },
+  "feld": {
+    "kontur": "rgb(241, 243, 245)",
+    "breite": "2px"
+  }
+}

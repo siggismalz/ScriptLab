@@ -12,15 +12,18 @@ Der Windows-Build erzeugt `release/ScriptLab-0.1.0-Setup-x64.exe`. Der NSIS-Inst
 
 ## Ein erster Workflow
 
-1. ScriptLab mit dem vorbereiteten Ablauf „Workflow starten → Zeige eine Nachricht“ öffnen.
-2. Den Text im Nachrichtenbaustein anklicken und ändern.
-3. In der Codevorschau den erzeugten Text ansehen.
-4. Mit **Speichern** ein bearbeitbares `.scriptlab`-Projekt sichern.
-5. Mit **Als VBS exportieren** eine `.vbs`-Datei speichern.
+1. ScriptLab öffnen. Ein neues Projekt enthält genau den Baustein **Workflow starten**.
+2. Links nach **Nachricht** suchen und beim Treffer **Nachricht anzeigen** auf Plus klicken.
+3. Als Einfügestelle **Nach „Workflow starten“** wählen. Alternativ lässt sich der Baustein aus der Palette an den Start ziehen.
+4. Den Nachrichtentext direkt am Baustein bearbeiten oder den Baustein auswählen und **Eigenschaften** öffnen (F4). Namen und Beschreibung des Projekts änderst du im **Projektmenü → Projektangaben**.
+5. Mit **Speichern** ein bearbeitbares `.scriptlab`-Projekt sichern. **Codevorschau** öffnet bei Bedarf unten die schreibgeschützte VBS-Vorschau.
+6. Mit **Als VBS exportieren** eine `.vbs`-Datei speichern.
 
 Danach gilt: **„Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“** ScriptLab besitzt keinen Startknopf, Testlauf oder Zeitplan für Workflows. „Speicherordner anzeigen“ markiert die Datei im Explorer und startet sie nicht.
 
-46 Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Drei Projekte liegen in [beispiele](beispiele); auch ihr Öffnen und Exportieren führt keine ihrer Aktionen aus.
+47 Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Die drei Beispiele sind über das Projektmenü erreichbar und liegen außerdem in [beispiele](beispiele); auch ihr Öffnen und Exportieren führt keine ihrer Aktionen aus.
+
+Die linke Palette verbindet Suche und Kategorien in einem verstellbaren Bereich. Eigenschaften und Codevorschau sind anfangs geschlossen. Neben Drag-and-drop gibt es anklickbare Einfügestellen zum Hinzufügen, Verbinden und Verschieben. Das Mausrad verschiebt die Arbeitsfläche; Strg+Mausrad zoomt dort. Die [Designnotiz](docs/DESIGNNOTIZ.md) enthält die tatsächlichen UI-Prüfungen, Bildschirmaufnahmen und offenen Punkte.
 
 ## Entwicklung
 

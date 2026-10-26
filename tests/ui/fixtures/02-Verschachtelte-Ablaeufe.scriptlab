@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1.0",
+  "name": "UI-Test: Verschachtelte Abläufe",
+  "beschreibung": "Reine Darstellungstestdaten: äußere Schleife, innere Bedingung und zusätzliche innere Schleife. Kein Scriptstart.",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "ui-start",
+          "x": 72,
+          "y": 48,
+          "next": {
+            "block": {
+              "type": "sl_set",
+              "id": "ui-zaehler-start",
+              "fields": {
+                "VAR": "Zähler"
+              },
+              "inputs": {
+                "WERT": {
+                  "block": {
+                    "type": "sl_number",
+                    "id": "ui-null",
+                    "fields": {
+                      "ZAHL": "0"
+                    }
+                  }
+                }
+              },
+              "next": {
+                "block": {
+                  "type": "sl_repeat",
+                  "id": "ui-aeussere-schleife",
+                  "inputs": {
+                    "ANZAHL": {
+                      "block": {
+                        "type": "sl_number",
+                        "id": "ui-aeussere-anzahl",
+                        "fields": {
+                          "ZAHL": "3"
+                        }
+                      }
+                    },
+                    "ABLAUF": {
+                      "block": {
+                        "type": "sl_if",
+                        "id": "ui-innere-bedingung",
+                        "inputs": {
+                          "BEDINGUNG": {
+                            "block": {
+                              "type": "sl_compare",
+                              "id": "ui-zaehler-vergleich",
+                              "fields": {
+                                "OP": "LT"
+                              },
+                              "inputs": {
+                                "A": {
+                                  "block": {
+                                    "type": "sl_get",
+                                    "id": "ui-zaehler-pruefen",
+                                    "fields": {
+                                      "VAR": "Zähler"
+                                    }
+                                  }
+                                },
+                                "B": {
+                                  "block": {
+                                    "type": "sl_number",
+                                    "id": "ui-grenze",
+                                    "fields": {
+                                      "ZAHL": "2"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "DANN": {
+                            "block": {
+                              "type": "sl_repeat",
+                              "id": "ui-innere-schleife",
+                              "inputs": {
+                                "ANZAHL": {
+                                  "block": {
+                                    "type": "sl_number",
+                                    "id": "ui-innere-anzahl",
+                                    "fields": {
+                                      "ZAHL": "2"
+                                    }
+                                  }
+                                },
+                                "ABLAUF": {
+                                  "block": {
+                                    "type": "sl_log",
+                                    "id": "ui-inneres-protokoll",
+                                    "inputs": {
+                                      "PFAD": {
+                                        "block": {
+                                          "type": "sl_text",
+                                          "id": "ui-innerer-pfad",
+                                          "fields": {
+                                            "TEXT": "ScriptLab-UI-Testdaten\\Verschachtelt.txt"
+                                          }
+                                        }
+                                      },
+                                      "TEXT": {
+                                        "block": {
+                                          "type": "sl_text",
+                                          "id": "ui-innerer-text",
+                                          "fields": {
+                                            "TEXT": "Nur Testdaten für die Darstellung."
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "SONST": {
+                            "block": {
+                              "type": "sl_message",
+                              "id": "ui-andere-runde",
+                              "inputs": {
+                                "TEXT": {
+                                  "block": {
+                                    "type": "sl_text",
+                                    "id": "ui-andere-runde-text",
+                                    "fields": {
+                                      "TEXT": "Diese Runde enthält keine Protokollzeile."
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "sl_set",
+                            "id": "ui-zaehler-erhoehen",
+                            "fields": {
+                              "VAR": "Zähler"
+                            },
+                            "inputs": {
+                              "WERT": {
+                                "block": {
+                                  "type": "sl_math",
+                                  "id": "ui-plus",
+                                  "fields": {
+                                    "OP": "ADD"
+                                  },
+                                  "inputs": {
+                                    "A": {
+                                      "block": {
+                                        "type": "sl_get",
+                                        "id": "ui-zaehler-lesen",
+                                        "fields": {
+                                          "VAR": "Zähler"
+                                        }
+                                      }
+                                    },
+                                    "B": {
+                                      "block": {
+                                        "type": "sl_number",
+                                        "id": "ui-eins",
+                                        "fields": {
+                                          "ZAHL": "1"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "sl_message",
+                      "id": "ui-verschachtelt-fertig",
+                      "inputs": {
+                        "TEXT": {
+                          "block": {
+                            "type": "sl_text",
+                            "id": "ui-verschachtelt-fertig-text",
+                            "fields": {
+                              "TEXT": "Der verschachtelte Testablauf ist vollständig."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

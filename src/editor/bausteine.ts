@@ -2,6 +2,7 @@ import * as Blockly from 'blockly/core';
 import * as deutscheTexte from 'blockly/msg/de';
 import { bausteinDefinitionen } from '../kern/katalog';
 import { deutscheErgaenzungen } from './deutsch';
+import { blockStilNachKategorie } from '../gestaltung/blocklyThema';
 
 export const bausteinKatalog = bausteinDefinitionen.map(({ typ, name, kategorie, hilfe }) => ({
   typ,
@@ -67,7 +68,10 @@ export function registriereBausteine(): void {
         type: def.typ,
         message0: def.nachricht,
         args0: args,
-        colour: def.farbe,
+        style:
+          def.typ === 'sl_delete'
+            ? 'datei_loeschen'
+            : blockStilNachKategorie[def.kategorie as keyof typeof blockStilNachKategorie],
         tooltip: def.hilfe,
         helpUrl: '',
         inputsInline: !def.eingaben.some((e) => e.typ === 'Statement'),

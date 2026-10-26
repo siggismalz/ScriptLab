@@ -22,6 +22,7 @@ const bruecke: ScriptLabBruecke = {
   },
   neu: (projekt) => ipcRenderer.invoke('scriptlab:neu', projekt),
   oeffnen: (projekt) => ipcRenderer.invoke('scriptlab:oeffnen', projekt),
+  beispielOeffnen: (projekt, beispiel) => ipcRenderer.invoke('scriptlab:beispiel', { projekt, beispiel }),
   speichern: (projekt, unter) => ipcRenderer.invoke('scriptlab:speichern', { projekt, unter }),
   exportieren: (projekt) => ipcRenderer.invoke('scriptlab:exportieren', projekt),
   exportOrdnerAnzeigen: () => ipcRenderer.invoke('scriptlab:exportordner'),

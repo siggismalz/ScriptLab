@@ -6,26 +6,43 @@ Entwickelt von Leon Stolz.
 
 ## Eine erste Nachricht erstellen
 
-1. Öffne ScriptLab. Das neue Projekt enthält bereits „Workflow starten“, „Zeige eine Nachricht“ und einen Textwert.
-2. Ändere oben den Projektnamen. Klicke auf das Textfeld im Textbaustein und schreibe deine Nachricht.
-3. Die schreibgeschützte **Codevorschau** rechts zeigt den erzeugten VBS-Text. Du kannst sie mit „Codevorschau“ ein- oder ausblenden.
-4. Speichere über **Speichern** eine `.scriptlab`-Projektdatei. Diese Datei erhält die Bausteine, ihre Verbindungen, Kommentare und die Ansicht für die spätere Bearbeitung.
-5. Wähle **Als VBS exportieren** und einen Speicherort für die `.vbs`-Datei. Ein normaler Export benötigt kein Zertifikat.
-6. Nach erfolgreichem Export erscheint: „Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“ **Speicherordner anzeigen** öffnet den Ordner; ScriptLab startet die Datei dabei nicht.
+1. Öffne ScriptLab. Ein neues Projekt enthält nur **Workflow starten** und den Hinweis „Füge links einen Baustein hinzu“.
+2. Suche links nach **Nachricht**. Klicke beim Treffer **Nachricht anzeigen** auf Plus und wähle **Nach „Workflow starten“**. Damit ist die Nachricht bereits mit dem Ablauf verbunden.
+3. Klicke auf das Textfeld am Nachrichtenbaustein und schreibe deine Nachricht. Alternativ wählst du den Baustein aus und öffnest **Eigenschaften** über die Werkzeugleiste oder F4. Dort stehen dieselben Werte in größeren Eingabefeldern.
+4. Öffne das **Projektmenü** neben **Speichern** und wähle **Projektangaben**, wenn du Namen oder Beschreibung ändern möchtest. **Übernehmen** aktualisiert die Angaben; die Projektdatei wird erst mit **Speichern** geschrieben.
+5. Speichere über **Speichern** eine `.scriptlab`-Projektdatei. Diese Datei erhält die Bausteine, ihre Verbindungen, Kommentare und die Ansicht für die spätere Bearbeitung. Zum Prüfen des erzeugten Texts kannst du **Codevorschau** öffnen: Sie erscheint als schreibgeschützter Bereich unten und ist anfangs geschlossen.
+6. Wähle **Als VBS exportieren** und einen Speicherort für die `.vbs`-Datei. Ein normaler Export benötigt kein Zertifikat.
+7. Nach erfolgreichem Export erscheint: „Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“ **Speicherordner anzeigen** öffnet den Ordner; ScriptLab startet die Datei dabei nicht.
 
 Der selbstständige Start außerhalb von ScriptLab ist deine eigene Entscheidung. Dafür muss Windows die optionale VBScript-Komponente bereitstellen und deine Richtlinie die Ausführung erlauben. ScriptLab aktiviert keine Windows-Features und ändert keine Sicherheitsrichtlinien.
 
 ## Bausteine verbinden und bearbeiten
 
-Wähle links eine beschriftete Kategorie. Ziehe einen Baustein aus der aufgeklappten Liste in den Arbeitsbereich. Die Suchleiste filtert die verfügbaren Bausteine anhand von Name, Kategorie und Hilfe.
+Wähle links eine beschriftete Kategorie. **Ein- und Ausgaben** ist anfangs geöffnet. Ziehe einen Baustein am Namen aus der aufgeklappten Liste in den Arbeitsbereich. Die Suchleiste durchsucht alle Kategorien anhand von Name, Kategorie und Hilfe. Treffer zeigen ihre Kategorie; bei „Keine Bausteine gefunden“ kannst du **Suche leeren** wählen. Danach erscheint wieder die zuvor geöffnete Kategorie.
 
 Ein Workflow besitzt genau einen aktiven Startbaustein. Anweisungen werden untereinander verbunden. Ihre Verbindungen legen die Reihenfolge fest; ihre Position auf dem Raster tut das nicht. Werte und Bedingungen passen in die dafür geformten Eingänge. „Wenn / sonst“ und Schleifen nehmen weitere Anweisungen in ihren inneren Abläufen auf.
 
-Ziehe einen verbundenen Baustein heraus, um ihn zu lösen oder neu einzusetzen. Das dezente Raster hilft beim Anordnen. Ziehen am freien Arbeitsbereich und die Bildlaufleisten verschieben den sichtbaren Ausschnitt. Unten stehen **Verkleinern**, **Vergrößern**, **100 %** und **Einpassen** bereit; „Einpassen“ zeigt den gesamten Workflow. Das Mausrad unterstützt die Blockly-Zoomfunktion.
+Ziehe einen verbundenen Baustein heraus, um ihn zu lösen oder neu einzusetzen. Eine Einfügemarkierung zeigt passende Anschlüsse. **Escape** bricht das Ziehen ab und stellt den vorherigen Zustand wieder her. Das dezente Punktraster hilft beim Anordnen.
 
-Die Werkzeugleiste enthält **Rückgängig** und **Wiederholen**. Unten findest du **Kopieren**, **Einfügen**, **Duplizieren** und **Löschen** für ausgewählte Bausteine. Blockly bietet außerdem das Kontextmenü per rechter Maustaste. Beim Auswählen eines Bausteins zeigt der rechte Bereich seine kurze Hilfe an, solange die Codevorschau eingeblendet ist.
+Das Mausrad, Ziehen am freien Arbeitsbereich, die Bildlaufleisten und die vier Ansichtspfeile verschieben den sichtbaren Ausschnitt. **Strg+Mausrad** zoomt nur über der Arbeitsfläche. In der Palette scrollt das Rad die Bausteinliste. Unten im Arbeitsbereich stehen **Verkleinern**, die aktuelle Prozentanzeige zum Zurücksetzen auf **100 %**, **Vergrößern** und **Alles anzeigen** bereit. Der Zoom reicht von 25 bis 200 Prozent; „Alles anzeigen“ passt den gesamten Workflow ein. Unter **Weitere Funktionen → Einstellungen → UI-Textgröße** lässt sich die Schrift der Bedienelemente getrennt davon vergrößern.
 
-Die von der Oberfläche unterstützten Projekt- und Zoomkürzel gelten außerhalb aktiver Texteingaben:
+Die Werkzeugleiste enthält **Neu**, **Öffnen**, **Speichern**, das **Projektmenü**, **Rückgängig**, **Wiederholen**, **Eigenschaften**, **Codevorschau** und **Als VBS exportieren**. **Speichern unter** liegt im Projektmenü. **Weitere Funktionen** neben dem Export öffnet unter anderem **Einstellungen**, **Über ScriptLab**, **Kopieren** und **Einfügen**. **Duplizieren**, **Kopieren**, **Verschieben** und **Baustein löschen** findest du auch in den Eigenschaften des ausgewählten Bausteins. Blockly bietet zusätzlich das Kontextmenü per rechter Maustaste. Gelöschte Bausteine lassen sich mit **Rückgängig** wiederherstellen.
+
+## Ohne Ziehen einfügen und umordnen
+
+Klicke in der Palette auf Plus neben dem gewünschten Baustein. Die Palette zeigt passende Einfügestellen, zum Beispiel **Nach „Workflow starten“** oder einen Eingang einer Schleife. Klicke die gewünschte Stelle an. Du kannst auch den Zielbaustein im Arbeitsbereich anklicken: Bei einem passenden Anschluss wird er verwendet; bei mehreren Anschlüssen wählst du anschließend links den gewünschten Eingang. **Abbrechen** oder **Escape** beendet die Zielauswahl.
+
+Zum Umordnen wählst du einen vorhandenen Baustein aus, öffnest **Eigenschaften** und klickst **Verschieben**. Wähle danach die neue Einfügestelle. Verschachtelte innere Abläufe bleiben beim verschobenen Baustein; eine vorherige Anschlusskette wird wieder geschlossen. Die angebotenen Ziele berücksichtigen den Blocktyp und verhindern Verbindungen mit dem eigenen inneren Ablauf. Hinzufügen und Verschieben lassen sich mit **Rückgängig** zurücknehmen.
+
+## Eigenschaften und Platz im Fenster
+
+Die **Eigenschaften** sind unabhängig von der Codevorschau und anfangs geschlossen. Sie zeigen die Hilfe, ein konkretes Wirkungsbeispiel und die bearbeitbaren Werte des ausgewählten Bausteins. Lange Texte und vollständige Pfade lassen sich in den größeren Feldern auswählen, kopieren und ändern. Änderungen erscheinen zugleich am Baustein.
+
+Bei schmaleren Fenstern liegt der Eigenschaftenbereich über dem rechten Rand der Arbeitsfläche; er verkleinert diese nicht. Bei mindestens 1440 CSS-Pixeln Fensterbreite lässt er sich anheften. **Eigenschaften schließen** gibt den Arbeitsbereich wieder frei. Die linke Palette kannst du über ihren Kopf einklappen und an der Trennlinie verbreitern. Auch **Einstellungen → Breite der Bausteinpalette** bietet dafür ein Feld. Die Höhe der Codevorschau lässt sich an ihrer oberen Trennlinie oder mit ihren Größenknöpfen verändern.
+
+## Tastenkombinationen
+
+Die Projektkürzel funktionieren auch während einer Texteingabe. Die übrigen genannten Editoraktionen gelten außerhalb aktiver Texteingaben und bei geschlossenem Dialog:
 
 | Tastenkombination | Aktion |
 | --- | --- |
@@ -36,6 +53,10 @@ Die von der Oberfläche unterstützten Projekt- und Zoomkürzel gelten außerhal
 | Strg+Plus / Strg+Minus | Vergrößern / verkleinern |
 | Strg+0 | Zoom auf 100 Prozent |
 | Strg+Z / Strg+Y | Blockly rückgängig / wiederholen |
+| Strg+Umschalt+Z | Wiederholen |
+| F4 | Eigenschaften öffnen |
+| Entf | Ausgewählten Baustein löschen |
+| Escape | Ziehen oder die Auswahl einer Einfügestelle abbrechen |
 
 Für mehrzeiligen Text kannst du „Texte verbinden“ mit dem Wert „Zeilenumbruch“ verwenden. Ein Zeilenumbruch entspricht dem Windows-Format CRLF.
 
@@ -43,13 +64,13 @@ Für mehrzeiligen Text kannst du „Texte verbinden“ mit dem Wert „Zeilenumb
 
 Unvollständige Entwürfe dürfen gespeichert werden. Beim Export müssen Pflichtwerte und Verbindungen gültig sein. Lose aktive Anweisungen werden als Fehler gemeldet, damit kein Arbeitsschritt stillschweigend verloren geht. Unverbundene Werte erzeugen einen Hinweis und werden nicht ausgegeben.
 
-Fehler erscheinen unten als verständliche Meldungen sowie direkt am zugehörigen Baustein. Ein Klick auf eine Meldung wählt den betroffenen Baustein aus und bringt ihn in den sichtbaren Bereich. Ein Hinweis auf eine möglicherweise noch nicht gesetzte Variable sollte vor dem späteren Start geprüft werden.
+**Hinweise** in der Statusleiste öffnet die Übersicht. Nach der Prüfung erscheinen verständliche Meldungen sowie Markierungen direkt am zugehörigen Baustein. Ein Klick auf eine Meldung wählt den betroffenen Baustein aus und bringt ihn in den sichtbaren Bereich. Ein Exportversuch mit Fehlern öffnet die Übersicht und führt zum ersten betroffenen Baustein. Ein Hinweis auf eine möglicherweise noch nicht gesetzte Variable sollte vor dem späteren Start geprüft werden.
 
 Die angezeigten Prüfungen kontrollieren die Struktur und die Übersetzbarkeit. Sie prüfen nicht durch Ausprobieren, ob eine Quelldatei auf deinem Computer vorhanden ist. Dateioperationen werden erst beim eigenen Start der exportierten VBS-Datei ausgeführt.
 
 ## Projekte und Änderungen erhalten
 
-**Öffnen** lädt `.scriptlab`-Dateien. **Speichern unter** legt das aktuelle Projekt an einem anderen Ort ab. Die Anzeige „Ungespeichert“ weist auf Änderungen hin. Bei einem Projektwechsel, beim Schließen oder vor einem Update-Neustart fragt die Anwendung nach, wenn Änderungen verloren gingen. Ein abgebrochener Speicherdialog bricht auch den davon abhängigen Vorgang ab.
+**Öffnen** lädt `.scriptlab`-Dateien. **Projektmenü → Speichern unter** legt das aktuelle Projekt an einem anderen Ort ab. Die Statusleiste unterscheidet **Neues Projekt**, **Ungespeicherte Änderungen** und **Projekt gespeichert**. Ein erfolgreicher VBS-Export speichert die Projektdatei nicht mit. Bei einem Projektwechsel, beim Schließen oder vor einem Update-Neustart fragt die Anwendung nach, wenn Änderungen verloren gingen. Die Auswahl lautet **Speichern**, **Nicht speichern** oder **Abbrechen**. Ein abgebrochener Speicherdialog bricht auch den davon abhängigen Vorgang ab.
 
 Projektdateien sind JSON-Daten. Die Anwendung prüft ihre Struktur und Schemaversion. Neuere unbekannte Formate und unbekannte Bausteintypen werden abgewiesen. Ein Rückimport beliebiger `.vbs`-Dateien als Bausteine ist nicht vorgesehen.
 
@@ -59,7 +80,7 @@ Eine `.scriptlab`-Datei bleibt bearbeitbar; eine `.vbs`-Datei ist das daraus erz
 
 ## Die drei Beispiele
 
-Die Beispiele liegen im Ordner `beispiele` des Quellprojekts. Öffne sie über **Öffnen**. Das Öffnen oder Exportieren verändert keine der beschriebenen Testdateien.
+Die Beispiele sind im **Projektmenü** unter **Beispiel: Begrüßung**, **Beispiel: Datei-Backup** und **Beispiel: Dateinamenliste** erreichbar. Im neuen Projekt öffnet auch **Beispiel öffnen** den Begrüßungsablauf. Die Dateien liegen zusätzlich im Ordner `beispiele` des Quellprojekts und lassen sich über **Öffnen** laden. Das Öffnen oder Exportieren verändert keine der beschriebenen Testdateien.
 
 | Projekt | Inhalt und spätere Wirkung |
 | --- | --- |
@@ -81,8 +102,10 @@ Der Baustein „Datei löschen (erweitert)“ ist besonders gekennzeichnet. Stan
 
 ## Optionale Signatur und Updates
 
-Unter **Einstellungen** kannst du „Exportierte Datei signieren“ aktivieren und nach dem Laden der Zertifikate dein eigenes Code-Signing-Zertifikat auswählen. Die Auswahl wird über seinen Fingerabdruck gespeichert. Private Schlüssel und Kennwörter werden nicht im Projekt gespeichert. Ohne geeignetes Zertifikat bleibt der unsignierte Export verfügbar. Weitere Einrichtungsschritte stehen in der Signaturdokumentation.
+Unter **Weitere Funktionen → Einstellungen** kannst du „Exportierte Datei signieren“ aktivieren und nach dem Laden der Zertifikate dein eigenes Code-Signing-Zertifikat auswählen. Die Auswahl wird über seinen Fingerabdruck gespeichert. Private Schlüssel und Kennwörter werden nicht im Projekt gespeichert. Ohne geeignetes Zertifikat bleibt der unsignierte Export verfügbar. Weitere Einrichtungsschritte stehen in der [Signaturdokumentation](SIGNATUR.md).
 
 Eine Signatur hilft, Herausgeber und Änderungen zu prüfen. Sie garantiert weder einen ungefährlichen Workflow noch die Ausführung ohne Windows-, SmartScreen- oder Unternehmenswarnungen.
 
 Ebenfalls unter **Einstellungen** stehen „Nach Updates suchen“, die abschaltbare automatische Prüfung und die bewusste Auswahl von Vorabversionen. Ein gefundenes Update muss erst heruntergeladen und anschließend von dir zur Installation bestätigt werden. Die Anwendung installiert es nicht stillschweigend beim Beenden. Produktive Updates benötigen die eingerichtete Release- und Anwendungssignaturinfrastruktur.
+
+Die [Designnotiz](DESIGNNOTIZ.md) hält die tatsächlich geprüften Größen, Bedienwege, Bildschirmaufnahmen und verbleibenden Einschränkungen der Oberfläche fest.

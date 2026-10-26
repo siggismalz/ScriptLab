@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1.0",
+  "name": "UI-Test: Begrüßung mit Protokoll",
+  "beschreibung": "Realistischer Ablauf mit 28 Bausteinen, Texteingabe, Bedingung, Schleife und Dateiprotokoll. Alle Pfade sind ausdrücklich Testdaten.",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "ui-start",
+          "x": 72,
+          "y": 48,
+          "next": {
+            "block": {
+              "type": "sl_comment",
+              "id": "ui-kommentar",
+              "fields": {
+                "TEXT": "Klare Testdaten: Dieser Workflow wird in der UI-Prüfung niemals gestartet."
+              },
+              "next": {
+                "block": {
+                  "type": "sl_set",
+                  "id": "ui-name-setzen",
+                  "fields": {
+                    "VAR": "Name"
+                  },
+                  "inputs": {
+                    "WERT": {
+                      "block": {
+                        "type": "sl_input",
+                        "id": "ui-name-fragen",
+                        "inputs": {
+                          "TEXT": {
+                            "block": {
+                              "type": "sl_text",
+                              "id": "ui-name-frage",
+                              "fields": {
+                                "TEXT": "Wie heißt du?"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "next": {
+                    "block": {
+                      "type": "sl_mkdir",
+                      "id": "ui-ordner",
+                      "inputs": {
+                        "PFAD": {
+                          "block": {
+                            "type": "sl_text",
+                            "id": "ui-ordnerpfad",
+                            "fields": {
+                              "TEXT": "ScriptLab-UI-Testdaten"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "sl_if",
+                          "id": "ui-wenn-name",
+                          "inputs": {
+                            "BEDINGUNG": {
+                              "block": {
+                                "type": "sl_compare",
+                                "id": "ui-name-vergleich",
+                                "fields": {
+                                  "OP": "NE"
+                                },
+                                "inputs": {
+                                  "A": {
+                                    "block": {
+                                      "type": "sl_get",
+                                      "id": "ui-name-pruefen",
+                                      "fields": {
+                                        "VAR": "Name"
+                                      }
+                                    }
+                                  },
+                                  "B": {
+                                    "block": {
+                                      "type": "sl_text",
+                                      "id": "ui-leerer-name",
+                                      "fields": {
+                                        "TEXT": ""
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "DANN": {
+                              "block": {
+                                "type": "sl_repeat",
+                                "id": "ui-wiederholen",
+                                "inputs": {
+                                  "ANZAHL": {
+                                    "block": {
+                                      "type": "sl_number",
+                                      "id": "ui-wiederholungszahl",
+                                      "fields": {
+                                        "ZAHL": "3"
+                                      }
+                                    }
+                                  },
+                                  "ABLAUF": {
+                                    "block": {
+                                      "type": "sl_log",
+                                      "id": "ui-protokoll",
+                                      "inputs": {
+                                        "PFAD": {
+                                          "block": {
+                                            "type": "sl_text",
+                                            "id": "ui-protokollpfad",
+                                            "fields": {
+                                              "TEXT": "ScriptLab-UI-Testdaten\\Protokoll.txt"
+                                            }
+                                          }
+                                        },
+                                        "TEXT": {
+                                          "block": {
+                                            "type": "sl_join",
+                                            "id": "ui-begruessung",
+                                            "inputs": {
+                                              "A": {
+                                                "block": {
+                                                  "type": "sl_text",
+                                                  "id": "ui-hallo",
+                                                  "fields": {
+                                                    "TEXT": "Hallo "
+                                                  }
+                                                }
+                                              },
+                                              "B": {
+                                                "block": {
+                                                  "type": "sl_get",
+                                                  "id": "ui-name-protokoll",
+                                                  "fields": {
+                                                    "VAR": "Name"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "sl_message",
+                                          "id": "ui-rueckmeldung",
+                                          "inputs": {
+                                            "TEXT": {
+                                              "block": {
+                                                "type": "sl_text",
+                                                "id": "ui-rueckmeldung-text",
+                                                "fields": {
+                                                  "TEXT": "Die Protokollzeile wurde geschrieben."
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "SONST": {
+                              "block": {
+                                "type": "sl_message",
+                                "id": "ui-ohne-eingabe",
+                                "inputs": {
+                                  "TEXT": {
+                                    "block": {
+                                      "type": "sl_text",
+                                      "id": "ui-ohne-eingabe-text",
+                                      "fields": {
+                                        "TEXT": "Du hast keinen Namen eingegeben."
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "next": {
+                            "block": {
+                              "type": "sl_set",
+                              "id": "ui-anzahl-setzen",
+                              "fields": {
+                                "VAR": "Wiederholungen"
+                              },
+                              "inputs": {
+                                "WERT": {
+                                  "block": {
+                                    "type": "sl_number",
+                                    "id": "ui-anzahl",
+                                    "fields": {
+                                      "ZAHL": "3"
+                                    }
+                                  }
+                                }
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "sl_message",
+                                  "id": "ui-fertig",
+                                  "inputs": {
+                                    "TEXT": {
+                                      "block": {
+                                        "type": "sl_join",
+                                        "id": "ui-fertig-verbinden",
+                                        "inputs": {
+                                          "A": {
+                                            "block": {
+                                              "type": "sl_text",
+                                              "id": "ui-fertig-text",
+                                              "fields": {
+                                                "TEXT": "Anzahl der Wiederholungen: "
+                                              }
+                                            }
+                                          },
+                                          "B": {
+                                            "block": {
+                                              "type": "sl_get",
+                                              "id": "ui-anzahl-lesen",
+                                              "fields": {
+                                                "VAR": "Wiederholungen"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

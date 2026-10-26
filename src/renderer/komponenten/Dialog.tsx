@@ -29,7 +29,10 @@ export function Dialog({
   useLayoutEffect(() => {
     const dialog = element.current;
     if (!offen || !dialog) return;
-    const vorher = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const vorher =
+      document.activeElement instanceof HTMLElement || document.activeElement instanceof SVGElement
+        ? document.activeElement
+        : null;
     if (!dialog.open) dialog.showModal();
     const fokus = anfangsfokusRef?.current ?? ueberschrift.current;
     fokus?.focus({ preventScroll: true });

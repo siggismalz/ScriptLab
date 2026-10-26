@@ -1,95 +1,113 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import * as Blockly from 'blockly/core';
-import { bausteinKatalog, registriereBausteine, werkzeugkasten } from '../editor/bausteine';
+import { registriereBausteine } from '../editor/bausteine';
+import { bausteinDefinitionen } from '../kern/katalog';
 import { neuesProjekt, type Projekt } from '../kern/projekt';
 import { vbsErzeugen } from '../kern/generator';
+import { scriptlabThema } from '../gestaltung/blocklyThema';
+import { farben, masse } from '../gestaltung/tokens';
+import {
+  bausteinEinfuegen,
+  bausteinVerschieben,
+  einfuegestellenLesen,
+  editorNavigationEinrichten,
+  verlaufAendern,
+  ScriptLabBlockDragger,
+  type Einfuegestelle,
+} from '../editor/bedienung';
 import type { Antwort, Dokument, Einstellungen, ExportErgebnis } from '../gemeinsam/bruecke';
 import type { Zertifikat } from '../windows/signatur';
 import type { UpdateZustand } from '../windows/updates';
+import { Knopf } from './komponenten/Knopf';
+import { Symbol } from './komponenten/Icon';
+import { Dialog } from './komponenten/Dialog';
+import { Palette, type PlatzierungsAuftrag } from './Palette';
+import { Eigenschaften } from './Eigenschaften';
+import { EinstellungenDialog } from './EinstellungenDialog';
+import { ProjektDialog } from './ProjektDialog';
+import { Menue } from './komponenten/Menue';
 
 registriereBausteine();
-const thema = Blockly.Theme.defineTheme('scriptlab', {
-  name: 'scriptlab',
-  base: Blockly.Themes.Classic,
-  componentStyles: {
-    workspaceBackgroundColour: '#131823',
-    toolboxBackgroundColour: '#171d2a',
-    toolboxForegroundColour: '#e0e6f4',
-    flyoutBackgroundColour: '#202839',
-    flyoutForegroundColour: '#edf1fa',
-    flyoutOpacity: 1,
-    scrollbarColour: '#62708a',
-    insertionMarkerColour: '#ffffff',
-    insertionMarkerOpacity: 0.6,
-    cursorColour: '#a5b4fc',
-  },
-  fontStyle: { family: 'Segoe UI, sans-serif', weight: '500', size: 12 },
-});
+const vorgaben: Einstellungen = {
+  automatischeUpdates: false,
+  vorabversionen: false,
+  palettenBreite: 272,
+  paletteEingeklappt: false,
+  eigenschaftenAngeheftet: false,
+  textSkalierung: 1,
+};
+function antwort<T>(r: Antwort<T>): T {
+  if (!r.ok) throw new Error(r.meldung);
+  return r.wert;
+}
 
 export function Anwendung() {
   const element = useRef<HTMLDivElement>(null);
-  const arbeitsbereich = useRef<Blockly.WorkspaceSvg | null>(null);
+  const wsRef = useRef<Blockly.WorkspaceSvg | null>(null);
+  const [workspace, setWorkspace] = useState<Blockly.WorkspaceSvg | null>(null);
   const projektRef = useRef(neuesProjekt());
-  const laedt = useRef(false);
-  const beschaeftigtRef = useRef(false);
+  const gespeichertRef = useRef(JSON.stringify(projektRef.current));
+  const laedt = useRef(false),
+    busy = useRef(false);
+  const auswahlRef = useRef<string | null>(null),
+    rueckfokus = useRef<HTMLElement | null>(null);
+  const platzierungRef = useRef<PlatzierungsAuftrag | null>(null);
   const [projekt, setProjekt] = useState(projektRef.current);
   const [datei, setDatei] = useState<string | null>(null);
   const [geaendert, setGeaendert] = useState(false);
-  const [vorschau, setVorschau] = useState(true);
-  const [suche, setSuche] = useState('');
   const [auswahl, setAuswahl] = useState<string | null>(null);
-  const [meldung, setMeldung] = useState('Bausteine verbinden, prüfen und als VBS speichern.');
-  const [fehler, setFehler] = useState(false);
-  const [beschaeftigt, setBeschaeftigt] = useState(false);
-  const [dialog, setDialog] = useState<'einstellungen' | 'ueber' | null>(null);
-  const [einstellungen, setEinstellungen] = useState<Einstellungen>({
-    automatischeUpdates: false,
-    vorabversionen: false,
-  });
+  const [revision, setRevision] = useState(0);
+  const [einstellungen, setEinstellungen] = useState(vorgaben);
+  const einstellungenRef = useRef(vorgaben);
+  const [eigenschaftenOffen, setEigenschaftenOffen] = useState(false);
+  const [vorschauOffen, setVorschauOffen] = useState(false);
+  const [hinweiseOffen, setHinweiseOffen] = useState(false);
+  const [pruefungAngefordert, setPruefungAngefordert] = useState(false);
+  const [beruehrt, setBeruehrt] = useState<Set<string>>(new Set());
+  const [platzierung, setPlatzierung] = useState<PlatzierungsAuftrag | null>(null);
+  const [ziele, setZiele] = useState<Einfuegestelle[]>([]);
+  const [breite, setBreite] = useState(window.innerWidth);
+  const [codeHoehe, setCodeHoehe] = useState(240);
+  const [codeUmbruch, setCodeUmbruch] = useState(false);
+  const [status, setStatus] = useState('Füge links einen Baustein hinzu.');
+  const [statusArt, setStatusArt] = useState<'neutral' | 'erfolg' | 'hinweis' | 'fehler'>('neutral');
+  const [dauerfehler, setDauerfehler] = useState<string | null>(null);
+  const [verarbeitung, setVerarbeitung] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<'einstellungen' | 'ueber' | 'projekt' | null>(null);
   const [version, setVersion] = useState('0.1.0');
   const [zertifikate, setZertifikate] = useState<Zertifikat[]>([]);
+  const [zertifikatMeldung, setZertifikatMeldung] = useState('');
   const [update, setUpdate] = useState<UpdateZustand | null>(null);
   const [exportiert, setExportiert] = useState<ExportErgebnis | null>(null);
-  const ergebnis = useMemo(() => vbsErzeugen(projekt), [projekt]);
-  const ausgewaehlterBlock = auswahl
-    ? bausteinKatalog.find((b) => b.typ === arbeitsbereich.current?.getBlockById(auswahl)?.type)
-    : undefined;
+  const ergebnis = useMemo(() => vbsErzeugen(projekt), [projekt.editor, projekt.exportOptionen]);
+  const sichtbareHinweise = ergebnis.meldungen.filter(
+    (m) => pruefungAngefordert || (m.blockId && beruehrt.has(m.blockId)),
+  );
+  const kannAnheften = breite >= 1440;
+  const angeheftet = eigenschaftenOffen && kannAnheften && einstellungen.eigenschaftenAngeheftet;
+  const nurStart = projekt.editor.blocks?.blocks.length === 1 && !projekt.editor.blocks.blocks[0].next;
 
-  function antwort<T>(wert: Antwort<T>): T {
-    if (!wert.ok) throw new Error(wert.meldung);
-    return wert.wert;
+  function melden(text: string, art: 'neutral' | 'erfolg' | 'hinweis' | 'fehler' = 'neutral') {
+    setStatus(text);
+    setStatusArt(art);
+    if (art === 'fehler') setDauerfehler(text);
   }
-  async function aktion(funktion: () => Promise<void>) {
-    if (beschaeftigtRef.current) return;
-    beschaeftigtRef.current = true;
-    setBeschaeftigt(true);
+  async function aktion(name: string, funktion: () => Promise<void>) {
+    if (busy.current) return;
+    busy.current = true;
+    setVerarbeitung(name);
+    setDauerfehler(null);
     try {
       await funktion();
-    } catch (problem) {
-      setFehler(true);
-      setMeldung(
-        problem instanceof Error ? problem.message : 'Der Vorgang konnte nicht abgeschlossen werden.',
-      );
+    } catch (e) {
+      melden(e instanceof Error ? e.message : 'Der Vorgang konnte nicht abgeschlossen werden.', 'fehler');
     } finally {
-      beschaeftigtRef.current = false;
-      setBeschaeftigt(false);
+      busy.current = false;
+      setVerarbeitung(null);
     }
   }
-  function aendern(neu: Projekt) {
-    if (JSON.stringify(neu) === JSON.stringify(projektRef.current)) return;
-    projektRef.current = neu;
-    setProjekt(neu);
-    setGeaendert(true);
-    setExportiert(null);
-    void window.scriptlab.aendern(neu).then((r) => {
-      if (!r.ok) {
-        setFehler(true);
-        setMeldung(r.meldung);
-      }
-    });
-  }
   function standLesen(): Projekt {
-    const ws = arbeitsbereich.current;
+    const ws = wsRef.current;
     return ws
       ? ({
           ...projektRef.current,
@@ -98,576 +116,851 @@ export function Anwendung() {
         } as Projekt)
       : projektRef.current;
   }
+  function aendern(neu: Projekt) {
+    const json = JSON.stringify(neu);
+    if (json === JSON.stringify(projektRef.current)) return;
+    projektRef.current = neu;
+    setProjekt(neu);
+    setRevision((n) => n + 1);
+    setGeaendert(json !== gespeichertRef.current);
+    setExportiert(null);
+    void window.scriptlab.aendern(neu).then((r) => {
+      if (!r.ok) melden(r.meldung, 'fehler');
+    });
+  }
+  function auswaehlen(id: string | null) {
+    auswahlRef.current = id;
+    setAuswahl(id);
+    for (const b of wsRef.current?.getAllBlocks(false) ?? [])
+      b.getSvgRoot()?.classList.toggle('scriptlabAuswahl', b.id === id);
+  }
+  function eigenschaftenOeffnen() {
+    rueckfokus.current = document.activeElement as HTMLElement;
+    setEigenschaftenOffen(true);
+  }
+  function eigenschaftenSchliessen() {
+    setEigenschaftenOffen(false);
+    rueckfokus.current?.focus?.({ preventScroll: true });
+  }
   async function dokumentLaden(neu: Dokument) {
     laedt.current = true;
     try {
-      const ws = arbeitsbereich.current!;
+      const ws = wsRef.current!;
       Blockly.serialization.workspaces.load(neu.projekt.editor, ws);
-      ws.setScale(neu.projekt.ansicht.zoom);
+      ws.setScale(Math.max(0.25, Math.min(2, neu.projekt.ansicht.zoom)));
       ws.scroll(neu.projekt.ansicht.x, neu.projekt.ansicht.y);
       ws.clearUndo();
-      // Blockly ergänzt nur technische Standardwerte und Schattenkennungen.
       const stand = {
         ...neu.projekt,
         editor: Blockly.serialization.workspaces.save(ws),
         ansicht: { zoom: ws.scale, x: ws.scrollX, y: ws.scrollY },
       } as Projekt;
       projektRef.current = stand;
+      gespeichertRef.current = JSON.stringify(stand);
       setProjekt(stand);
       setDatei(neu.dateiname);
-      setGeaendert(neu.geaendert);
-      setAuswahl(null);
+      setGeaendert(false);
+      auswaehlen(null);
+      setBeruehrt(new Set());
+      setPruefungAngefordert(false);
+      setHinweiseOffen(false);
       setExportiert(null);
+      setRevision((n) => n + 1);
+      setPlatzierung(null);
+      platzierungRef.current = null;
       antwort(await window.scriptlab.darstellungBereit(stand));
     } finally {
       laedt.current = false;
     }
   }
-  async function projektAktion(art: 'neu' | 'oeffnen' | 'speichern' | 'unter') {
-    await aktion(async () => {
-      const stand = standLesen();
-      const r =
-        art === 'neu'
-          ? await window.scriptlab.neu(stand)
-          : art === 'oeffnen'
-            ? await window.scriptlab.oeffnen(stand)
-            : await window.scriptlab.speichern(stand, art === 'unter');
-      const neu = antwort(r);
-      if (neu) {
-        if (art === 'neu' || art === 'oeffnen') await dokumentLaden(neu);
-        else {
-          setDatei(neu.dateiname);
-          setGeaendert(neu.geaendert);
-        }
-        setFehler(false);
-        setMeldung(
+  async function projektAktion(
+    art: 'neu' | 'oeffnen' | 'speichern' | 'unter' | 'begruessung' | 'backup' | 'dateiliste',
+  ) {
+    await aktion(
+      art === 'speichern' || art === 'unter' ? 'Projekt wird gespeichert …' : 'Projekt wird geöffnet …',
+      async () => {
+        const stand = standLesen();
+        const r =
           art === 'neu'
-            ? 'Ein neues Projekt ist bereit.'
+            ? await window.scriptlab.neu(stand)
             : art === 'oeffnen'
-              ? 'Das Projekt wurde geöffnet.'
-              : 'Das Projekt wurde gespeichert.',
-        );
-      } else {
-        // Ein vorgeschaltetes Speichern kann trotz anschließendem Dialogabbruch erfolgreich sein.
-        const aktuell = antwort(await window.scriptlab.laden()).dokument;
-        setDatei(aktuell.dateiname);
-        setGeaendert(aktuell.geaendert);
+              ? await window.scriptlab.oeffnen(stand)
+              : ['begruessung', 'backup', 'dateiliste'].includes(art)
+                ? await window.scriptlab.beispielOeffnen(
+                    stand,
+                    art as 'begruessung' | 'backup' | 'dateiliste',
+                  )
+                : await window.scriptlab.speichern(stand, art === 'unter');
+        const neu = antwort(r);
+        if (neu) {
+          if (art === 'speichern' || art === 'unter') {
+            gespeichertRef.current = JSON.stringify(stand);
+            setDatei(neu.dateiname);
+            setGeaendert(JSON.stringify(projektRef.current) !== gespeichertRef.current);
+            melden('Projekt gespeichert.', 'erfolg');
+          } else {
+            await dokumentLaden(neu);
+            melden(art === 'neu' ? 'Füge links einen Baustein hinzu.' : 'Projekt geöffnet.');
+          }
+        } else {
+          const aktuell = antwort(await window.scriptlab.laden()).dokument;
+          setDatei(aktuell.dateiname);
+          setGeaendert(aktuell.geaendert);
+          if (!aktuell.geaendert) gespeichertRef.current = JSON.stringify(aktuell.projekt);
+        }
+      },
+    );
+  }
+  function blockAnzeigen(id?: string) {
+    const ws = wsRef.current;
+    if (!ws || !id) return;
+    const b = ws.getBlockById(id);
+    if (b) {
+      auswaehlen(id);
+      b.select();
+      ws.centerOnBlock(id);
+    }
+  }
+  async function exportieren() {
+    setExportiert(null);
+    setDauerfehler(null);
+    const p = vbsErzeugen(standLesen());
+    if (!p.code || p.meldungen.some((m) => m.stufe === 'fehler')) {
+      setPruefungAngefordert(true);
+      setHinweiseOffen(true);
+      melden('Bitte vervollständige die markierten Bausteine vor dem Export.', 'hinweis');
+      blockAnzeigen(p.meldungen.find((m) => m.stufe === 'fehler')?.blockId);
+      return;
+    }
+    await aktion('VBS-Datei wird gespeichert …', async () => {
+      const neu = antwort(await window.scriptlab.exportieren(standLesen()));
+      if (neu) {
+        setExportiert(neu);
+        melden('Script gespeichert.', neu.signatur.status === 'vertrauen-offen' ? 'hinweis' : 'erfolg');
       }
     });
   }
-  async function exportieren() {
-    await aktion(async () => {
-      const neu = antwort(await window.scriptlab.exportieren(standLesen()));
-      if (!neu) return;
-      setExportiert(neu);
-      setFehler(neu.signatur.status === 'vertrauen-offen');
-      setMeldung('Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.');
-    });
+  async function einstellungenSetzen(neu: Einstellungen) {
+    einstellungenRef.current = neu;
+    setEinstellungen(neu);
+    try {
+      const r = antwort(await window.scriptlab.einstellungenSpeichern(neu));
+      if (einstellungenRef.current === neu) {
+        setEinstellungen(r);
+        einstellungenRef.current = r;
+      }
+    } catch (e) {
+      melden(
+        e instanceof Error ? e.message : 'Die Einstellungen konnten nicht gespeichert werden.',
+        'fehler',
+      );
+    }
+  }
+  function platzierungStarten(art: 'einfuegen' | 'verschieben', typOderId: string) {
+    const ws = wsRef.current;
+    if (!ws) return;
+    const typ = art === 'verschieben' ? ws.getBlockById(typOderId)?.type : typOderId;
+    const neu: PlatzierungsAuftrag = {
+      art,
+      typOderId,
+      name: bausteinDefinitionen.find((b) => b.typ === typ)?.name ?? 'Baustein',
+    };
+    platzierungRef.current = neu;
+    setPlatzierung(neu);
+    setZiele(einfuegestellenLesen(ws, typOderId));
+    if (einstellungenRef.current.paletteEingeklappt)
+      void einstellungenSetzen({ ...einstellungenRef.current, paletteEingeklappt: false });
+    melden('Wähle eine Einfügestelle. Escape bricht die Auswahl ab.');
+  }
+  function zielWaehlen(ziel: Einfuegestelle) {
+    const ws = wsRef.current,
+      auftrag = platzierungRef.current;
+    if (!ws || !auftrag) return;
+    try {
+      const b =
+        auftrag.art === 'einfuegen'
+          ? bausteinEinfuegen(ws, auftrag.typOderId, ziel)
+          : bausteinVerschieben(ws, auftrag.typOderId, ziel);
+      platzierungRef.current = null;
+      setPlatzierung(null);
+      setZiele([]);
+      auswaehlen(b.id);
+      aendern(standLesen());
+      melden(auftrag.art === 'einfuegen' ? 'Baustein eingefügt.' : 'Baustein verschoben.');
+    } catch (e) {
+      melden(e instanceof Error ? e.message : 'Diese Verbindung ist nicht möglich.', 'fehler');
+    }
   }
   function blockAktion(art: 'kopieren' | 'einfuegen' | 'duplizieren' | 'loeschen') {
-    const ws = arbeitsbereich.current;
-    const block = ws?.getBlockById(auswahl || '');
+    const ws = wsRef.current;
     if (!ws) return;
+    const b = auswahlRef.current ? ws.getBlockById(auswahlRef.current) : null;
     if (art === 'einfuegen') {
       const daten = Blockly.clipboard.getLastCopiedData();
       if (daten) Blockly.clipboard.paste(daten, ws);
+      else melden('Kopiere zuerst einen Baustein.');
       return;
     }
-    if (!block) return;
+    if (!b) {
+      melden('Wähle zuerst einen Baustein im Arbeitsbereich.');
+      return;
+    }
     if (art === 'loeschen') {
-      block.dispose(true);
+      b.dispose(true);
+      auswaehlen(null);
+      melden('Baustein gelöscht. Rückgängig stellt ihn wieder her.');
       return;
     }
-    const daten = Blockly.clipboard.copy(block);
+    const daten = Blockly.clipboard.copy(b);
     if (art === 'duplizieren' && daten) Blockly.clipboard.paste(daten, ws);
+    melden(
+      art === 'kopieren' ? 'Baustein kopiert.' : 'Baustein dupliziert. Verbinde die Kopie mit dem Ablauf.',
+    );
   }
   async function updateAktion(art: 'status' | 'pruefen' | 'laden' | 'installieren') {
-    await aktion(async () => {
+    await aktion(art === 'laden' ? 'Update wird geladen …' : 'Update wird geprüft …', async () => {
       setUpdate(antwort(await window.scriptlab.updateAktion(art)) as UpdateZustand);
     });
   }
 
   useEffect(() => {
     const ws = Blockly.inject(element.current!, {
-      toolbox: werkzeugkasten,
-      theme: thema,
+      theme: scriptlabThema,
       renderer: 'zelos',
       media: 'scriptlab://app/media/',
-      grid: { spacing: 24, length: 2, colour: '#344056', snap: true },
-      zoom: { controls: false, wheel: true, startScale: 1, maxScale: 3, minScale: 0.2, scaleSpeed: 1.15 },
+      grid: { spacing: masse.raster, length: 1, colour: farben.trennung, snap: true },
+      zoom: { controls: false, wheel: false, startScale: 1, minScale: 0.25, maxScale: 2, scaleSpeed: 1.15 },
       move: { scrollbars: true, drag: true, wheel: true },
-      trashcan: true,
+      trashcan: false,
       sounds: false,
       maxBlocks: 2000,
+      plugins: { blockDragger: ScriptLabBlockDragger },
     });
-    arbeitsbereich.current = ws;
-    const geaendert = (event: Blockly.Events.Abstract) => {
+    wsRef.current = ws;
+    setWorkspace(ws);
+    const aenderung = (event: Blockly.Events.Abstract) => {
       if (laedt.current) return;
       if (event.type === Blockly.Events.SELECTED) {
-        setAuswahl((event as Blockly.Events.Selected).newElementId ?? null);
+        const id = (event as Blockly.Events.Selected).newElementId;
+        if (id && ws.getBlockById(id)) auswaehlen(id);
         return;
       }
       if (event.isUiEvent && event.type !== Blockly.Events.VIEWPORT_CHANGE) return;
-      aendern(standLesen());
+      if (event.type === Blockly.Events.VIEWPORT_CHANGE)
+        aendern({ ...projektRef.current, ansicht: { zoom: ws.scale, x: ws.scrollX, y: ws.scrollY } });
+      else {
+        aendern(standLesen());
+        if (auswahlRef.current && !ws.getBlockById(auswahlRef.current)) auswaehlen(null);
+      }
     };
-    ws.addChangeListener(geaendert);
-    const groesse = new ResizeObserver(() => Blockly.svgResize(ws));
+    ws.addChangeListener(aenderung);
+    const groesse = new ResizeObserver(() => {
+      const x = ws.scrollX,
+        y = ws.scrollY;
+      Blockly.svgResize(ws);
+      ws.scroll(x, y);
+    });
     groesse.observe(element.current!);
-    void aktion(async () => {
-      const start = antwort(await window.scriptlab.laden());
-      setVersion(start.version);
-      setEinstellungen(start.einstellungen);
-      await dokumentLaden(start.dokument);
+    const navigation = editorNavigationEinrichten(ws, {
+      paletteFokussieren: () => document.querySelector<HTMLElement>('[data-testid="palette"] input')?.focus(),
     });
     const abmelden = window.scriptlab.beiStandAnfrage(standLesen);
+    void aktion('Projekt wird geladen …', async () => {
+      const start = antwort(await window.scriptlab.laden());
+      setEinstellungen(start.einstellungen);
+      einstellungenRef.current = start.einstellungen;
+      setVersion(start.version);
+      await dokumentLaden(start.dokument);
+    });
     return () => {
       abmelden();
+      navigation();
       groesse.disconnect();
       ws.dispose();
     };
   }, []);
-
   useEffect(() => {
-    const ws = arbeitsbereich.current;
-    if (!ws) return;
-    for (const block of ws.getAllBlocks(false)) {
-      const meldungen = ergebnis.meldungen
-        .filter((m) => m.blockId === block.id && m.stufe === 'fehler')
+    for (const b of wsRef.current?.getAllBlocks(false) ?? []) {
+      const texte = sichtbareHinweise
+        .filter((m) => m.blockId === b.id && m.stufe === 'fehler')
         .map((m) => m.text);
-      block.setWarningText(meldungen.length ? meldungen.join('\n') : null, 'validierung');
+      b.setWarningText(texte.length ? texte.join('\n') : null, 'validierung');
+      b.getSvgRoot()?.classList.toggle('scriptlabFehler', texte.length > 0);
+      b.getSvgRoot()?.classList.toggle('scriptlabAuswahl', b.id === auswahlRef.current);
     }
-  }, [ergebnis]);
+  }, [ergebnis, pruefungAngefordert, beruehrt, revision]);
   useEffect(() => {
-    const ws = arbeitsbereich.current;
-    if (!ws) return;
-    const text = suche.trim().toLocaleLowerCase('de');
-    if (!text) {
-      ws.updateToolbox(werkzeugkasten);
-      return;
-    }
-    const treffer = new Set(
-      bausteinKatalog
-        .filter((b) => `${b.name} ${b.kategorie} ${b.hilfe}`.toLocaleLowerCase('de').includes(text))
-        .map((b) => b.typ),
-    );
-    const kasten = structuredClone(werkzeugkasten) as {
-      kind: string;
-      contents: Array<{ kind: string; name: string; contents: Array<{ type: string }> }>;
-    };
-    kasten.contents = kasten.contents
-      .map((k) => ({ ...k, contents: k.contents.filter((b) => treffer.has(b.type)) }))
-      .filter((k) => k.contents.length);
-    ws.updateToolbox(kasten);
-  }, [suche]);
+    const resize = () => setBreite(window.innerWidth);
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
   useEffect(() => {
     if (dialog !== 'einstellungen') return;
-    void window.scriptlab.updateAktion('status').then((r) => {
-      if (r.ok) setUpdate(r.wert as UpdateZustand);
-    });
-    const timer = setInterval(() => {
+    const lesen = () =>
       void window.scriptlab.updateAktion('status').then((r) => {
         if (r.ok) setUpdate(r.wert as UpdateZustand);
       });
-    }, 1000);
+    lesen();
+    const timer = setInterval(lesen, 1000);
     return () => clearInterval(timer);
   }, [dialog]);
   useEffect(() => {
     const tasten = (event: KeyboardEvent) => {
+      if (dialog) return;
       const ziel = event.target as HTMLElement;
-      if (ziel.matches('input,textarea,select') || ziel.isContentEditable || dialog) return;
-      if (event.ctrlKey && ['s', 'o', 'n'].includes(event.key.toLowerCase())) {
+      if (event.ctrlKey && ['n', 'o', 's'].includes(event.key.toLowerCase())) {
         event.preventDefault();
         void projektAktion(
-          event.key.toLowerCase() === 's'
-            ? event.shiftKey
-              ? 'unter'
-              : 'speichern'
+          event.key.toLowerCase() === 'n'
+            ? 'neu'
             : event.key.toLowerCase() === 'o'
               ? 'oeffnen'
-              : 'neu',
+              : event.shiftKey
+                ? 'unter'
+                : 'speichern',
         );
+        return;
+      }
+      if (ziel.matches?.('input,textarea,select') || ziel.isContentEditable) return;
+      if (event.ctrlKey && ['z', 'y'].includes(event.key.toLowerCase())) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (wsRef.current)
+          void verlaufAendern(wsRef.current, event.key.toLowerCase() === 'y' || event.shiftKey);
+        return;
+      }
+      if (event.key === 'Escape' && platzierungRef.current) {
+        event.preventDefault();
+        setPlatzierung(null);
+        platzierungRef.current = null;
+        melden('Einfügen abgebrochen.');
+        return;
+      }
+      if (event.key === 'F4') {
+        event.preventDefault();
+        eigenschaftenOeffnen();
+      }
+      if (event.key === 'Delete' && auswahlRef.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        blockAktion('loeschen');
       }
       if (event.ctrlKey && ['+', '=', '-', '0'].includes(event.key)) {
         event.preventDefault();
-        if (event.key === '0') arbeitsbereich.current?.setScale(1);
-        else arbeitsbereich.current?.zoomCenter(event.key === '-' ? -1 : 1);
+        if (event.key === '0') wsRef.current?.setScale(1);
+        else wsRef.current?.zoomCenter(event.key === '-' ? -1 : 1);
       }
     };
-    window.addEventListener('keydown', tasten);
-    return () => window.removeEventListener('keydown', tasten);
+    window.addEventListener('keydown', tasten, true);
+    return () => window.removeEventListener('keydown', tasten, true);
   }, [dialog]);
 
+  function paletteGroesseStarten(event: React.PointerEvent) {
+    const start = event.clientX,
+      anfang = einstellungenRef.current.palettenBreite;
+    const bewegen = (e: PointerEvent) =>
+      setEinstellungen({
+        ...einstellungenRef.current,
+        palettenBreite: Math.max(240, Math.min(400, Math.round(anfang + e.clientX - start))),
+      });
+    const ende = (e: PointerEvent) => {
+      window.removeEventListener('pointermove', bewegen);
+      window.removeEventListener('pointerup', ende);
+      void einstellungenSetzen({
+        ...einstellungenRef.current,
+        palettenBreite: Math.max(240, Math.min(400, Math.round(anfang + e.clientX - start))),
+      });
+    };
+    window.addEventListener('pointermove', bewegen);
+    window.addEventListener('pointerup', ende, { once: true });
+  }
+  function codeGroesseStarten(event: React.PointerEvent) {
+    const start = event.clientY,
+      anfang = codeHoehe;
+    const bewegen = (e: PointerEvent) =>
+      setCodeHoehe(Math.max(140, Math.min(window.innerHeight * 0.65, anfang + start - e.clientY)));
+    const ende = () => {
+      window.removeEventListener('pointermove', bewegen);
+      window.removeEventListener('pointerup', ende);
+    };
+    window.addEventListener('pointermove', bewegen);
+    window.addEventListener('pointerup', ende, { once: true });
+  }
+  const verschieben = (dx: number, dy: number) => {
+    const ws = wsRef.current;
+    if (ws) ws.scroll(ws.scrollX + dx, ws.scrollY + dy);
+  };
+  const style = {
+    '--text-skala': einstellungen.textSkalierung,
+    '--breite-palette': einstellungen.paletteEingeklappt ? '48px' : `${einstellungen.palettenBreite}px`,
+  } as CSSProperties;
   return (
-    <div className="anwendung">
-      <header className="kopf">
-        <div className="marke">
-          <span className="markensymbol" aria-hidden="true">
-            S
-          </span>
-          <div>
-            <strong>ScriptLab</strong>
-            <small>Dein Ablauf. Deine Bausteine.</small>
-          </div>
-        </div>
-        <div className="projekttitel">
-          <label htmlFor="projektname">PROJEKT</label>
-          <input
-            id="projektname"
-            aria-label="Projektname"
-            value={projekt.name}
-            maxLength={160}
-            onChange={(e) => aendern({ ...projektRef.current, name: e.target.value || 'Mein Workflow' })}
-          />
-          <span className="speicherpunkt">
-            {geaendert ? '● Ungespeichert' : datei ? '✓ Gespeichert' : 'Neues Projekt'}
-          </span>
-        </div>
-        <button className="leise" onClick={() => setDialog('einstellungen')}>
-          Einstellungen
-        </button>
-        <button className="leise" onClick={() => setDialog('ueber')}>
-          Über ScriptLab
-        </button>
-      </header>
-      <nav className="werkzeuge" aria-label="Projektaktionen">
+    <div className="anwendung" style={style}>
+      <nav className="werkzeugleiste" aria-label="Projektaktionen">
         <div className="knopfgruppe">
-          <button disabled={beschaeftigt} onClick={() => void projektAktion('neu')}>
-            ＋ Neu
-          </button>
-          <button disabled={beschaeftigt} onClick={() => void projektAktion('oeffnen')}>
+          <Knopf
+            symbol="neu"
+            variante="leise"
+            disabled={!!verarbeitung}
+            grundId="status-aktion"
+            onClick={() => void projektAktion('neu')}
+          >
+            Neu
+          </Knopf>
+          <Knopf
+            symbol="oeffnen"
+            variante="leise"
+            disabled={!!verarbeitung}
+            grundId="status-aktion"
+            onClick={() => void projektAktion('oeffnen')}
+          >
             Öffnen
-          </button>
-          <button disabled={beschaeftigt} onClick={() => void projektAktion('speichern')}>
+          </Knopf>
+          <Knopf
+            symbol="speichern"
+            disabled={!!verarbeitung}
+            grundId="status-aktion"
+            onClick={() => void projektAktion('speichern')}
+          >
             Speichern
-          </button>
-          <button disabled={beschaeftigt} onClick={() => void projektAktion('unter')}>
-            Speichern unter
-          </button>
+          </Knopf>
+          <Menue
+            beschriftung="Projektmenü"
+            nurSymbol
+            symbol="unten"
+            eintraege={[
+              { text: 'Speichern unter', symbol: 'speichern', aktion: () => void projektAktion('unter') },
+              { text: 'Projektangaben', symbol: 'info', aktion: () => setDialog('projekt') },
+              { text: 'Beispiel: Begrüßung', aktion: () => void projektAktion('begruessung') },
+              { text: 'Beispiel: Datei-Backup', aktion: () => void projektAktion('backup') },
+              { text: 'Beispiel: Dateinamenliste', aktion: () => void projektAktion('dateiliste') },
+            ]}
+          />
         </div>
+        <span className="werkzeug-trenner" />
         <div className="knopfgruppe">
-          <button title="Strg+Z" onClick={() => arbeitsbereich.current?.undo(false)}>
-            ↶ Rückgängig
-          </button>
-          <button title="Strg+Y" onClick={() => arbeitsbereich.current?.undo(true)}>
-            ↷ Wiederholen
-          </button>
-          <button aria-pressed={vorschau} onClick={() => setVorschau(!vorschau)}>
+          <Knopf
+            variante="leise"
+            symbol="rueckgaengig"
+            aria-label="Rückgängig"
+            title="Rückgängig (Strg+Z)"
+            onClick={() => wsRef.current && void verlaufAendern(wsRef.current)}
+          />
+          <Knopf
+            variante="leise"
+            symbol="wiederholen"
+            aria-label="Wiederholen"
+            title="Wiederholen (Strg+Y)"
+            onClick={() => wsRef.current && void verlaufAendern(wsRef.current, true)}
+          />
+        </div>
+        <div className="knopfgruppe ansichtknopfgruppe">
+          <Knopf
+            variante="leise"
+            symbol="eigenschaften"
+            aria-pressed={eigenschaftenOffen}
+            onClick={() => (eigenschaftenOffen ? eigenschaftenSchliessen() : eigenschaftenOeffnen())}
+          >
+            Eigenschaften
+          </Knopf>
+          <Knopf
+            variante="leise"
+            symbol="code"
+            aria-pressed={vorschauOffen}
+            onClick={() => setVorschauOffen(!vorschauOffen)}
+          >
             Codevorschau
-          </button>
+          </Knopf>
         </div>
-        <button className="primaer" disabled={beschaeftigt} onClick={() => void exportieren()}>
-          Als VBS exportieren ↗
-        </button>
+        <div className="hauptaktion">
+          <Knopf
+            variante="primaer"
+            symbol="exportieren"
+            verarbeitung={verarbeitung === 'VBS-Datei wird gespeichert …'}
+            disabled={!!verarbeitung}
+            grundId="status-aktion"
+            onClick={() => void exportieren()}
+          >
+            Als VBS exportieren
+          </Knopf>
+          <Menue
+            beschriftung="Weitere Funktionen"
+            nurSymbol
+            symbol="mehr"
+            eintraege={[
+              { text: 'Einstellungen', symbol: 'einstellungen', aktion: () => setDialog('einstellungen') },
+              { text: 'Über ScriptLab', symbol: 'info', aktion: () => setDialog('ueber') },
+              { text: 'Kopieren', symbol: 'kopieren', aktion: () => blockAktion('kopieren') },
+              { text: 'Einfügen', symbol: 'einfuegen', aktion: () => blockAktion('einfuegen') },
+            ]}
+          />
+        </div>
       </nav>
-      <main className={`inhalt ${vorschau ? 'mit-vorschau' : ''}`}>
-        <section className="editorbereich" aria-label="Visueller Workfloweditor">
-          <div className="editorleiste">
-            <label className="suche">
-              ⌕{' '}
-              <input
-                aria-label="Bausteine suchen"
-                placeholder="Bausteine suchen …"
-                value={suche}
-                onChange={(e) => setSuche(e.target.value)}
-              />
-            </label>
-            <span className="hinweis">Verbinde die Bausteine ab „Workflow starten“.</span>
-            <span className="etikett">NUR ERSTELLEN & EXPORTIEREN</span>
-          </div>
-          <div ref={element} className="blockly-editor" data-testid="arbeitsbereich" />
-          <div className="editorfuss">
-            <div className="knopfgruppe">
-              <button onClick={() => blockAktion('kopieren')}>Kopieren</button>
-              <button onClick={() => blockAktion('einfuegen')}>Einfügen</button>
-              <button onClick={() => blockAktion('duplizieren')}>Duplizieren</button>
-              <button onClick={() => blockAktion('loeschen')}>Löschen</button>
-            </div>
-            <div className="knopfgruppe zoom">
-              <button aria-label="Verkleinern" onClick={() => arbeitsbereich.current?.zoomCenter(-1)}>
-                −
-              </button>
-              <button
-                title="Auf 100 Prozent zurücksetzen"
-                onClick={() => arbeitsbereich.current?.setScale(1)}
-              >
-                {Math.round(projekt.ansicht.zoom * 100)} %
-              </button>
-              <button aria-label="Vergrößern" onClick={() => arbeitsbereich.current?.zoomCenter(1)}>
-                ＋
-              </button>
-              <button onClick={() => arbeitsbereich.current?.zoomToFit()}>Einpassen</button>
-            </div>
-          </div>
-        </section>
-        {vorschau && (
-          <aside className="seitenpanel" aria-label="Codevorschau und Bausteinhilfe">
-            <div className="panelkopf">
-              <div>
-                <span className="augenbraue">VORSCHAU</span>
-                <h2>Dein VBScript</h2>
-              </div>
-              <span className="dateityp">.vbs</span>
-            </div>
-            <p className="panelbeschreibung">
-              Wird aus deinen Bausteinen erzeugt. Diese Vorschau führt keine Aktionen aus.
-            </p>
-            <pre className="code" tabIndex={0} aria-label="Schreibgeschützte VBS-Codevorschau">
-              {ergebnis.code ?? "' Bitte zuerst die markierten Bausteine vervollständigen."}
-            </pre>
-            <section className="blockhilfe">
-              <h3>{ausgewaehlterBlock?.name || 'So geht’s'}</h3>
-              <p>
-                {ausgewaehlterBlock?.hilfe ||
-                  'Wähle links eine Kategorie. Ziehe einen Baustein in den Arbeitsbereich und verbinde ihn mit deinem Ablauf. Werte passen in die passenden Eingaben.'}
-              </p>
-              <label>
-                Projektbeschreibung
-                <textarea
-                  value={projekt.beschreibung}
-                  maxLength={10000}
-                  onChange={(e) => aendern({ ...projektRef.current, beschreibung: e.target.value })}
-                  placeholder="Was soll dein Workflow später tun?"
-                />
-              </label>
-            </section>
-          </aside>
-        )}
-      </main>
-      <section className={`meldungen ${fehler ? 'fehler' : ''}`} aria-live="polite">
-        <span>{beschaeftigt ? 'Bitte warten …' : meldung}</span>
-        {exportiert && (
-          <>
-            <strong>{exportiert.signatur.meldung}</strong>
-            <button
-              onClick={() =>
-                void aktion(async () => {
-                  antwort(await window.scriptlab.exportOrdnerAnzeigen());
-                })
-              }
-            >
-              Speicherordner anzeigen
-            </button>
-          </>
-        )}
-      </section>
-      {ergebnis.meldungen.length > 0 && (
-        <div className="validierung" aria-label="Validierungshinweise">
-          {ergebnis.meldungen.map((m, i) => (
-            <button
-              key={i}
-              className={m.stufe}
-              onClick={() => {
-                if (m.blockId) {
-                  arbeitsbereich.current?.getBlockById(m.blockId)?.select();
-                  arbeitsbereich.current?.centerOnBlock(m.blockId);
-                }
-              }}
-            >
-              {m.stufe === 'fehler' ? '⚠' : 'ⓘ'} {m.text}
-            </button>
-          ))}
-        </div>
-      )}
-      <footer>
-        <span>
-          {datei || 'Neues Projekt'} ·{' '}
-          {geaendert ? 'Ungespeicherte Änderungen' : 'Keine ungespeicherten Änderungen'}
-        </span>
-        <span>
-          {ergebnis.meldungen.filter((m) => m.stufe === 'fehler').length
-            ? 'Bitte Hinweise prüfen'
-            : '✓ Workflow ist bereit für den Export'}{' '}
-          · Windows 11 x64
-        </span>
-        <span>Entwickelt von Leon Stolz</span>
-      </footer>
-      {dialog && (
+      <main className={`arbeitszeile ${angeheftet ? 'mit-eigenschaften' : ''}`}>
+        <Palette
+          ws={workspace}
+          eingeklappt={einstellungen.paletteEingeklappt}
+          umschalten={() =>
+            void einstellungenSetzen({
+              ...einstellungenRef.current,
+              paletteEingeklappt: !einstellungenRef.current.paletteEingeklappt,
+            })
+          }
+          platzierung={platzierung}
+          ziele={ziele}
+          einfuegen={(typ) => platzierungStarten('einfuegen', typ)}
+          zielWaehlen={zielWaehlen}
+          abbrechen={() => {
+            setPlatzierung(null);
+            platzierungRef.current = null;
+            melden('Einfügen abgebrochen.');
+          }}
+          blockAuswaehlen={auswaehlen}
+          meldung={melden}
+        />
         <div
-          className="modalhintergrund"
+          className="paletten-trenner"
+          role="separator"
+          tabIndex={0}
+          aria-label="Breite der Bausteinpalette"
+          aria-orientation="vertical"
+          aria-valuemin={240}
+          aria-valuemax={400}
+          aria-valuenow={einstellungen.palettenBreite}
+          onPointerDown={paletteGroesseStarten}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') setDialog(null);
-            if (e.key === 'Tab') {
-              const elemente = Array.from(
-                e.currentTarget.querySelectorAll<HTMLElement>(
-                  'button:not(:disabled), input, select, textarea, [tabindex="0"]',
-                ),
-              );
-              const erstes = elemente[0];
-              const letztes = elemente.at(-1);
-              if (e.shiftKey && document.activeElement === erstes) {
-                e.preventDefault();
-                letztes?.focus();
-              }
-              if (!e.shiftKey && document.activeElement === letztes) {
-                e.preventDefault();
-                erstes?.focus();
-              }
+            if (['ArrowLeft', 'ArrowRight', 'Home'].includes(e.key)) {
+              e.preventDefault();
+              void einstellungenSetzen({
+                ...einstellungenRef.current,
+                palettenBreite:
+                  e.key === 'Home'
+                    ? 272
+                    : Math.max(
+                        240,
+                        Math.min(
+                          400,
+                          einstellungenRef.current.palettenBreite + (e.key === 'ArrowRight' ? 16 : -16),
+                        ),
+                      ),
+              });
             }
           }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-label={dialog === 'ueber' ? 'Über ScriptLab' : 'Einstellungen'}
-            className="modal"
-          >
-            <button
-              autoFocus
-              className="schliessen"
-              aria-label="Dialog schließen"
-              onClick={() => setDialog(null)}
-            >
-              ×
-            </button>
-            {dialog === 'ueber' ? (
-              <>
-                <span className="augenbraue">VISUELL GESTALTEN</span>
-                <h1>ScriptLab</h1>
-                <p>Version {version} · Windows 11 x64</p>
-                <p>
-                  <strong>Entwickelt von Leon Stolz</strong>
-                </p>
-                <p>
-                  ScriptLab erstellt und exportiert Workflows. Die Ausführung übernimmst du selbst außerhalb
-                  dieser Anwendung.
-                </p>
-                <p>
-                  VBScript ist von Microsoft abgekündigt. Die spätere Ausführung hängt von der
-                  Windows-VBScript-Komponente und deinen Richtlinien ab.
-                </p>
-                <p>Mit Electron, React, Vite und Blockly. Lizenzhinweise liegen der Installation bei.</p>
-              </>
-            ) : (
-              <>
-                <h1>Einstellungen</h1>
-                <h2>VBS-Export signieren</h2>
-                <label className="schalter">
-                  <input
-                    type="checkbox"
-                    checked={projekt.exportOptionen.signieren}
-                    onChange={(e) =>
-                      aendern({
-                        ...projektRef.current,
-                        exportOptionen: { ...projektRef.current.exportOptionen, signieren: e.target.checked },
-                      })
-                    }
-                  />{' '}
-                  Exportierte Datei signieren
-                </label>
-                <p>
-                  Optional: Du benötigst ein gültiges Code-Signing-Zertifikat mit privatem Schlüssel im
-                  Windows-Zertifikatspeicher.
-                </p>
-                <button
-                  onClick={() =>
-                    void aktion(async () => {
-                      const liste = antwort(await window.scriptlab.zertifikate());
-                      setZertifikate(liste);
-                      setFehler(false);
-                      setMeldung(
-                        liste.length
-                          ? `${liste.length} geeignete Zertifikate gefunden.`
-                          : 'Kein geeignetes Zertifikat gefunden. Ein unsignierter Export ist weiterhin möglich.',
-                      );
-                    })
+        />
+        <section className="editor-mitte" aria-label="Workflow bearbeiten">
+          <div className="canvas-bereich">
+            <div
+              ref={element}
+              data-testid="arbeitsbereich"
+              className={`blockly-editor ${platzierung ? 'wartet-auf-ziel' : ''}`}
+              tabIndex={-1}
+              aria-label="Arbeitsbereich"
+              onPointerUp={(e) => {
+                if (!platzierungRef.current) return;
+                const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
+                if (id) {
+                  const passend = einfuegestellenLesen(
+                    wsRef.current!,
+                    platzierungRef.current.typOderId,
+                  ).filter((z) => z.blockId === id);
+                  if (passend.length === 1) zielWaehlen(passend[0]);
+                  else if (passend.length) {
+                    setZiele(passend);
+                    melden('Wähle links den gewünschten Anschluss dieses Bausteins.');
                   }
-                >
-                  Zertifikate laden
-                </button>
-                <label>
-                  Zertifikat
-                  <select
-                    value={projekt.exportOptionen.zertifikatFingerabdruck}
-                    onChange={(e) =>
-                      aendern({
-                        ...projektRef.current,
-                        exportOptionen: {
-                          ...projektRef.current.exportOptionen,
-                          zertifikatFingerabdruck: e.target.value,
-                        },
+                }
+              }}
+            />
+            {nurStart && !platzierung && (
+              <div className="naechster-schritt">
+                <p>Füge links einen Baustein hinzu.</p>
+                <Knopf variante="leise" onClick={() => void projektAktion('begruessung')}>
+                  Beispiel öffnen
+                </Knopf>
+              </div>
+            )}
+            <div className="ansichtsteuerung" aria-label="Arbeitsbereich verschieben">
+              {(['links', 'rechts', 'oben', 'unten'] as const).map((name, i) => (
+                <Knopf
+                  key={name}
+                  variante="leise"
+                  symbol={name}
+                  aria-label={`Ansicht nach ${name}`}
+                  title={`Ansicht nach ${name}`}
+                  onClick={() =>
+                    verschieben(i === 0 ? 100 : i === 1 ? -100 : 0, i === 2 ? 100 : i === 3 ? -100 : 0)
+                  }
+                />
+              ))}
+            </div>
+            <div className="zoom" aria-label="Zoom im Arbeitsbereich">
+              <Knopf
+                variante="leise"
+                symbol="minus"
+                aria-label="Verkleinern"
+                title="Verkleinern"
+                onClick={() => wsRef.current?.zoomCenter(-1)}
+              />
+              <Knopf
+                variante="leise"
+                aria-label="Zoom auf 100 Prozent zurücksetzen"
+                onClick={() => wsRef.current?.setScale(1)}
+              >
+                {Math.round(projekt.ansicht.zoom * 100)} %
+              </Knopf>
+              <Knopf
+                variante="leise"
+                symbol="plus"
+                aria-label="Vergrößern"
+                title="Vergrößern"
+                onClick={() => wsRef.current?.zoomCenter(1)}
+              />
+              <Knopf variante="leise" symbol="einpassen" onClick={() => wsRef.current?.zoomToFit()}>
+                Alles anzeigen
+              </Knopf>
+            </div>
+            {exportiert && (
+              <section className="export-rueckmeldung" role="status" aria-label="Export abgeschlossen">
+                <div>
+                  <h3>Script gespeichert</h3>
+                  <p>Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.</p>
+                  <p
+                    className={
+                      exportiert.signatur.status === 'vertrauen-offen' ? 'text-hinweis' : 'text-sekundaer'
+                    }
+                  >
+                    {exportiert.signatur.meldung}
+                  </p>
+                  <Knopf
+                    onClick={() =>
+                      void aktion('Speicherordner wird angezeigt …', async () => {
+                        antwort(await window.scriptlab.exportOrdnerAnzeigen());
                       })
                     }
                   >
-                    <option value="">Bitte auswählen</option>
-                    {projekt.exportOptionen.zertifikatFingerabdruck &&
-                      !zertifikate.some(
-                        (z) => z.fingerabdruck === projekt.exportOptionen.zertifikatFingerabdruck,
-                      ) && (
-                        <option value={projekt.exportOptionen.zertifikatFingerabdruck}>
-                          Gespeicherte Auswahl: {projekt.exportOptionen.zertifikatFingerabdruck}
-                        </option>
-                      )}
-                    {zertifikate.map((z) => (
-                      <option key={z.fingerabdruck} value={z.fingerabdruck}>
-                        {z.betreff} · {z.fingerabdruck}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Zeitstempeldienst (optional)
-                  <input
-                    value={projekt.exportOptionen.zeitstempelUrl}
-                    placeholder="http://…"
-                    onChange={(e) =>
-                      aendern({
-                        ...projektRef.current,
-                        exportOptionen: {
-                          ...projektRef.current.exportOptionen,
-                          zeitstempelUrl: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </label>
-                <p className="klein">
-                  Windows PowerShell unterstützt für diesen optionalen Authenticode-Zeitstempel nur HTTP. Eine
-                  Signatur hilft, Herausgeber und Änderungen zu prüfen. Sie garantiert keine Ungefährlichkeit
-                  und verhindert keine Windows-Warnungen.
-                </p>
-                <h2>Anwendungsupdates</h2>
-                <p>
-                  Installiert: {version}
-                  {update?.verfuegbareVersion ? ` · Verfügbar: ${update.verfuegbareVersion}` : ''}
-                </p>
-                {(['automatischeUpdates', 'vorabversionen'] as const).map((key) => (
-                  <label key={key} className="schalter">
-                    <input
-                      type="checkbox"
-                      checked={einstellungen[key]}
-                      onChange={(e) =>
-                        void aktion(async () => {
-                          const neu = { ...einstellungen, [key]: e.target.checked };
-                          setEinstellungen(antwort(await window.scriptlab.einstellungenSpeichern(neu)));
-                        })
-                      }
-                    />
-                    {key === 'automatischeUpdates'
-                      ? 'Automatisch nach Updates suchen'
-                      : 'Vorabversionen bewusst zulassen'}
-                  </label>
-                ))}
-                <p>{update?.meldung}</p>
-                {update?.phase === 'laedt' && <progress value={update.fortschritt} max={100} />}
-                <div className="knopfgruppe">
-                  <button disabled={beschaeftigt} onClick={() => void updateAktion('pruefen')}>
-                    Nach Updates suchen
-                  </button>
-                  {update?.phase === 'verfuegbar' && (
-                    <button onClick={() => void updateAktion('laden')}>Update herunterladen</button>
-                  )}
-                  {update?.phase === 'bereit-zur-installation' && (
-                    <button onClick={() => void updateAktion('installieren')}>
-                      Installieren und neu starten
-                    </button>
-                  )}
+                    Speicherordner anzeigen
+                  </Knopf>
                 </div>
-                {update?.aenderungen && <pre className="aenderungen">{update.aenderungen}</pre>}
-              </>
+                <Knopf
+                  variante="leise"
+                  symbol="schliessen"
+                  aria-label="Exportmeldung schließen"
+                  onClick={() => setExportiert(null)}
+                />
+              </section>
             )}
-          </section>
-        </div>
+          </div>
+          {vorschauOffen && (
+            <section
+              className="code-panel"
+              data-testid="code-panel"
+              aria-label="VBS-Codevorschau"
+              style={{ height: codeHoehe }}
+            >
+              <div
+                role="separator"
+                className="code-trenner"
+                tabIndex={0}
+                aria-label="Höhe der Codevorschau"
+                aria-orientation="horizontal"
+                aria-valuemin={140}
+                aria-valuemax={Math.floor(window.innerHeight * 0.65)}
+                aria-valuenow={Math.round(codeHoehe)}
+                onPointerDown={codeGroesseStarten}
+                onKeyDown={(e) => {
+                  if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+                    e.preventDefault();
+                    setCodeHoehe((h) =>
+                      Math.max(
+                        140,
+                        Math.min(window.innerHeight * 0.65, h + (e.key === 'ArrowUp' ? 24 : -24)),
+                      ),
+                    );
+                  }
+                }}
+              />
+              <header className="panel-kopf">
+                <h2>VBS-Codevorschau</h2>
+                <div className="knopfgruppe">
+                  <Knopf
+                    variante="leise"
+                    symbol="oben"
+                    aria-label="Codevorschau vergrößern"
+                    onClick={() => setCodeHoehe((h) => Math.min(window.innerHeight * 0.65, h + 48))}
+                  />
+                  <Knopf
+                    variante="leise"
+                    symbol="unten"
+                    aria-label="Codevorschau verkleinern"
+                    onClick={() => setCodeHoehe((h) => Math.max(140, h - 48))}
+                  />
+                  <Knopf
+                    variante="leise"
+                    aria-pressed={codeUmbruch}
+                    onClick={() => setCodeUmbruch(!codeUmbruch)}
+                  >
+                    Zeilen umbrechen
+                  </Knopf>
+                  <Knopf
+                    variante="leise"
+                    symbol="schliessen"
+                    aria-label="Codevorschau schließen"
+                    onClick={() => setVorschauOffen(false)}
+                  />
+                </div>
+              </header>
+              <p className="code-hinweis">Schreibgeschützt. Diese Vorschau führt keine Aktionen aus.</p>
+              <pre
+                tabIndex={0}
+                className={`code ${codeUmbruch ? 'mit-umbruch' : ''}`}
+                aria-label="Schreibgeschützte VBS-Codevorschau"
+              >
+                {ergebnis.code ??
+                  "' Vervollständige den Entwurf. Die Hinweise erklären fehlende Verbindungen."}
+              </pre>
+            </section>
+          )}
+          {hinweiseOffen && (
+            <section
+              className="hinweise-panel"
+              data-testid="hinweise-panel"
+              aria-label="Hinweise zum Workflow"
+            >
+              <header className="panel-kopf">
+                <h2>Hinweise zum Workflow</h2>
+                <Knopf
+                  variante="leise"
+                  symbol="schliessen"
+                  aria-label="Hinweise schließen"
+                  onClick={() => setHinweiseOffen(false)}
+                />
+              </header>
+              <div className="hinweise-liste">
+                {ergebnis.meldungen.length ? (
+                  ergebnis.meldungen.map((m, i) => (
+                    <Knopf
+                      key={i}
+                      variante="leise"
+                      symbol={m.stufe === 'fehler' ? 'fehler' : 'hinweis'}
+                      onClick={() => blockAnzeigen(m.blockId)}
+                    >
+                      {m.text}
+                    </Knopf>
+                  ))
+                ) : (
+                  <p>Der Workflow enthält keine erkannten Strukturfehler.</p>
+                )}
+              </div>
+            </section>
+          )}
+        </section>
+        {eigenschaftenOffen && (
+          <Eigenschaften
+            ws={workspace}
+            blockId={auswahl}
+            angeheftet={einstellungen.eigenschaftenAngeheftet}
+            kannAnheften={kannAnheften}
+            anheften={() =>
+              void einstellungenSetzen({
+                ...einstellungenRef.current,
+                eigenschaftenAngeheftet: !einstellungenRef.current.eigenschaftenAngeheftet,
+              })
+            }
+            schliessen={eigenschaftenSchliessen}
+            verschieben={() => {
+              if (auswahlRef.current) platzierungStarten('verschieben', auswahlRef.current);
+              else melden('Wähle zuerst einen Baustein.');
+            }}
+            blockAktion={blockAktion}
+            beruehrt={(id) => setBeruehrt((alt) => new Set([...alt, id]))}
+          />
+        )}
+      </main>
+      {dauerfehler && (
+        <section className="aufgabenfehler" role="alert">
+          <Symbol name="fehler" />
+          <p>{dauerfehler}</p>
+          <Knopf
+            variante="leise"
+            symbol="schliessen"
+            aria-label="Fehlermeldung schließen"
+            onClick={() => setDauerfehler(null)}
+          />
+        </section>
       )}
+      <footer className="statusleiste" data-testid="statusleiste">
+        <span className="projektstatus" aria-label="Projektstatus">
+          {geaendert ? 'Ungespeicherte Änderungen' : datei ? 'Projekt gespeichert' : 'Neues Projekt'}
+        </span>
+        <span id="status-aktion" role="status" className={`status-aktion status-aktion--${statusArt}`}>
+          {verarbeitung ?? status}
+        </span>
+        <Knopf
+          variante="leise"
+          symbol={sichtbareHinweise.some((m) => m.stufe === 'fehler') ? 'hinweis' : 'info'}
+          onClick={() => {
+            setPruefungAngefordert(true);
+            setHinweiseOffen(!hinweiseOffen);
+          }}
+        >
+          Hinweise{sichtbareHinweise.length ? ` (${sichtbareHinweise.length})` : ''}
+        </Knopf>
+      </footer>
+      <ProjektDialog
+        offen={dialog === 'projekt'}
+        name={projekt.name}
+        beschreibung={projekt.beschreibung}
+        schliessen={() => setDialog(null)}
+        speichern={(name, beschreibung) => aendern({ ...projektRef.current, name, beschreibung })}
+      />
+      <EinstellungenDialog
+        offen={dialog === 'einstellungen'}
+        schliessen={() => setDialog(null)}
+        einstellungen={einstellungen}
+        setzen={(neu) => void einstellungenSetzen(neu)}
+        projekt={projekt}
+        exportOptionenSetzen={(neu) => aendern({ ...projektRef.current, exportOptionen: neu })}
+        version={version}
+        zertifikate={zertifikate}
+        zertifikatMeldung={zertifikatMeldung}
+        zertifikateLaden={() =>
+          void aktion('Zertifikate werden gelesen …', async () => {
+            const liste = antwort(await window.scriptlab.zertifikate());
+            setZertifikate(liste);
+            setZertifikatMeldung(
+              liste.length
+                ? `${liste.length} geeignete Zertifikate gefunden.`
+                : 'Kein geeignetes Zertifikat gefunden. Ein unsignierter Export ist weiterhin möglich.',
+            );
+          })
+        }
+        update={update}
+        updateAktion={(art) => void updateAktion(art)}
+        verarbeitung={verarbeitung}
+        fehlerMeldung={dauerfehler}
+      />
+      <Dialog
+        offen={dialog === 'ueber'}
+        titel="Über ScriptLab"
+        onSchliessen={() => setDialog(null)}
+        fuss={
+          <Knopf variante="primaer" onClick={() => setDialog(null)}>
+            Schließen
+          </Knopf>
+        }
+      >
+        <p>ScriptLab {version} · Windows 11 x64</p>
+        <p>Entwickelt von Leon Stolz</p>
+        <p>
+          ScriptLab erstellt und exportiert Workflows. Du führst die gespeicherten Scripts eigenständig
+          außerhalb dieser Anwendung aus.
+        </p>
+        <p>
+          VBScript ist von Microsoft abgekündigt. Die spätere Ausführung hängt von der Windows-Komponente und
+          deinen Richtlinien ab.
+        </p>
+        <p>Mit Electron, React, Vite und Blockly. Die Lizenzhinweise liegen der Installation bei.</p>
+      </Dialog>
     </div>
   );
 }
