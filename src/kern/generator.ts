@@ -4,107 +4,272 @@ import { workflowPruefen, variablenSchluessel, type Anweisung, type Ausdruck, ty
 /** VBScript-Textliteral. Zeilenumbrüche werden als Daten zusammengesetzt. */
 export function vbsText(text: string): string {
   const teile = text.split(/(\r\n|[\u0000-\u001f\u007f\u2028\u2029])/);
-  return teile.map(teil => teil === '\r\n' ? 'vbCrLf' : teil === '\r' ? 'vbCr' : teil === '\n' ? 'vbLf' : teil === '\t' ? 'vbTab' : /^[\u0000-\u001f\u007f\u2028\u2029]$/.test(teil) ? `ChrW(${teil.charCodeAt(0)})` : `"${teil.replaceAll('"', '""')}"`).filter(teil => teil !== '""').join(' & ') || '""';
+  return (
+    teile
+      .map((teil) =>
+        teil === '\r\n'
+          ? 'vbCrLf'
+          : teil === '\r'
+            ? 'vbCr'
+            : teil === '\n'
+              ? 'vbLf'
+              : teil === '\t'
+                ? 'vbTab'
+                : /^[\u0000-\u001f\u007f\u2028\u2029]$/.test(teil)
+                  ? `ChrW(${teil.charCodeAt(0)})`
+                  : `"${teil.replaceAll('"', '""')}"`,
+      )
+      .filter((teil) => teil !== '""')
+      .join(' & ') || '""'
+  );
 }
 
 export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen: Meldung[] } {
   let geprueft: Projekt;
-  try { geprueft = projektPruefen(projekt); } catch (fehler) { return { code: null, meldungen: [{ text: fehler instanceof Error ? fehler.message : 'Das Projekt ist ungültig.', stufe: 'fehler' }] }; }
+  try {
+    geprueft = projektPruefen(projekt);
+  } catch (fehler) {
+    return {
+      code: null,
+      meldungen: [
+        { text: fehler instanceof Error ? fehler.message : 'Das Projekt ist ungültig.', stufe: 'fehler' },
+      ],
+    };
+  }
   const { workflow, meldungen } = workflowPruefen(geprueft);
   if (!workflow) return { code: null, meldungen };
   const variablen = new Map(workflow.variablen.map((name, i) => [name, `v_${i + 1}`]));
-  const helfer = new Set<string>(); const interneVariablen: string[] = []; let zaehler = 0;
+  const helfer = new Set<string>();
+  const interneVariablen: string[] = [];
+  let zaehler = 0;
   const variable = (name: string): string => variablen.get(variablenSchluessel(name))!;
-  const neu = (): string => { const name = `sl_intern_${++zaehler}`; interneVariablen.push(name); return name; };
-  const hilfe = (name: string): string => { helfer.add(name); return name; };
+  const neu = (): string => {
+    const name = `sl_intern_${++zaehler}`;
+    interneVariablen.push(name);
+    return name;
+  };
+  const hilfe = (name: string): string => {
+    helfer.add(name);
+    return name;
+  };
   function wert(a: Ausdruck): string {
     const w = (name: string): string => wert(a.werte[name]);
     const op = (zeichen: string): string => `(${w('A')} ${zeichen} ${w('B')})`;
     switch (a.art) {
-      case 'sl_text': return `(${vbsText(a.felder.TEXT)})`;
-      case 'sl_number': return a.felder.ZAHL.startsWith('-') ? `(${a.felder.ZAHL})` : a.felder.ZAHL;
-      case 'sl_bool': return a.felder.WERT === 'WAHR' ? 'True' : 'False';
-      case 'sl_get': return variable(a.felder.VAR);
-      case 'sl_list': return 'Array()';
-      case 'sl_compare': return op(({ EQ: '=', NE: '<>', GT: '>', LT: '<' })[a.felder.OP]!);
-      case 'sl_logic': return op(a.felder.OP === 'AND' ? 'And' : 'Or');
-      case 'sl_not': return `(Not ${w('WERT')})`;
-      case 'sl_exists': return `${hilfe('SL_Vorhanden')}(${w('PFAD')}, ${a.felder.ART === 'ORDNER' ? 'True' : 'False'})`;
-      case 'sl_list_files': return `${hilfe('SL_Dateien')}(${w('PFAD')})`;
-      case 'sl_basename': return `${hilfe('SL_Dateiname')}(${w('PFAD')})`;
-      case 'sl_read_text': return `${hilfe('SL_Lesen')}(${w('PFAD')}, ${vbsText(a.felder.KODIERUNG)})`;
-      case 'sl_list_get': return `${hilfe('SL_Eintrag')}(${w('LISTE')}, ${w('INDEX')})`;
-      case 'sl_join': return `(CStr(${w('A')}) & CStr(${w('B')}))`;
-      case 'sl_newline': return 'vbCrLf';
-      case 'sl_replace': return `${hilfe('SL_Ersetzen')}(${w('TEXT')}, ${w('SUCHEN')}, ${w('ERSATZ')})`;
-      case 'sl_len': return `Len(CStr(${w('TEXT')}))`;
-      case 'sl_case': return `${a.felder.ART === 'GROSS' ? 'UCase' : 'LCase'}(CStr(${w('TEXT')}))`;
-      case 'sl_contains': return `(InStr(1, CStr(${w('TEXT')}), CStr(${w('SUCHEN')}), vbBinaryCompare) > 0)`;
-      case 'sl_math': return a.felder.OP === 'DIV' ? `${hilfe('SL_Teilen')}(${w('A')}, ${w('B')})` : `(${hilfe('SL_Zahl')}(${w('A')}) ${({ ADD: '+', SUB: '-', MUL: '*' })[a.felder.OP]} ${hilfe('SL_Zahl')}(${w('B')}))`;
-      case 'sl_round': return `Round(${hilfe('SL_Zahl')}(${w('WERT')}), ${a.felder.STELLEN})`;
-      case 'sl_random': return `${hilfe('SL_Zufall')}(${w('MIN')}, ${w('MAX')})`;
-      case 'sl_input': return `InputBox(CStr(${w('TEXT')}), "ScriptLab")`;
-      case 'sl_question': return `(MsgBox(CStr(${w('TEXT')}), vbYesNo + vbQuestion, "ScriptLab") = vbYes)`;
-      case 'sl_date': return 'Date()';
-      case 'sl_time': return 'Time()';
-      case 'sl_date_format': return `${hilfe('SL_Datum')}(${w('WERT')}, ${vbsText(a.felder.FORMAT)})`;
-      default: throw new Error('Für einen Baustein fehlt der VBS-Generator.');
+      case 'sl_text':
+        return `(${vbsText(a.felder.TEXT)})`;
+      case 'sl_number':
+        return a.felder.ZAHL.startsWith('-') ? `(${a.felder.ZAHL})` : a.felder.ZAHL;
+      case 'sl_bool':
+        return a.felder.WERT === 'WAHR' ? 'True' : 'False';
+      case 'sl_get':
+        return variable(a.felder.VAR);
+      case 'sl_list':
+        return 'Array()';
+      case 'sl_compare':
+        return op({ EQ: '=', NE: '<>', GT: '>', LT: '<' }[a.felder.OP]!);
+      case 'sl_logic':
+        return op(a.felder.OP === 'AND' ? 'And' : 'Or');
+      case 'sl_not':
+        return `(Not ${w('WERT')})`;
+      case 'sl_exists':
+        return `${hilfe('SL_Vorhanden')}(${w('PFAD')}, ${a.felder.ART === 'ORDNER' ? 'True' : 'False'})`;
+      case 'sl_list_files':
+        return `${hilfe('SL_Dateien')}(${w('PFAD')})`;
+      case 'sl_basename':
+        return `${hilfe('SL_Dateiname')}(${w('PFAD')})`;
+      case 'sl_read_text':
+        return `${hilfe('SL_Lesen')}(${w('PFAD')}, ${vbsText(a.felder.KODIERUNG)})`;
+      case 'sl_list_get':
+        return `${hilfe('SL_Eintrag')}(${w('LISTE')}, ${w('INDEX')})`;
+      case 'sl_join':
+        return `(CStr(${w('A')}) & CStr(${w('B')}))`;
+      case 'sl_newline':
+        return 'vbCrLf';
+      case 'sl_replace':
+        return `${hilfe('SL_Ersetzen')}(${w('TEXT')}, ${w('SUCHEN')}, ${w('ERSATZ')})`;
+      case 'sl_len':
+        return `Len(CStr(${w('TEXT')}))`;
+      case 'sl_case':
+        return `${a.felder.ART === 'GROSS' ? 'UCase' : 'LCase'}(CStr(${w('TEXT')}))`;
+      case 'sl_contains':
+        return `(InStr(1, CStr(${w('TEXT')}), CStr(${w('SUCHEN')}), vbBinaryCompare) > 0)`;
+      case 'sl_math':
+        return a.felder.OP === 'DIV'
+          ? `${hilfe('SL_Teilen')}(${w('A')}, ${w('B')})`
+          : `(${hilfe('SL_Zahl')}(${w('A')}) ${{ ADD: '+', SUB: '-', MUL: '*' }[a.felder.OP]} ${hilfe('SL_Zahl')}(${w('B')}))`;
+      case 'sl_round':
+        return `Round(${hilfe('SL_Zahl')}(${w('WERT')}), ${a.felder.STELLEN})`;
+      case 'sl_random':
+        return `${hilfe('SL_Zufall')}(${w('MIN')}, ${w('MAX')})`;
+      case 'sl_input':
+        return `InputBox(CStr(${w('TEXT')}), "ScriptLab")`;
+      case 'sl_question':
+        return `(MsgBox(CStr(${w('TEXT')}), vbYesNo + vbQuestion, "ScriptLab") = vbYes)`;
+      case 'sl_date':
+        return 'Date()';
+      case 'sl_time':
+        return 'Time()';
+      case 'sl_date_format':
+        return `${hilfe('SL_Datum')}(${w('WERT')}, ${vbsText(a.felder.FORMAT)})`;
+      default:
+        throw new Error('Für einen Baustein fehlt der VBS-Generator.');
     }
   }
   const zeilen: string[] = [];
   function anweisungen(liste: Anweisung[], tiefe: number): void {
-    const ausgeben = (zeile: string): void => { zeilen.push(`${'  '.repeat(tiefe)}${zeile}`); };
+    const ausgeben = (zeile: string): void => {
+      zeilen.push(`${'  '.repeat(tiefe)}${zeile}`);
+    };
     for (const a of liste) {
       const w = (name: string): string => wert(a.werte[name]);
       ausgeben(`sl_block = ${vbsText(a.id)}`);
       switch (a.art) {
-        case 'sl_comment': for (const zeile of a.felder.TEXT.split(/\r\n|\r|\n|\u2028|\u2029/)) ausgeben(`' ${zeile.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')}`); break;
-        case 'sl_end': ausgeben('WScript.Quit 0'); break;
-        case 'sl_message': ausgeben(`MsgBox CStr(${w('TEXT')}), vbInformation, "ScriptLab"`); break;
-        case 'sl_set': ausgeben(`${variable(a.felder.VAR)} = ${w('WERT')}`); break;
-        case 'sl_if': ausgeben(`If ${w('BEDINGUNG')} Then`); anweisungen(a.zweige.DANN, tiefe + 1); ausgeben('Else'); anweisungen(a.zweige.SONST, tiefe + 1); ausgeben('End If'); break;
+        case 'sl_comment':
+          for (const zeile of a.felder.TEXT.split(/\r\n|\r|\n|\u2028|\u2029/))
+            ausgeben(`' ${zeile.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')}`);
+          break;
+        case 'sl_end':
+          ausgeben('WScript.Quit 0');
+          break;
+        case 'sl_message':
+          ausgeben(`MsgBox CStr(${w('TEXT')}), vbInformation, "ScriptLab"`);
+          break;
+        case 'sl_set':
+          ausgeben(`${variable(a.felder.VAR)} = ${w('WERT')}`);
+          break;
+        case 'sl_if':
+          ausgeben(`If ${w('BEDINGUNG')} Then`);
+          anweisungen(a.zweige.DANN, tiefe + 1);
+          ausgeben('Else');
+          anweisungen(a.zweige.SONST, tiefe + 1);
+          ausgeben('End If');
+          break;
         case 'sl_repeat': {
-          const index = neu(); const anzahl = neu(); ausgeben(`${anzahl} = ${hilfe('SL_Anzahl')}(${w('ANZAHL')})`); ausgeben(`For ${index} = 1 To ${anzahl}`); anweisungen(a.zweige.ABLAUF, tiefe + 1); ausgeben('Next'); break;
+          const index = neu();
+          const anzahl = neu();
+          ausgeben(`${anzahl} = ${hilfe('SL_Anzahl')}(${w('ANZAHL')})`);
+          ausgeben(`For ${index} = 1 To ${anzahl}`);
+          anweisungen(a.zweige.ABLAUF, tiefe + 1);
+          ausgeben('Next');
+          break;
         }
-        case 'sl_while': ausgeben('Do'); zeilen.push(`${'  '.repeat(tiefe + 1)}sl_block = ${vbsText(a.id)}`); zeilen.push(`${'  '.repeat(tiefe + 1)}If Not (${w('BEDINGUNG')}) Then Exit Do`); anweisungen(a.zweige.ABLAUF, tiefe + 1); ausgeben('Loop'); break;
-        case 'sl_foreach': case 'sl_foreach_file': {
-          const liste = neu(); const index = neu(); const inhalt = a.art === 'sl_foreach' ? w('LISTE') : `${hilfe('SL_Dateien')}(${w('PFAD')})`;
-          ausgeben(`${liste} = ${hilfe('SL_Liste')}(${inhalt})`); ausgeben(`For ${index} = 0 To UBound(${liste})`); zeilen.push(`${'  '.repeat(tiefe + 1)}${variable(a.felder.VAR)} = ${liste}(${index})`); anweisungen(a.zweige.ABLAUF, tiefe + 1); ausgeben('Next'); break;
+        case 'sl_while':
+          ausgeben('Do');
+          zeilen.push(`${'  '.repeat(tiefe + 1)}sl_block = ${vbsText(a.id)}`);
+          zeilen.push(`${'  '.repeat(tiefe + 1)}If Not (${w('BEDINGUNG')}) Then Exit Do`);
+          anweisungen(a.zweige.ABLAUF, tiefe + 1);
+          ausgeben('Loop');
+          break;
+        case 'sl_foreach':
+        case 'sl_foreach_file': {
+          const liste = neu();
+          const index = neu();
+          const inhalt = a.art === 'sl_foreach' ? w('LISTE') : `${hilfe('SL_Dateien')}(${w('PFAD')})`;
+          ausgeben(`${liste} = ${hilfe('SL_Liste')}(${inhalt})`);
+          ausgeben(`For ${index} = 0 To UBound(${liste})`);
+          zeilen.push(`${'  '.repeat(tiefe + 1)}${variable(a.felder.VAR)} = ${liste}(${index})`);
+          anweisungen(a.zweige.ABLAUF, tiefe + 1);
+          ausgeben('Next');
+          break;
         }
-        case 'sl_mkdir': ausgeben(`${hilfe('SL_Ordner')} ${w('PFAD')}`); break;
-        case 'sl_copy': case 'sl_move': ausgeben(`${hilfe('SL_Kopieren')} ${w('QUELLE')}, ${w('ZIEL')}, ${a.felder.ZIELREGEL === 'ERSETZEN' ? 'True' : 'False'}, ${a.art === 'sl_move' ? 'True' : 'False'}`); break;
-        case 'sl_rename': ausgeben(`${hilfe('SL_Umbenennen')} ${w('QUELLE')}, ${w('NAME')}`); break;
-        case 'sl_write_text': case 'sl_append_text': ausgeben(`${hilfe('SL_Schreiben')} ${w('PFAD')}, ${w('TEXT')}, ${vbsText(a.felder.KODIERUNG)}, ${a.art === 'sl_append_text' ? 'True' : 'False'}`); break;
-        case 'sl_delete': ausgeben(`${hilfe('SL_Loeschen')} ${w('PFAD')}, ${a.felder.RUECKFRAGE === 'JA' ? 'True' : 'False'}`); break;
-        case 'sl_list_add': ausgeben(`${variable(a.felder.VAR)} = ${hilfe('SL_Anhaengen')}(${variable(a.felder.VAR)}, ${w('WERT')})`); break;
-        case 'sl_log': ausgeben(`${hilfe('SL_Schreiben')} ${w('PFAD')}, ${hilfe('SL_Datum')}(Now(), "BEIDES") & " " & CStr(${w('TEXT')}) & vbCrLf, "UTF8", True`); break;
-        case 'sl_sleep': ausgeben(`${hilfe('SL_Warten')} ${w('SEKUNDEN')}`); break;
-        default: throw new Error('Für einen Baustein fehlt der VBS-Generator.');
+        case 'sl_mkdir':
+          ausgeben(`${hilfe('SL_Ordner')} ${w('PFAD')}`);
+          break;
+        case 'sl_copy':
+        case 'sl_move':
+          ausgeben(
+            `${hilfe('SL_Kopieren')} ${w('QUELLE')}, ${w('ZIEL')}, ${a.felder.ZIELREGEL === 'ERSETZEN' ? 'True' : 'False'}, ${a.art === 'sl_move' ? 'True' : 'False'}`,
+          );
+          break;
+        case 'sl_rename':
+          ausgeben(`${hilfe('SL_Umbenennen')} ${w('QUELLE')}, ${w('NAME')}`);
+          break;
+        case 'sl_write_text':
+        case 'sl_append_text':
+          ausgeben(
+            `${hilfe('SL_Schreiben')} ${w('PFAD')}, ${w('TEXT')}, ${vbsText(a.felder.KODIERUNG)}, ${a.art === 'sl_append_text' ? 'True' : 'False'}`,
+          );
+          break;
+        case 'sl_delete':
+          ausgeben(
+            `${hilfe('SL_Loeschen')} ${w('PFAD')}, ${a.felder.RUECKFRAGE === 'JA' ? 'True' : 'False'}`,
+          );
+          break;
+        case 'sl_list_add':
+          ausgeben(
+            `${variable(a.felder.VAR)} = ${hilfe('SL_Anhaengen')}(${variable(a.felder.VAR)}, ${w('WERT')})`,
+          );
+          break;
+        case 'sl_log':
+          ausgeben(
+            `${hilfe('SL_Schreiben')} ${w('PFAD')}, ${hilfe('SL_Datum')}(Now(), "BEIDES") & " " & CStr(${w('TEXT')}) & vbCrLf, "UTF8", True`,
+          );
+          break;
+        case 'sl_sleep':
+          ausgeben(`${hilfe('SL_Warten')} ${w('SEKUNDEN')}`);
+          break;
+        default:
+          throw new Error('Für einen Baustein fehlt der VBS-Generator.');
       }
     }
   }
-  try { anweisungen(workflow.anweisungen, 1); } catch { return { code: null, meldungen: [...meldungen, { text: 'Der Workflow konnte nicht vollständig in VBS übersetzt werden.', stufe: 'fehler' }] }; }
+  try {
+    anweisungen(workflow.anweisungen, 1);
+  } catch {
+    return {
+      code: null,
+      meldungen: [
+        ...meldungen,
+        { text: 'Der Workflow konnte nicht vollständig in VBS übersetzt werden.', stufe: 'fehler' },
+      ],
+    };
+  }
   // Abhängigkeiten werden geschlossen, bevor die Helfer in fester Reihenfolge ausgegeben werden.
   if (helfer.has('SL_Schreiben')) helfer.add('SL_Lesen');
   if (helfer.has('SL_Umbenennen')) helfer.add('SL_Kopieren');
   if (helfer.has('SL_Eintrag') || helfer.has('SL_Anhaengen')) helfer.add('SL_Liste');
-  const benutztDateien = [...helfer].some(name => ['SL_Vorhanden', 'SL_Dateien', 'SL_Dateiname', 'SL_Lesen', 'SL_Schreiben', 'SL_Ordner', 'SL_Kopieren', 'SL_Umbenennen', 'SL_Loeschen'].includes(name));
+  const benutztDateien = [...helfer].some((name) =>
+    [
+      'SL_Vorhanden',
+      'SL_Dateien',
+      'SL_Dateiname',
+      'SL_Lesen',
+      'SL_Schreiben',
+      'SL_Ordner',
+      'SL_Kopieren',
+      'SL_Umbenennen',
+      'SL_Loeschen',
+    ].includes(name),
+  );
   const deklarationen = ['sl_block', ...variablen.values(), ...interneVariablen];
   const code = [
     "' Erstellt mit ScriptLab. Entwickelt von Leon Stolz.",
     "' Dieses Script wurde von ScriptLab nur erzeugt, niemals ausgeführt.",
     "' Relative Pfade beziehen sich auf den Speicherort dieser VBS-Datei.",
-    'Option Explicit', '',
-    ...deklarationen.map(name => `Dim ${name}`),
+    'Option Explicit',
+    '',
+    ...deklarationen.map((name) => `Dim ${name}`),
     ...(benutztDateien ? ['Dim sl_fso'] : []),
     ...(helfer.has('SL_Zufall') ? ['Randomize'] : []),
-    'sl_block = "Start"', 'SL_Geschuetzt', 'WScript.Quit 0', '',
-    'Sub SL_Haupt()', ...(benutztDateien ? ['  Set sl_fso = CreateObject("Scripting.FileSystemObject")'] : []), ...zeilen, 'End Sub', '',
+    'sl_block = "Start"',
+    'SL_Geschuetzt',
+    'WScript.Quit 0',
+    '',
+    'Sub SL_Haupt()',
+    ...(benutztDateien ? ['  Set sl_fso = CreateObject("Scripting.FileSystemObject")'] : []),
+    ...zeilen,
+    'End Sub',
+    '',
     grundHelfer,
     ...(benutztDateien ? [pfadHelfer] : []),
-    ...Object.entries(helferTexte).filter(([name]) => helfer.has(name)).map(([, text]) => text),
+    ...Object.entries(helferTexte)
+      .filter(([name]) => helfer.has(name))
+      .map(([, text]) => text),
     '',
-  ].join('\n').replace(/\r?\n/g, '\r\n');
+  ]
+    .join('\n')
+    .replace(/\r?\n/g, '\r\n');
   return { code, meldungen };
 }
 

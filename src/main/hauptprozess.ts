@@ -104,7 +104,13 @@ function registrieren(kanal: string, funktion: (daten: unknown) => unknown | Pro
         throw new Error('Die Anfrage ist zu groß.');
       return { ok: true, wert: await funktion(daten) };
     } catch (error) {
-      const bekannteMeldung = error instanceof Error && !('code' in error) && !(error instanceof z.ZodError);
+      const bekannteMeldung =
+        error instanceof Error &&
+        !('code' in error) &&
+        !(error instanceof z.ZodError) &&
+        !(error instanceof TypeError) &&
+        !(error instanceof RangeError) &&
+        !(error instanceof SyntaxError);
       return { ok: false, meldung: bekannteMeldung ? error.message : dateiFehler(error) };
     }
   });

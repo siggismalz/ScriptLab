@@ -318,7 +318,9 @@ export function Anwendung() {
             maxLength={160}
             onChange={(e) => aendern({ ...projektRef.current, name: e.target.value || 'Mein Workflow' })}
           />
-          <span className="speicherpunkt">{geaendert ? '● Ungespeichert' : '✓ Gespeichert'}</span>
+          <span className="speicherpunkt">
+            {geaendert ? '● Ungespeichert' : datei ? '✓ Gespeichert' : 'Neues Projekt'}
+          </span>
         </div>
         <button className="leise" onClick={() => setDialog('einstellungen')}>
           Einstellungen
@@ -484,6 +486,23 @@ export function Anwendung() {
           className="modalhintergrund"
           onKeyDown={(e) => {
             if (e.key === 'Escape') setDialog(null);
+            if (e.key === 'Tab') {
+              const elemente = Array.from(
+                e.currentTarget.querySelectorAll<HTMLElement>(
+                  'button:not(:disabled), input, select, textarea, [tabindex="0"]',
+                ),
+              );
+              const erstes = elemente[0];
+              const letztes = elemente.at(-1);
+              if (e.shiftKey && document.activeElement === erstes) {
+                e.preventDefault();
+                letztes?.focus();
+              }
+              if (!e.shiftKey && document.activeElement === letztes) {
+                e.preventDefault();
+                erstes?.focus();
+              }
+            }
           }}
         >
           <section
