@@ -24,6 +24,7 @@ test.beforeAll(async () => {
   });
   seite = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
+  await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
   await expect(seite.getByTestId('statusleiste')).toBeVisible();
   await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Neues Projekt');
 });

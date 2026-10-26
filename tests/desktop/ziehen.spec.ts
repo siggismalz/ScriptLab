@@ -17,6 +17,7 @@ async function starten(): Promise<Sitzung> {
   });
   const seite = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
+  await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
   await expect(seite.getByTestId('statusleiste')).toContainText('Neues Projekt');
   return { app, seite, ordner };
 }

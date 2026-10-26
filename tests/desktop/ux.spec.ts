@@ -45,6 +45,7 @@ async function starten(faktor = 1, breite = 1280, hoehe = 720): Promise<Sitzung>
           new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
       );
     }
+    await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
     await expect(seite.getByTestId('statusleiste')).toBeVisible();
     await expect(seite.getByTestId('palette')).toBeVisible();
     const wirklich = await seite.evaluate(() => ({ breite: innerWidth, hoehe: innerHeight }));

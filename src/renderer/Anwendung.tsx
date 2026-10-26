@@ -42,6 +42,11 @@ function antwort<T>(r: Antwort<T>): T {
 }
 
 export function Anwendung() {
+  const [ansicht, setAnsicht] = useState<'start' | 'editor'>('start');
+  const [editorBegonnen, setEditorBegonnen] = useState(false);
+  const editorSichtbar = useRef(false);
+  const editorFokus = useRef<Element | null>(null);
+  editorSichtbar.current = ansicht === 'editor';
   const element = useRef<HTMLDivElement>(null);
   const wsRef = useRef<Blockly.WorkspaceSvg | null>(null);
   const [workspace, setWorkspace] = useState<Blockly.WorkspaceSvg | null>(null);
@@ -86,6 +91,29 @@ export function Anwendung() {
   const kannAnheften = breite >= 1440;
   const angeheftet = eigenschaftenOffen && kannAnheften && einstellungen.eigenschaftenAngeheftet;
   const nurStart = projekt.editor.blocks?.blocks.length === 1 && !projekt.editor.blocks.blocks[0].next;
+
+  function editorZeigen() {
+    setEditorBegonnen(true);
+    setAnsicht('editor');
+  }
+  function startseiteZeigen() {
+    editorFokus.current = document.activeElement;
+    aendern(standLesen());
+    setAnsicht('start');
+  }
+  useEffect(() => {
+    if (ansicht !== 'editor') return;
+    const frame = requestAnimationFrame(() => {
+      const ws = wsRef.current;
+      if (!ws) return;
+      const { x, y } = projektRef.current.ansicht;
+      Blockly.svgResize(ws);
+      ws.scroll(x, y);
+      if (editorFokus.current?.isConnected && 'focus' in editorFokus.current)
+        (editorFokus.current as HTMLElement).focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [ansicht]);
 
   function melden(text: string, art: 'neutral' | 'erfolg' | 'hinweis' | 'fehler' = 'neutral') {
     setStatus(text);
@@ -200,6 +228,7 @@ export function Anwendung() {
             melden('Projekt gespeichert.', 'erfolg');
           } else {
             await dokumentLaden(neu);
+            editorZeigen();
             melden(art === 'neu' ? 'Füge links einen Baustein hinzu.' : 'Projekt geöffnet.');
           }
         } else {
@@ -355,6 +384,7 @@ export function Anwendung() {
     };
     ws.addChangeListener(aenderung);
     const groesse = new ResizeObserver(() => {
+      if (!editorSichtbar.current) return;
       const x = ws.scrollX,
         y = ws.scrollY;
       Blockly.svgResize(ws);
@@ -421,7 +451,8 @@ export function Anwendung() {
         );
         return;
       }
-      if (ziel.matches?.('input,textarea,select') || ziel.isContentEditable) return;
+      if (!editorSichtbar.current || ziel.matches?.('input,textarea,select') || ziel.isContentEditable)
+        return;
       if (event.ctrlKey && ['z', 'y'].includes(event.key.toLowerCase())) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -496,416 +527,457 @@ export function Anwendung() {
   } as CSSProperties;
   return (
     <div className="anwendung" style={style}>
-      <nav className="werkzeugleiste" aria-label="Projektaktionen">
-        <div className="knopfgruppe">
-          <Knopf
-            symbol="neu"
-            variante="leise"
-            disabled={!!verarbeitung}
-            grundId="status-aktion"
-            onClick={() => void projektAktion('neu')}
-          >
-            Neu
+      <section className="start-einstieg" hidden={ansicht !== 'start'} aria-label="Startseite">
+        <header className="start-kopf">
+          <span>ScriptLab</span>
+          <div className="knopfgruppe">
+            <Knopf onClick={() => setDialog('einstellungen')}>Einstellungen</Knopf>
+            <Knopf onClick={() => setDialog('ueber')}>Über ScriptLab</Knopf>
+          </div>
+        </header>
+        <main className="start-inhalt">
+          <h1>Startseite</h1>
+          <p>Erstelle einen neuen Ablauf oder arbeite an einem vorhandenen weiter.</p>
+          <div className="knopfgruppe umbrechen">
+            <Knopf
+              variante="primaer"
+              symbol="neu"
+              disabled={!!verarbeitung}
+              grund={verarbeitung ?? undefined}
+              onClick={() => void projektAktion('neu')}
+            >
+              Neuer Workflow
+            </Knopf>
+            <Knopf
+              symbol="oeffnen"
+              disabled={!!verarbeitung}
+              grund={verarbeitung ?? undefined}
+              onClick={() => void projektAktion('oeffnen')}
+            >
+              Workflow öffnen
+            </Knopf>
+          </div>
+          {editorBegonnen && <Knopf onClick={editorZeigen}>Weiterbearbeiten: {projekt.name}</Knopf>}
+          {dauerfehler && <p role="alert">{dauerfehler}</p>}
+        </main>
+      </section>
+      <div className="editor-ansicht" hidden={ansicht !== 'editor'}>
+        <nav className="werkzeugleiste" aria-label="Projektaktionen">
+          <Knopf variante="leise" onClick={startseiteZeigen}>
+            Startseite
           </Knopf>
-          <Knopf
-            symbol="oeffnen"
-            variante="leise"
-            disabled={!!verarbeitung}
-            grundId="status-aktion"
-            onClick={() => void projektAktion('oeffnen')}
-          >
-            Öffnen
-          </Knopf>
-          <Knopf
-            symbol="speichern"
-            disabled={!!verarbeitung}
-            grundId="status-aktion"
-            onClick={() => void projektAktion('speichern')}
-          >
-            Speichern
-          </Knopf>
-          <Menue
-            beschriftung="Projektmenü"
-            nurSymbol
-            symbol="unten"
-            eintraege={[
-              { text: 'Speichern unter', symbol: 'speichern', aktion: () => void projektAktion('unter') },
-              { text: 'Projektangaben', symbol: 'info', aktion: () => setDialog('projekt') },
-              { text: 'Beispiel: Begrüßung', aktion: () => void projektAktion('begruessung') },
-              { text: 'Beispiel: Datei-Backup', aktion: () => void projektAktion('backup') },
-              { text: 'Beispiel: Dateinamenliste', aktion: () => void projektAktion('dateiliste') },
-            ]}
-          />
-        </div>
-        <span className="werkzeug-trenner" />
-        <div className="knopfgruppe">
-          <Knopf
-            variante="leise"
-            symbol="rueckgaengig"
-            aria-label="Rückgängig"
-            title="Rückgängig (Strg+Z)"
-            onClick={() => wsRef.current && void verlaufAendern(wsRef.current)}
-          />
-          <Knopf
-            variante="leise"
-            symbol="wiederholen"
-            aria-label="Wiederholen"
-            title="Wiederholen (Strg+Y)"
-            onClick={() => wsRef.current && void verlaufAendern(wsRef.current, true)}
-          />
-        </div>
-        <div className="knopfgruppe ansichtknopfgruppe">
-          <Knopf
-            variante="leise"
-            symbol="eigenschaften"
-            aria-pressed={eigenschaftenOffen}
-            onClick={() => (eigenschaftenOffen ? eigenschaftenSchliessen() : eigenschaftenOeffnen())}
-          >
-            Eigenschaften
-          </Knopf>
-          <Knopf
-            variante="leise"
-            symbol="code"
-            aria-pressed={vorschauOffen}
-            onClick={() => setVorschauOffen(!vorschauOffen)}
-          >
-            Codevorschau
-          </Knopf>
-        </div>
-        <div className="hauptaktion">
-          <Knopf
-            variante="primaer"
-            symbol="exportieren"
-            verarbeitung={verarbeitung === 'VBS-Datei wird gespeichert …'}
-            disabled={!!verarbeitung}
-            grundId="status-aktion"
-            onClick={() => void exportieren()}
-          >
-            Als VBS exportieren
-          </Knopf>
-          <Menue
-            beschriftung="Weitere Funktionen"
-            nurSymbol
-            symbol="mehr"
-            eintraege={[
-              { text: 'Einstellungen', symbol: 'einstellungen', aktion: () => setDialog('einstellungen') },
-              { text: 'Über ScriptLab', symbol: 'info', aktion: () => setDialog('ueber') },
-              { text: 'Kopieren', symbol: 'kopieren', aktion: () => blockAktion('kopieren') },
-              { text: 'Einfügen', symbol: 'einfuegen', aktion: () => blockAktion('einfuegen') },
-            ]}
-          />
-        </div>
-      </nav>
-      <main className={`arbeitszeile ${angeheftet ? 'mit-eigenschaften' : ''}`}>
-        <Palette
-          ws={workspace}
-          eingeklappt={einstellungen.paletteEingeklappt}
-          umschalten={() =>
-            void einstellungenSetzen({
-              ...einstellungenRef.current,
-              paletteEingeklappt: !einstellungenRef.current.paletteEingeklappt,
-            })
-          }
-          platzierung={platzierung}
-          ziele={ziele}
-          einfuegen={(typ) => platzierungStarten('einfuegen', typ)}
-          zielWaehlen={zielWaehlen}
-          abbrechen={() => {
-            setPlatzierung(null);
-            platzierungRef.current = null;
-            melden('Einfügen abgebrochen.');
-          }}
-          blockAuswaehlen={auswaehlen}
-          meldung={melden}
-        />
-        <div
-          className="paletten-trenner"
-          role="separator"
-          tabIndex={0}
-          aria-label="Breite der Bausteinpalette"
-          aria-orientation="vertical"
-          aria-valuemin={240}
-          aria-valuemax={400}
-          aria-valuenow={einstellungen.palettenBreite}
-          onPointerDown={paletteGroesseStarten}
-          onKeyDown={(e) => {
-            if (['ArrowLeft', 'ArrowRight', 'Home'].includes(e.key)) {
-              e.preventDefault();
+          <div className="knopfgruppe">
+            <Knopf
+              symbol="neu"
+              variante="leise"
+              disabled={!!verarbeitung}
+              grundId="status-aktion"
+              onClick={() => void projektAktion('neu')}
+            >
+              Neu
+            </Knopf>
+            <Knopf
+              symbol="oeffnen"
+              variante="leise"
+              disabled={!!verarbeitung}
+              grundId="status-aktion"
+              onClick={() => void projektAktion('oeffnen')}
+            >
+              Öffnen
+            </Knopf>
+            <Knopf
+              symbol="speichern"
+              disabled={!!verarbeitung}
+              grundId="status-aktion"
+              onClick={() => void projektAktion('speichern')}
+            >
+              Speichern
+            </Knopf>
+            <Menue
+              beschriftung="Projektmenü"
+              nurSymbol
+              symbol="unten"
+              eintraege={[
+                { text: 'Speichern unter', symbol: 'speichern', aktion: () => void projektAktion('unter') },
+                { text: 'Projektangaben', symbol: 'info', aktion: () => setDialog('projekt') },
+                { text: 'Beispiel: Begrüßung', aktion: () => void projektAktion('begruessung') },
+                { text: 'Beispiel: Datei-Backup', aktion: () => void projektAktion('backup') },
+                { text: 'Beispiel: Dateinamenliste', aktion: () => void projektAktion('dateiliste') },
+              ]}
+            />
+          </div>
+          <span className="werkzeug-trenner" />
+          <div className="knopfgruppe">
+            <Knopf
+              variante="leise"
+              symbol="rueckgaengig"
+              aria-label="Rückgängig"
+              title="Rückgängig (Strg+Z)"
+              onClick={() => wsRef.current && void verlaufAendern(wsRef.current)}
+            />
+            <Knopf
+              variante="leise"
+              symbol="wiederholen"
+              aria-label="Wiederholen"
+              title="Wiederholen (Strg+Y)"
+              onClick={() => wsRef.current && void verlaufAendern(wsRef.current, true)}
+            />
+          </div>
+          <div className="knopfgruppe ansichtknopfgruppe">
+            <Knopf
+              variante="leise"
+              symbol="eigenschaften"
+              aria-pressed={eigenschaftenOffen}
+              onClick={() => (eigenschaftenOffen ? eigenschaftenSchliessen() : eigenschaftenOeffnen())}
+            >
+              Eigenschaften
+            </Knopf>
+            <Knopf
+              variante="leise"
+              symbol="code"
+              aria-pressed={vorschauOffen}
+              onClick={() => setVorschauOffen(!vorschauOffen)}
+            >
+              Codevorschau
+            </Knopf>
+          </div>
+          <div className="hauptaktion">
+            <Knopf
+              variante="primaer"
+              symbol="exportieren"
+              verarbeitung={verarbeitung === 'VBS-Datei wird gespeichert …'}
+              disabled={!!verarbeitung}
+              grundId="status-aktion"
+              onClick={() => void exportieren()}
+            >
+              Als VBS exportieren
+            </Knopf>
+            <Menue
+              beschriftung="Weitere Funktionen"
+              nurSymbol
+              symbol="mehr"
+              eintraege={[
+                { text: 'Einstellungen', symbol: 'einstellungen', aktion: () => setDialog('einstellungen') },
+                { text: 'Über ScriptLab', symbol: 'info', aktion: () => setDialog('ueber') },
+                { text: 'Kopieren', symbol: 'kopieren', aktion: () => blockAktion('kopieren') },
+                { text: 'Einfügen', symbol: 'einfuegen', aktion: () => blockAktion('einfuegen') },
+              ]}
+            />
+          </div>
+        </nav>
+        <main className={`arbeitszeile ${angeheftet ? 'mit-eigenschaften' : ''}`}>
+          <Palette
+            ws={workspace}
+            eingeklappt={einstellungen.paletteEingeklappt}
+            umschalten={() =>
               void einstellungenSetzen({
                 ...einstellungenRef.current,
-                palettenBreite:
-                  e.key === 'Home'
-                    ? 272
-                    : Math.max(
-                        240,
-                        Math.min(
-                          400,
-                          einstellungenRef.current.palettenBreite + (e.key === 'ArrowRight' ? 16 : -16),
-                        ),
-                      ),
-              });
+                paletteEingeklappt: !einstellungenRef.current.paletteEingeklappt,
+              })
             }
-          }}
-        />
-        <section className="editor-mitte" aria-label="Workflow bearbeiten">
-          <div className="canvas-bereich">
-            <div
-              ref={element}
-              data-testid="arbeitsbereich"
-              className={`blockly-editor ${platzierung ? 'wartet-auf-ziel' : ''}`}
-              tabIndex={-1}
-              aria-label="Arbeitsbereich"
-              onPointerUp={(e) => {
-                if (!platzierungRef.current) return;
-                const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
-                if (id) {
-                  const passend = einfuegestellenLesen(
-                    wsRef.current!,
-                    platzierungRef.current.typOderId,
-                  ).filter((z) => z.blockId === id);
-                  if (passend.length === 1) zielWaehlen(passend[0]);
-                  else if (passend.length) {
-                    setZiele(passend);
-                    melden('Wähle links den gewünschten Anschluss dieses Bausteins.');
-                  }
-                }
-              }}
-            />
-            {nurStart && !platzierung && (
-              <div className="naechster-schritt">
-                <p>Füge links einen Baustein hinzu.</p>
-                <Knopf variante="leise" onClick={() => void projektAktion('begruessung')}>
-                  Beispiel öffnen
-                </Knopf>
-              </div>
-            )}
-            <div className="ansichtsteuerung" aria-label="Arbeitsbereich verschieben">
-              {(['links', 'rechts', 'oben', 'unten'] as const).map((name, i) => (
-                <Knopf
-                  key={name}
-                  variante="leise"
-                  symbol={name}
-                  aria-label={`Ansicht nach ${name}`}
-                  title={`Ansicht nach ${name}`}
-                  onClick={() =>
-                    verschieben(i === 0 ? 100 : i === 1 ? -100 : 0, i === 2 ? 100 : i === 3 ? -100 : 0)
-                  }
-                />
-              ))}
-            </div>
-            <div className="zoom" aria-label="Zoom im Arbeitsbereich">
-              <Knopf
-                variante="leise"
-                symbol="minus"
-                aria-label="Verkleinern"
-                title="Verkleinern"
-                onClick={() => wsRef.current?.zoomCenter(-1)}
-              />
-              <Knopf
-                variante="leise"
-                aria-label="Zoom auf 100 Prozent zurücksetzen"
-                onClick={() => wsRef.current?.setScale(1)}
-              >
-                {Math.round(projekt.ansicht.zoom * 100)} %
-              </Knopf>
-              <Knopf
-                variante="leise"
-                symbol="plus"
-                aria-label="Vergrößern"
-                title="Vergrößern"
-                onClick={() => wsRef.current?.zoomCenter(1)}
-              />
-              <Knopf variante="leise" symbol="einpassen" onClick={() => wsRef.current?.zoomToFit()}>
-                Alles anzeigen
-              </Knopf>
-            </div>
-            {exportiert && (
-              <section className="export-rueckmeldung" role="status" aria-label="Export abgeschlossen">
-                <div>
-                  <h3>Script gespeichert</h3>
-                  <p>Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.</p>
-                  <p
-                    className={
-                      exportiert.signatur.status === 'vertrauen-offen' ? 'text-hinweis' : 'text-sekundaer'
-                    }
-                  >
-                    {exportiert.signatur.meldung}
-                  </p>
-                  <Knopf
-                    onClick={() =>
-                      void aktion('Speicherordner wird angezeigt …', async () => {
-                        antwort(await window.scriptlab.exportOrdnerAnzeigen());
-                      })
-                    }
-                  >
-                    Speicherordner anzeigen
-                  </Knopf>
-                </div>
-                <Knopf
-                  variante="leise"
-                  symbol="schliessen"
-                  aria-label="Exportmeldung schließen"
-                  onClick={() => setExportiert(null)}
-                />
-              </section>
-            )}
-          </div>
-          {vorschauOffen && (
-            <section
-              className="code-panel"
-              data-testid="code-panel"
-              aria-label="VBS-Codevorschau"
-              style={{ height: codeHoehe }}
-            >
+            platzierung={platzierung}
+            ziele={ziele}
+            einfuegen={(typ) => platzierungStarten('einfuegen', typ)}
+            zielWaehlen={zielWaehlen}
+            abbrechen={() => {
+              setPlatzierung(null);
+              platzierungRef.current = null;
+              melden('Einfügen abgebrochen.');
+            }}
+            blockAuswaehlen={auswaehlen}
+            meldung={melden}
+          />
+          <div
+            className="paletten-trenner"
+            role="separator"
+            tabIndex={0}
+            aria-label="Breite der Bausteinpalette"
+            aria-orientation="vertical"
+            aria-valuemin={240}
+            aria-valuemax={400}
+            aria-valuenow={einstellungen.palettenBreite}
+            onPointerDown={paletteGroesseStarten}
+            onKeyDown={(e) => {
+              if (['ArrowLeft', 'ArrowRight', 'Home'].includes(e.key)) {
+                e.preventDefault();
+                void einstellungenSetzen({
+                  ...einstellungenRef.current,
+                  palettenBreite:
+                    e.key === 'Home'
+                      ? 272
+                      : Math.max(
+                          240,
+                          Math.min(
+                            400,
+                            einstellungenRef.current.palettenBreite + (e.key === 'ArrowRight' ? 16 : -16),
+                          ),
+                        ),
+                });
+              }
+            }}
+          />
+          <section className="editor-mitte" aria-label="Workflow bearbeiten">
+            <div className="canvas-bereich">
               <div
-                role="separator"
-                className="code-trenner"
-                tabIndex={0}
-                aria-label="Höhe der Codevorschau"
-                aria-orientation="horizontal"
-                aria-valuemin={140}
-                aria-valuemax={Math.floor(window.innerHeight * 0.65)}
-                aria-valuenow={Math.round(codeHoehe)}
-                onPointerDown={codeGroesseStarten}
-                onKeyDown={(e) => {
-                  if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
-                    e.preventDefault();
-                    setCodeHoehe((h) =>
-                      Math.max(
-                        140,
-                        Math.min(window.innerHeight * 0.65, h + (e.key === 'ArrowUp' ? 24 : -24)),
-                      ),
-                    );
+                ref={element}
+                data-testid="arbeitsbereich"
+                className={`blockly-editor ${platzierung ? 'wartet-auf-ziel' : ''}`}
+                tabIndex={-1}
+                aria-label="Arbeitsbereich"
+                onPointerUp={(e) => {
+                  if (!platzierungRef.current) return;
+                  const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
+                  if (id) {
+                    const passend = einfuegestellenLesen(
+                      wsRef.current!,
+                      platzierungRef.current.typOderId,
+                    ).filter((z) => z.blockId === id);
+                    if (passend.length === 1) zielWaehlen(passend[0]);
+                    else if (passend.length) {
+                      setZiele(passend);
+                      melden('Wähle links den gewünschten Anschluss dieses Bausteins.');
+                    }
                   }
                 }}
               />
-              <header className="panel-kopf">
-                <h2>VBS-Codevorschau</h2>
-                <div className="knopfgruppe">
-                  <Knopf
-                    variante="leise"
-                    symbol="oben"
-                    aria-label="Codevorschau vergrößern"
-                    onClick={() => setCodeHoehe((h) => Math.min(window.innerHeight * 0.65, h + 48))}
-                  />
-                  <Knopf
-                    variante="leise"
-                    symbol="unten"
-                    aria-label="Codevorschau verkleinern"
-                    onClick={() => setCodeHoehe((h) => Math.max(140, h - 48))}
-                  />
-                  <Knopf
-                    variante="leise"
-                    aria-pressed={codeUmbruch}
-                    onClick={() => setCodeUmbruch(!codeUmbruch)}
-                  >
-                    Zeilen umbrechen
+              {nurStart && !platzierung && (
+                <div className="naechster-schritt">
+                  <p>Füge links einen Baustein hinzu.</p>
+                  <Knopf variante="leise" onClick={() => void projektAktion('begruessung')}>
+                    Beispiel öffnen
                   </Knopf>
+                </div>
+              )}
+              <div className="ansichtsteuerung" aria-label="Arbeitsbereich verschieben">
+                {(['links', 'rechts', 'oben', 'unten'] as const).map((name, i) => (
+                  <Knopf
+                    key={name}
+                    variante="leise"
+                    symbol={name}
+                    aria-label={`Ansicht nach ${name}`}
+                    title={`Ansicht nach ${name}`}
+                    onClick={() =>
+                      verschieben(i === 0 ? 100 : i === 1 ? -100 : 0, i === 2 ? 100 : i === 3 ? -100 : 0)
+                    }
+                  />
+                ))}
+              </div>
+              <div className="zoom" aria-label="Zoom im Arbeitsbereich">
+                <Knopf
+                  variante="leise"
+                  symbol="minus"
+                  aria-label="Verkleinern"
+                  title="Verkleinern"
+                  onClick={() => wsRef.current?.zoomCenter(-1)}
+                />
+                <Knopf
+                  variante="leise"
+                  aria-label="Zoom auf 100 Prozent zurücksetzen"
+                  onClick={() => wsRef.current?.setScale(1)}
+                >
+                  {Math.round(projekt.ansicht.zoom * 100)} %
+                </Knopf>
+                <Knopf
+                  variante="leise"
+                  symbol="plus"
+                  aria-label="Vergrößern"
+                  title="Vergrößern"
+                  onClick={() => wsRef.current?.zoomCenter(1)}
+                />
+                <Knopf variante="leise" symbol="einpassen" onClick={() => wsRef.current?.zoomToFit()}>
+                  Alles anzeigen
+                </Knopf>
+              </div>
+              {exportiert && (
+                <section className="export-rueckmeldung" role="status" aria-label="Export abgeschlossen">
+                  <div>
+                    <h3>Script gespeichert</h3>
+                    <p>
+                      Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.
+                    </p>
+                    <p
+                      className={
+                        exportiert.signatur.status === 'vertrauen-offen' ? 'text-hinweis' : 'text-sekundaer'
+                      }
+                    >
+                      {exportiert.signatur.meldung}
+                    </p>
+                    <Knopf
+                      onClick={() =>
+                        void aktion('Speicherordner wird angezeigt …', async () => {
+                          antwort(await window.scriptlab.exportOrdnerAnzeigen());
+                        })
+                      }
+                    >
+                      Speicherordner anzeigen
+                    </Knopf>
+                  </div>
                   <Knopf
                     variante="leise"
                     symbol="schliessen"
-                    aria-label="Codevorschau schließen"
-                    onClick={() => setVorschauOffen(false)}
+                    aria-label="Exportmeldung schließen"
+                    onClick={() => setExportiert(null)}
                   />
-                </div>
-              </header>
-              <p className="code-hinweis">Schreibgeschützt. Diese Vorschau führt keine Aktionen aus.</p>
-              <pre
-                tabIndex={0}
-                className={`code ${codeUmbruch ? 'mit-umbruch' : ''}`}
-                aria-label="Schreibgeschützte VBS-Codevorschau"
+                </section>
+              )}
+            </div>
+            {vorschauOffen && (
+              <section
+                className="code-panel"
+                data-testid="code-panel"
+                aria-label="VBS-Codevorschau"
+                style={{ height: codeHoehe }}
               >
-                {ergebnis.code ??
-                  "' Vervollständige den Entwurf. Die Hinweise erklären fehlende Verbindungen."}
-              </pre>
-            </section>
-          )}
-          {hinweiseOffen && (
-            <section
-              className="hinweise-panel"
-              data-testid="hinweise-panel"
-              aria-label="Hinweise zum Workflow"
-            >
-              <header className="panel-kopf">
-                <h2>Hinweise zum Workflow</h2>
-                <Knopf
-                  variante="leise"
-                  symbol="schliessen"
-                  aria-label="Hinweise schließen"
-                  onClick={() => setHinweiseOffen(false)}
+                <div
+                  role="separator"
+                  className="code-trenner"
+                  tabIndex={0}
+                  aria-label="Höhe der Codevorschau"
+                  aria-orientation="horizontal"
+                  aria-valuemin={140}
+                  aria-valuemax={Math.floor(window.innerHeight * 0.65)}
+                  aria-valuenow={Math.round(codeHoehe)}
+                  onPointerDown={codeGroesseStarten}
+                  onKeyDown={(e) => {
+                    if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+                      e.preventDefault();
+                      setCodeHoehe((h) =>
+                        Math.max(
+                          140,
+                          Math.min(window.innerHeight * 0.65, h + (e.key === 'ArrowUp' ? 24 : -24)),
+                        ),
+                      );
+                    }
+                  }}
                 />
-              </header>
-              <div className="hinweise-liste">
-                {ergebnis.meldungen.length ? (
-                  ergebnis.meldungen.map((m, i) => (
+                <header className="panel-kopf">
+                  <h2>VBS-Codevorschau</h2>
+                  <div className="knopfgruppe">
                     <Knopf
-                      key={i}
                       variante="leise"
-                      symbol={m.stufe === 'fehler' ? 'fehler' : 'hinweis'}
-                      onClick={() => blockAnzeigen(m.blockId)}
+                      symbol="oben"
+                      aria-label="Codevorschau vergrößern"
+                      onClick={() => setCodeHoehe((h) => Math.min(window.innerHeight * 0.65, h + 48))}
+                    />
+                    <Knopf
+                      variante="leise"
+                      symbol="unten"
+                      aria-label="Codevorschau verkleinern"
+                      onClick={() => setCodeHoehe((h) => Math.max(140, h - 48))}
+                    />
+                    <Knopf
+                      variante="leise"
+                      aria-pressed={codeUmbruch}
+                      onClick={() => setCodeUmbruch(!codeUmbruch)}
                     >
-                      {m.text}
+                      Zeilen umbrechen
                     </Knopf>
-                  ))
-                ) : (
-                  <p>Der Workflow enthält keine erkannten Strukturfehler.</p>
-                )}
-              </div>
-            </section>
+                    <Knopf
+                      variante="leise"
+                      symbol="schliessen"
+                      aria-label="Codevorschau schließen"
+                      onClick={() => setVorschauOffen(false)}
+                    />
+                  </div>
+                </header>
+                <p className="code-hinweis">Schreibgeschützt. Diese Vorschau führt keine Aktionen aus.</p>
+                <pre
+                  tabIndex={0}
+                  className={`code ${codeUmbruch ? 'mit-umbruch' : ''}`}
+                  aria-label="Schreibgeschützte VBS-Codevorschau"
+                >
+                  {ergebnis.code ??
+                    "' Vervollständige den Entwurf. Die Hinweise erklären fehlende Verbindungen."}
+                </pre>
+              </section>
+            )}
+            {hinweiseOffen && (
+              <section
+                className="hinweise-panel"
+                data-testid="hinweise-panel"
+                aria-label="Hinweise zum Workflow"
+              >
+                <header className="panel-kopf">
+                  <h2>Hinweise zum Workflow</h2>
+                  <Knopf
+                    variante="leise"
+                    symbol="schliessen"
+                    aria-label="Hinweise schließen"
+                    onClick={() => setHinweiseOffen(false)}
+                  />
+                </header>
+                <div className="hinweise-liste">
+                  {ergebnis.meldungen.length ? (
+                    ergebnis.meldungen.map((m, i) => (
+                      <Knopf
+                        key={i}
+                        variante="leise"
+                        symbol={m.stufe === 'fehler' ? 'fehler' : 'hinweis'}
+                        onClick={() => blockAnzeigen(m.blockId)}
+                      >
+                        {m.text}
+                      </Knopf>
+                    ))
+                  ) : (
+                    <p>Der Workflow enthält keine erkannten Strukturfehler.</p>
+                  )}
+                </div>
+              </section>
+            )}
+          </section>
+          {eigenschaftenOffen && (
+            <Eigenschaften
+              ws={workspace}
+              blockId={auswahl}
+              angeheftet={einstellungen.eigenschaftenAngeheftet}
+              kannAnheften={kannAnheften}
+              anheften={() =>
+                void einstellungenSetzen({
+                  ...einstellungenRef.current,
+                  eigenschaftenAngeheftet: !einstellungenRef.current.eigenschaftenAngeheftet,
+                })
+              }
+              schliessen={eigenschaftenSchliessen}
+              verschieben={() => {
+                if (auswahlRef.current) platzierungStarten('verschieben', auswahlRef.current);
+                else melden('Wähle zuerst einen Baustein.');
+              }}
+              blockAktion={blockAktion}
+              beruehrt={(id) => setBeruehrt((alt) => new Set([...alt, id]))}
+            />
           )}
-        </section>
-        {eigenschaftenOffen && (
-          <Eigenschaften
-            ws={workspace}
-            blockId={auswahl}
-            angeheftet={einstellungen.eigenschaftenAngeheftet}
-            kannAnheften={kannAnheften}
-            anheften={() =>
-              void einstellungenSetzen({
-                ...einstellungenRef.current,
-                eigenschaftenAngeheftet: !einstellungenRef.current.eigenschaftenAngeheftet,
-              })
-            }
-            schliessen={eigenschaftenSchliessen}
-            verschieben={() => {
-              if (auswahlRef.current) platzierungStarten('verschieben', auswahlRef.current);
-              else melden('Wähle zuerst einen Baustein.');
-            }}
-            blockAktion={blockAktion}
-            beruehrt={(id) => setBeruehrt((alt) => new Set([...alt, id]))}
-          />
+        </main>
+        {dauerfehler && (
+          <section className="aufgabenfehler" role="alert">
+            <Symbol name="fehler" />
+            <p>{dauerfehler}</p>
+            <Knopf
+              variante="leise"
+              symbol="schliessen"
+              aria-label="Fehlermeldung schließen"
+              onClick={() => setDauerfehler(null)}
+            />
+          </section>
         )}
-      </main>
-      {dauerfehler && (
-        <section className="aufgabenfehler" role="alert">
-          <Symbol name="fehler" />
-          <p>{dauerfehler}</p>
+        <footer className="statusleiste" data-testid="statusleiste">
+          <span className="projektstatus" aria-label="Projektstatus">
+            {geaendert ? 'Ungespeicherte Änderungen' : datei ? 'Projekt gespeichert' : 'Neues Projekt'}
+          </span>
+          <span id="status-aktion" role="status" className={`status-aktion status-aktion--${statusArt}`}>
+            {verarbeitung ?? status}
+          </span>
           <Knopf
             variante="leise"
-            symbol="schliessen"
-            aria-label="Fehlermeldung schließen"
-            onClick={() => setDauerfehler(null)}
-          />
-        </section>
-      )}
-      <footer className="statusleiste" data-testid="statusleiste">
-        <span className="projektstatus" aria-label="Projektstatus">
-          {geaendert ? 'Ungespeicherte Änderungen' : datei ? 'Projekt gespeichert' : 'Neues Projekt'}
-        </span>
-        <span id="status-aktion" role="status" className={`status-aktion status-aktion--${statusArt}`}>
-          {verarbeitung ?? status}
-        </span>
-        <Knopf
-          variante="leise"
-          symbol={sichtbareHinweise.some((m) => m.stufe === 'fehler') ? 'hinweis' : 'info'}
-          onClick={() => {
-            setPruefungAngefordert(true);
-            setHinweiseOffen(!hinweiseOffen);
-          }}
-        >
-          Hinweise{sichtbareHinweise.length ? ` (${sichtbareHinweise.length})` : ''}
-        </Knopf>
-      </footer>
+            symbol={sichtbareHinweise.some((m) => m.stufe === 'fehler') ? 'hinweis' : 'info'}
+            onClick={() => {
+              setPruefungAngefordert(true);
+              setHinweiseOffen(!hinweiseOffen);
+            }}
+          >
+            Hinweise{sichtbareHinweise.length ? ` (${sichtbareHinweise.length})` : ''}
+          </Knopf>
+        </footer>
+      </div>
       <ProjektDialog
         offen={dialog === 'projekt'}
         name={projekt.name}

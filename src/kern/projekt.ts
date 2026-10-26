@@ -23,6 +23,7 @@ export interface EditorBlock {
 export interface Projekt {
   schemaVersion: 1;
   appVersion: string;
+  projektKennung?: string;
   name: string;
   beschreibung: string;
   editor: {
@@ -68,6 +69,7 @@ export function projektPruefen(wert: unknown): Projekt {
         ![
           'schemaVersion',
           'appVersion',
+          'projektKennung',
           'name',
           'beschreibung',
           'editor',
@@ -77,6 +79,12 @@ export function projektPruefen(wert: unknown): Projekt {
     )
   )
     return fehler('Die Projektdatei enthält nicht unterstützte Zusatzdaten.');
+  if (
+    wert.projektKennung !== undefined &&
+    (typeof wert.projektKennung !== 'string' ||
+      !/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(wert.projektKennung))
+  )
+    return fehler('Die Projektkennung ist ungültig.');
   if (
     !text(wert.appVersion, 80) ||
     !text(wert.name, 160) ||
@@ -300,6 +308,7 @@ export function neuesProjekt(): Projekt {
   return {
     schemaVersion: 1,
     appVersion: '0.1.0',
+    projektKennung: globalThis.crypto.randomUUID(),
     name: 'Mein Workflow',
     beschreibung: '',
     editor: {
