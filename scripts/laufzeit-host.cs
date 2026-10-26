@@ -20,6 +20,7 @@ internal static class LaufzeitHost
     private const uint StopExitcode = 0xC000013A;
     private const uint WaitObject = 0;
     private static readonly IntPtr Ungueltig = new IntPtr(-1);
+    private static Encoding protokollKodierung = Encoding.Unicode;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct SicherheitsAttribute { public int Laenge; public IntPtr Beschreibung; public int Vererbbar; }
@@ -159,7 +160,7 @@ internal static class LaufzeitHost
     // Nur der Hauptthread schreibt Protokollmeldungen: vor den Pumpen oder nach deren Ende.
     private static void Diagnose(string text)
     {
-        byte[] daten = Encoding.Unicode.GetBytes(text + "\r\n");
+        byte[] daten = protokollKodierung.GetBytes(text + "\r\n");
         Stream fehler = Console.OpenStandardError();
         fehler.Write(daten, 0, daten.Length); fehler.Flush();
     }
@@ -228,16 +229,20 @@ internal static class LaufzeitHost
         bool listeInitialisiert = false, zeitlimitErreicht = false;
         try
         {
-            if (IntPtr.Size != 8 || args.Length != 8 || args[0] != "--script" || args[2] != "--basis" || args[4] != "--limit-ms" || args[6] != "--token")
-                throw new ArgumentException("Erwartet: --script <VBS> --basis <Ordner> --limit-ms <Zeit> --token <Kennung>.");
+            bool python = args.Length >= 10 && args[8] == "--sprache" && args[9] == "python";
+            if (python) protokollKodierung = new UTF8Encoding(false);
+            if (IntPtr.Size != 8 || (args.Length != 8 && !(python && args.Length == 12 && args[10] == "--interpreter")) || args[0] != "--script" || args[2] != "--basis" || args[4] != "--limit-ms" || args[6] != "--token")
+                throw new ArgumentException("Erwartet: --script <Datei> --basis <Ordner> --limit-ms <Zeit> --token <Kennung>, für Python zusätzlich --sprache python --interpreter <python.exe>.");
             string script = AbsoluterPfad(args[1]), basis = AbsoluterPfad(args[3]);
             basis = basis.TrimEnd('\\', '/');
             if (basis.Length == 2 && basis[1] == ':') basis += "\\.";
             int limit;
-            if (!String.Equals(Path.GetExtension(script), ".vbs", StringComparison.OrdinalIgnoreCase) || !Int32.TryParse(args[5], out limit) || limit < 100 || limit > 86400000 || !Regex.IsMatch(args[7], "^[A-Za-z0-9_-]{32,128}$"))
+            if (!String.Equals(Path.GetExtension(script), python ? ".py" : ".vbs", StringComparison.OrdinalIgnoreCase) || !Int32.TryParse(args[5], out limit) || limit < 100 || limit > 86400000 || !Regex.IsMatch(args[7], "^[A-Za-z0-9_-]{32,128}$"))
                 throw new ArgumentException("Scriptpfad, Zeitlimit oder Testkennung sind ungültig.");
-            string host = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cscript.exe");
-            if (!File.Exists(host)) throw new FileNotFoundException("Der feste Windows-Scripthost ist nicht verfügbar.");
+            string host = python ? AbsoluterPfad(args[11]) : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cscript.exe");
+            if (python && (!Regex.IsMatch(Path.GetFileName(host), "^python(?:3(?:\\.[0-9]+)?)?\\.exe$", RegexOptions.IgnoreCase) || host.IndexOf("\\WindowsApps\\", StringComparison.OrdinalIgnoreCase) >= 0 || new FileInfo(host).Length == 0))
+                throw new ArgumentException("Wähle eine konkrete Python-Laufzeit. Launcher und Windows-Store-Aliasse sind nicht zulässig.");
+            if (!File.Exists(host)) throw new FileNotFoundException("Die festgelegte Windows-Laufzeit ist nicht verfügbar.");
             IntPtr kontrolle = GetStdHandle(-10);
             StringBuilder befehl = new StringBuilder();
             if (KontrollePruefen(kontrolle, befehl)) return unchecked((int)StopExitcode);
@@ -269,7 +274,9 @@ internal static class LaufzeitHost
             start.Start.Groesse = Marshal.SizeOf(typeof(ErweiterterStart)); start.Start.Flags = StartUseStdHandles | 1;
             start.Start.Fensteranzeige = 0;
             start.Start.Eingabe = eingabeNull; start.Start.Ausgabe = ausgabe; start.Start.Fehler = fehlerausgabe; start.Attribute = liste;
-            StringBuilder argumente = new StringBuilder(Argument(host) + " //Nologo //U //I //E:VBScript " + Argument(script) + " " + Argument("/ScriptLabBasis:" + basis) + " " + Argument("/ScriptLabTestToken:" + args[7]));
+            StringBuilder argumente = new StringBuilder(python
+                ? Argument(host) + " -I -u -X utf8 " + Argument(script) + " --scriptlab-basis " + Argument(basis) + " --scriptlab-token " + Argument(args[7])
+                : Argument(host) + " //Nologo //U //I //E:VBScript " + Argument(script) + " " + Argument("/ScriptLabBasis:" + basis) + " " + Argument("/ScriptLabTestToken:" + args[7]));
             if (argumente.Length > 32000) throw new ArgumentException("Die Windows-Aufrufargumente sind zu lang.");
             if (KontrollePruefen(kontrolle, befehl)) return unchecked((int)StopExitcode);
             Pruefen(CreateProcessW(host, argumente, IntPtr.Zero, IntPtr.Zero, true, CreateSuspended | CreateNoWindow | ExtendedStartup, IntPtr.Zero, basis, ref start, out prozess), "Windows-Scripthost anlegen");
