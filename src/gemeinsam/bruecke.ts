@@ -14,6 +14,44 @@ export interface Dokument {
   dateiname: string | null;
   geaendert: boolean;
 }
+export type VerfuegbarkeitsZustand =
+  'unbekannt' | 'prueft' | 'verfuegbar' | 'geaendert' | 'fehlt' | 'nicht-erreichbar' | 'ungueltig';
+export interface Verfuegbarkeit {
+  zustand: VerfuegbarkeitsZustand;
+  meldung: string;
+}
+export interface ProjektEintrag {
+  id: string;
+  projektKennung: string;
+  name: string;
+  beschreibung: string;
+  pfad: string;
+  zuletztGeoeffnet: string | null;
+  geaendertAm: string;
+  groesse: number;
+  hash: string;
+  verfuegbarkeit: VerfuegbarkeitsZustand;
+}
+export interface EntwurfEintrag {
+  id: string;
+  projektKennung: string;
+  name: string;
+  beschreibung: string;
+  gesichertAm: string;
+  ausgangspfad: string | null;
+  baselineHash: string | null;
+}
+export interface EntwurfStatus {
+  id: string | null;
+  phase: 'kein' | 'ausstehend' | 'gesichert' | 'fehler';
+  gesichertAm: string | null;
+  meldung: string | null;
+}
+export interface ProjektBibliothek {
+  projekte: ProjektEintrag[];
+  entwuerfe: EntwurfEintrag[];
+  hinweis: string | null;
+}
 export type Antwort<T> = { ok: true; wert: T } | { ok: false; meldung: string };
 export interface ExportErgebnis {
   dateiname: string;
