@@ -278,6 +278,41 @@ test('lässt höchstens einen Start zu und leert während eines Laufs nur die Au
   expect((await fertig()).phase).toBe('abgebrochen');
 });
 
+test('lässt alte Ausgabe beim Lesen stehen und kopiert sie auch während eines echten Laufs', async () => {
+  const zeilen = Array.from({ length: 50 }, (_, i) => `Lesbare Testzeile ${i + 1} ä`).join('\r\n');
+  const pause = block('sl_sleep', { SEKUNDEN: block('sl_number', {}, { ZAHL: '4' }) });
+  await oeffnen(
+    projektMit(ausgabe(zeilen), pause, ausgabe('SPÄTERE AUSGABE'), warten(), ausgabe('NICHT ERREICHBAR')),
+  );
+  await seite.getByRole('button', { name: 'Testen', exact: true }).click();
+  await ausgabeErwarten('Lesbare Testzeile 50 ä');
+  const log = seite.getByRole('log', { name: 'Testausgabe', exact: true });
+  await log.scrollIntoViewIfNeeded();
+  await log.hover();
+  await seite.mouse.wheel(0, -10000);
+  await expect.poll(() => log.evaluate((el) => el.scrollTop)).toBe(0);
+  await seite.getByRole('button', { name: 'Ausgabe kopieren', exact: true }).click();
+  expect(testAktiv((await zustand()).phase)).toBe(true);
+  await expect
+    .poll(() =>
+      app.evaluate(async ({ clipboard }) => (await clipboard.readText()).includes('Lesbare Testzeile 1 ä')),
+    )
+    .toBe(true);
+  await ausgabeErwarten('SPÄTERE AUSGABE');
+  await expect(log).toContainText('SPÄTERE AUSGABE');
+  expect(await log.evaluate((el) => el.scrollTop)).toBe(0);
+  await seite.getByRole('button', { name: 'Zum Ausgabeende', exact: true }).click();
+  await expect
+    .poll(() => log.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop))
+    .toBeLessThanOrEqual(2);
+  await seite
+    .getByRole('navigation', { name: 'Projektaktionen' })
+    .getByRole('button', { name: 'Stoppen', exact: true })
+    .click();
+  expect((await fertig()).phase).toBe('abgebrochen');
+  expect((await zustand()).ausgabe).not.toContain('NICHT ERREICHBAR');
+});
+
 test('ein ungültiger Workflow und fremde Testoptionen starten keinen Prozess', async () => {
   const ungueltig = block('sl_write_text');
   await oeffnen(projektMit(ungueltig));
