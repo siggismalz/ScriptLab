@@ -46,6 +46,14 @@ npm run dev
 
 Nach `npm run package` prüft `npm run verify:package` Installergröße, Update-Prüfsummen, Blockmap und die Übereinstimmung des entpackten Pakets mit `dist`, Beispielen und Beilagen. Der tatsächliche Bericht liegt unter `release/pruefung.json`. Diese lesende Prüfung ersetzt weder eine Installation noch den Vergleich zweier installierter Updateversionen.
 
+Falls ältere Builddateien gesperrt sind, kann ein eigener Ausgabeordner verwendet werden. Die Prüfung akzeptiert denselben Ordner als Argument und schreibt ihren Bericht dort; ihre Prüfungen bleiben gleich:
+
+```powershell
+npm run build
+npx electron-builder --win nsis --x64 --publish never --config.directories.output=artifacts/startseiten-build-final
+npm run verify:package -- artifacts/startseiten-build-final
+```
+
 ## Projekt und Export
 
 `.scriptlab` enthält den bearbeitbaren JSON-Projektzustand. `.vbs` enthält erzeugten Quelltext und ist kein rückimportierbares Projektformat. Unvollständige Entwürfe dürfen gespeichert werden; Fehler verhindern den Export.

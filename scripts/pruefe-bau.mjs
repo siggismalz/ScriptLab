@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { readFile, readdir, stat, writeFile, mkdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
-import { basename, join, relative, sep } from 'node:path';
+import { basename, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { load } from 'js-yaml';
@@ -10,7 +10,9 @@ import { parse, prerelease } from 'semver';
 import asar from '@electron/asar';
 
 const wurzel = fileURLToPath(new URL('..', import.meta.url));
-const release = join(wurzel, 'release');
+// Ein eigener Ausgabeordner erlaubt die Prüfung auch bei gesperrten älteren Builddateien.
+if (process.argv.length > 3) throw new Error('Bitte höchstens einen Ausgabeordner angeben.');
+const release = resolve(wurzel, process.argv[2] ?? 'release');
 const ressourcen = join(release, 'win-unpacked', 'resources');
 const archiv = join(ressourcen, 'app.asar');
 const paket = JSON.parse(await readFile(join(wurzel, 'package.json'), 'utf8'));
@@ -23,6 +25,7 @@ const bericht = {
   schemaVersion: 1,
   erstelltAm: new Date().toISOString(),
   version: paket.version,
+  ausgabeordner: relative(wurzel, release).replaceAll('\\', '/'),
   quellstand: null,
   pruefungen: [],
   dateien: [],
@@ -390,7 +393,7 @@ bericht.fehler = fehler;
 await mkdir(release, { recursive: true });
 await writeFile(join(release, 'pruefung.json'), `${JSON.stringify(bericht, null, 2)}\n`, 'utf8');
 console.log(
-  `${bericht.pruefungen.filter((p) => p.bestanden).length} Paketprüfungen bestanden, ${bericht.offenePruefungen} offen, ${fehler.length} fehlgeschlagen. Bericht: release/pruefung.json`,
+  `${bericht.pruefungen.filter((p) => p.bestanden).length} Paketprüfungen bestanden, ${bericht.offenePruefungen} offen, ${fehler.length} fehlgeschlagen. Bericht: ${relativ(join(release, 'pruefung.json'))}`,
 );
 for (const eintrag of fehler) console.error(`${eintrag.name}: ${eintrag.meldung}`);
 process.exitCode = bericht.bestanden ? 0 : 1;
