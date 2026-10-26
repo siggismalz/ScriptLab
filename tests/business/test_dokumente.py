@@ -16,16 +16,16 @@ import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "laufzeit"))
 
-from scriptlab_business.kontext import BusinessFehler, Grenzen, Kontext, UnklarerZustand
+from scriptlab_business.kontext import AbbruchFehler, BusinessFehler, Grenzen, Journal, Kontext, UnklarerZustand, runtime_hash_berechnen
 from scriptlab_business.dateien import archivieren, beleg_ablegen, csv_stapel, datei_aktion, datei_fingerabdruck, dateistapel, publizieren, zip_pruefen
-from scriptlab_business.ausfuehrung import abschliessen, ausfuehren, kontext_laden, schritt
+from scriptlab_business.ausfuehrung import _parameter_pruefen, abschliessen, ausfuehren, kontext_laden, schritt
 from scriptlab_business.dokumente import (
     docx_erstellen, docx_serie, docx_vorlage, pdf_bericht, pdf_seiten, pdf_teilen,
     pdf_text, pdf_verbinden, seiten_lesen, xlsx_vorlage,
 )
 from docx import Document
 from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font
+from openpyxl.styles import Alignment, Font
 from pypdf import PdfReader
 from reportlab.pdfgen import canvas
 from PIL import Image
@@ -82,6 +82,33 @@ class DokumentTests(unittest.TestCase):
         self.assertEqual(ausgabe.active["B1"].value, "=A2+1")
         self.assertEqual(ausgabe.active["C1"].value, "=SUM(A2:A2)")
         self.assertEqual(ausgabe.calculation.calcMode, "manual")
+        self.assertEqual(quelle.read_bytes(), original)
+
+    def test_xlsx_schreibt_enge_formate_und_erhaelt_andere_stilwerte(self):
+        quelle = self.basis / "Formatvorlage.xlsx"
+        buch = Workbook()
+        buch.active["A1"].font = Font(name="Calibri", italic=True, color="FF123456")
+        buch.active["B2"] = 1.25
+        buch.active["B2"].alignment = Alignment(vertical="top", wrap_text=True)
+        buch.active.merge_cells("C3:D3")
+        buch.save(quelle)
+        buch.close()
+        original = quelle.read_bytes()
+        xlsx_vorlage(self.kontext(), {"vorlage": str(quelle), "ziel": "Formatiert.xlsx", "formate": [{"adresse": "A1", "fett": True}, {"adresse": "B2", "zahlformat": "0.00", "fuellung": "a1B2c3", "ausrichtung": "rechts"}]}, {})
+        ergebnis = load_workbook(self.basis / "Formatiert.xlsx")
+        self.addCleanup(ergebnis.close)
+        self.assertTrue(ergebnis.active["A1"].font.bold)
+        self.assertTrue(ergebnis.active["A1"].font.italic)
+        self.assertEqual(ergebnis.active["A1"].font.color.rgb, "FF123456")
+        self.assertEqual(ergebnis.active["B2"].number_format, "0.00")
+        self.assertEqual(ergebnis.active["B2"].fill.fgColor.rgb, "FFA1B2C3")
+        self.assertEqual(ergebnis.active["B2"].alignment.horizontal, "right")
+        self.assertEqual(ergebnis.active["B2"].alignment.vertical, "top")
+        self.assertTrue(ergebnis.active["B2"].alignment.wrap_text)
+        for format in [{"adresse": "A1", "fuellung": "#A1B2C3"}, {"adresse": "A1", "fett": "ja"}, {"adresse": "D3", "fett": True}, {"adresse": "XFE1", "fett": True}, {"adresse": "A1048577", "fett": True}]:
+            with self.subTest(format=format), self.assertRaises(BusinessFehler):
+                xlsx_vorlage(self.kontext(), {"vorlage": str(quelle), "ziel": "NichtSchreiben.xlsx", "formate": [format]}, {})
+        self.assertFalse((self.basis / "NichtSchreiben.xlsx").exists())
         self.assertEqual(quelle.read_bytes(), original)
 
     def test_docx_runuebergreifend_umlaute_kopf_und_tabelle(self):
@@ -150,6 +177,12 @@ class DokumentTests(unittest.TestCase):
         self.assertEqual(len(d.inline_shapes), 1)
         self.assertIn("Bericht ä", [p.text for p in d.paragraphs])
 
+    def test_neues_word_dokument_erlaubt_leeren_optionalen_absatzstil(self):
+        docx_erstellen(self.kontext(), {"ziel": "LeerStil.docx", "abschnitte": [{"art": "ABSATZ", "text": "Normaler Absatz", "stil": ""}]}, {})
+        dokument = Document(self.basis / "LeerStil.docx")
+        self.assertEqual(dokument.paragraphs[0].text, "Normaler Absatz")
+        self.assertEqual(dokument.paragraphs[0].style.name, "Normal")
+
     def test_pdf_verbinden_auswaehlen_und_teilen(self):
         a, b = self.pdf("A.pdf", ["Erste", "Zweite"]), self.pdf("B.pdf", ["Dritte"])
         k = self.kontext()
@@ -194,6 +227,18 @@ class DokumentTests(unittest.TestCase):
             self.assertIn("Seite", text)
             self.assertIn("Monatsbericht ä", text)
         self.assertIn("München", r.pages[0].extract_text())
+
+    def test_pdf_standardfont_vera_hat_umlaute_und_lehnt_fehlende_glyphen_ab(self):
+        k = self.kontext()
+        k.dienste["daten"] = TabellenFixture(["Grüße"], [("ÄÖÜ äöü ß €",)])
+        pdf_bericht(k, {"ziel": "Vera.pdf", "titel": "Öffentliche Grüße", "schrift": "INTERN:VERA"}, {"tabelle": {"tabelle": "bericht"}})
+        text = PdfReader(self.basis / "Vera.pdf").pages[0].extract_text()
+        self.assertIn("ÄÖÜ äöü ß €", text)
+        self.assertIn("Öffentliche Grüße", text)
+        k.dienste["daten"] = TabellenFixture(["Text"], [("Nicht enthalten: \U0010FFFF",)])
+        with self.assertRaisesRegex(BusinessFehler, "U\\+10FFFF"):
+            pdf_bericht(k, {"ziel": "NichtErzeugen.pdf", "schrift": "INTERN:VERA"}, {"tabelle": {"tabelle": "bericht"}})
+        self.assertFalse((self.basis / "NichtErzeugen.pdf").exists())
 
     def test_quellidentitaet_ist_stabil_und_aenderung_verhindert_publikation(self):
         quelle = self.basis / "Quelle.txt"
@@ -370,6 +415,21 @@ class DokumentTests(unittest.TestCase):
         self.assertEqual(list((self.basis / "Ausgabe").iterdir()), [])
         self.assertEqual(list((self.basis / "Archiv").iterdir()), [])
 
+    def test_csv_stapel_verschluckt_abbruch_und_unklar_auch_im_berichtmodus_nicht(self):
+        for name in ("Eingang", "Ausgabe", "Archiv"):
+            (self.basis / name).mkdir()
+        quelle = self.basis / "Eingang/Einzige.csv"
+        quelle.write_text("A;B\n1;2\n", encoding="utf-8")
+        config = {"ordner": "Eingang", "zielordner": "Ausgabe", "archivordner": "Archiv", "bei_fehler": "BERICHT"}
+        for fehler in (AbbruchFehler("Abgebrochen"), UnklarerZustand("Unklar")):
+            with self.subTest(fehler=type(fehler).__name__), patch("scriptlab_business.dateien.publizieren", side_effect=fehler):
+                k = self.kontext()
+                with self.assertRaises(type(fehler)):
+                    csv_stapel(k, config, {})
+                self.assertEqual(k.fehler, [])
+        self.assertTrue(quelle.exists())
+        self.assertEqual(list((self.basis / "Archiv").iterdir()), [])
+
     def test_runner_parameter_verweise_und_persistenter_bericht(self):
         from scriptlab_business.kontext import daten_hash
         (self.basis / "Eingang.csv").write_text("Region;Wert\nNord;100\nSued;80\n", encoding="utf-8")
@@ -399,6 +459,78 @@ class DokumentTests(unittest.TestCase):
         arbeitsordner = k.arbeitsordner
         k.schliessen()
         self.assertFalse(arbeitsordner.exists())
+
+    def test_zeitlimit_bleibt_abbruchgrund_bis_zum_persistenten_abschluss(self):
+        meldungen = []
+        k = self.kontext(journal_pfad=self.basis / "Laufdaten/journal.jsonl", ereignis_callback=meldungen.append)
+        with patch("scriptlab_business.kontext.time.monotonic", return_value=k._deadline + 1):
+            with self.assertRaises(AbbruchFehler) as aufgetreten:
+                k.pruefen()
+        self.assertEqual(aufgetreten.exception.grund, "zeitlimit")
+        self.assertEqual(abschliessen(k, aufgetreten.exception), 1)
+        self.assertEqual(meldungen[-1]["status"], "zeitlimit")
+        self.assertEqual(meldungen[-1]["grund"], "zeitlimit")
+        bericht = json.loads(next((self.basis / "Laufdaten").glob("bericht-*.json")).read_text())
+        self.assertEqual(bericht["status"], "zeitlimit")
+        self.assertEqual(bericht["abbruchgrund"], "zeitlimit")
+
+    def test_bericht_hat_workflow_quellenidentitaeten_und_ehrliche_summen(self):
+        quelle = self.basis / "Daten.csv"
+        quelle.write_text("ID;Wert\n001;2\n", encoding="utf-8")
+        vorlage = self.basis / "Vorlage.docx"
+        dokument = Document()
+        dokument.add_paragraph("{{Name}}")
+        dokument.save(vorlage)
+        script = self.basis / "workflow.py"
+        script.write_text("# kontrollierte Testfixture\n", encoding="utf-8")
+        kontextdatei = {"version": 1, "basis": str(self.basis), "modus": "ausfuehren", "journal_pfad": str(self.basis / "Laufdaten/journal.jsonl")}
+        (self.basis / "scriptlab-kontext.json").write_text(json.dumps(kontextdatei), encoding="utf-8")
+        metadaten = {"workflow_id": "bekannte-workflow-id", "projekt_name": "Quellenbericht", "parameter": []}
+        with redirect_stderr(StringIO()):
+            k = kontext_laden(script, metadaten, token="a" * 32)
+            self.addCleanup(k.schliessen)
+            schritt(k, "lesen", "daten.importieren", {"format": "CSV", "pfad": "Daten.csv"}, {})
+            schritt(k, "brief", "dokument.docx_vorlage", {"vorlage": "Vorlage.docx", "ziel": "Ergebnis.docx", "werte": {"Name": "Müller"}}, {})
+            schritt(k, "auslassen", "dateien.aktion", {"aktion": "KOPIEREN", "quelle": "Daten.csv", "ziel": "Ergebnis.docx", "konflikt": "UEBERSPRINGEN"}, {})
+            k.fehler.append({"block_id": "kontrolle", "meldung": "Bewusstes fachliches Testergebnis"})
+            self.assertEqual(abschliessen(k), 2)
+        bericht = json.loads(next((self.basis / "Laufdaten").glob("bericht-*.json")).read_text())
+        self.assertEqual(bericht["workflow_id"], "bekannte-workflow-id")
+        self.assertEqual(bericht["projekt_name"], "Quellenbericht")
+        self.assertEqual(bericht["runtime"]["business"], "1.0.0")
+        self.assertEqual(bericht["runtime_hash"], k.runtime_hash)
+        self.assertEqual(len(bericht["runtime_hash"]), 64)
+        self.assertEqual({Path(q["pfad"]).name for q in bericht["quellen"]}, {"Daten.csv", "Vorlage.docx"})
+        self.assertTrue(all(len(q["sha256"]) == 64 and q["bytes"] > 0 for q in bericht["quellen"]))
+        self.assertEqual(bericht["summen"], {"bezug": "Ausgabedateien und Fehlermeldungen", "verarbeitet": 1, "uebersprungen": 1, "geplant": 0, "fehlerhaft": 1})
+
+    def test_quellenregistry_verwirft_geaenderte_originale_statt_hash_zu_ersetzen(self):
+        quelle = self.basis / "Quelle.txt"
+        quelle.write_text("Original", encoding="utf-8")
+        k = self.kontext("vorschau")
+        dateistapel(k, {"ordner": ".", "muster": "Quelle.txt"}, {})
+        gemerkt = next(iter(k.quellen.values()))["sha256"]
+        quelle.write_text("Nachträglich verändert", encoding="utf-8")
+        with self.assertRaisesRegex(BusinessFehler, "Originalquelle"):
+            dateistapel(k, {"ordner": ".", "muster": "Quelle.txt"}, {})
+        self.assertEqual(next(iter(k.quellen.values()))["sha256"], gemerkt)
+
+    def test_grosses_abschlussereignis_behaelt_status_grund_und_berichtspfad(self):
+        script = self.basis / "workflow.py"
+        script.write_text("# feste Fixture\n", encoding="utf-8")
+        (self.basis / "scriptlab-kontext.json").write_text(json.dumps({"version": 1, "basis": str(self.basis), "modus": "prueflauf"}), encoding="utf-8")
+        ausgang = StringIO()
+        with redirect_stderr(ausgang):
+            k = kontext_laden(script, {"parameter": []}, token="b" * 32)
+            self.addCleanup(k.schliessen)
+            k.ereignis("abschluss", status="zeitlimit", grund="zeitlimit", bericht_pfad=str(self.basis / "Laufbericht ä.json"), ausgaben=["x" * 300000])
+        zeile = ausgang.getvalue().splitlines()[-1]
+        self.assertLessEqual(len(zeile.encode("utf-8")), 256 * 1024)
+        ereignis = json.loads(zeile.split("|", 2)[2])
+        self.assertEqual(ereignis["status"], "zeitlimit")
+        self.assertEqual(ereignis["grund"], "zeitlimit")
+        self.assertEqual(ereignis["bericht_pfad"], str(self.basis / "Laufbericht ä.json"))
+        self.assertTrue(ereignis["details_ausgelassen"])
 
     def test_exporthash_verwendet_scriptbytes_statt_metadaten(self):
         script = self.basis / "workflow.py"
@@ -471,6 +603,85 @@ class DokumentTests(unittest.TestCase):
         with self.assertRaises(BusinessFehler):
             ausfuehren({"version": 1, "schritte": [eintrag, eintrag]}, self.kontext())
         self.assertFalse((self.basis / "NichtAnlegen").exists())
+
+    def test_parameter_vertrag_ist_strikt_und_optionale_leerwerte_werden_null(self):
+        definitionen = [{"name": name, "typ": typ, "erforderlich": False, "standard": None}
+                        for name, typ in [("betrag", "Dezimalbetrag"), ("datum", "Datum"), ("zahl", "Zahl"), ("ja", "Wahrheitswert"), ("text", "Text")]]
+        werte = {"betrag": "+001.20", "datum": "2024-02-29", "zahl": 2.5, "ja": False, "text": ""}
+        _parameter_pruefen(definitionen, werte)
+        self.assertIsNone(werte["text"])
+        self.assertEqual(werte["betrag"], "+001.20")
+        for name in ("betrag", "datum", "zahl", "ja"):
+            leer = {name: ""}
+            _parameter_pruefen(definitionen, leer)
+            self.assertIsNone(leer[name])
+        for name, wert in [("betrag", "1,20"), ("betrag", "1e3"), ("betrag", "١.٢"), ("datum", "2025-02-29"), ("datum", "2026-13-01"), ("zahl", "2.5"), ("zahl", True), ("zahl", float("nan")), ("zahl", float("inf")), ("ja", "false")]:
+            with self.subTest(name=name, wert=wert), self.assertRaises(BusinessFehler):
+                _parameter_pruefen(definitionen, {name: wert})
+
+    def test_parameter_vertrag_lehnt_unbekannte_und_fehlende_pflichtwerte_ab(self):
+        definitionen = [{"name": "eingang", "typ": "Datei", "erforderlich": True, "standard": None}]
+        for werte in ({}, {"eingang": ""}, {"eingang": "Daten.csv", "fremd": "keine Nebeneingabe"}):
+            with self.subTest(werte=werte), self.assertRaises(BusinessFehler):
+                _parameter_pruefen(definitionen, werte)
+
+    def test_laufzeithash_bindet_quellbytes_python_pakete_und_vera_ohne_installationspfad(self):
+        ordner = [self.basis / "Installation A", self.basis / "Anderer Ort B"]
+        for ziel in ordner:
+            (ziel / "schriften").mkdir(parents=True)
+            for name, inhalt in [("kontext.py", b"# gleicher Kontext\n"), ("daten.py", b"# gleiche Datenengine\n")]:
+                (ziel / name).write_bytes(inhalt)
+            (ziel / "schriften/Vera.ttf").write_bytes(b"synthetische Schriftbytes")
+        def hash_fuer(ziel):
+            with patch("scriptlab_business.kontext.__file__", str(ziel / "kontext.py")):
+                return runtime_hash_berechnen()
+        with patch("scriptlab_business.kontext.version", return_value="1.0"):
+            referenz = hash_fuer(ordner[0])
+            self.assertEqual(hash_fuer(ordner[1]), referenz)
+            (ordner[1] / "daten.py").write_bytes(b"# geaenderte Verarbeitung\n")
+            self.assertNotEqual(hash_fuer(ordner[1]), referenz)
+            (ordner[1] / "daten.py").write_bytes(b"# gleiche Datenengine\n")
+            (ordner[1] / "schriften/Vera.ttf").write_bytes(b"andere Schriftbytes")
+            self.assertNotEqual(hash_fuer(ordner[1]), referenz)
+            with patch("scriptlab_business.kontext.sys.version", "andere CPython-Buildversion"):
+                self.assertNotEqual(hash_fuer(ordner[0]), referenz)
+        with patch("scriptlab_business.kontext.version", side_effect=lambda name: "2.0" if name == "duckdb" else "1.0"):
+            self.assertNotEqual(hash_fuer(ordner[0]), referenz)
+
+    def test_resume_braucht_identische_laufzeit_und_erhaelt_dateien_bei_abweichung(self):
+        journal = self.basis / "Journal.jsonl"
+        with patch("scriptlab_business.kontext.runtime_hash_berechnen", return_value="a" * 64):
+            k = self.kontext(journal_pfad=journal)
+            k.beginn_schritt("schreiben", {}, {})
+            publizieren(k, "Ergebnis.txt", lambda p: p.write_text("Bestätigter Inhalt", encoding="utf-8"), ausgabe_id="datei")
+            k.schliessen()
+            neu = self.kontext(journal_pfad=journal, fortsetzen=True)
+            neu.beginn_schritt("schreiben", {}, {})
+            self.assertEqual(publizieren(neu, "Ergebnis.txt", lambda p: p.write_text("Bestätigter Inhalt", encoding="utf-8"), ausgabe_id="datei")["status"], "wiederverwendet")
+            neu.schliessen()
+        ausgabe_vorher = (self.basis / "Ergebnis.txt").read_bytes()
+        journal_vorher = journal.read_bytes()
+        with patch("scriptlab_business.kontext.runtime_hash_berechnen", return_value="b" * 64):
+            geaendert = self.kontext(journal_pfad=journal, fortsetzen=True)
+            with self.assertRaisesRegex(UnklarerZustand, "Laufzeit"):
+                _ = geaendert.journal
+        self.assertEqual((self.basis / "Ergebnis.txt").read_bytes(), ausgabe_vorher)
+        self.assertEqual(journal.read_bytes(), journal_vorher)
+        self.assertEqual(json.loads(journal.read_text().splitlines()[0])["runtime_hash"], "a" * 64)
+
+    def test_aelteres_journal_ohne_laufzeithash_wird_unveraendert_abgelehnt(self):
+        pfad = self.basis / "Altjournal.jsonl"
+        neu = Journal(pfad, "workflow", "parameter", False)
+        neu.schliessen()
+        kompatibel = Journal(pfad, "workflow", "parameter", True)
+        kompatibel.schliessen()
+        kopf = json.loads(pfad.read_text().splitlines()[0])
+        del kopf["runtime_hash"]
+        pfad.write_text(json.dumps(kopf) + "\n", encoding="utf-8")
+        vorher = pfad.read_bytes()
+        with self.assertRaisesRegex(UnklarerZustand, "ältere Journal"):
+            Journal(pfad, "workflow", "parameter", True)
+        self.assertEqual(pfad.read_bytes(), vorher)
 
 
 if __name__ == "__main__":

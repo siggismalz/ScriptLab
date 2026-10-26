@@ -19,3 +19,5 @@
 *.docx binary
 *.xlsx binary
 *.pdf binary
+# Der unveränderte Original-Lizenztext bleibt einschließlich Leerzeichen bytegleich.
+laufzeit/scriptlab_business/schriften/bitstream-vera-license.txt -text whitespace=-trailing-space

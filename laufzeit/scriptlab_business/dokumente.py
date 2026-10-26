@@ -1,7 +1,7 @@
 """Begrenzte Dokumentoperationen; Bibliotheken starten weder Office noch einen Viewer."""
 from __future__ import annotations
 
-from copy import deepcopy
+from copy import copy, deepcopy
 from datetime import date, datetime
 from decimal import Decimal
 import hashlib
@@ -10,7 +10,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 from .kontext import BusinessFehler, Kontext
-from .dateien import publizieren, quellkopie, zip_pruefen, datei_fingerabdruck
+from .dateien import publizieren, quellkopie, zip_pruefen, datei_fingerabdruck, quellen_pruefen
 
 
 def _ziel(k, endung):
@@ -54,6 +54,8 @@ def _office_pruefer(kontext):
 def xlsx_vorlage(kontext: Kontext, k: dict, e: dict):
     from openpyxl import load_workbook
     from openpyxl.cell.cell import MergedCell
+    from openpyxl.styles import PatternFill
+    from openpyxl.utils.cell import column_index_from_string
     from openpyxl.workbook.properties import CalcProperties
     ziel = _ziel(k, ".xlsx")
     quelle = kontext.pfad(k["vorlage"])
@@ -67,16 +69,24 @@ def xlsx_vorlage(kontext: Kontext, k: dict, e: dict):
                 if blattname not in buch.sheetnames:
                     raise BusinessFehler("Das gewählte Tabellenblatt fehlt in der Vorlage.")
                 blatt = buch[blattname]
-                zellen, formeln = k.get("zellen", {}), k.get("formeln", {})
+                zellen, formeln, formate = k.get("zellen", {}), k.get("formeln", {}), k.get("formate", [])
                 if not isinstance(zellen, dict) or not isinstance(formeln, dict) or set(zellen) & set(formeln):
                     raise BusinessFehler("Zellwerte und ausdrücklich gewählte Formeln müssen getrennt zugeordnet sein.")
+                if not isinstance(formate, list) or len(zellen) + len(formeln) + len(formate) > kontext.grenzen.max_dokument_zellen:
+                    raise BusinessFehler("Die Excel-Zellzuweisungen überschreiten die Dokumentzellengrenze.")
+                def zelle_lesen(adresse):
+                    treffer = re.fullmatch(r"([A-Z]{1,3})([1-9][0-9]{0,6})", adresse) if isinstance(adresse, str) else None
+                    if not treffer:
+                        raise BusinessFehler("Eine Excel-Zelladresse ist ungültig, beispielsweise A1.")
+                    if int(treffer[2]) > 1048576 or column_index_from_string(treffer[1]) > 16384:
+                        raise BusinessFehler("Die Zielzelle liegt außerhalb des Excel-Bereichs.")
+                    zelle = blatt[adresse]
+                    if isinstance(zelle, MergedCell):
+                        raise BusinessFehler("Die Zielzelle liegt außerhalb des Excel-Bereichs oder innerhalb verbundener Zellen.")
+                    return zelle
                 for adresse, wert in [*zellen.items(), *formeln.items()]:
                     kontext.pruefen()
-                    if not re.fullmatch(r"[A-Z]{1,3}[1-9][0-9]{0,6}", adresse):
-                        raise BusinessFehler("Eine Excel-Zelladresse ist ungültig, beispielsweise A1.")
-                    zelle = blatt[adresse]
-                    if isinstance(zelle, MergedCell) or zelle.row > 1048576 or zelle.column > 16384:
-                        raise BusinessFehler("Die Zielzelle liegt außerhalb des Excel-Bereichs oder innerhalb verbundener Zellen.")
+                    zelle = zelle_lesen(adresse)
                     if adresse in formeln:
                         if not isinstance(wert, str) or not wert.startswith("="):
                             raise BusinessFehler("Eine ausdrücklich gesetzte Excel-Formel muss mit = beginnen.")
@@ -87,6 +97,34 @@ def xlsx_vorlage(kontext: Kontext, k: dict, e: dict):
                         zelle.value = str(wert) if isinstance(wert, Decimal) else wert
                         if isinstance(wert, str):
                             zelle.data_type = "s"  # Fremde Texte werden niemals zu Formeln.
+                for format in formate:
+                    kontext.pruefen()
+                    if not isinstance(format, dict) or "adresse" not in format or set(format) - {"adresse", "zahlformat", "fett", "fuellung", "ausrichtung"}:
+                        raise BusinessFehler("Ein Excel-Format benötigt eine Zelladresse und ausdrücklich erlaubte Formatangaben.")
+                    zelle = zelle_lesen(format["adresse"])
+                    if "zahlformat" in format:
+                        wert = format["zahlformat"]
+                        if not isinstance(wert, str) or not 1 <= len(wert) <= 256 or re.search(r"[\x00-\x1f]", wert):
+                            raise BusinessFehler("Das Excel-Zahlenformat muss ein kurzer gültiger Formattext sein.")
+                        zelle.number_format = wert
+                    if "fett" in format:
+                        if type(format["fett"]) is not bool:
+                            raise BusinessFehler("Die Excel-Einstellung Fett benötigt wahr oder falsch.")
+                        schrift = copy(zelle.font)
+                        schrift.bold = format["fett"]
+                        zelle.font = schrift
+                    if "fuellung" in format:
+                        farbe = format["fuellung"]
+                        if not isinstance(farbe, str) or not re.fullmatch(r"[0-9A-Fa-f]{6}", farbe):
+                            raise BusinessFehler("Die Excel-Füllfarbe benötigt genau sechs Hexzeichen, beispielsweise E8EBEF.")
+                        zelle.fill = PatternFill(fill_type="solid", fgColor="FF" + farbe.upper())
+                    if "ausrichtung" in format:
+                        wert = format["ausrichtung"]
+                        if not isinstance(wert, str) or wert not in {"links", "mitte", "rechts"}:
+                            raise BusinessFehler("Wähle links, mitte oder rechts als Excel-Ausrichtung.")
+                        ausrichtung = copy(zelle.alignment)
+                        ausrichtung.horizontal = {"links": "left", "mitte": "center", "rechts": "right"}[wert]
+                        zelle.alignment = ausrichtung
                 buch.calculation = CalcProperties(calcMode="manual", fullCalcOnLoad=False)
                 buch.save(temp)
             finally:
@@ -365,25 +403,40 @@ def pdf_bericht(kontext: Kontext, k: dict, e: dict):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.pdfbase.ttfonts import TTFont, TTFError
     from reportlab.platypus import LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
     dienst, tabelle = _tabelle(kontext, e)
     spalten = k.get("spalten") or [s.name for s in tabelle.spalten]
     if not isinstance(spalten, list) or not 1 <= len(spalten) <= 20 or any(s not in {s.name for s in tabelle.spalten} for s in spalten):
         raise BusinessFehler("Wähle zwischen einer und zwanzig vorhandenen Berichtsspalten.")
-    schrift = kontext.pfad(k["schrift"])
+    schriftwahl = k.get("schrift", "INTERN:VERA")
+    schrift = (Path(__file__).resolve().parent / "schriften" / "Vera.ttf"
+               if schriftwahl == "INTERN:VERA" else kontext.pfad(schriftwahl))
     if schrift.suffix.lower() != ".ttf":
         raise BusinessFehler("Wähle eine lokale TrueType-Schriftdatei (.ttf).")
     fingerprint = datei_fingerabdruck(kontext, schrift)
     fontname = "ScriptLab-" + fingerprint["sha256"][:16]
-    pdfmetrics.registerFont(TTFont(fontname, str(schrift)))
+    try:
+        with quellkopie(kontext, schrift) as kopie:
+            font = TTFont(fontname, str(kopie))
+    except (TTFError, OSError, ValueError) as fehler:
+        raise BusinessFehler("Die gewählte TrueType-Schrift konnte nicht gelesen werden.") from fehler
+    pdfmetrics.registerFont(font)
+    def schrift_pruefen(text):
+        fehlend = sorted({ord(zeichen) for zeichen in text
+                          if zeichen not in "\r\n\t" and not font.face.charToGlyph.get(ord(zeichen))})
+        if fehlend:
+            codes = ", ".join(f"U+{code:04X}" for code in fehlend[:12])
+            raise BusinessFehler(f"Die gewählte Schrift enthält Zeichen des Berichts nicht ({codes}). Wähle eine geeignete TTF-Schrift.")
+        return text
     stil = ParagraphStyle("ScriptLab", fontName=fontname, fontSize=9, leading=12)
-    daten = [[Paragraph(escape(s), stil) for s in spalten]]
+    daten = [[Paragraph(escape(schrift_pruefen(s)), stil) for s in spalten]]
     for zeile in _zeilen(kontext, dienst, tabelle):
         if (len(daten) + 1) * len(spalten) > kontext.grenzen.max_dokument_zellen:
             raise BusinessFehler("Der PDF-Bericht überschreitet die Dokumentzellengrenze. Teile den Bericht oder erhöhe die Grenze bewusst.")
-        daten.append([Paragraph(escape(_text(zeile[s])), stil) for s in spalten])
-    titel = _text(k.get("titel", "Bericht"))
+        daten.append([Paragraph(escape(schrift_pruefen(_text(zeile[s]))), stil) for s in spalten])
+    titel = schrift_pruefen(_text(k.get("titel", "Bericht")))
+    schrift_pruefen("Seite 0123456789")
     def schreiben(temp):
         raender = k.get("rand_mm", 12.7)
         if type(raender) not in {int, float} or not 5 <= raender <= 40:
@@ -406,6 +459,7 @@ def pdf_bericht(kontext: Kontext, k: dict, e: dict):
             canvas.drawString(raender * mm, format[1] - 24, titel[:140])
             canvas.drawRightString(format[0] - raender * mm, 24, f"Seite {dokument.page}")
         SimpleDocTemplate(str(temp), pagesize=format, topMargin=max(42, raender * mm), bottomMargin=max(42, raender * mm), leftMargin=raender * mm, rightMargin=raender * mm).build([Paragraph(escape(titel), stil), Spacer(1, 12), tabelle_pdf], onFirstPage=seitenkopf, onLaterPages=seitenkopf)
+    quellen_pruefen(kontext, [fingerprint])
     return {**publizieren(kontext, _ziel(k, ".pdf"), schreiben, k.get("konflikt", "FEHLER"), [schrift, *dienst.quellpfade(tabelle)], lambda pfad: _pdf_lesen(kontext, pfad)), "dokumenttyp": "PDF"}
 
 
@@ -424,7 +478,7 @@ def docx_erstellen(kontext: Kontext, k: dict, e: dict):
             kontext.pruefen()
             art = abschnitt.get("art")
             if art == "ABSATZ":
-                stil = abschnitt.get("stil")
+                stil = abschnitt.get("stil") or None
                 if stil is not None and stil not in dokument.styles:
                     raise BusinessFehler("Der gewählte Absatzstil fehlt im neuen Word-Dokument.")
                 dokument.add_paragraph(_text(abschnitt.get("text")), style=stil)

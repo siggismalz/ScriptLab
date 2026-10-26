@@ -469,5 +469,21 @@ class DatenTests(unittest.TestCase):
                     self.engine.importieren("XLSX","bereich.xlsx",{"bereich":bereich})
 
 
+    def test_lange_ganzzahlen_bleiben_in_vorschau_und_excel_exakt(self):
+        from openpyxl import load_workbook
+        (self.basis/"lang.csv").write_text("ID\n123456789012345678\n",encoding="utf-8")
+        t=self.engine.importieren("CSV","lang.csv")
+        t=self.engine.spalten(t,{"aktion":"TYP","spalte":"ID","typ":"GANZZAHL"})
+        v=self.engine.vorschau(t)
+        self.assertEqual(v["zeilen"],[["123456789012345678"]])
+        self.assertTrue(v["grosse_ganzzahlen_als_text"])
+        self.assertEqual(self.zeilen(t),[(123456789012345678,)])
+        self.engine.exportieren(t,"XLSX","lang.xlsx")
+        wb=load_workbook(self.basis/"lang.xlsx",read_only=True)
+        try:
+            self.assertEqual(wb.active["A2"].value,"123456789012345678")
+            self.assertEqual(wb.active["A2"].data_type,"s")
+        finally: wb.close()
+
 if __name__ == "__main__":
     unittest.main()

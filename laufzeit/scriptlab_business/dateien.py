@@ -14,7 +14,7 @@ import tempfile
 import re
 import zipfile
 
-from .kontext import BusinessFehler, Kontext, UnklarerZustand, daten_hash
+from .kontext import AbbruchFehler, BusinessFehler, Kontext, UnklarerZustand, daten_hash
 
 REGELN = {"FEHLER", "UEBERSPRINGEN", "NEUER_NAME", "ERSETZEN"}
 
@@ -118,6 +118,7 @@ def quellkopie(kontext: Kontext, pfad, office: bool = False):
     """Bibliotheken lesen eine feste technische Kopie; das Original bleibt unangetastet."""
     quelle = kontext.pfad(pfad)
     vorher = datei_fingerabdruck(kontext, quelle)
+    kontext.quelle_merken(vorher)
     ziel = kontext.arbeitsordner / (hashlib.sha256(str(quelle).encode()).hexdigest() + quelle.suffix)
     with quelle.open("rb") as eingang, ziel.open("wb") as ausgang:
         while daten := eingang.read(65536):
@@ -161,6 +162,8 @@ def ausgabe(kontext: Kontext, ziel, regel="FEHLER", quellen=(), pruefer=None, au
     if zielpfad.exists() and not zielpfad.is_file():
         raise BusinessFehler("Der Ausgabepfad bezeichnet keine normale Datei.")
     vorher = [datei_fingerabdruck(kontext, pfad) for pfad in sorted({str(kontext.pfad(p)) for p in quellen})]
+    for fingerprint in vorher:
+        kontext.quelle_merken(fingerprint)
     if any(Path(e["pfad"]) == zielpfad for e in vorher):
         raise BusinessFehler("Quelle und Ausgabedatei müssen verschiedene Dateien sein.")
     schluessel = f"{kontext.schritt_key or kontext.block_id or 'direkt'}:{ausgabe_id or len(kontext.ausgaben)}"
@@ -253,7 +256,9 @@ def dateistapel(kontext: Kontext, konfiguration: dict, eingaben: dict):
     for pfad in sorted(ordner.iterdir(), key=lambda p: (p.name.casefold(), p.name)):
         kontext.pruefen()
         if pfad.is_file() and not pfad.is_symlink() and fnmatch.fnmatchcase(pfad.name.casefold(), muster.casefold()):
-            ergebnis.append(datei_fingerabdruck(kontext, pfad))
+            fingerprint = datei_fingerabdruck(kontext, pfad)
+            kontext.quelle_merken(fingerprint)
+            ergebnis.append(fingerprint)
             if len(ergebnis) > kontext.grenzen.max_ausgaben:
                 raise BusinessFehler("Der Dateistapel enthält zu viele Dateien.")
     return {"dateien": ergebnis}
@@ -472,6 +477,7 @@ def csv_stapel(kontext: Kontext, k: dict, e: dict):
                 continue
             if Path(archiv["quelle"]["pfad"]).exists():
                 raise UnklarerZustand("Eine bereits archivierte Quelle liegt wieder im Eingang. Starte dafür einen neuen Lauf.")
+            kontext.quelle_merken(archiv["quelle"])
             prefix = schluessel.rsplit(":", 1)[0]
             output = kontext.journal.eintraege.get(prefix + ":csv")
             if not output or output.get("zustand") != "publiziert":
@@ -511,6 +517,9 @@ def csv_stapel(kontext: Kontext, k: dict, e: dict):
                 output = publizieren(kontext, zielordner / quelle.name, schreiben, k.get("konflikt", "FEHLER"), [quelle], pruefen, "csv")
                 archiv = archivieren(kontext, {"quelle": str(quelle), "ziel": str(archivordner / quelle.name), "konflikt": k.get("konflikt", "FEHLER")}, {"ausgaben": [output]}) if output["status"] in {"publiziert", "wiederverwendet", "geplant"} else {"status": "nicht_archiviert"}
                 berichte.append({"quelle": str(quelle), "status": output["status"], "zeilen": anzahl[0], "ausgabe": output, "archiv": archiv})
+            except (AbbruchFehler, UnklarerZustand):
+                # Sicherheit und bewusster Abbruch sind keine überspringbaren CSV-Fehlzeilen.
+                raise
             except (BusinessFehler, OSError, UnicodeError, csv.Error) as fehler:
                 meldung = str(fehler) if isinstance(fehler, BusinessFehler) else "Die CSV-Datei ist ungültig oder nicht lesbar."
                 berichte.append({"quelle": str(quelle), "status": "fehler", "meldung": meldung})

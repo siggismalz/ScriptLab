@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from importlib.metadata import version, PackageNotFoundError
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -101,19 +102,39 @@ def ausfuehren(plan: dict, kontext: Kontext):
 
 
 def _parameter_pruefen(definitionen, werte):
+    bekannt = {definition["name"] for definition in definitionen}
+    if set(werte) - bekannt:
+        raise BusinessFehler("Die Parameterdatei enthält unbekannte Parameternamen.")
     for definition in definitionen:
         name = definition["name"]
         wert = werte.get(name, definition.get("standard"))
         if definition.get("erforderlich") and (wert is None or wert == ""):
             raise BusinessFehler(f"Der erforderliche Parameter fehlt: {name}")
+        if wert is None or wert == "":
+            werte[name] = None
+            continue
         if wert is not None:
             typ = definition["typ"]
             if typ == "Wahrheitswert" and type(wert) is not bool:
                 raise BusinessFehler(f"Der Parameter {name} benötigt wahr oder falsch.")
-            if typ == "Zahl" and (type(wert) not in {int, float}):
-                raise BusinessFehler(f"Der Parameter {name} benötigt eine Zahl.")
+            if typ == "Zahl":
+                try:
+                    gueltig = type(wert) in {int, float} and math.isfinite(wert)
+                except OverflowError:
+                    gueltig = False
+                if not gueltig:
+                    raise BusinessFehler(f"Der Parameter {name} benötigt eine endliche Zahl.")
             if typ not in {"Zahl", "Wahrheitswert"} and not isinstance(wert, str):
                 raise BusinessFehler(f"Der Parameter {name} benötigt Text.")
+            if typ == "Dezimalbetrag" and not re.fullmatch(r"[+-]?[0-9]+(?:\.[0-9]+)?", wert):
+                raise BusinessFehler(f"Der Parameter {name} benötigt einen exakten Dezimalbetrag mit Punkt.")
+            if typ == "Datum":
+                try:
+                    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", wert):
+                        raise ValueError()
+                    date.fromisoformat(wert)
+                except ValueError as fehler:
+                    raise BusinessFehler(f"Der Parameter {name} benötigt ein gültiges Datum im Format JJJJ-MM-TT.") from fehler
         werte[name] = wert
 
 
@@ -159,11 +180,18 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
     if token is None or not kontext.workflow_hash:
         kontext.workflow_hash = hashlib.sha256(Path(scriptdatei).resolve().read_bytes()).hexdigest()
     kontext.token = token
+    kontext.metadaten = {name: metadaten.get(name) for name in ("workflow_id", "projekt_name")}
     kontext.scriptdatei = str(Path(scriptdatei).resolve())
     def senden(ereignis):
         text = json.dumps(ereignis, ensure_ascii=True, default=str, separators=(",", ":"))
         if len(text.encode("utf-8")) > 256 * 1024:
-            text = json.dumps({"art": ereignis["art"], "block_id": ereignis.get("block_id"), "details_ausgelassen": True, "meldung": "Die Ereignisdetails überschreiten 256 KiB."})
+            # Der Dienst braucht den bestätigten Abschluss und Berichtspfad auch
+            # dann, wenn ein großer Stapel nicht vollständig in das Ereignis passt.
+            grenzen = {"art": 160, "block_id": 160, "status": 160, "grund": 160,
+                       "bericht_pfad": 32768, "operation": 160, "modus": 160}
+            kurz = {name: wert[:grenzen[name]] if isinstance(wert, str) else wert
+                    for name, wert in ereignis.items() if name in grenzen}
+            text = json.dumps({**kurz, "details_ausgelassen": True, "meldung": "Die Ereignisdetails überschreiten 256 KiB. Vollständige Angaben stehen im Laufbericht."}, ensure_ascii=True, separators=(",", ":"))
         sys.stderr.write(f"SLBUS|{token or ''}|{text}\n")
         sys.stderr.flush()
     kontext.ereignis_callback = senden
@@ -177,6 +205,7 @@ def _unklare_schritte(kontext):
 
 
 def _bericht_speichern(kontext, status, fehler):
+    from . import __version__
     ordnername = kontext.workflow_hash if re.fullmatch(r"[a-fA-F0-9]{64}", kontext.workflow_hash) else daten_hash(kontext.workflow_hash)
     ordner = kontext.journal_pfad.parent if kontext.journal_pfad else kontext.basis / ".scriptlab" / ordnername if kontext.modus == "ausfuehren" else Path(tempfile.gettempdir()) / "ScriptLab-Business-Berichte"
     ordner.mkdir(parents=True, exist_ok=True)
@@ -188,12 +217,20 @@ def _bericht_speichern(kontext, status, fehler):
             pakete[name] = None
     parameter = {name: "[nicht protokolliert]" if re.search(r"passwort|password|token|secret|credential|api.?key|privat", name, re.I) else wert for name, wert in kontext.parameter.items()}
     unklar = _unklare_schritte(kontext)
-    bericht = {"version": 1, "quelle": kontext.scriptdatei, "workflow_hash": kontext.workflow_hash,
+    summen = {"bezug": "Ausgabedateien und Fehlermeldungen",
+              "verarbeitet": sum(a.get("status") in {"publiziert", "wiederverwendet"} for a in kontext.ausgaben),
+              "uebersprungen": sum(a.get("status") == "uebersprungen" for a in kontext.ausgaben),
+              "geplant": sum(a.get("status") == "geplant" for a in kontext.ausgaben),
+              "fehlerhaft": len(kontext.fehler) + int(bool(fehler) and not any(e.get("meldung") == str(fehler) for e in kontext.fehler))}
+    bericht = {"version": 1, "quelle": kontext.scriptdatei, "workflow_hash": kontext.workflow_hash, "runtime_hash": kontext.runtime_hash,
+               "workflow_id": kontext.metadaten.get("workflow_id"), "projekt_name": kontext.metadaten.get("projekt_name"),
                "lauf_id": kontext.lauf_id, "modus": kontext.modus, "gestartet_am": kontext.gestartet_am,
                "beendet_am": datetime.now(timezone.utc).isoformat(), "status": status,
-               "runtime": {"python": sys.version.split()[0], "pakete": pakete}, "parameter": parameter,
+               "runtime": {"python": sys.version.split()[0], "business": __version__, "pakete": pakete}, "parameter": parameter,
                "grenzen": vars(kontext.grenzen), "fehler": kontext.fehler, "hinweise": kontext.hinweise, "meldung": str(fehler) if fehler else None,
-               "ausgaben": kontext.ausgaben, "geplant": kontext.geplante_schritte, "unklare_schritte": unklar}
+               "ausgaben": kontext.ausgaben, "geplant": kontext.geplante_schritte, "unklare_schritte": unklar,
+               "quellen": sorted(kontext.quellen.values(), key=lambda f: f["pfad"]), "summen": summen,
+               "abbruchgrund": fehler.grund if isinstance(fehler, AbbruchFehler) else None}
     ziel = ordner / f"bericht-{kontext.lauf_id}.json"
     fd, name = tempfile.mkstemp(prefix=".bericht-", suffix=".json", dir=ordner)
     try:
@@ -214,9 +251,9 @@ def abschliessen(kontext: Kontext, fehler=None):
             if letzte:
                 vorschau = _handler()["daten.vorschau"](kontext, {"limit": 200}, {"tabelle": letzte})
                 kontext.ereignis("vorschau", **vorschau, abgeschnitten=vorschau.get("gekuerzt", False))
-        status = "unklar" if isinstance(fehler, UnklarerZustand) or _unklare_schritte(kontext) or any(e.get("unklar") for e in kontext.fehler) else "abgebrochen" if isinstance(fehler, AbbruchFehler) else "fehlgeschlagen" if fehler else "mit_fehlern" if kontext.fehler else "erfolgreich"
+        status = "unklar" if isinstance(fehler, UnklarerZustand) or _unklare_schritte(kontext) or any(e.get("unklar") for e in kontext.fehler) else fehler.grund if isinstance(fehler, AbbruchFehler) else "fehlgeschlagen" if fehler else "mit_fehlern" if kontext.fehler else "erfolgreich"
         bericht = _bericht_speichern(kontext, status, fehler)
-        kontext.ereignis("abschluss", status=status, ausgaben=kontext.ausgaben, fehler=kontext.fehler, bericht_pfad=str(bericht), meldung=str(fehler) if fehler else None)
+        kontext.ereignis("abschluss", status=status, grund=fehler.grund if isinstance(fehler, AbbruchFehler) else None, ausgaben=kontext.ausgaben, fehler=kontext.fehler, bericht_pfad=str(bericht), meldung=str(fehler) if fehler else None)
         return 1 if fehler or status == "unklar" else 2 if kontext.fehler else 0
     finally:
         kontext.schliessen()

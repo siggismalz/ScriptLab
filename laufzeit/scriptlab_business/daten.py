@@ -237,6 +237,7 @@ class DatenEngine:
             raise DatenFehler("Die Quelldatei überschreitet die eingestellte Dateigröße.")
         from .dateien import datei_fingerabdruck
         fp = datei_fingerabdruck(self.kontext, quelle)
+        self.kontext.quelle_merken(fp)
         finger = _Quelle(quelle,fp["bytes"],fp["sha256"],tuple(fp["stat"]))
         try:
             if format == "XLSX":
@@ -733,11 +734,14 @@ class DatenEngine:
         klein = self._neu(f"SELECT {','.join(teile)},({warnung}) AS {_bezeichner(marker)} FROM ({plan.sql}) AS t LIMIT {limit+1}",plan.parameter,plan.quellen,max_spalten=16385)
         zeilen, groesse, gekuerzt = [], 0, False
         zellen_gekuerzt = False
+        grosse_ganzzahlen_als_text = False
         start = time.monotonic()
         iterator = self.zeilen(klein, 1, zeitlimit=min(5,self._grenze("zeitlimit_sekunden",120)))
         try:
             for zeile in iterator:
-                werte = [_jsonwert(w) for w in zeile[:-1]]
+                grosse_ganzzahlen_als_text = grosse_ganzzahlen_als_text or any(type(w) is int and abs(w)>9007199254740991 for w in zeile[:-1])
+                # Nur die Anzeige erhält Text; der Tabellenplan bleibt numerisch.
+                werte = [str(w) if type(w) is int and abs(w)>9007199254740991 else _jsonwert(w) for w in zeile[:-1]]
                 laenge = len(json.dumps(werte, ensure_ascii=True).encode("utf-8"))
                 if len(zeilen) == limit or groesse + laenge > byte_limit:
                     gekuerzt = True
@@ -750,7 +754,7 @@ class DatenEngine:
             self._plaene.pop(klein.id, None)
             self._tabellen.pop(klein.id, None)
         self._pruefe_quellen(plan)
-        return {"spalten": tabelle.json()["spalten"], "zeilen": zeilen, "gekuerzt": gekuerzt or zellen_gekuerzt, "zellen_gekuerzt": zellen_gekuerzt, "bytes": groesse, "dauer_ms": round((time.monotonic()-start)*1000)}
+        return {"spalten": tabelle.json()["spalten"], "zeilen": zeilen, "gekuerzt": gekuerzt or zellen_gekuerzt, "zellen_gekuerzt": zellen_gekuerzt,"grosse_ganzzahlen_als_text":grosse_ganzzahlen_als_text, "bytes": groesse, "dauer_ms": round((time.monotonic()-start)*1000)}
 
     def exportieren(self, tabelle: Tabelle, format: str, pfad: str, konflikt="FEHLER", optionen: dict | None = None) -> dict:
         from .dateien import publizieren
@@ -814,7 +818,7 @@ class DatenEngine:
             for wert in werte:
                 # XLSX kann Dezimalwerte >15 Stellen nicht verlustfrei numerisch
                 # darstellen; Dezimalzahlen werden daher bewusst Textzellen.
-                if isinstance(wert, Decimal):
+                if isinstance(wert, Decimal) or type(wert) is int and len(str(abs(wert)))>15:
                     wert = str(wert)
                 if isinstance(wert, str):
                     if len(wert) > 32767:

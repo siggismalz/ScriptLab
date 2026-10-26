@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, fields
+from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
+from importlib.metadata import PackageNotFoundError, version
 import json
 import os
 import re
+import sys
 from pathlib import Path
 import tempfile
 import time
@@ -25,10 +28,40 @@ class UnklarerZustand(BusinessFehler):
 class AbbruchFehler(BusinessFehler):
     """Kooperativer Abbruch vor dem nächsten fachlichen Verarbeitungsschritt."""
 
+    def __init__(self, meldung: str, *, grund: str = "abgebrochen"):
+        super().__init__(meldung)
+        self.grund = "zeitlimit" if grund == "zeitlimit" else "abgebrochen"
+
 
 def daten_hash(wert: Any) -> str:
     daten = json.dumps(wert, ensure_ascii=True, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(daten.encode("utf-8")).hexdigest()
+
+
+def runtime_hash_berechnen() -> str:
+    """Inhalte und tatsächliche Versionen binden; Installationspfade bleiben außen vor."""
+    paket = Path(__file__).resolve().parent
+    quellen = []
+    try:
+        for quelle in sorted(paket.rglob("*.py"), key=lambda p: p.relative_to(paket).as_posix()):
+            vorher = quelle.stat()
+            inhalt = quelle.read_bytes()
+            nachher = quelle.stat()
+            if (vorher.st_size, vorher.st_mtime_ns) != (nachher.st_size, nachher.st_mtime_ns):
+                raise BusinessFehler("Die Business-Laufzeit wurde während der Prüfung verändert. Starte den Lauf erneut.")
+            quellen.append({"name": quelle.relative_to(paket).as_posix(), "sha256": hashlib.sha256(inhalt).hexdigest()})
+        vera = paket / "schriften" / "Vera.ttf"
+        vera_hash = hashlib.sha256(vera.read_bytes()).hexdigest() if vera.is_file() else None
+    except OSError as fehler:
+        raise BusinessFehler("Die installierte Business-Laufzeit konnte nicht vollständig geprüft werden.") from fehler
+    pakete = {}
+    for name in sorted(("duckdb", "openpyxl", "python-docx", "pypdf", "reportlab", "defusedxml",
+                        "lxml", "pillow", "typing_extensions", "et-xmlfile", "charset-normalizer")):
+        try:
+            pakete[name] = version(name)
+        except PackageNotFoundError:
+            pakete[name] = None
+    return daten_hash({"quellen": quellen, "python": sys.version, "pakete": pakete, "vera_sha256": vera_hash})
 
 
 @dataclass(frozen=True)
@@ -61,7 +94,7 @@ class Grenzen:
 
 class Journal:
     """JSONL unter exklusiver Betriebssystem-Dateisperre; nie Nutzdaten protokollieren."""
-    def __init__(self, pfad: Path, workflow_hash: str, parameter_hash: str, fortsetzen: bool):
+    def __init__(self, pfad: Path, workflow_hash: str, parameter_hash: str, fortsetzen: bool, runtime_hash: str = ""):
         self.pfad = pfad
         self.eintraege: dict[str, dict] = {}
         pfad.parent.mkdir(parents=True, exist_ok=True)
@@ -99,6 +132,10 @@ class Journal:
             if fortsetzen:
                 if not kopf or kopf.get("workflow_hash") != workflow_hash or kopf.get("parameter_hash") != parameter_hash:
                     raise UnklarerZustand("Workflow oder Parameter passen nicht zum fortzusetzenden Journal.")
+                if "runtime_hash" not in kopf:
+                    raise UnklarerZustand("Das ältere Journal enthält keine Laufzeitidentität. Es wird unverändert erhalten; prüfe die Dateien und starte bewusst einen neuen Lauf.")
+                if kopf["runtime_hash"] != runtime_hash:
+                    raise UnklarerZustand("Die Business-Laufzeit, Python-Version oder Paket-/Schriftfassung hat sich seit dem ersten Lauf geändert. Das Journal wird nicht automatisch fortgesetzt.")
                 self.lauf_id = kopf["lauf_id"]
                 for eintrag in alt:
                     if eintrag.get("lauf_id") == self.lauf_id and "schluessel" in eintrag:
@@ -109,7 +146,7 @@ class Journal:
                 self.lauf_id = str(uuid4())
             self._datei = open(pfad, "a", encoding="utf-8", newline="\n")
             if not fortsetzen:
-                self.schreiben("lauf", workflow_hash=workflow_hash, parameter_hash=parameter_hash)
+                self.schreiben("lauf", workflow_hash=workflow_hash, parameter_hash=parameter_hash, runtime_hash=runtime_hash)
         except BaseException:
             self._sperre.close()
             raise
@@ -150,6 +187,7 @@ class Kontext:
         self.journal_pfad = Path(journal_pfad).resolve() if journal_pfad else None
         self.fortsetzen = bool(fortsetzen)
         self.workflow_hash = workflow_hash
+        self.runtime_hash = runtime_hash_berechnen()
         try:
             self.lauf_id = str(UUID(lauf_id)) if lauf_id else str(uuid4())
         except (ValueError, TypeError) as fehler:
@@ -159,6 +197,8 @@ class Kontext:
         self.ereignis_callback = ereignis_callback
         self.dienste: dict[str, Any] = {}
         self.ergebnisse: dict[str, Any] = {}
+        self.metadaten: dict[str, Any] = {}
+        self.quellen: dict[str, dict] = {}
         self._tabellen_herkunft: dict[str, str] = {}
         self.fehler: list[dict] = []
         self.hinweise: list[dict] = []
@@ -202,7 +242,19 @@ class Kontext:
         if self.abgebrochen:
             raise AbbruchFehler("Der Business-Lauf wurde abgebrochen.")
         if jetzt >= self._deadline:
-            raise BusinessFehler("Das Business-Zeitlimit wurde erreicht.")
+            raise AbbruchFehler("Das Business-Zeitlimit wurde erreicht.", grund="zeitlimit")
+
+    def quelle_merken(self, fingerprint: dict):
+        """Nur fachliche Originale registrieren, niemals technische Prüfkopien."""
+        schluessel = os.path.normcase(fingerprint["pfad"])
+        vorher = self.quellen.get(schluessel)
+        if vorher is not None:
+            if any(vorher[feld] != fingerprint[feld] for feld in ("sha256", "bytes")):
+                raise BusinessFehler("Eine bereits verwendete Originalquelle wurde während des Laufs verändert.")
+        else:
+            if len(self.quellen) >= 100000:
+                raise BusinessFehler("Der Lauf enthält mehr als 100000 unterschiedliche Originalquellen.")
+            self.quellen[schluessel] = deepcopy(fingerprint)
 
     def pfad(self, wert: str | Path, schreiben: bool = False) -> Path:
         self.pruefen()
@@ -249,7 +301,7 @@ class Kontext:
         if self._journal is None:
             ordnername = self.workflow_hash if re.fullmatch(r"[a-fA-F0-9]{64}", self.workflow_hash) else daten_hash(self.workflow_hash)
             pfad = self.journal_pfad or self.basis / ".scriptlab" / ordnername / "journal.jsonl"
-            self._journal = Journal(pfad, self.workflow_hash, daten_hash(self.parameter), self.fortsetzen)
+            self._journal = Journal(pfad, self.workflow_hash, daten_hash(self.parameter), self.fortsetzen, self.runtime_hash)
         return self._journal
 
     def ausgabe(self, ziel, regel="FEHLER", **optionen):
