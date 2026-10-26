@@ -13,4 +13,9 @@ playwright-report/
 *.key
 *.pem
 coverage/
+__pycache__/
+*.pyc
+.venv/
+*.jsonl
+.scriptlab/
 .DS_Store

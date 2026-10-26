@@ -18,6 +18,14 @@ Die folgende Liste umfasst alle elf direkt oder transitiv benoetigten Pakete. Di
 | charset-normalizer | 3.5.2   | MIT                                 | [PyPI](https://pypi.org/project/charset-normalizer/3.5.2/) |
 | defusedxml         | 0.7.1   | PSFL                                | [PyPI](https://pypi.org/project/defusedxml/0.7.1/)         |
 
+## Mitgelieferte Schrift Bitstream Vera
+
+Die unveraenderte Datei `scriptlab_business/schriften/Vera.ttf` stammt aus dem festen Original-Wheel `reportlab-5.1.0-py3-none-any.whl`. Sie wird als Bestandteil der Software mitgeliefert, nicht als eigenstaendiges Schriftprodukt verkauft und nicht in Windows installiert. Es werden keine Windows-Schriftdateien weiterverteilt.
+
+Der im Wheel mitgelieferte Originaltext erlaubt die Weiterverteilung und Buendelung mit Software, wenn Copyright-, Marken- und Erlaubnishinweise erhalten bleiben. Die Schriftdatei wurde nicht veraendert oder umbenannt. Der vollstaendige Originaltext einschliesslich FAQ liegt bytegleich unter [scriptlab_business/schriften/bitstream-vera-license.txt](scriptlab_business/schriften/bitstream-vera-license.txt).
+
+Quelle: [ReportLab 5.1.0 auf PyPI](https://pypi.org/project/reportlab/5.1.0/), Wheel-SHA-256 `59fdbaec5efe437095ad1d7292ec9a271c8ca2d3ec75e889c6e61400929b90df`. Interne Originalpfade: `reportlab/fonts/Vera.ttf` und `reportlab/fonts/bitstream-vera-license.txt`. Schrift-SHA-256: `c4c45690b345435b2cba52ecabe275f05e49b389b39fe68ad03afbb551288d3d`. Lizenzdatei-SHA-256: `3361d054759a2fc686a2c058be82deaf9c2e6fe549be9004d7935a6c1736315d`.
+
 ## Originale Lizenz- und Rechtehinweise
 
 ### charset-normalizer 3.5.2 — charset_normalizer-3.5.2.dist-info/licenses/LICENSE

@@ -12,3 +12,10 @@
 *.scriptlab text eol=lf
 *.ico binary
 *.png binary
+*.py text eol=lf
+*.lock text eol=lf
+*.in text eol=lf
+*.ttf binary
+*.docx binary
+*.xlsx binary
+*.pdf binary
