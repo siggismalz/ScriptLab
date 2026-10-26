@@ -60,7 +60,7 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
     if (!def || def.form !== 'wert') { fehler(b, 'An dieser Stelle wird ein Wert oder eine Bedingung benötigt.'); return null; }
     if (b.next) fehler(b, 'Ein Wertbaustein darf keinen nachfolgenden Anweisungsbaustein besitzen.');
     const felder = felderLesen(b); const { werte } = eingabenLesen(b);
-    if (['sl_exists', 'sl_list_files', 'sl_read_text'].includes(b.type)) pfadPruefen(b, werte.PFAD);
+    if (['sl_exists', 'sl_list_files', 'sl_basename', 'sl_read_text'].includes(b.type)) pfadPruefen(b, werte.PFAD);
     if (b.type === 'sl_replace' && werte.SUCHEN?.art === 'sl_text' && !werte.SUCHEN.felder.TEXT) fehler(b, 'Der zu ersetzende Suchtext darf nicht leer sein.');
     return { id: b.id, art: b.type, typ: def.ausgabe ?? 'Any', felder, werte };
   }

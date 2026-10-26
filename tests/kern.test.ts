@@ -121,6 +121,14 @@ describe('VBS-Erzeugung ohne Ausführung', () => {
     const p = projektMit(block('sl_copy', { ZIELREGEL: 'FEHLER' }, { QUELLE: text('Testdaten\\Quelle.txt'), ZIEL: text('Testdaten\\Backup.txt') }), block('sl_delete', { RUECKFRAGE: 'JA' }, { PFAD: text('Testdaten\\Backup.txt') }));
     const code = vbsErzeugen(p).code!; expect(code).toContain('WScript.ScriptFullName'); expect(code).toContain('vbDefaultButton2'); expect(code).toContain('vorhanden'); expect(code.match(/Sub SL_Kopieren\(/g)).toHaveLength(1);
   });
+  it('initialisiert die Windows-Dateikomponente innerhalb des geschützten Hauptablaufs', () => {
+    const code = vbsErzeugen(projektMit(block('sl_mkdir', {}, { PFAD: text('ScriptLab-Testdaten\\Neuer Ordner') }))).code!;
+    const beginnHauptablauf = code.indexOf('Sub SL_Haupt()');
+    expect(code.slice(0, beginnHauptablauf)).toContain('Dim sl_fso');
+    expect(code.slice(0, beginnHauptablauf)).not.toContain('CreateObject');
+    expect(code).toContain('Sub SL_Haupt()\r\n  Set sl_fso = CreateObject("Scripting.FileSystemObject")');
+    expect(code).toContain('On Error Resume Next\r\n  SL_Haupt\r\n  nummer = Err.Number');
+  });
   for (const def of bausteinDefinitionen) it(`bietet gültige Definition und Generator für ${def.typ}`, () => {
     const ziel = vorlage(def);
     const vorbereiten = [block('sl_set', { VAR: 'Mein Wert' }, { WERT: text('Wert') }), block('sl_set', { VAR: 'Meine Liste' }, { WERT: block('sl_list') })];
@@ -135,6 +143,21 @@ describe('VBS-Erzeugung ohne Ausführung', () => {
 
 describe('Blockly-Definitionen und gespeicherte Verbindungen', () => {
   registriereBausteine();
+  it('erreicht für jede Blockfarbe mit weißer Schrift mindestens 4,5:1 WCAG-Kontrast', () => {
+    // Unabhängige sRGB-Linearisierung gemäß WCAG; kein aus der Palette abgeleiteter Sollwert.
+    function luminanz(hex: string): number {
+      expect(hex).toMatch(/^#[0-9A-F]{6}$/i);
+      const kanal = (start: number): number => {
+        const srgb = parseInt(hex.slice(start, start + 2), 16) / 255;
+        return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * kanal(1) + 0.7152 * kanal(3) + 0.0722 * kanal(5);
+    }
+    for (const farbe of new Set(bausteinDefinitionen.map(def => def.farbe))) {
+      const kontrast = (1 + 0.05) / (luminanz(farbe) + 0.05);
+      expect(kontrast, `Weiße Schrift auf ${farbe}: ${kontrast.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
   it('kann jeden angebotenen Baustein in einem echten Blockly-Workspace anlegen', () => {
     const workspace = new Blockly.Workspace();
     try { for (const def of bausteinDefinitionen) { const b = workspace.newBlock(def.typ); expect(b.type).toBe(def.typ); for (const e of def.eingaben) expect(b.getInput(e.name)).toBeTruthy(); for (const f of def.felder) expect(b.getField(f.name)).toBeTruthy(); } } finally { workspace.dispose(); }

@@ -31,6 +31,7 @@ export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen:
       case 'sl_not': return `(Not ${w('WERT')})`;
       case 'sl_exists': return `${hilfe('SL_Vorhanden')}(${w('PFAD')}, ${a.felder.ART === 'ORDNER' ? 'True' : 'False'})`;
       case 'sl_list_files': return `${hilfe('SL_Dateien')}(${w('PFAD')})`;
+      case 'sl_basename': return `${hilfe('SL_Dateiname')}(${w('PFAD')})`;
       case 'sl_read_text': return `${hilfe('SL_Lesen')}(${w('PFAD')}, ${vbsText(a.felder.KODIERUNG)})`;
       case 'sl_list_get': return `${hilfe('SL_Eintrag')}(${w('LISTE')}, ${w('INDEX')})`;
       case 'sl_join': return `(CStr(${w('A')}) & CStr(${w('B')}))`;
@@ -87,7 +88,7 @@ export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen:
   if (helfer.has('SL_Schreiben')) helfer.add('SL_Lesen');
   if (helfer.has('SL_Umbenennen')) helfer.add('SL_Kopieren');
   if (helfer.has('SL_Eintrag') || helfer.has('SL_Anhaengen')) helfer.add('SL_Liste');
-  const benutztDateien = [...helfer].some(name => ['SL_Vorhanden', 'SL_Dateien', 'SL_Lesen', 'SL_Schreiben', 'SL_Ordner', 'SL_Kopieren', 'SL_Umbenennen', 'SL_Loeschen'].includes(name));
+  const benutztDateien = [...helfer].some(name => ['SL_Vorhanden', 'SL_Dateien', 'SL_Dateiname', 'SL_Lesen', 'SL_Schreiben', 'SL_Ordner', 'SL_Kopieren', 'SL_Umbenennen', 'SL_Loeschen'].includes(name));
   const deklarationen = ['sl_block', ...variablen.values(), ...interneVariablen];
   const code = [
     "' Erstellt mit ScriptLab. Entwickelt von Leon Stolz.",
@@ -95,10 +96,10 @@ export function vbsErzeugen(projekt: Projekt): { code: string | null; meldungen:
     "' Relative Pfade beziehen sich auf den Speicherort dieser VBS-Datei.",
     'Option Explicit', '',
     ...deklarationen.map(name => `Dim ${name}`),
-    ...(benutztDateien ? ['Dim sl_fso', 'Set sl_fso = CreateObject("Scripting.FileSystemObject")'] : []),
+    ...(benutztDateien ? ['Dim sl_fso'] : []),
     ...(helfer.has('SL_Zufall') ? ['Randomize'] : []),
     'sl_block = "Start"', 'SL_Geschuetzt', 'WScript.Quit 0', '',
-    'Sub SL_Haupt()', ...zeilen, 'End Sub', '',
+    'Sub SL_Haupt()', ...(benutztDateien ? ['  Set sl_fso = CreateObject("Scripting.FileSystemObject")'] : []), ...zeilen, 'End Sub', '',
     grundHelfer,
     ...(benutztDateien ? [pfadHelfer] : []),
     ...Object.entries(helferTexte).filter(([name]) => helfer.has(name)).map(([, text]) => text),
@@ -145,6 +146,9 @@ const pfadHelfer = `Function SL_Pfad(wert)
 End Function`;
 
 const helferTexte: Record<string, string> = {
+  SL_Dateiname: `Function SL_Dateiname(wert)
+  SL_Dateiname = sl_fso.GetFileName(SL_Pfad(wert))
+End Function`,
   SL_Vorhanden: `Function SL_Vorhanden(wert, ordner)
   Dim pfad, ergebnis, nummer, beschreibung
   pfad = SL_Pfad(wert)

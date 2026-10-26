@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "0.1.0",
+  "name": "Testdatei sichern",
+  "beschreibung": "Vor einem eigenständigen Start neben der exportierten VBS-Datei den Ordner ScriptLab-Testdaten\\Backup\\Quelle anlegen und dort beispiel.txt mit beliebigem Testinhalt speichern. Das Script prüft die Quelle, legt den Sicherungsordner an und kopiert die Testdatei. Eine vorhandene Sicherung wird nicht überschrieben. Alle Pfade beziehen sich auf den Speicherort der VBS-Datei.",
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "beispiel_13",
+          "x": 90,
+          "y": 65,
+          "next": {
+            "block": {
+              "type": "sl_if",
+              "id": "beispiel_12",
+              "inputs": {
+                "BEDINGUNG": {
+                  "block": {
+                    "type": "sl_exists",
+                    "id": "beispiel_9",
+                    "fields": {
+                      "ART": "DATEI"
+                    },
+                    "inputs": {
+                      "PFAD": {
+                        "block": {
+                          "type": "sl_text",
+                          "id": "beispiel_8",
+                          "fields": {
+                            "TEXT": "ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "DANN": {
+                  "block": {
+                    "type": "sl_mkdir",
+                    "id": "beispiel_2",
+                    "inputs": {
+                      "PFAD": {
+                        "block": {
+                          "type": "sl_text",
+                          "id": "beispiel_1",
+                          "fields": {
+                            "TEXT": "ScriptLab-Testdaten\\Backup\\Sicherung"
+                          }
+                        }
+                      }
+                    },
+                    "next": {
+                      "block": {
+                        "type": "sl_copy",
+                        "id": "beispiel_5",
+                        "fields": {
+                          "ZIELREGEL": "FEHLER"
+                        },
+                        "inputs": {
+                          "QUELLE": {
+                            "block": {
+                              "type": "sl_text",
+                              "id": "beispiel_3",
+                              "fields": {
+                                "TEXT": "ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt"
+                              }
+                            }
+                          },
+                          "ZIEL": {
+                            "block": {
+                              "type": "sl_text",
+                              "id": "beispiel_4",
+                              "fields": {
+                                "TEXT": "ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt"
+                              }
+                            }
+                          }
+                        },
+                        "next": {
+                          "block": {
+                            "type": "sl_message",
+                            "id": "beispiel_7",
+                            "inputs": {
+                              "TEXT": {
+                                "block": {
+                                  "type": "sl_text",
+                                  "id": "beispiel_6",
+                                  "fields": {
+                                    "TEXT": "Die Testdatei wurde nach ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt kopiert."
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "SONST": {
+                  "block": {
+                    "type": "sl_message",
+                    "id": "beispiel_11",
+                    "inputs": {
+                      "TEXT": {
+                        "block": {
+                          "type": "sl_text",
+                          "id": "beispiel_10",
+                          "fields": {
+                            "TEXT": "Die Testquelle fehlt. Lege neben dieser VBS-Datei ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt an."
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 0.7,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}
