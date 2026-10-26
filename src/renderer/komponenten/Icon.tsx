@@ -25,6 +25,8 @@ const formen = {
       <path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
     </>
   ),
+  testen: <path d="m8 4 12 8-12 8Z" />,
+  stoppen: <rect x="6" y="6" width="12" height="12" rx="1" />,
   rueckgaengig: (
     <>
       <path d="m8 4-5 5 5 5M3 9h10a7 7 0 0 1 0 14" />

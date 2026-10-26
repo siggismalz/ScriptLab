@@ -41,5 +41,12 @@ const bruecke: ScriptLabBruecke = {
     ipcRenderer.invoke('scriptlab:entwurf-speichern-als', { projekt, id }),
   entwurfLoeschen: (id) => ipcRenderer.invoke('scriptlab:entwurf-loeschen', id),
   entwurfSichern: (projekt) => ipcRenderer.invoke('scriptlab:entwurf-sichern', projekt),
+  testLesen: () => ipcRenderer.invoke('scriptlab:test-lesen'),
+  testStarten: (projekt, optionen) => ipcRenderer.invoke('scriptlab:test-starten', { projekt, optionen }),
+  testStoppen: (laufId) => ipcRenderer.invoke('scriptlab:test-stoppen', laufId),
+  testAusgabeLeeren: () => ipcRenderer.invoke('scriptlab:test-leeren'),
+  testAusgabeKopieren: () => ipcRenderer.invoke('scriptlab:test-kopieren'),
+  testOrdnerWaehlen: () => ipcRenderer.invoke('scriptlab:test-ordner'),
+  testVerlassen: () => ipcRenderer.invoke('scriptlab:test-verlassen'),
 };
 contextBridge.exposeInMainWorld('scriptlab', Object.freeze(bruecke));

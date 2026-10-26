@@ -25,6 +25,7 @@ export interface TestZustand {
   standHash: string | null;
   vorbereitetAm: string | null;
   gestartetAm: string | null;
+  prozessId: number | null;
   beendetAm: string | null;
   optionen: TestOptionen;
   ausgabe: string;
@@ -49,6 +50,7 @@ export function testBereit(): TestZustand {
     standHash: null,
     vorbereitetAm: null,
     gestartetAm: null,
+    prozessId: null,
     beendetAm: null,
     optionen: { basisVerzeichnis: null, zeitlimitSekunden: 120 },
     ausgabe: '',

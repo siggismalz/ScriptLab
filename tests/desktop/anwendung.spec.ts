@@ -200,6 +200,7 @@ test('beginnt mit einem leeren Start und isoliert den Renderer', async () => {
       'testStarten',
       'testStoppen',
       'testAusgabeLeeren',
+      'testAusgabeKopieren',
       'testOrdnerWaehlen',
       'testVerlassen',
     ],
@@ -222,7 +223,12 @@ test('beginnt mit einem leeren Start und isoliert den Renderer', async () => {
   const testStand = await seite.evaluate(() => window.scriptlab.testLesen());
   expect(testStand.ok).toBe(true);
   if (!testStand.ok) throw new Error(testStand.meldung);
-  expect(testStand.wert.zustand).toMatchObject({ phase: 'bereit', laufId: null, gestartetAm: null, ausgabe: '' });
+  expect(testStand.wert.zustand).toMatchObject({
+    phase: 'bereit',
+    laufId: null,
+    gestartetAm: null,
+    ausgabe: '',
+  });
 });
 
 test('findet, fügt ein, konfiguriert und verbindet eine Nachricht ohne gehaltene Maustaste', async () => {

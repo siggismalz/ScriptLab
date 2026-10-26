@@ -16,6 +16,7 @@ export function Eigenschaften({
   verschieben,
   blockAktion,
   beruehrt,
+  schreibgeschuetzt = false,
 }: {
   ws: Blockly.WorkspaceSvg | null;
   blockId: string | null;
@@ -26,6 +27,7 @@ export function Eigenschaften({
   verschieben: () => void;
   blockAktion: (art: 'kopieren' | 'duplizieren' | 'loeschen') => void;
   beruehrt: (id: string) => void;
+  schreibgeschuetzt?: boolean;
 }) {
   const [feldfehler, setFeldfehler] = useState<Record<string, string>>({});
   const block = blockId ? ws?.getBlockById(blockId) : null;
@@ -44,6 +46,7 @@ export function Eigenschaften({
     setFeldfehler({});
   }, [blockId]);
   const setzen = (quellId: string, feld: string, id: string, wert: string) => {
+    if (schreibgeschuetzt) return;
     try {
       eigenschaftSetzen(ws!, quellId, feld, wert);
       setFeldfehler((alt) => ({ ...alt, [id]: '' }));
@@ -82,6 +85,9 @@ export function Eigenschaften({
         </div>
       </header>
       <div className="panel-inhalt">
+        {schreibgeschuetzt && (
+          <p>Während des Tests sind Änderungen gesperrt. Auswahl und Ansicht bleiben nutzbar.</p>
+        )}
         {definition && block ? (
           <>
             <h3>{definition.name}</h3>
@@ -92,6 +98,7 @@ export function Eigenschaften({
             </section>
             {felder.map((f) => {
               const gemeinsam = {
+                disabled: schreibgeschuetzt,
                 beschriftung: f.beschriftung,
                 value: f.wert,
                 hilfe: f.hilfe,
@@ -130,16 +137,32 @@ export function Eigenschaften({
             })}
             <section className="eigenschaften-aktionen">
               <h3>Baustein bearbeiten</h3>
-              <Knopf symbol="verschieben" onClick={verschieben}>
+              <Knopf
+                symbol="verschieben"
+                disabled={schreibgeschuetzt}
+                grund="Stoppe den Test vor Änderungen."
+                onClick={verschieben}
+              >
                 Verschieben
               </Knopf>
               <Knopf symbol="kopieren" onClick={() => blockAktion('kopieren')}>
                 Kopieren
               </Knopf>
-              <Knopf symbol="duplizieren" onClick={() => blockAktion('duplizieren')}>
+              <Knopf
+                symbol="duplizieren"
+                disabled={schreibgeschuetzt}
+                grund="Stoppe den Test vor Änderungen."
+                onClick={() => blockAktion('duplizieren')}
+              >
                 Duplizieren
               </Knopf>
-              <Knopf variante="gefahr" symbol="loeschen" onClick={() => blockAktion('loeschen')}>
+              <Knopf
+                variante="gefahr"
+                symbol="loeschen"
+                disabled={schreibgeschuetzt}
+                grund="Stoppe den Test vor Änderungen."
+                onClick={() => blockAktion('loeschen')}
+              >
                 Baustein löschen
               </Knopf>
             </section>

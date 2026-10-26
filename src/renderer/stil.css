@@ -94,6 +94,10 @@ summary {
   margin-left: auto;
   min-width: 0;
 }
+.test-kurzstatus { color: var(--farbe-hinweis); white-space: nowrap; }
+@media (max-width: 1439px) {
+  .ansichtknopfgruppe .sl-knopf > span { display: none; }
+}
 .werkzeugleiste .sl-knopf {
   white-space: nowrap;
 }
@@ -289,6 +293,24 @@ summary {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+.test-palette {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.test-palette > .palette {
+  flex: 1;
+}
+.test-panel-rahmen {
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  min-width: 0;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-top: 1px solid var(--farbe-trennung);
 }
 .canvas-bereich {
   position: relative;

@@ -274,6 +274,8 @@ export class TestlaufDienst {
           if (!probe && !lauf.grund) {
             this.zustand.phase = 'laeuft';
             const zeit = text.split('|')[2];
+            const pid = Number(text.split('|')[3]);
+            this.zustand.prozessId = Number.isSafeInteger(pid) && pid > 0 ? pid : null;
             this.zustand.gestartetAm = Number.isFinite(Date.parse(zeit))
               ? new Date(zeit).toISOString()
               : new Date().toISOString();

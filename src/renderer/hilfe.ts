@@ -28,7 +28,7 @@ export const beispiele: readonly BeispielInfo[] = [
       'Prüft eine einzelne Testdatei, legt einen Sicherungsordner an und kopiert die Datei dorthin.',
     lernziele: ['Dateipfade festlegen', 'Eine Bedingung verwenden', 'Vorhandene Zieldateien beachten'],
     vorbereitung:
-      'Erst für einen späteren eigenen Start außerhalb von ScriptLab: Neben der exportierten VBS-Datei die Datei ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt selbst anlegen. Die Sicherung entsteht unter ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt. Eine vorhandene Sicherung wird nicht überschrieben.',
+      'Für einen bewusst gestarteten Test die Datei ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt im gewählten Basisordner selbst anlegen; für einen eigenständigen Start neben der exportierten VBS-Datei. Die Sicherung entsteht unter ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt. Eine vorhandene Sicherung wird nicht überschrieben. Öffnen und Exportieren starten das Beispiel nicht.',
   },
   {
     id: 'dateiliste',
@@ -42,7 +42,7 @@ export const beispiele: readonly BeispielInfo[] = [
       'Text mit Zeilenumbrüchen schreiben',
     ],
     vorbereitung:
-      'Erst für einen späteren eigenen Start außerhalb von ScriptLab: Neben der exportierten VBS-Datei den Ordner ScriptLab-Testdaten\\Dateiliste\\Eingang mit Testdateien anlegen. ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt wird beim eigenen Start erstellt oder ersetzt. Unterordner werden nicht durchsucht.',
+      'Für einen bewusst gestarteten Test den Ordner ScriptLab-Testdaten\\Dateiliste\\Eingang mit entbehrlichen Testdateien im gewählten Basisordner anlegen; für einen eigenständigen Start neben der exportierten VBS-Datei. ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt wird bei der Ausführung erstellt oder ersetzt. Unterordner werden nicht durchsucht. Öffnen und Exportieren starten das Beispiel nicht.',
   },
 ];
 
@@ -83,11 +83,23 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         beispiel: 'begruessung',
       },
       {
-        id: 'keine-ausfuehrung',
-        titel: 'ScriptLab führt keine Workflows aus',
+        id: 'bewusste-ausfuehrung',
+        titel: 'Nur bewusst gestartete Tests führen den Workflow aus',
         texte: [
-          'Bearbeiten, Vorschau, Prüfen, Speichern, Öffnen von Beispielen und Export führen keine Workflowaktionen aus. ScriptLab hat keinen Startknopf und keinen Testlauf für Workflows.',
+          'Bearbeiten, Öffnen, Wiederherstellen, Vorschau, Strukturprüfung, Speichern, Signieren und Export führen keine Workflowaktionen aus. Nur „Testen“ startet den vollständigen aktuellen Workflow. Es gibt keine automatische Ausführung oder Zeitplanung.',
+          'Der Test führt deinen Workflow auf diesem Computer aus. Dateiänderungen werden tatsächlich vorgenommen. Er ist keine Sandbox; Stoppen macht bereits vorgenommene Änderungen nicht rückgängig.',
           'Nach dem Export entscheidest du selbst, ob du das Script außerhalb von ScriptLab ausführst. Dafür müssen Windows-Komponenten und Richtlinien die spätere Ausführung erlauben.',
+        ],
+      },
+      {
+        id: 'test-vorbereiten',
+        titel: 'Einen Test vorbereiten und seine Ausgabe verstehen',
+        texte: [
+          '„Testausgabe“ öffnet das Panel, ohne einen Workflow zu starten. Wähle mit „Ordner auswählen“ einen Basisordner und prüfe das Zeitlimit: Standard 120 Sekunden, erlaubt 1 bis 3600. Relative Pfade werden beim Test auf diesen Ordner bezogen. Absolute Pfade können außerhalb des Basisordners wirken. Nutze zuerst entbehrliche Dateien in einem eigenen Testordner.',
+          '„Testen“ und „Workflow testen“ starten den vollständigen aktuellen Hauptablauf, nicht nur den ausgewählten Baustein. Während eines Tests sind inhaltliche Änderungen gesperrt. Testen speichert weder dein Projekt noch einen VBS-Export.',
+          '„Text ausgeben“ schreibt in die Testausgabe. „Nachricht anzeigen“, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage bleiben native Windows-Dialoge. Stoppen und das Zeitlimit beenden den Test; bereits erfolgte Änderungen bleiben bestehen.',
+          'Lauf-ID, Standkennung, Startzeit, Laufzeit, Pfadbasis und Exitcode gehören zum angezeigten Lauf. Ein Ergebnis mit Exitcode 0 bestätigt ein Ende ohne gemeldeten Fehler, nicht die Ungefährlichkeit oder das gewünschte Dateiergebnis. Nach einer Workflowänderung weist das Panel auf den früheren Stand hin.',
+          '„Ausgabe kopieren“ und „Ausgabe leeren“ betreffen nur den angezeigten Text, auch während eines Tests. Beim Hochscrollen folgt die Anzeige neuen Zeilen nicht automatisch; „Zum Ausgabeende“ führt zurück. „Laufdetails und Technik“ zeigt den schreibgeschützten Testquelltext und vorhandene Fehlerzuordnungen. „Baustein anzeigen“ führt zum zugeordneten Baustein.',
         ],
       },
     ],
@@ -206,7 +218,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'pfade-dateien',
         titel: 'Dateipfade und vorhandene Dateien',
         texte: [
-          'Relative Dateipfade beziehen sich auf den Ordner der exportierten VBS-Datei, nicht auf den Projektordner oder ein zufälliges Arbeitsverzeichnis. Absolute Windows- und UNC-Pfade sind ebenfalls möglich. Platzhalter wie * und ? sind bei Dateioperationen nicht erlaubt.',
+          'Relative Dateipfade beziehen sich beim Export auf den Ordner der VBS-Datei und beim Test auf den sichtbaren Basisordner. Der Projektordner ist keine automatische Pfadbasis. Absolute Windows- und UNC-Pfade sind ebenfalls möglich und können beim Test außerhalb des Basisordners wirken. Platzhalter wie * und ? sind bei Dateioperationen nicht erlaubt.',
           'Kopieren und Verschieben behandeln ein vorhandenes Ziel standardmäßig als Fehler; bewusst gewähltes Überschreiben ersetzt die Zieldatei. Textdatei schreiben ersetzt den Inhalt. Der erweiterte Löschbaustein erzeugt standardmäßig eine Rückfrage im später gestarteten Script.',
           'Die Kodierung der vom Workflow bearbeiteten Textdateien wird gesondert gewählt. UTF-8 und UTF-16LE schreiben eine BOM; Windows-ANSI verwendet die lokale Windows-Codepage. Beim Ergänzen muss eine vorhandene Datei zur ausgewählten Kodierung passen.',
         ],
@@ -217,7 +229,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         titel: 'VBScript-Verfügbarkeit unter Windows',
         texte: [
           'Microsoft hat VBScript abgekündigt. Die spätere Ausführung hängt von Windows-Version, verfügbarer VBScript-Komponente, Windows Script Host und den geltenden Richtlinien ab. Dateiaktionen verwenden die dokumentierten Windows-Komponenten Scripting.FileSystemObject und gegebenenfalls ADODB.Stream.',
-          'ScriptLab kann auch ohne VBScript-Laufzeit bearbeiten, speichern und unsigniert exportieren. Es aktiviert keine Windows-Features und ändert keine Sicherheitsrichtlinien. ScriptLab bietet keinen Ausführungsweg für Nutzerworkflows.',
+          'ScriptLab kann auch ohne VBScript-Laufzeit bearbeiten, speichern und unsigniert exportieren. Bewusste Tests benötigen die verfügbare Laufzeit und einen von Windows erlaubten Scriptstart. Eine fehlende oder blockierte Laufzeit wird verständlich gemeldet. ScriptLab aktiviert keine Windows-Features und ändert keine Sicherheitsrichtlinien.',
         ],
       },
     ],
@@ -257,7 +269,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         titel: 'Fehler und Speicherzustände verstehen',
         texte: [
           '„Ungespeicherte Änderungen“ betrifft die Projektdatei. „Projekt gespeichert“ bestätigt deren erfolgreichen Schreibvorgang. „Script gespeichert“ betrifft den VBS-Export; „Signatur gültig“ bestätigt erst das tatsächliche Signaturprüfergebnis.',
-          '„Verbinde diesen Baustein mit deinem Ablauf“ bedeutet, dass eine aktive Anweisung lose ist. Ein dynamischer Dateipfad ist dagegen nicht allein deshalb falsch, weil er beim Entwerfen nicht aufgelöst werden kann. Vorhandene Quellen und Dateirechte werden nicht durch einen Testlauf geprüft.',
+          '„Verbinde diesen Baustein mit deinem Ablauf“ bedeutet, dass eine aktive Anweisung lose ist. Ein dynamischer Dateipfad ist dagegen nicht allein deshalb falsch, weil er beim Entwerfen nicht aufgelöst werden kann. Die Strukturprüfung probiert keine Dateiaktionen aus. Quellen und Dateirechte werden erst bei einer ausdrücklich gestarteten Ausführung relevant; ein Test hat dabei echte Auswirkungen.',
           'Unbekannte neuere Projektformate werden nicht überschrieben. Ist eine gespeicherte Datei von außen verändert worden, beachte die konkrete Konfliktmeldung und speichere deinen Stand nötigenfalls unter einem neuen Namen.',
         ],
       },

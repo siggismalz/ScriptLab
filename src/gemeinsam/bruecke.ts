@@ -1,5 +1,6 @@
 import type { Projekt } from '../kern/projekt';
 import type { SignaturErgebnis, Zertifikat } from '../windows/signatur';
+import type { TestOptionen, TestZustand } from './testlauf';
 
 export interface Einstellungen {
   automatischeUpdates: boolean;
@@ -88,6 +89,13 @@ export interface ScriptLabBruecke {
   entwurfSpeichernAls(projekt: Projekt, id: string): Promise<Antwort<Dokument | null>>;
   entwurfLoeschen(id: string): Promise<Antwort<boolean>>;
   entwurfSichern(projekt: Projekt): Promise<Antwort<Dokument>>;
+  testLesen(): Promise<Antwort<{ zustand: TestZustand; optionen: TestOptionen }>>;
+  testStarten(projekt: Projekt, optionen: TestOptionen): Promise<Antwort<TestZustand>>;
+  testStoppen(laufId: string): Promise<Antwort<TestZustand>>;
+  testAusgabeLeeren(): Promise<Antwort<TestZustand>>;
+  testAusgabeKopieren(): Promise<Antwort<void>>;
+  testOrdnerWaehlen(): Promise<Antwort<string | null>>;
+  testVerlassen(): Promise<Antwort<boolean>>;
 }
 
 declare global {

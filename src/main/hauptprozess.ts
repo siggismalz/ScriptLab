@@ -6,6 +6,7 @@ import {
   protocol,
   session,
   shell,
+  clipboard,
   type IpcMainInvokeEvent,
   type IpcMainEvent,
 } from 'electron';
@@ -28,6 +29,8 @@ import {
 import { atomarSchreiben, dateiFehler, projektLesen, projektSchreiben, vbsKodieren } from './dateien';
 import { SignaturDienst } from '../windows/signatur';
 import { AktualisierungsDienst } from '../windows/updates';
+import { TestlaufDienst, testOptionenSchema, testStandHash } from '../windows/testlauf';
+import type { TestOptionen } from '../gemeinsam/testlauf';
 import type { Antwort, Dokument, Einstellungen } from '../gemeinsam/bruecke';
 
 protocol.registerSchemesAsPrivileged([
@@ -66,6 +69,8 @@ let darfSchliessen = false;
 let dialogAktiv = false;
 let signaturDienst: SignaturDienst;
 let aktualisierungen: AktualisierungsDienst;
+let testDienst: TestlaufDienst;
+let testOptionen: TestOptionen = { basisVerzeichnis: null, zeitlimitSekunden: 120 };
 let wartetAufDarstellung = true;
 let standAnfrage: { kennung: string; uebernehmen: (daten: unknown) => void } | null = null;
 
@@ -88,6 +93,8 @@ function dokument(): Dokument {
 function uebernehmen(daten: unknown, sicherungPlanen = true): Projekt {
   const vorher = projektHash(projekt);
   const geprueft = projektPruefen(daten);
+  if (testDienst?.aktiv() && testStandHash(geprueft) !== testStandHash(projekt))
+    throw new Error('Während des Tests sind Änderungen am Workflow gesperrt. Stoppe den Test zuerst.');
   if (geprueft.projektKennung && geprueft.projektKennung !== projekt.projektKennung)
     throw new Error(
       'Dieser Bearbeitungsstand gehört zu einem anderen Projekt. Bitte verwende den aktuell geöffneten Workflow.',
@@ -180,6 +187,8 @@ function registrieren(kanal: string, funktion: (daten: unknown) => unknown | Pro
 }
 
 async function speichern(unter: boolean): Promise<Dokument | null> {
+  if (testDienst.aktiv())
+    throw new Error('Stoppe den Test vor dem Speichern. Dein Arbeitsstand bleibt erhalten.');
   try {
     await entwurfAktuellSichern();
   } catch {
@@ -258,6 +267,7 @@ function projektAktivieren(
   projekt = { ...neu, projektKennung: neu.projektKennung ?? randomUUID() };
   entwuerfe.neueBearbeitung(projekt.projektKennung!);
   projektPfad = pfad;
+  testOptionen = { ...testOptionen, basisVerzeichnis: pfad ? dirname(pfad) : null };
   baselineHash = hash;
   gespeichert = JSON.stringify(projekt);
   gespeichertInhalt = ungespeichert ? '' : projektHash(projekt);
@@ -290,6 +300,7 @@ function dateiname(name: string): string {
 }
 
 async function aenderungenSichern(): Promise<boolean> {
+  if (!(await testBeendenVorWechsel())) return false;
   if (!wiederhergestellt && projektHash(projekt) === gespeichertInhalt) {
     if (entwuerfe.status(projekt.projektKennung!).phase !== 'kein')
       await entwuerfe.aktivenEntwurfEntfernen(projekt.projektKennung!);
@@ -322,6 +333,24 @@ async function aenderungenSichern(): Promise<boolean> {
   return true;
 }
 
+async function testBeendenVorWechsel(): Promise<boolean> {
+  if (!testDienst.aktiv()) return true;
+  const auswahl = await dialog.showMessageBox(fenster, {
+    type: 'question',
+    title: 'Ein Test läuft',
+    message: 'Den laufenden Test stoppen und fortfahren?',
+    detail:
+      'Bereits erfolgte Änderungen bleiben bestehen. Dein Projektstand wird anschließend getrennt behandelt.',
+    buttons: ['Test stoppen und fortfahren', 'Im Editor bleiben'],
+    defaultId: 1,
+    cancelId: 1,
+    noLink: true,
+  });
+  if (auswahl.response !== 0) return false;
+  await testDienst.stoppen();
+  return !testDienst.aktiv();
+}
+
 async function mitDialog<T>(funktion: () => Promise<T>): Promise<T> {
   if (dialogAktiv) throw new Error('Bitte schließe zuerst den geöffneten Dialog.');
   dialogAktiv = true;
@@ -334,6 +363,38 @@ async function mitDialog<T>(funktion: () => Promise<T>): Promise<T> {
 }
 
 function ipcEinrichten(): void {
+  registrieren('test-lesen', () => ({ zustand: testDienst.lesen(), optionen: testOptionen }));
+  registrieren('test-starten', (daten) => {
+    if (dialogAktiv) throw new Error('Schließe zuerst den geöffneten Dialog.');
+    if (testDienst.aktiv()) throw new Error('Es läuft bereits ein Test.');
+    const auswahl = z.object({ projekt: z.unknown(), optionen: testOptionenSchema }).strict().parse(daten);
+    const stand = structuredClone(uebernehmen(auswahl.projekt));
+    testOptionen = auswahl.optionen;
+    return testDienst.starten(stand, testOptionen);
+  });
+  registrieren('test-stoppen', (daten) => {
+    const id = z.string().uuid().parse(daten);
+    if (testDienst.lesen().laufId !== id) throw new Error('Dieser Testlauf ist nicht mehr aktuell.');
+    return testDienst.stoppen();
+  });
+  registrieren('test-leeren', () => testDienst.leeren());
+  registrieren('test-kopieren', async () => {
+    await clipboard.writeText(testDienst.lesen().ausgabe);
+  });
+  registrieren('test-verlassen', () => mitDialog(testBeendenVorWechsel));
+  registrieren('test-ordner', () =>
+    mitDialog(async () => {
+      if (testDienst.aktiv()) throw new Error('Das Basisverzeichnis ist während eines Tests festgelegt.');
+      const auswahl = await dialog.showOpenDialog(fenster, {
+        title: 'Basisordner für Workflowtests wählen',
+        properties: ['openDirectory'],
+        ...(testOptionen.basisVerzeichnis ? { defaultPath: testOptionen.basisVerzeichnis } : {}),
+      });
+      if (auswahl.canceled || auswahl.filePaths.length !== 1) return null;
+      testOptionen = { ...testOptionen, basisVerzeichnis: resolve(auswahl.filePaths[0]) };
+      return testOptionen.basisVerzeichnis;
+    }),
+  );
   ipcMain.on('scriptlab:stand-antwort', (event, daten: unknown) => {
     try {
       absenderPruefen(event);
@@ -506,6 +567,7 @@ function ipcEinrichten(): void {
     mitDialog(async () => {
       const auswahl = auswahlPruefen(daten);
       let entwurf = await entwuerfe.lesen(auswahl.id);
+      if (!(await testBeendenVorWechsel())) return null;
       uebernehmen(auswahl.projekt);
       if (entwurf.id === entwuerfe.status(projekt.projektKennung!).id) {
         await entwurfAktuellSichern();
@@ -740,6 +802,12 @@ else {
         app.isPackaged
           ? join(process.resourcesPath, 'signatur-helper.ps1')
           : join(app.getAppPath(), 'scripts/signatur-helper.ps1'),
+      );
+      testDienst = new TestlaufDienst(
+        app.isPackaged
+          ? join(process.resourcesPath, 'ScriptLab.Testhost.exe')
+          : join(app.getAppPath(), 'artifacts/native/ScriptLab.Testhost.exe'),
+        join(app.getPath('userData'), 'testlaeufe'),
       );
       aktualisierungen = new AktualisierungsDienst({
         installierteVersion: app.getVersion(),

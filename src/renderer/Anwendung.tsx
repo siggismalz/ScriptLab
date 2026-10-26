@@ -35,6 +35,8 @@ import { EinstellungenDialog } from './EinstellungenDialog';
 import { ProjektDialog } from './ProjektDialog';
 import { Menue } from './komponenten/Menue';
 import { Startbereich } from './Startbereich';
+import { Testbereich } from './Testbereich';
+import { testAktiv, testBereit, type TestZustand, type TestOptionen } from '../gemeinsam/testlauf';
 
 registriereBausteine();
 const vorgaben: Einstellungen = {
@@ -51,6 +53,16 @@ function antwort<T>(r: Antwort<T>): T {
 }
 
 export function Anwendung() {
+  const [test, setTest] = useState<TestZustand>(testBereit);
+  const [testOptionen, setTestOptionen] = useState<TestOptionen>({
+    basisVerzeichnis: null,
+    zeitlimitSekunden: 120,
+  });
+  const [testOffen, setTestOffen] = useState(false);
+  const [testHoehe, setTestHoehe] = useState(280);
+  const testSperre = useRef(false);
+  const testAnfrage = useRef(false);
+  const testInhalt = useRef<string | null>(null);
   const [ansicht, setAnsicht] = useState<'start' | 'editor'>('start');
   const [editorBegonnen, setEditorBegonnen] = useState(false);
   const [startZiel, setStartZiel] = useState<'start' | 'hilfe'>('start');
@@ -117,7 +129,14 @@ export function Anwendung() {
     setEditorBegonnen(true);
     setAnsicht('editor');
   }
-  function startseiteZeigen(ziel: 'start' | 'hilfe' = 'start') {
+  async function startseiteZeigen(ziel: 'start' | 'hilfe' = 'start') {
+    try {
+      if (!antwort(await window.scriptlab.testVerlassen())) return;
+      testUebernehmen(antwort(await window.scriptlab.testLesen()).zustand);
+    } catch (e) {
+      melden(e instanceof Error ? e.message : 'Der laufende Test konnte nicht beendet werden.', 'fehler');
+      return;
+    }
     editorFokus.current = document.activeElement;
     aendern(standLesen());
     setAnsicht('start');
@@ -329,6 +348,10 @@ export function Anwendung() {
       : projektRef.current;
   }
   function aendern(neu: Projekt) {
+    if (testSperre.current && testInhaltsText(neu) !== testInhaltsText(projektRef.current)) {
+      melden('Stoppe den Test vor Änderungen am Workflow.', 'hinweis');
+      return;
+    }
     const json = JSON.stringify(neu);
     if (json === JSON.stringify(projektRef.current)) return;
     projektRef.current = neu;
@@ -474,6 +497,103 @@ export function Anwendung() {
       }
     });
   }
+  function testInhaltsText(p: Projekt): string {
+    const { ansicht: _ansicht, ...inhalt } = p;
+    return JSON.stringify(inhalt);
+  }
+  function testUebernehmen(neu: TestZustand) {
+    const sperren = testAktiv(neu.phase);
+    testSperre.current = sperren;
+    const ws = wsRef.current;
+    if (ws && ws.isReadOnly() !== sperren) {
+      ws.setIsReadOnly(sperren);
+      for (const b of ws.getAllBlocks(false))
+        for (const eingang of b.inputList) for (const feld of eingang.fieldRow) feld.updateEditable();
+    }
+    setTest(neu);
+  }
+  async function testStarten() {
+    if (testAnfrage.current || testSperre.current || busy.current) return;
+    setTestOffen(true);
+    setVorschauOffen(false);
+    setExportiert(null);
+    setDauerfehler(null);
+    const stand = structuredClone(standLesen());
+    const pruefung = vbsErzeugen(stand);
+    if (!pruefung.code) {
+      setPruefungAngefordert(true);
+      setHinweiseOffen(true);
+      melden('Vervollständige die markierten Bausteine vor dem Test.', 'hinweis');
+      blockAnzeigen(pruefung.meldungen.find((m) => m.stufe === 'fehler')?.blockId);
+      return;
+    }
+    if (!testOptionen.basisVerzeichnis) {
+      melden(
+        'Wähle im Testbereich zuerst einen Basisordner. Relative Dateipfade beziehen sich auf diesen Ordner.',
+        'fehler',
+      );
+      return;
+    }
+    testAnfrage.current = true;
+    testInhalt.current = testInhaltsText(stand);
+    testUebernehmen({
+      ...testBereit(),
+      phase: 'vorbereitung',
+      projektName: stand.name,
+      projektKennung: stand.projektKennung ?? null,
+      optionen: testOptionen,
+      meldung: 'Der aktuelle Editorstand wird geprüft.',
+    });
+    setPlatzierung(null);
+    platzierungRef.current = null;
+    try {
+      testUebernehmen(antwort(await window.scriptlab.testStarten(stand, testOptionen)));
+    } catch (e) {
+      testUebernehmen({
+        ...testBereit(),
+        phase: 'fehlgeschlagen',
+        meldung: e instanceof Error ? e.message : 'Der Test konnte nicht gestartet werden.',
+      });
+    } finally {
+      testAnfrage.current = false;
+    }
+  }
+  async function testStoppen() {
+    if (!test.laufId) return;
+    testUebernehmen({ ...test, phase: 'stoppt', meldung: 'Das Ende des Testprozesses wird abgewartet.' });
+    try {
+      testUebernehmen(antwort(await window.scriptlab.testStoppen(test.laufId)));
+    } catch (e) {
+      melden(e instanceof Error ? e.message : 'Der Test konnte nicht gestoppt werden.', 'fehler');
+    }
+  }
+  async function testOrdnerWaehlen() {
+    try {
+      const pfad = antwort(await window.scriptlab.testOrdnerWaehlen());
+      if (pfad) setTestOptionen((alt) => ({ ...alt, basisVerzeichnis: pfad }));
+    } catch (e) {
+      melden(e instanceof Error ? e.message : 'Der Ordner konnte nicht gewählt werden.', 'fehler');
+    }
+  }
+  useEffect(() => {
+    if (!editorBegonnen) return;
+    let aktiv = true;
+    const lesen = async () => {
+      const r = await window.scriptlab.testLesen();
+      if (aktiv && r.ok && !testAnfrage.current) testUebernehmen(r.wert.zustand);
+    };
+    void lesen();
+    const timer = setInterval(() => void lesen(), 250);
+    return () => {
+      aktiv = false;
+      clearInterval(timer);
+    };
+  }, [editorBegonnen]);
+  useEffect(() => {
+    void window.scriptlab.testLesen().then((r) => {
+      if (r.ok) setTestOptionen(r.wert.optionen);
+    });
+  }, [projekt.projektKennung]);
   async function einstellungenSetzen(neu: Einstellungen) {
     einstellungenRef.current = neu;
     setEinstellungen(neu);
@@ -491,6 +611,7 @@ export function Anwendung() {
     }
   }
   function platzierungStarten(art: 'einfuegen' | 'verschieben', typOderId: string) {
+    if (testSperre.current) return;
     const ws = wsRef.current;
     if (!ws) return;
     const typ = art === 'verschieben' ? ws.getBlockById(typOderId)?.type : typOderId;
@@ -507,6 +628,7 @@ export function Anwendung() {
     melden('Wähle eine Einfügestelle. Escape bricht die Auswahl ab.');
   }
   function zielWaehlen(ziel: Einfuegestelle) {
+    if (testSperre.current) return;
     const ws = wsRef.current,
       auftrag = platzierungRef.current;
     if (!ws || !auftrag) return;
@@ -526,6 +648,7 @@ export function Anwendung() {
     }
   }
   function blockAktion(art: 'kopieren' | 'einfuegen' | 'duplizieren' | 'loeschen') {
+    if (testSperre.current && art !== 'kopieren') return;
     const ws = wsRef.current;
     if (!ws) return;
     const b = auswahlRef.current ? ws.getBlockById(auswahlRef.current) : null;
@@ -619,11 +742,17 @@ export function Anwendung() {
       const texte = sichtbareHinweise
         .filter((m) => m.blockId === b.id && m.stufe === 'fehler')
         .map((m) => m.text);
+      if (
+        test.phase === 'fehlgeschlagen' &&
+        test.fehlerBlockId === b.id &&
+        testInhalt.current === testInhaltsText(projektRef.current)
+      )
+        texte.push(test.meldung);
       b.setWarningText(texte.length ? texte.join('\n') : null, 'validierung');
       b.getSvgRoot()?.classList.toggle('scriptlabFehler', texte.length > 0);
       b.getSvgRoot()?.classList.toggle('scriptlabAuswahl', b.id === auswahlRef.current);
     }
-  }, [ergebnis, pruefungAngefordert, beruehrt, revision]);
+  }, [ergebnis, pruefungAngefordert, beruehrt, revision, test.phase, test.fehlerBlockId, test.meldung]);
   useEffect(() => {
     const resize = () => setBreite(window.innerWidth);
     window.addEventListener('resize', resize);
@@ -653,6 +782,15 @@ export function Anwendung() {
         return;
       }
       if (dialog) return;
+      if (
+        testSperre.current &&
+        ((event.ctrlKey && ['z', 'y', 's', 'v', 'x'].includes(event.key.toLowerCase())) ||
+          event.key === 'Delete')
+      ) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
       const ziel = event.target as HTMLElement;
       if (event.ctrlKey && ['n', 'o', 's'].includes(event.key.toLowerCase())) {
         event.preventDefault();
@@ -814,8 +952,8 @@ export function Anwendung() {
             </Knopf>
             <Knopf
               symbol="speichern"
-              disabled={!!verarbeitung}
-              grundId="status-aktion"
+              disabled={!!verarbeitung || testAktiv(test.phase)}
+              grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
               onClick={() => void projektAktion('speichern')}
             >
               Speichern
@@ -825,13 +963,25 @@ export function Anwendung() {
               nurSymbol
               symbol="unten"
               eintraege={[
-                { text: 'Speichern unter', symbol: 'speichern', aktion: () => void projektAktion('unter') },
+                {
+                  text: 'Speichern unter',
+                  symbol: 'speichern',
+                  gesperrt: testAktiv(test.phase),
+                  grund: 'Stoppe den Test vor dem Speichern.',
+                  aktion: () => void projektAktion('unter'),
+                },
                 {
                   text: 'Als Entwurf sichern',
                   symbol: 'speichern',
                   aktion: () => void entwurfJetztSichern(),
                 },
-                { text: 'Projektangaben', symbol: 'info', aktion: () => setDialog('projekt') },
+                {
+                  text: 'Projektangaben',
+                  symbol: 'info',
+                  gesperrt: testAktiv(test.phase),
+                  grund: 'Stoppe den Test vor Änderungen.',
+                  aktion: () => setDialog('projekt'),
+                },
                 { text: 'Beispiel: Begrüßung', aktion: () => void projektAktion('begruessung') },
                 { text: 'Beispiel: Datei-Backup', aktion: () => void projektAktion('backup') },
                 { text: 'Beispiel: Dateinamenliste', aktion: () => void projektAktion('dateiliste') },
@@ -844,6 +994,8 @@ export function Anwendung() {
               variante="leise"
               symbol="rueckgaengig"
               aria-label="Rückgängig"
+              disabled={testAktiv(test.phase)}
+              grundId="test-sperrhinweis"
               title="Rückgängig (Strg+Z)"
               onClick={() => wsRef.current && void verlaufAendern(wsRef.current)}
             />
@@ -851,6 +1003,8 @@ export function Anwendung() {
               variante="leise"
               symbol="wiederholen"
               aria-label="Wiederholen"
+              disabled={testAktiv(test.phase)}
+              grundId="test-sperrhinweis"
               title="Wiederholen (Strg+Y)"
               onClick={() => wsRef.current && void verlaufAendern(wsRef.current, true)}
             />
@@ -859,6 +1013,7 @@ export function Anwendung() {
             <Knopf
               variante="leise"
               symbol="eigenschaften"
+              aria-label="Eigenschaften"
               aria-pressed={eigenschaftenOffen}
               onClick={() => (eigenschaftenOffen ? eigenschaftenSchliessen() : eigenschaftenOeffnen())}
             >
@@ -867,8 +1022,12 @@ export function Anwendung() {
             <Knopf
               variante="leise"
               symbol="code"
+              aria-label="Codevorschau"
               aria-pressed={vorschauOffen}
-              onClick={() => setVorschauOffen(!vorschauOffen)}
+              onClick={() => {
+                setVorschauOffen(!vorschauOffen);
+                if (!vorschauOffen) setTestOffen(false);
+              }}
             >
               Codevorschau
             </Knopf>
@@ -876,10 +1035,52 @@ export function Anwendung() {
           <div className="hauptaktion">
             <Knopf
               variante="primaer"
+              symbol="testen"
+              disabled={testAktiv(test.phase) || !!verarbeitung}
+              grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
+              onClick={() => void testStarten()}
+            >
+              Testen
+            </Knopf>
+            {testAktiv(test.phase) && (
+              <>
+                <span id="test-sperrhinweis" className="test-kurzstatus" role="status">
+                  {test.phase === 'vorbereitung'
+                    ? 'Wird vorbereitet'
+                    : test.phase === 'stoppt'
+                      ? 'Wird gestoppt'
+                      : 'Test läuft'}
+                  <span className="sl-nur-vorlesen">
+                    . Änderungen und ein weiterer Start sind bis zum Testende gesperrt.
+                  </span>
+                </span>
+                <Knopf
+                  variante="gefahr"
+                  symbol="stoppen"
+                  disabled={test.phase === 'stoppt'}
+                  grundId="test-sperrhinweis"
+                  onClick={() => void testStoppen()}
+                >
+                  Stoppen
+                </Knopf>
+              </>
+            )}
+            <Knopf
+              variante="leise"
+              aria-pressed={testOffen}
+              onClick={() => {
+                setTestOffen(!testOffen);
+                if (!testOffen) setVorschauOffen(false);
+              }}
+            >
+              Testausgabe
+            </Knopf>
+            <Knopf
+              variante="standard"
               symbol="exportieren"
               verarbeitung={verarbeitung === 'VBS-Datei wird gespeichert …'}
-              disabled={!!verarbeitung}
-              grundId="status-aktion"
+              disabled={!!verarbeitung || testAktiv(test.phase)}
+              grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
               onClick={() => void exportieren()}
             >
               Als VBS exportieren
@@ -899,27 +1100,29 @@ export function Anwendung() {
           </div>
         </nav>
         <main className={`arbeitszeile ${angeheftet ? 'mit-eigenschaften' : ''}`}>
-          <Palette
-            ws={workspace}
-            eingeklappt={einstellungen.paletteEingeklappt}
-            umschalten={() =>
-              void einstellungenSetzen({
-                ...einstellungenRef.current,
-                paletteEingeklappt: !einstellungenRef.current.paletteEingeklappt,
-              })
-            }
-            platzierung={platzierung}
-            ziele={ziele}
-            einfuegen={(typ) => platzierungStarten('einfuegen', typ)}
-            zielWaehlen={zielWaehlen}
-            abbrechen={() => {
-              setPlatzierung(null);
-              platzierungRef.current = null;
-              melden('Einfügen abgebrochen.');
-            }}
-            blockAuswaehlen={auswaehlen}
-            meldung={melden}
-          />
+          <div className="test-palette" inert={testAktiv(test.phase)}>
+            <Palette
+              ws={workspace}
+              eingeklappt={einstellungen.paletteEingeklappt}
+              umschalten={() =>
+                void einstellungenSetzen({
+                  ...einstellungenRef.current,
+                  paletteEingeklappt: !einstellungenRef.current.paletteEingeklappt,
+                })
+              }
+              platzierung={platzierung}
+              ziele={ziele}
+              einfuegen={(typ) => platzierungStarten('einfuegen', typ)}
+              zielWaehlen={zielWaehlen}
+              abbrechen={() => {
+                setPlatzierung(null);
+                platzierungRef.current = null;
+                melden('Einfügen abgebrochen.');
+              }}
+              blockAuswaehlen={auswaehlen}
+              meldung={melden}
+            />
+          </div>
           <div
             className="paletten-trenner"
             role="separator"
@@ -958,6 +1161,14 @@ export function Anwendung() {
                 tabIndex={-1}
                 aria-label="Arbeitsbereich"
                 onPointerUp={(e) => {
+                  if (testSperre.current) {
+                    const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
+                    if (id) {
+                      auswaehlen(id);
+                      wsRef.current?.getBlockById(id)?.select();
+                    }
+                    return;
+                  }
                   if (!platzierungRef.current) return;
                   const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
                   if (id) {
@@ -1054,6 +1265,77 @@ export function Anwendung() {
                 </section>
               )}
             </div>
+            {testOffen && (
+              <section
+                className="test-panel-rahmen"
+                style={{ height: Math.min(testHoehe, window.innerHeight * 0.5) }}
+              >
+                <div
+                  className="code-trenner"
+                  role="separator"
+                  tabIndex={0}
+                  aria-label="Höhe der Testausgabe"
+                  aria-orientation="horizontal"
+                  aria-valuemin={200}
+                  aria-valuemax={Math.floor(window.innerHeight * 0.5)}
+                  aria-valuenow={testHoehe}
+                  onKeyDown={(e) => {
+                    if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+                      e.preventDefault();
+                      setTestHoehe((h) =>
+                        Math.max(
+                          200,
+                          Math.min(window.innerHeight * 0.5, h + (e.key === 'ArrowUp' ? 24 : -24)),
+                        ),
+                      );
+                    }
+                  }}
+                  onPointerDown={(e) => {
+                    const start = e.clientY,
+                      hoehe = testHoehe;
+                    const bewegen = (p: PointerEvent) =>
+                      setTestHoehe(
+                        Math.max(200, Math.min(window.innerHeight * 0.5, hoehe + start - p.clientY)),
+                      );
+                    const ende = () => {
+                      window.removeEventListener('pointermove', bewegen);
+                      window.removeEventListener('pointerup', ende);
+                    };
+                    window.addEventListener('pointermove', bewegen);
+                    window.addEventListener('pointerup', ende, { once: true });
+                  }}
+                />
+                <Testbereich
+                  zustand={test}
+                  optionen={testOptionen}
+                  veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
+                  gesperrt={!!verarbeitung}
+                  schliessen={() => setTestOffen(false)}
+                  starten={() => void testStarten()}
+                  stoppen={() => void testStoppen()}
+                  ordnerWaehlen={() => void testOrdnerWaehlen()}
+                  optionenAendern={setTestOptionen}
+                  kopieren={() =>
+                    void window.scriptlab.testAusgabeKopieren().then((r) => {
+                      if (!r.ok) melden(r.meldung, 'fehler');
+                    })
+                  }
+                  leeren={() =>
+                    void window.scriptlab.testAusgabeLeeren().then((r) => {
+                      if (r.ok) testUebernehmen(r.wert);
+                    })
+                  }
+                  blockAnzeigen={() => {
+                    if (!testAktiv(test.phase) && testInhalt.current !== testInhaltsText(projekt))
+                      melden(
+                        'Dieser Fehler gehört zu einem älteren Teststand. Die Blockzuordnung wird nicht auf einen anderen Workflow übertragen.',
+                        'hinweis',
+                      );
+                    else blockAnzeigen(test.fehlerBlockId ?? undefined);
+                  }}
+                />
+              </section>
+            )}
             {vorschauOffen && (
               <section
                 className="code-panel"
@@ -1176,6 +1458,7 @@ export function Anwendung() {
                 else melden('Wähle zuerst einen Baustein.');
               }}
               blockAktion={blockAktion}
+              schreibgeschuetzt={testAktiv(test.phase)}
               beruehrt={(id) => setBeruehrt((alt) => new Set([...alt, id]))}
             />
           )}
@@ -1291,8 +1574,9 @@ export function Anwendung() {
         <p>ScriptLab {version} · Windows 11 x64</p>
         <p>Entwickelt von Leon Stolz</p>
         <p>
-          ScriptLab erstellt und exportiert Workflows. Du führst die gespeicherten Scripts eigenständig
-          außerhalb dieser Anwendung aus.
+          ScriptLab erstellt, prüft und exportiert Workflows. Mit „Testen“ führst du den aktuellen Ablauf
+          bewusst auf diesem Computer aus. Dateiänderungen sind echt. Exportierte Scripts kannst du auch
+          eigenständig außerhalb dieser Anwendung ausführen.
         </p>
         <p>
           VBScript ist von Microsoft abgekündigt. Die spätere Ausführung hängt von der Windows-Komponente und
