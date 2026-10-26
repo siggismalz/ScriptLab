@@ -34,6 +34,13 @@ jobs:
         with:
           node-version: '24.19.0'
           package-manager-cache: false
+      - name: Festgelegte Python-Testlaufzeit bereitstellen
+        id: python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.15.2'
+          architecture: x64
+          update-environment: false
       - name: Tag und Paketversion vergleichen
         shell: pwsh
         run: |
@@ -50,8 +57,13 @@ jobs:
       - run: npm test
         env:
           SCRIPTLAB_RUNTIME_TESTS: '1'
+          SCRIPTLAB_TEST_PYTHON: ${{ steps.python.outputs.python-path }}
+          SCRIPTLAB_TEST_PYTHON_VERSION: '3.15.2'
       - run: npm run build
       - run: npm run test:e2e
+        env:
+          SCRIPTLAB_TEST_PYTHON: ${{ steps.python.outputs.python-path }}
+          SCRIPTLAB_TEST_PYTHON_VERSION: '3.15.2'
       - name: Signaturinfrastruktur pruefen
         shell: pwsh
         env:
@@ -95,7 +107,7 @@ jobs:
           $vorher = git describe --tags --abbrev=0 "$env:RELEASE_TAG^" 2>$null
           $bereich = if ($LASTEXITCODE -eq 0) { "$vorher..$env:RELEASE_TAG" } else { $env:RELEASE_TAG }
           $aenderungen = @(git log --format='- %s' $bereich)
-          $text = @("ScriptLab $env:RELEASE_TAG fuer Windows 11 x64.", '', 'Entwickelt von Leon Stolz.', '', 'Aenderungen:', '') + $aenderungen + @('', 'ScriptLab erstellt und exportiert Workflows. Die Ausfuehrung erfolgt ausschliesslich eigenstaendig ausserhalb der Anwendung.', '', 'VBScript ist abgekuendigt. Die spaetere Ausfuehrung haengt von Windows-Komponente und Richtlinien ab.')
+          $text = @("ScriptLab $env:RELEASE_TAG fuer Windows 11 x64.", '', 'Entwickelt von Leon Stolz.', '', 'Aenderungen:', '') + $aenderungen + @('', 'ScriptLab erstellt, prueft und exportiert Python- und VBS-Workflows. Ein bewusst gestarteter Test fuehrt den vollstaendigen Ablauf lokal aus und kann Dateien veraendern. Exportierte Scripts koennen eigenstaendig ausserhalb von ScriptLab ausgefuehrt werden.', '', 'Python benoetigt eine stabile CPython-Installation von 3.12 bis 3.15 fuer Windows x64; Dialogbausteine benoetigen Tcl/Tk.', '', 'VBScript ist abgekuendigt. Seine Ausfuehrung haengt von Windows-Komponente und Richtlinien ab.')
           [IO.File]::WriteAllLines((Join-Path $PWD 'release-notizen.md'), $text, [Text.UTF8Encoding]::new($false))
       - name: Gepruefte Artefakte veroeffentlichen
         shell: pwsh

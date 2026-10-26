@@ -305,8 +305,11 @@ await pruefen('Beispiele und Windows-Helfer', async () => {
         '01-Begruessung.scriptlab',
         '02-Datei-Backup.scriptlab',
         '03-Dateinamenliste.scriptlab',
+        '04-Python-Begruessung.scriptlab',
+        '05-Python-Datei-Backup.scriptlab',
+        '06-Python-Dateinamenliste.scriptlab',
       ]),
-    'Die drei festen Beispielprojekte fehlen oder es liegen zusätzliche Beispiele vor.',
+    'Die sechs festen Beispielprojekte fehlen oder es liegen zusätzliche Beispiele vor.',
   );
   verlangen(
     JSON.stringify(dateien) === JSON.stringify(await dateienSammeln(join(ressourcen, 'beispiele'))),
