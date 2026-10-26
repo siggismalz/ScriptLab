@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "quelle": "artifacts/python/desktop-ergebnis-erster-lauf.json",
+  "quellHash": "fbd2f3ce8b6f8aa33891433a3e1e3db67eec8d65ed80c7bf543291dfa664dba1",
+  "status": "fehlgeschlagen",
+  "anzahl": 96,
+  "bestanden": 78,
+  "fehlgeschlagen": 7,
+  "uebersprungen": 11,
+  "beobachtung": "Veraltete exakte Schnittstellen-, Einstellungs-, Projekt-, Variablen- und Leertext-Erwartungen wurden an den geprüften neuen Vertrag angepasst. Die tatsächliche Bereitschaft des Basisfelds und das bewusste Öffnen vorhandener Testoptionen werden vor weiteren Aktionen geprüft. Ein zuerst im Zustand bereit verbliebener Python-UI-Fall bestand gezielt ohne Ablaufänderung; seine ursprüngliche Ursache ist nicht abschließend belegt."
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "quelle": "artifacts/python/unit-ergebnis-erster-lauf.json",
+  "quellHash": "142c43bd62146c89e3684927cf9bd075d18cec93aed063e9c06c40b4b960a692",
+  "status": "fehlgeschlagen",
+  "anzahl": 334,
+  "bestanden": 333,
+  "fehlgeschlagen": 1,
+  "uebersprungen": 0,
+  "beobachtung": "Ein VBS-Vergleichsprozess erreichte seine unveränderte Zehn-Sekunden-Frist. Zwei gezielte Gegenläufe und der anschließende vollständige Lauf bestanden. Die sporadische Ursache ist nicht abschließend geklärt."
+}

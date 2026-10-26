@@ -1,0 +1,91 @@
+{
+  "geprueftAm": "2026-10-26",
+  "zweck": "Isolierte Entwicklungspruefung der zweiten Python-Version. Kein Bestandteil der Anwendungserkennung oder Auslieferung.",
+  "plattform": "Windows x64",
+  "quellen": {
+    "windowsDownloads": "https://www.python.org/downloads/windows/",
+    "release": "https://www.python.org/downloads/release/python-3152/",
+    "archiv": "https://www.python.org/ftp/python/3.15.2/python-3.15.2-embed-amd64.zip",
+    "sigstore": "https://www.python.org/ftp/python/3.15.2/python-3.15.2-embed-amd64.zip.sigstore"
+  },
+  "download": {
+    "datei": "python-3.15.2-embed-amd64.zip",
+    "version": "3.15.2",
+    "bytes": 13740486,
+    "sha256": "d012f3aa29cf07436dae8aea1fec0fd195c2612a0b059b1f915ae0afb9ad1f62",
+    "offiziellerReleaseHashStimmtUeberein": true,
+    "sigstoreDigestStimmtUeberein": true,
+    "sigstoreIdentitaetVollstaendigGeprueft": false
+  },
+  "archiv": {
+    "eintraege": 39,
+    "entpackteBytes": 26496099,
+    "vorEntpackenGeprueft": [
+      "Keine absoluten oder uebergeordneten Pfade",
+      "Keine Windows-ADS oder unzulaessigen Namen",
+      "Keine symbolischen Links",
+      "Keine gleichnamigen Eintraege bei Windows-Pfadvergleich",
+      "Zielpfade bleiben im eigenen neuen Pruefverzeichnis",
+      "Anzahl und entpackte Groesse begrenzt"
+    ],
+    "produkt": "Python",
+    "originaldateiname": "python.exe",
+    "dateiversion": "3.15.2",
+    "runtimeDll": "python315.dll",
+    "runtimeDllVorhanden": true,
+    "keineTkBeilagen": true
+  },
+  "laufzeit315": {
+    "probe": {
+      "version": "3.15.2",
+      "implementierung": "CPython",
+      "architektur": "x64",
+      "stabil": true,
+      "festerJobhelper": true,
+      "nativeFristMillisekunden": 4000,
+      "flags": ["-I", "-u", "-X", "utf8"],
+      "tkinterOhneBedarf": null
+    },
+    "workflowOhneDialoge": {
+      "phase": "beendet",
+      "exitcode": 0,
+      "ausgabe": "CPython 3.15.2: Grüße 😀\r\n",
+      "basisDateienNachTest": []
+    },
+    "workflowMitDialog": {
+      "phase": "fehlgeschlagen",
+      "vorWorkflowstartAbgewiesen": true,
+      "gestartetAm": null,
+      "prozessId": null,
+      "ausgabe": "",
+      "meldung": "Dieser Python-Installation fehlt Tkinter. Wähle für Dialogbausteine eine Installation mit Tcl/Tk. Workflows ohne Dialoge und der Export bleiben möglich."
+    }
+  },
+  "getrennteVorherigeAutomatisierteLaeufe312": [
+    {
+      "version": "3.12.6",
+      "art": "Gesamtlauf der damaligen Python-Laufzeitdatei vor Aufteilung der reinen Auswahltests",
+      "bestanden": 28,
+      "fehlgeschlagen": 0,
+      "reineFaelle": 22,
+      "nativeFaelle": 6
+    },
+    {
+      "version": "3.12.6",
+      "art": "Zwei danach ergaenzte Faelle gezielt geprueft",
+      "bestanden": 2,
+      "uebersprungen": 28,
+      "faelle": [
+        "Abbruch waehrend ausstehender Interpreterpruefung ohne Workflowstart",
+        "Echter Textdateifehler mit Wertebaustein, Workflowzeile und Originaltraceback"
+      ]
+    }
+  ],
+  "grenzen": [
+    "Sigstore-Digest abgeglichen; Sigstore-Identitaet und Transparenzlog nicht vollstaendig geprueft.",
+    "Keine Installation, keine Aenderung von Registry, PATH, Windows-Features oder Python-Paketen.",
+    "Keine Tk-Dialogfunktion der embeddable Distribution behauptet; das tatsaechlich fehlende Tk wurde vor Workflowstart abgewiesen.",
+    "Die beiden vorherigen automatisierten Laeufe bleiben getrennte Nachweise und werden nicht zu einem gemeinsamen Lauf addiert.",
+    "Keine lokalen Benutzer- oder Interpreterpfade enthalten."
+  ]
+}

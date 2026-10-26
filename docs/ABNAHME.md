@@ -2,7 +2,17 @@
 
 Stand: 26.10.2026, ScriptLab 0.1.0. Die technische Erstprüfung unten dokumentiert den Stand **vor der anschließenden UI-Überarbeitung**. Ihre Testzahlen, Bildschirmgrößen, Commitverweise und Installerangaben gehören zu diesem Prüfzeitpunkt. Der UI-Nachtrag verweist auf die gesonderten aktuellen Bediennachweise. Ein vorhandener Prüfplan, ein erfolgreicher Build oder ein simulierter Updater ersetzt keine vollständig geprüfte produktive Installation und Updatekette.
 
-## Erweiterung um bewusste Testläufe vom 26.10.2026
+## Erweiterung um Python vom 26.10.2026
+
+Python ist als zweite feste Projektsprache an denselben Editor, alle 48 Bausteintypen, die gemeinsame Validierung, Projektdateien, Entwürfe, Beispiele, Vorschau, Export und bewusst gestartete Tests angebunden. Neue Workflows entstehen erst nach der ausdrücklichen Kartenwahl. Alte Projekte ohne Sprachfeld bleiben VBS; beim bloßen Öffnen werden sie nicht umgeschrieben. Das Projektformat ist auf Schema 2 versioniert. Der Umfang pro Block steht im [Funktionsinventar](PYTHON-FUNKTIONSUMFANG.md); Einrichtung, Laufzeitgrenzen und neue Nachweise stehen in [PYTHON.md](PYTHON.md).
+
+Der vollständige lokale Lauf auf Windows 11 x64 bestand mit **334/334 Unit-, Generator-, Datei-, Prozess-, Laufzeit- und Komponententests**, ohne übersprungene Fälle. Dabei wurden echte CPython-3.12.6- und VBS-Prozesse, eigenständige Python-Exporte bei geschlossener App, virtuelle Umgebungen sowie die tatsächlichen Dateiergebnisse geprüft. Ein vorheriger Lauf bestand mit 333/334; ein VBS-Vergleich erreichte die unveränderte Zehn-Sekunden-Frist. Zwei gezielte Gegenläufe und der anschließende vollständige Lauf bestanden. Diese sporadische Zeitbeobachtung bleibt offen und wird nicht durch abgeschwächte Prüfungen verborgen.
+
+Der vollständige Electron-Durchlauf bestand mit **96/96 Desktopfällen in 248,11 Sekunden**, ohne übersprungene oder instabile Fälle. Er prüft beide Sprachen, ausdrücklich gewählte Neuanlagen, echte Python-Ausgaben und ungespeicherte Stände, Entwürfe nach Neustart, sechs Vorlagen, Sprachfilter, Stoppen, Zeitlimit, Projekt-/Schließschutz und die bisherigen VBS-/Editorabläufe. Die bereinigten Berichte mit Rohberichtshashes, vorherigen Fehlversuchen, zwei Auswahlaufnahmen und den konkreten Grenzen stehen unter [PYTHON.md](PYTHON.md). Die dort benannten Python-Dialogentscheidungen, weiteren nativen Skalierungsstufen und vollständigen Screenreaderprüfungen bleiben offen; sie werden nicht durch die grünen automatischen Läufe ersetzt.
+
+Die älteren Installer-, Commit-, Test- und Bildschirmangaben in den folgenden Abschnitten gehören ausschließlich zum damaligen Umfang. Sie belegen keinen Python-Installer. Insbesondere bleiben die produktive Entwicklersignatur, Veröffentlichung und Updateprüfung mit zwei installierten signierten Versionen gesonderte Einrichtungsschritte.
+
+## Historischer Nachweis: bewusste VBS-Testläufe vom 26.10.2026
 
 Der neue Entwicklungsauftrag erlaubt ausdrücklich gestartete Workflowtests. Die frühere globale Grenze „ScriptLab führt keine Nutzerworkflows aus“ gilt damit nicht mehr für **Testen**. Öffnen, Wiederherstellen, Bearbeiten, Vorschau, Strukturprüfung, Speichern, Export und Signaturprüfung bleiben ohne Workflowausführung. Die neue Bedienung, der kontrollierte Host und die gesonderten Nachweise stehen in [TESTLAUF.md](TESTLAUF.md).
 

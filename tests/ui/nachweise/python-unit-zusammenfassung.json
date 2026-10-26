@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "quelle": "artifacts/python/unit-ergebnis.json",
+  "quellHash": "8fe585110e0676c1a8b7ec55b15e45c69c254b4cc2882f51d93ced484467d021",
+  "werkzeug": "Vitest",
+  "status": "bestanden",
+  "gestartetAm": "2026-10-26T19:51:24.120Z",
+  "dauerMillisekunden": 85686,
+  "anzahl": 334,
+  "bestanden": 334,
+  "fehlgeschlagen": 0,
+  "uebersprungen": 0
+}

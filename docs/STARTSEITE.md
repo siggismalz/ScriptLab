@@ -1,5 +1,7 @@
 # Startseite und lokale Workflowbibliothek
 
+Die anschließende Python-Erweiterung ergänzt dieselbe Startseite um die ausdrückliche Sprachauswahl bei Neuanlage, Sprachkennzeichnungen und sechs Vorlagen mit Sprachfilter. Ihre aktuellen Nachweise stehen in [PYTHON.md](PYTHON.md); die unten dokumentierten früheren Prüfungen bleiben ihrem damaligen Umfang zugeordnet.
+
 Historischer Prüfstand vom 26.10.2026, vor Einführung der bewussten Workflowtests. Die Startseite ist in das bestehende ScriptLab integriert. Der Editor und sein VBS-Export bleiben Bestandteil derselben Anwendung; während der hier dokumentierten Startseitenprüfung wurde kein Nutzerworkflow ausgeführt. Die spätere Funktion **Testen** und ihre eigenen Nachweise stehen in [TESTLAUF.md](TESTLAUF.md).
 
 ## Bestandsaufnahme und Entscheidungen

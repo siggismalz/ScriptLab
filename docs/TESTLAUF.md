@@ -1,5 +1,7 @@
 # Workflows bewusst testen
 
+Dieser Leitfaden und seine ursprünglichen Prüfzahlen dokumentieren die Einführung der VBS-Testfunktion. Die spätere zweite Sprache, Python-Einrichtung, gemeinsame Laufsteuerung und aktuellen zusätzlichen Nachweise stehen in [PYTHON.md](PYTHON.md). Die folgenden alten Installerangaben belegen keinen Build mit Python.
+
 Stand: 26.10.2026. Der Erweiterungsauftrag erlaubt ausdrücklich gestartete Testläufe des vollständigen aktuellen Workflows. Das ersetzt die frühere globale Vorgabe gegen jede Ausführung innerhalb von ScriptLab. Bearbeiten, Öffnen, Wiederherstellen, Strukturprüfung, Vorschau, Speichern, Export und Signaturprüfung starten weiterhin keinen Workflow. Es gibt keine automatische Ausführung, Zeitplanung oder Autostartfunktion.
 
 Die lokalen praktischen Prüfungen fanden unter Windows 11 Pro x64, Build 26200, mit Node.js 24.19.0 und Electron 45.0.0 statt.

@@ -1,0 +1,21 @@
+{
+  "geometrie": {
+    "breite": 851,
+    "hoehe": 721,
+    "dpr": 1.75,
+    "scrollBreite": 851,
+    "dialogScroll": 1000
+  },
+  "rahmen": [
+    {
+      "breite": 771.4285888671875,
+      "oben": -116.5714340209961,
+      "text": "PythonFür vielseitige Automatisierungen mit Dateien, Texten und Daten.Bietet viele Möglichkeiten und lässt sich durch zusätzliche Funktionen erweitern.Zum Ausführen wird eine passende Python-Installation benötigt. Je nach Workflow können weitere Pakete erforderlich sein."
+    },
+    {
+      "breite": 771.4285888671875,
+      "oben": 338.5714416503906,
+      "text": "VBScript (VBS)Für klassische Windows-Abläufe und vorhandene VBScript-Umgebungen.Nutzt den Windows Script Host und vorhandene Windows-Schnittstellen.VBScript muss auf dem Rechner verfügbar sein. Microsoft lässt die Unterstützung auslaufen."
+    }
+  ]
+}

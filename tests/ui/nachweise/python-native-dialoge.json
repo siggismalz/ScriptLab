@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "pythonVersion": "3.12.6",
+  "eingabenUndStopp": {
+    "modus": "normal",
+    "phase": "abgebrochen",
+    "skriptsprache": "python",
+    "pythonVersion": "3.12.6",
+    "ausgabe": "PYTHON NATIV VOR\r\nEINGABE=Grüße aus Python 😀\r\nEINGABE=\r\nEINGABE=\r\n",
+    "exitcode": 3221225786,
+    "gestartetAm": "2026-10-26T19:35:44.387Z",
+    "beendetAm": "2026-10-26T19:37:59.556Z",
+    "meldung": "Test abgebrochen. Bereits erfolgte Änderungen bleiben bestehen.",
+    "dateiErhalten": true,
+    "quellHash": "6b8187af2f99fb7a8e39d29e9759dc19b4ee6a1a38fe3e852058f66c7e276a9c"
+  },
+  "zeitlimit": {
+    "modus": "zeitlimit",
+    "phase": "zeitlimit",
+    "skriptsprache": "python",
+    "pythonVersion": "3.12.6",
+    "ausgabe": "VOR PYTHON DIALOGSTOPP\r\n\n",
+    "exitcode": 3221225786,
+    "gestartetAm": "2026-10-26T19:41:56.142Z",
+    "beendetAm": "2026-10-26T19:41:57.170Z",
+    "meldung": "Zeitlimit erreicht. Bereits erfolgte Änderungen bleiben bestehen.",
+    "dateiErhalten": true,
+    "quellHash": "0a0473fb273f8b6acfcb55f28ac0a87335185fef10d7ae6ecc2504c395425828",
+    "zeitlimitSekunden": 1
+  },
+  "geprueft": [
+    "Unicodeeingabe",
+    "Leeres OK ergibt leeren Text",
+    "Abbrechen ergibt leeren Text",
+    "Werkzeugleisten-Stopp bei offener Ja-/Nein-Rückfrage",
+    "Zeitlimit bei offener Nachrichtenbox"
+  ],
+  "offen": [
+    "Ja-/Nein-Antworten",
+    "Nachrichtenbox-OK",
+    "Löschrückfrage mit Nein"
+  ],
+  "grenze": "Der Windows-UI-Helper erkannte die betreffenden nativen Tk-Unterfenster nicht zuverlässig als auswählbares Ziel. Die offenen Antworten gelten nicht als interaktiv geprüft. Der Dateierhalt hier bestätigt nur, dass der spätere Löschblock nicht erreicht wurde."
+}
