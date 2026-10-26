@@ -32,7 +32,7 @@ function namensProjekt(sprache: 'vbs' | 'python' = 'vbs'): Projekt {
 describe('Versionierte Sprache und stabile Variablen', () => {
   it.each(['vbs', 'python'] as const)('erstellt und erhält %s samt vollständigem Zustand', (sprache) => {
     const p = projektPruefen(namensProjekt(sprache));
-    expect(p.schemaVersion).toBe(2);
+    expect(p.schemaVersion).toBe(3);
     expect(p.skriptsprache).toBe(sprache);
     expect(projektPruefen(JSON.parse(JSON.stringify(p)))).toEqual(p);
     expect(p.ansicht).toEqual({ zoom: 1.25, x: -30, y: 80 });
@@ -59,7 +59,7 @@ describe('Versionierte Sprache und stabile Variablen', () => {
     const p = { ...neuesProjekt() } as Record<string, unknown>;
     delete p.skriptsprache;
     expect(() => projektPruefen(p)).toThrow(/Scriptsprache/);
-    expect(() => projektPruefen({ ...neuesProjekt(), schemaVersion: 3 })).toThrow(/neueren/);
+    expect(() => projektPruefen({ ...neuesProjekt(), schemaVersion: 4 })).toThrow(/neueren/);
     expect(() => projektPruefen({ ...neuesProjekt('python'), schemaVersion: 1 })).toThrow(/Projektformat 2/);
   });
   it('ordnet Variablen nach Identität zu und erhält die Zuordnung beim Umbenennen', () => {

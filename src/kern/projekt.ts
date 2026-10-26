@@ -1,5 +1,6 @@
 import { definitionNachTyp } from './katalog';
 import { sprachePruefen, type Skriptsprache } from './sprachen';
+import { businessProjektPruefen, leeresBusinessProjekt, type BusinessProjekt } from './business-modell';
 
 /** Das Projekt speichert ausschließlich Daten. Es enthält niemals ausführbaren Anwendungscode. */
 export interface EditorBlock {
@@ -22,7 +23,8 @@ export interface EditorBlock {
 }
 
 export interface Projekt {
-  schemaVersion: 2;
+  schemaVersion: 3;
+  business: BusinessProjekt;
   skriptsprache: Skriptsprache;
   appVersion: string;
   projektKennung?: string;
@@ -63,9 +65,9 @@ export function projektPruefen(wert: unknown): Projekt {
     throw new Error(meldung);
   };
   if (!objekt(wert)) return fehler('Die Projektdatei enthält kein gültiges Projekt.');
-  if (wert.schemaVersion !== 1 && wert.schemaVersion !== 2)
+  if (wert.schemaVersion !== 1 && wert.schemaVersion !== 2 && wert.schemaVersion !== 3)
     return fehler(
-      typeof wert.schemaVersion === 'number' && wert.schemaVersion > 2
+      typeof wert.schemaVersion === 'number' && wert.schemaVersion > 3
         ? 'Dieses Projekt wurde mit einem neueren Dateiformat gespeichert. Bitte ScriptLab aktualisieren.'
         : 'Die Schemaversion der Projektdatei wird nicht unterstützt.',
     );
@@ -74,6 +76,7 @@ export function projektPruefen(wert: unknown): Projekt {
       (k) =>
         ![
           'schemaVersion',
+          'business',
           'skriptsprache',
           'appVersion',
           'projektKennung',
@@ -86,7 +89,7 @@ export function projektPruefen(wert: unknown): Projekt {
     )
   )
     return fehler('Die Projektdatei enthält nicht unterstützte Zusatzdaten.');
-  if (wert.schemaVersion === 2 && !Object.hasOwn(wert, 'skriptsprache'))
+  if (wert.schemaVersion !== 1 && !Object.hasOwn(wert, 'skriptsprache'))
     return fehler('Im Projekt fehlt die Scriptsprache. Die Datei wird nicht verändert.');
   const skriptsprache = Object.hasOwn(wert, 'skriptsprache') ? sprachePruefen(wert.skriptsprache) : 'vbs';
   if (wert.schemaVersion === 1 && skriptsprache !== 'vbs')
@@ -313,7 +316,8 @@ export function projektPruefen(wert: unknown): Projekt {
     }
   }
   // Kopieren entfernt geteilte Referenzen und verhindert spätere Änderungen am geprüften Objekt.
-  const projekt = { ...JSON.parse(JSON.stringify(wert)), schemaVersion: 2, skriptsprache } as Projekt;
+  const business = wert.schemaVersion === 3 ? businessProjektPruefen(wert.business) : leeresBusinessProjekt();
+  const projekt = { ...JSON.parse(JSON.stringify(wert)), schemaVersion: 3, skriptsprache, business } as Projekt;
   variablenIdentitaetenErgaenzen(projekt);
   return projekt;
 }
@@ -374,7 +378,8 @@ function variablenIdentitaetenErgaenzen(projekt: Projekt): void {
 export function neuesProjekt(skriptsprache: Skriptsprache = 'vbs'): Projekt {
   sprachePruefen(skriptsprache);
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
+    business: leeresBusinessProjekt(),
     skriptsprache,
     appVersion: '0.1.0',
     projektKennung: globalThis.crypto.randomUUID(),
