@@ -1,0 +1,563 @@
+{
+  "schemaVersion": 1,
+  "erstelltAm": "2026-10-26T20:42:24.382Z",
+  "version": "0.1.0",
+  "ausgabeordner": "artifacts/python-build-fertig",
+  "quellstand": {
+    "head": "1a0ed2e5fd41ef38729e3acd1033f5f78eec7b38",
+    "unveroeffentlichteAenderungen": false,
+    "status": [],
+    "einordnung": "Sauberer Git-Arbeitsstand."
+  },
+  "pruefungen": [
+    {
+      "name": "Git-Stand",
+      "bestanden": true
+    },
+    {
+      "name": "NSIS-Installer und Update-Metadaten",
+      "bestanden": true,
+      "details": {
+        "metadatenDatei": "latest.yml",
+        "version": "0.1.0",
+        "bytes": 125342651,
+        "sha512Passt": true
+      }
+    },
+    {
+      "name": "Blockmap",
+      "bestanden": true,
+      "details": {
+        "version": "2",
+        "chunks": 6003,
+        "abgedeckteBytes": 125342651
+      }
+    },
+    {
+      "name": "Gepackter Renderer, Hauptprozess und Preload",
+      "bestanden": true,
+      "details": {
+        "dateien": 21,
+        "alleBytegleich": true
+      }
+    },
+    {
+      "name": "Paketversion und Entwicklerangabe",
+      "bestanden": true,
+      "details": {
+        "version": "0.1.0",
+        "autor": "Leon Stolz",
+        "einstieg": "dist/main/hauptprozess.cjs"
+      }
+    },
+    {
+      "name": "Beispiele und Windows-Helfer",
+      "bestanden": true
+    },
+    {
+      "name": "Dokumentation und Lizenzhinweise",
+      "bestanden": true
+    },
+    {
+      "name": "Updatequelle",
+      "bestanden": true
+    },
+    {
+      "name": "Windows-Metadaten: ScriptLab-0.1.0-Setup-x64.exe",
+      "bestanden": true,
+      "details": {
+        "signaturStatus": "NotSigned",
+        "produktVersion": "0.1.0"
+      }
+    },
+    {
+      "name": "Windows-Metadaten: ScriptLab.exe",
+      "bestanden": true,
+      "details": {
+        "signaturStatus": "NotSigned",
+        "produktVersion": "0.1.0.0"
+      }
+    },
+    {
+      "name": "Windows-Metadaten: ScriptLab.Testhost.exe",
+      "bestanden": true,
+      "details": {
+        "signaturStatus": "NotSigned",
+        "produktVersion": "0.1.0.0"
+      }
+    }
+  ],
+  "dateien": [
+    {
+      "pfad": "artifacts/python-build-fertig/ScriptLab-0.1.0-Setup-x64.exe",
+      "bytes": 125342651,
+      "sha256": "d4c2a5485c6b87f2386420633005e8b307f9e8eb0c192e8a3d9a5cb4ba1125eb",
+      "sha512": "GgmXMQM1xL5MXO6a1mi21QUECT2hVewx+3YauyUEjN3msIoEsi5J3qZoj8xNFUchvPzzup7V7DUSztICkGsSzw=="
+    },
+    {
+      "pfad": "artifacts/python-build-fertig/latest.yml",
+      "bytes": 355,
+      "sha256": "afea96cb7c89234ae28687514a34ad0edbfe9ad724edee2a4ab614d099725d57",
+      "sha512": "SHgFX+Cs31c0oVna6EDOGboKgZ1dpFXUxNUrxL5d3HO2AV0PQs7lUAyjcQF6D0qh0+47ZEDmgHD+wDMB3GaVeA=="
+    },
+    {
+      "pfad": "artifacts/python-build-fertig/ScriptLab-0.1.0-Setup-x64.exe.blockmap",
+      "bytes": 132528,
+      "sha256": "31fc42e2eb4578b2f13919cce706498c2295da1486ca336b279300a0b15a7d5d",
+      "sha512": "zsoGP0N5U//ABwx6cX5fQ9tHqTERFhuG+I2w0vQ96EqCu36QYWPTDPueYv8dV7ReTnqGRC87nTLfxzpQywYGcg=="
+    },
+    {
+      "pfad": "artifacts/python-build-fertig/win-unpacked/resources/app.asar",
+      "bytes": 37999044,
+      "sha256": "553473b0a228ed7d8bbf7b58295dd30e21ae6685958aafda520a12cff3ab404a",
+      "sha512": "UEOtO3W2ugfwlat0WeZYYDEPHEObU9HFkM8ApYbD9OVzu8hvcIP9m7h8diNU4j8SqaI/Z9+ZJp+h2kOcflykdw=="
+    }
+  ],
+  "bytevergleiche": [
+    {
+      "quelle": "dist/main/hauptprozess.cjs",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/main/hauptprozess.cjs",
+      "bytes": 2044172,
+      "sha256Quelle": "73b3dcd64a954641a06e40264968a5e58339cae137903cbe48031bf384cf75e4",
+      "sha256Paket": "73b3dcd64a954641a06e40264968a5e58339cae137903cbe48031bf384cf75e4",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/main/preload.cjs",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/main/preload.cjs",
+      "bytes": 3979,
+      "sha256Quelle": "c17979c72ae7ca51a812aa8b03b578ba8eb11a59b442238b03dbe5849f55625e",
+      "sha256Paket": "c17979c72ae7ca51a812aa8b03b578ba8eb11a59b442238b03dbe5849f55625e",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/assets/index-CLfyYR0N.js",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/assets/index-CLfyYR0N.js",
+      "bytes": 1204437,
+      "sha256Quelle": "882381c42e2c6f839afbd6248bd64c590956e138b108a48d222cb68f28985a9d",
+      "sha256Paket": "882381c42e2c6f839afbd6248bd64c590956e138b108a48d222cb68f28985a9d",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/assets/index-DKq4rl8W.css",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/assets/index-DKq4rl8W.css",
+      "bytes": 37054,
+      "sha256Quelle": "19c7295de1f04e07db70867ff0a46cc240ac204ece582a44e7bfad1d2ebcf232",
+      "sha256Paket": "19c7295de1f04e07db70867ff0a46cc240ac204ece582a44e7bfad1d2ebcf232",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/index.html",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/index.html",
+      "bytes": 677,
+      "sha256Quelle": "5952dddd5632de7196e4b756ef4987b6d54ffc8fe0433a02f485f0c5333dcf2e",
+      "sha256Paket": "5952dddd5632de7196e4b756ef4987b6d54ffc8fe0433a02f485f0c5333dcf2e",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/1x1.gif",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/1x1.gif",
+      "bytes": 43,
+      "sha256Quelle": "a1d88b2c952b790f5f23473c63ef99473327d02e11ebe174799ad912db08f629",
+      "sha256Paket": "a1d88b2c952b790f5f23473c63ef99473327d02e11ebe174799ad912db08f629",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/click.mp3",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/click.mp3",
+      "bytes": 2304,
+      "sha256Quelle": "1048f2539ac47e4eaa4bd1688968c0d7b9956bd6fef507644ee5131924c6517c",
+      "sha256Paket": "1048f2539ac47e4eaa4bd1688968c0d7b9956bd6fef507644ee5131924c6517c",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/delete-icon.svg",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/delete-icon.svg",
+      "bytes": 315,
+      "sha256Quelle": "3eee02b06f476ce746566808178543389e53cd4e9d7fd32b69e329eff4fc71ef",
+      "sha256Paket": "3eee02b06f476ce746566808178543389e53cd4e9d7fd32b69e329eff4fc71ef",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/delete.mp3",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/delete.mp3",
+      "bytes": 3123,
+      "sha256Quelle": "6ea0afab062cb3ba5409dc65d7a9fdf85d602b1870d231d80bdf3cc5b32432b6",
+      "sha256Paket": "6ea0afab062cb3ba5409dc65d7a9fdf85d602b1870d231d80bdf3cc5b32432b6",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/disconnect.mp3",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/disconnect.mp3",
+      "bytes": 1586,
+      "sha256Quelle": "849465a8968836ab5b24b68a7289ee76ca1a6a50ba87a295a32efe1e507e3451",
+      "sha256Paket": "849465a8968836ab5b24b68a7289ee76ca1a6a50ba87a295a32efe1e507e3451",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/drop.mp3",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/drop.mp3",
+      "bytes": 5434,
+      "sha256Quelle": "6c76cac85b42494683549938729f9994eec9ce03a940e5b4e1ef18279dea01ff",
+      "sha256Paket": "6c76cac85b42494683549938729f9994eec9ce03a940e5b4e1ef18279dea01ff",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/dropdown-arrow.svg",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/dropdown-arrow.svg",
+      "bytes": 569,
+      "sha256Quelle": "bc3873b086b25a01c417cb3b5fe61fd7eef360b8f7c85c2c7f7b802a2626faf9",
+      "sha256Paket": "bc3873b086b25a01c417cb3b5fe61fd7eef360b8f7c85c2c7f7b802a2626faf9",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/foldout-icon.svg",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/foldout-icon.svg",
+      "bytes": 150,
+      "sha256Quelle": "0ac7478b56f5e5cc583c26710cb7ee5edcedb563cde65cd2385f4dd3e9e08c64",
+      "sha256Paket": "0ac7478b56f5e5cc583c26710cb7ee5edcedb563cde65cd2385f4dd3e9e08c64",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/handclosed.cur",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/handclosed.cur",
+      "bytes": 326,
+      "sha256Quelle": "4a1637e16f33e1b02f96f699ada695edededfd089530372126d375ad9ed2f0a5",
+      "sha256Paket": "4a1637e16f33e1b02f96f699ada695edededfd089530372126d375ad9ed2f0a5",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/handdelete.cur",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/handdelete.cur",
+      "bytes": 766,
+      "sha256Quelle": "e53ef200d76fef617bd2e307a100d778834ad49784f80c1abc6da547e50b8040",
+      "sha256Paket": "e53ef200d76fef617bd2e307a100d778834ad49784f80c1abc6da547e50b8040",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/handopen.cur",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/handopen.cur",
+      "bytes": 198,
+      "sha256Quelle": "d2ec9a81d9a76b0f64b7168e5f05ee660ffb6ba7e35695caaf9851e6b01a04fd",
+      "sha256Paket": "d2ec9a81d9a76b0f64b7168e5f05ee660ffb6ba7e35695caaf9851e6b01a04fd",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/pilcrow.png",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/pilcrow.png",
+      "bytes": 1010,
+      "sha256Quelle": "4e4aa37ce0c162b0239203e538a7ae8eee706554514ff611cfb3a94baaa66167",
+      "sha256Paket": "4e4aa37ce0c162b0239203e538a7ae8eee706554514ff611cfb3a94baaa66167",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/quote0.png",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/quote0.png",
+      "bytes": 771,
+      "sha256Quelle": "a06f7a05d9c86851266e55357090d3af37ff24e116258c94d52c4f436c614c7c",
+      "sha256Paket": "a06f7a05d9c86851266e55357090d3af37ff24e116258c94d52c4f436c614c7c",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/quote1.png",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/quote1.png",
+      "bytes": 738,
+      "sha256Quelle": "56c52fc75cf7d2926d7502aaa7e95efb46c229aa266306d932795325722aba35",
+      "sha256Paket": "56c52fc75cf7d2926d7502aaa7e95efb46c229aa266306d932795325722aba35",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/resize-handle.svg",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/resize-handle.svg",
+      "bytes": 218,
+      "sha256Quelle": "c95d07b3fb3aaa088e6665061b01952e7ea9dda462b7032a85e095bf8a12855b",
+      "sha256Paket": "c95d07b3fb3aaa088e6665061b01952e7ea9dda462b7032a85e095bf8a12855b",
+      "identisch": true
+    },
+    {
+      "quelle": "dist/renderer/media/sprites.svg",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/app.asar!/dist/renderer/media/sprites.svg",
+      "bytes": 1775,
+      "sha256Quelle": "862de0ee081fa9baf504e673736d7446439c15246452258cab964a82566ef40f",
+      "sha256Paket": "862de0ee081fa9baf504e673736d7446439c15246452258cab964a82566ef40f",
+      "identisch": true
+    },
+    {
+      "quelle": "beispiele/01-Begruessung.scriptlab",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/beispiele/01-Begruessung.scriptlab",
+      "bytes": 1144,
+      "sha256Quelle": "fb0fa6a613494e0e7cc21b6bfff2817fe7cfda88b13f5c602d66a8e270af30ad",
+      "sha256Paket": "fb0fa6a613494e0e7cc21b6bfff2817fe7cfda88b13f5c602d66a8e270af30ad",
+      "identisch": true
+    },
+    {
+      "quelle": "beispiele/02-Datei-Backup.scriptlab",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/beispiele/02-Datei-Backup.scriptlab",
+      "bytes": 4894,
+      "sha256Quelle": "78fcd76524392a10745f8adf41cde33d3de02c720a9508166f797ae9c69a2a7c",
+      "sha256Paket": "78fcd76524392a10745f8adf41cde33d3de02c720a9508166f797ae9c69a2a7c",
+      "identisch": true
+    },
+    {
+      "quelle": "beispiele/03-Dateinamenliste.scriptlab",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/beispiele/03-Dateinamenliste.scriptlab",
+      "bytes": 6561,
+      "sha256Quelle": "d9b00ecb4d03743a2664b1155c7d79d06029eeae7422d652cdeca460ea72af77",
+      "sha256Paket": "d9b00ecb4d03743a2664b1155c7d79d06029eeae7422d652cdeca460ea72af77",
+      "identisch": true
+    },
+    {
+      "quelle": "beispiele/04-Python-Begruessung.scriptlab",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/beispiele/04-Python-Begruessung.scriptlab",
+      "bytes": 1281,
+      "sha256Quelle": "daa1c754a376ea8561642a3232f40b754a7afb6288cccd76ce6bbe9b40b4bfdc",
+      "sha256Paket": "daa1c754a376ea8561642a3232f40b754a7afb6288cccd76ce6bbe9b40b4bfdc",
+      "identisch": true
+    },
+    {
+      "quelle": "beispiele/05-Python-Datei-Backup.scriptlab",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/beispiele/05-Python-Datei-Backup.scriptlab",
+      "bytes": 5122,
+      "sha256Quelle": "3ea6678d813c99180117f69f8d0ef9c7b98b690dd77242c06a0bd40f83a6a2cd",
+      "sha256Paket": "3ea6678d813c99180117f69f8d0ef9c7b98b690dd77242c06a0bd40f83a6a2cd",
+      "identisch": true
+    },
+    {
+      "quelle": "beispiele/06-Python-Dateinamenliste.scriptlab",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/beispiele/06-Python-Dateinamenliste.scriptlab",
+      "bytes": 6826,
+      "sha256Quelle": "69f0affc68d715dbb8b8fd0d82aa568406986f4b40197418b37a8e3c81580467",
+      "sha256Paket": "69f0affc68d715dbb8b8fd0d82aa568406986f4b40197418b37a8e3c81580467",
+      "identisch": true
+    },
+    {
+      "quelle": "scripts/signatur-helper.ps1",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/signatur-helper.ps1",
+      "bytes": 7324,
+      "sha256Quelle": "59bb133f642f7e07e34d867b2f90aa0ddef99b924abb98c91f4bbc97bc3ca88b",
+      "sha256Paket": "59bb133f642f7e07e34d867b2f90aa0ddef99b924abb98c91f4bbc97bc3ca88b",
+      "identisch": true
+    },
+    {
+      "quelle": "artifacts/native/ScriptLab.Testhost.exe",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/ScriptLab.Testhost.exe",
+      "bytes": 16384,
+      "sha256Quelle": "e915609aa3cb1d61bfd4733bf1f838a3ac06fec1c71a292c9adc60f2e55bb473",
+      "sha256Paket": "e915609aa3cb1d61bfd4733bf1f838a3ac06fec1c71a292c9adc60f2e55bb473",
+      "identisch": true
+    },
+    {
+      "quelle": "README.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/README.md",
+      "bytes": 13613,
+      "sha256Quelle": "dba6a68790afde7871291c9f6c9bc8a05eff9866c42f8e0e8bbf474a5dc80a5b",
+      "sha256Paket": "dba6a68790afde7871291c9f6c9bc8a05eff9866c42f8e0e8bbf474a5dc80a5b",
+      "identisch": true
+    },
+    {
+      "quelle": "THIRD_PARTY_NOTICES.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/THIRD_PARTY_NOTICES.md",
+      "bytes": 131221,
+      "sha256Quelle": "96399bb47e52ad4dad1b3f8c8acb8a8cc7ad66ddcf21c5bad50e4ca9453e7910",
+      "sha256Paket": "96399bb47e52ad4dad1b3f8c8acb8a8cc7ad66ddcf21c5bad50e4ca9453e7910",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/ABNAHME.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/ABNAHME.md",
+      "bytes": 32751,
+      "sha256Quelle": "f74d16e1a13f393fb8d081ba6b3eaf5f61d8b53323b7d2e83e25f8b898f207d0",
+      "sha256Paket": "f74d16e1a13f393fb8d081ba6b3eaf5f61d8b53323b7d2e83e25f8b898f207d0",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/ARCHITEKTUR.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/ARCHITEKTUR.md",
+      "bytes": 15287,
+      "sha256Quelle": "c8a8afee6c830d72a58633129346077ec0ed1d385edefa6660fb92e3554fdb84",
+      "sha256Paket": "c8a8afee6c830d72a58633129346077ec0ed1d385edefa6660fb92e3554fdb84",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/BAUSTEINE.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/BAUSTEINE.md",
+      "bytes": 17827,
+      "sha256Quelle": "dc24a21333656600e2bad7294d6c315cf9814e54efba51e0699fe11eda347674",
+      "sha256Paket": "dc24a21333656600e2bad7294d6c315cf9814e54efba51e0699fe11eda347674",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/BEDIENUNG.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/BEDIENUNG.md",
+      "bytes": 27629,
+      "sha256Quelle": "64eb8f61734ff4c9154c088b9c8ba97720afc2cf3c0c42f12df87497b43026d6",
+      "sha256Paket": "64eb8f61734ff4c9154c088b9c8ba97720afc2cf3c0c42f12df87497b43026d6",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/DESIGNNOTIZ.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/DESIGNNOTIZ.md",
+      "bytes": 25234,
+      "sha256Quelle": "b294c91987dda9dbecb5064a8ae7afc73c7ebab632a43038b7dda1efee0e8091",
+      "sha256Paket": "b294c91987dda9dbecb5064a8ae7afc73c7ebab632a43038b7dda1efee0e8091",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/KOMPONENTEN.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/KOMPONENTEN.md",
+      "bytes": 6797,
+      "sha256Quelle": "a62e169bb3a56b77916c1fc505e8885dbb3adc8cc0e1f557718dd440d8d6695e",
+      "sha256Paket": "a62e169bb3a56b77916c1fc505e8885dbb3adc8cc0e1f557718dd440d8d6695e",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/PRUEFPLAN.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/PRUEFPLAN.md",
+      "bytes": 14661,
+      "sha256Quelle": "d7fef82383871b180574e3b176afad4d55ab000d25e95f55e758cd6629512574",
+      "sha256Paket": "d7fef82383871b180574e3b176afad4d55ab000d25e95f55e758cd6629512574",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/PYTHON-FUNKTIONSUMFANG.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/PYTHON-FUNKTIONSUMFANG.md",
+      "bytes": 30725,
+      "sha256Quelle": "68c23a5776e8d2ff9d712b0242fcc655b3c3436a103436fda0e1c9479b16d7ba",
+      "sha256Paket": "68c23a5776e8d2ff9d712b0242fcc655b3c3436a103436fda0e1c9479b16d7ba",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/PYTHON.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/PYTHON.md",
+      "bytes": 24216,
+      "sha256Quelle": "1f568efe7f1448b24801ec20cf344731d895204fed442166f4d90d7e8cb3387d",
+      "sha256Paket": "1f568efe7f1448b24801ec20cf344731d895204fed442166f4d90d7e8cb3387d",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/RELEASES.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/RELEASES.md",
+      "bytes": 11687,
+      "sha256Quelle": "5729eeaf67facd3609038e285842a0f83e50ec9aebe779e55abd40f9a1ba0862",
+      "sha256Paket": "5729eeaf67facd3609038e285842a0f83e50ec9aebe779e55abd40f9a1ba0862",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/SIGNATUR.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/SIGNATUR.md",
+      "bytes": 9889,
+      "sha256Quelle": "3fcbb95b816a5e503a1f3d40d4398c2a37be3aab34d776a0698cf1d8a0c64893",
+      "sha256Paket": "3fcbb95b816a5e503a1f3d40d4398c2a37be3aab34d776a0698cf1d8a0c64893",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/STARTSEITE.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/STARTSEITE.md",
+      "bytes": 18467,
+      "sha256Quelle": "4c461a08b663b0e149e77c913d0312cbd71e19243a1d0e9f7175f941dc9eabad",
+      "sha256Paket": "4c461a08b663b0e149e77c913d0312cbd71e19243a1d0e9f7175f941dc9eabad",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/STARTSEITEN-PLAN.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/STARTSEITEN-PLAN.md",
+      "bytes": 1827,
+      "sha256Quelle": "678484914de5b836181e61eb4121ab0b9bc509761fb35988851affcb9ba4fe73",
+      "sha256Paket": "678484914de5b836181e61eb4121ab0b9bc509761fb35988851affcb9ba4fe73",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/TESTLAUF-PLAN.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/TESTLAUF-PLAN.md",
+      "bytes": 1747,
+      "sha256Quelle": "eae85e7bb8b16eb148f785e35ee43f6e753f350746ec3cb08d27b7fcd5a72d9e",
+      "sha256Paket": "eae85e7bb8b16eb148f785e35ee43f6e753f350746ec3cb08d27b7fcd5a72d9e",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/TESTLAUF.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/TESTLAUF.md",
+      "bytes": 26555,
+      "sha256Quelle": "f6afa16255d5075a33ebdcc73d7637fe4db3e8772d68c5b4aa193a34b38e71b8",
+      "sha256Paket": "f6afa16255d5075a33ebdcc73d7637fe4db3e8772d68c5b4aa193a34b38e71b8",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/UI-PRUEFPLAN.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/UI-PRUEFPLAN.md",
+      "bytes": 15686,
+      "sha256Quelle": "4559a3ba85b81e5fa5aed5cb430a6be2359726c2ebc9f714bd8a15abf96bbdc5",
+      "sha256Paket": "4559a3ba85b81e5fa5aed5cb430a6be2359726c2ebc9f714bd8a15abf96bbdc5",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/UMSETZUNG.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/UMSETZUNG.md",
+      "bytes": 2049,
+      "sha256Quelle": "88564f7dbcb0a19d5a0ec493010c51714664bbdaa6da19d0b9a574b536b05666",
+      "sha256Paket": "88564f7dbcb0a19d5a0ec493010c51714664bbdaa6da19d0b9a574b536b05666",
+      "identisch": true
+    },
+    {
+      "quelle": "docs/VERSIONEN.md",
+      "ziel": "artifacts/python-build-fertig/win-unpacked/resources/docs/VERSIONEN.md",
+      "bytes": 3181,
+      "sha256Quelle": "2bbb6f0d20ee6abec7002067f02cc9e0ffbae5e9fd12bff65a8346887afcf78f",
+      "sha256Paket": "2bbb6f0d20ee6abec7002067f02cc9e0ffbae5e9fd12bff65a8346887afcf78f",
+      "identisch": true
+    }
+  ],
+  "windowsMetadaten": [
+    {
+      "pfad": "artifacts/python-build-fertig/ScriptLab-0.1.0-Setup-x64.exe",
+      "geprueft": true,
+      "produkt": "ScriptLab",
+      "produktVersion": "0.1.0",
+      "dateiVersion": "0.1.0",
+      "firma": "Leon Stolz",
+      "signaturStatus": "NotSigned",
+      "zertifikat": null
+    },
+    {
+      "pfad": "artifacts/python-build-fertig/win-unpacked/ScriptLab.exe",
+      "geprueft": true,
+      "produkt": "ScriptLab",
+      "produktVersion": "0.1.0.0",
+      "dateiVersion": "0.1.0",
+      "firma": "Leon Stolz",
+      "signaturStatus": "NotSigned",
+      "zertifikat": null
+    },
+    {
+      "pfad": "artifacts/python-build-fertig/win-unpacked/resources/ScriptLab.Testhost.exe",
+      "geprueft": true,
+      "produkt": "ScriptLab",
+      "produktVersion": "0.1.0.0",
+      "dateiVersion": "0.1.0.0",
+      "firma": "Leon Stolz",
+      "signaturStatus": "NotSigned",
+      "zertifikat": null
+    }
+  ],
+  "pruefgrenzen": [
+    "Keine Installation, kein Anwendungsstart und keine Ausführung von Nutzerworkflows.",
+    "Verglichen wird das vorhandene dist mit win-unpacked. Ein frischer Build aus dem genannten Git-Stand wird dadurch nicht belegt.",
+    "Der im NSIS-Installer eingebettete Anwendungspayload wird nicht entpackt. Seine Identität mit win-unpacked wird hier nicht unabhängig nachgewiesen.",
+    "Blockmap-Struktur und Größenabdeckung werden geprüft; die einzelnen Blockmap-Chunk-Prüfsummen werden nicht unabhängig nachgerechnet. Der vollständige Installer wird gegen SHA-512 aus latest.yml geprüft.",
+    "Es werden weder Desktoptestergebnisse noch eine produktive Updatekette aus anderen Berichten übernommen.",
+    "Im Paket fehlt publisherName. Eine für produktive Updates geeignete Herausgeber-Signaturkonfiguration ist damit nicht belegt.",
+    "artifacts/python-build-fertig/ScriptLab-0.1.0-Setup-x64.exe: Authenticode-Status NotSigned; kein Nachweis einer gültigen vertrauenswürdigen Anwendungssignatur.",
+    "artifacts/python-build-fertig/win-unpacked/ScriptLab.exe: Authenticode-Status NotSigned; kein Nachweis einer gültigen vertrauenswürdigen Anwendungssignatur.",
+    "artifacts/python-build-fertig/win-unpacked/resources/ScriptLab.Testhost.exe: Authenticode-Status NotSigned; kein Nachweis einer gültigen vertrauenswürdigen Anwendungssignatur."
+  ],
+  "updatequelle": {
+    "provider": "github",
+    "owner": "siggismalz",
+    "repo": "ScriptLab",
+    "private": false,
+    "updaterCacheDirName": "scriptlab-updater"
+  },
+  "bestanden": true,
+  "offenePruefungen": 0,
+  "fehler": []
+}

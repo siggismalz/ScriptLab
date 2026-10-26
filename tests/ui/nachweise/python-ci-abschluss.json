@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "quellstand": "1a0ed2e5fd41ef38729e3acd1033f5f78eec7b38",
+  "workflow": "Windows pruefen",
+  "runId": 40397781464,
+  "jobId": 121835305889,
+  "url": "https://github.com/siggismalz/ScriptLab/actions/runs/40397781464",
+  "status": "success",
+  "umgebung": "windows-2025",
+  "python": "CPython 3.15.2 x64 mit eigens angelegter CI-venv ohne pip",
+  "unit": {
+    "dateien": 24,
+    "bestanden": 336,
+    "fehlgeschlagen": 0,
+    "uebersprungen": 0,
+    "dauerSekunden": 38.81
+  },
+  "desktop": {
+    "bestanden": 96,
+    "fehlgeschlagen": 0,
+    "uebersprungen": 0,
+    "instabil": 0,
+    "dauerLautKonsole": "4.0 Minuten"
+  },
+  "paket": {
+    "bestanden": 11,
+    "offen": 0,
+    "fehlgeschlagen": 0,
+    "signatur": "Nicht signiert",
+    "releaseVeroeffentlicht": false
+  },
+  "artefakt": {
+    "id": 12687507175,
+    "name": "ScriptLab-Windows-Testbuild",
+    "bytes": 125497331,
+    "digest": "sha256:2432b1754bfa2b92e37cf354547e97933d3b15340d2372c3636415e926921625",
+    "erstelltAm": "2026-10-26T20:48:29Z",
+    "verfuegbarBis": "2026-11-09T20:48:23Z",
+    "url": "https://github.com/siggismalz/ScriptLab/actions/runs/40397781464/artifacts/12687507175"
+  },
+  "grenzen": [
+    "GitHub-Testartefakt mit begrenzter Aufbewahrung, kein dauerhaftes Release.",
+    "Keine produktive Zertifikats-/Updatekette aus diesem Testbuild abgeleitet.",
+    "Native interaktive Dialogentscheidungen bleiben den getrennten manuellen Nachweisen zugeordnet."
+  ]
+}

@@ -97,7 +97,9 @@ CPython 3.12.6 wurde für diese AST-/Semantikmatrix tatsächlich verwendet. Die 
 
 Pythonproben hatten eine feste Prozessfrist von vier Sekunden. Für isolierte VBS-Vergleichsfälle wurden nach anfänglichen Zeitüberschreitungen ausdrücklich zehn Sekunden und ein zusätzlicher 14-Sekunden-Watchdog freigegeben. Die frühen Vier-/Zehn-Sekunden-Timeouts bleiben als fehlgeschlagene Einzelversuche dokumentiert; ihre Ursache ist nicht reproduzierbar geklärt. Sechs feste Quit-Repros, auch in geschützten Funktionen/Logikausdrücken, endeten korrekt mit Exitcode 1; ein genereller VBS-Quit-Fehler wurde dadurch nicht belegt und der VBS-Fehlerpfad nicht auf Verdacht verändert.
 
-Noch offen sind die native Bedienung der erzeugten Python-Dialoge, die vollständige versionsübergreifende Semantikmatrix und der neu gebaute Installer. Die neue fachliche Grenze ist ausschließlich die ausdrücklich gestartete Ausführung; Erzeugen, Vorschau, Laden, Speichern und Export führen weiterhin keine Workflowaktion aus.
+Der anschließende vollständige Windows-CI-Abschluss mit CPython 3.15.2 bestand mit 336/336 Kern-/Windowsfällen, 96/96 Desktopfällen und 11/11 Paketprüfungen. Er umfasst auch die 17 nativen Syntax-/Semantikfälle und einen echten eigenständigen Export aus einer CI-venv. Der neue lokale NSIS-Abschlussbuild und seine tatsächlichen Hashes stehen in [PYTHON.md](PYTHON.md).
+
+Native Unicode-Texteingabe, leeres OK, Abbrechen, Stoppen bei offener Rückfrage und das Zeitlimit bei einer Nachrichtenbox sind praktisch geprüft. Offen bleiben die dort ausdrücklich benannten Python-Dialogentscheidungen, die vollständige versionsübergreifende Semantikmatrix einschließlich 3.13/3.14, weitere Skalierungs-/Screenreaderprüfungen sowie produktive Signierung und Updates. Die neue fachliche Grenze ist ausschließlich die ausdrücklich gestartete Ausführung; Erzeugen, Vorschau, Laden, Speichern und Export führen weiterhin keine Workflowaktion aus.
 
 ## Wiederholen der Prüfungen
 
