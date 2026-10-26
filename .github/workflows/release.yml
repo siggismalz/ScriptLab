@@ -1,0 +1,107 @@
+name: Windows-Release veroeffentlichen
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Bereits vorhandener Versionstag, zum Beispiel v0.1.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  erstellen:
+    runs-on: windows-2025
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.19.0'
+          package-manager-cache: false
+      - name: Tag und Paketversion vergleichen
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($env:RELEASE_TAG -cne "v$version") { throw 'Versionstag und Paketversion stimmen nicht ueberein.' }
+          if ($env:RELEASE_TAG -cnotmatch '^v\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?$') { throw 'Erlaubt sind stabile Versionstags oder bewusst gewaehlte alpha-, beta- und rc-Versionen mit Nummer.' }
+          git rev-parse --verify "refs/tags/$env:RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) { throw 'Der Tag muss vor dem manuellen Release vorhanden sein.' }
+      - run: npm ci
+      - name: Vollstaendige Lizenzbeilagen pruefen
+        run: node scripts/lizenzhinweise.mjs --check --strict
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:e2e
+      - name: Signaturinfrastruktur pruefen
+        shell: pwsh
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+          PUBLISHER_NAME: ${{ vars.WINDOWS_PUBLISHER_NAME }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CSC_LINK) -or [string]::IsNullOrWhiteSpace($env:CSC_KEY_PASSWORD) -or [string]::IsNullOrWhiteSpace($env:PUBLISHER_NAME)) {
+            throw 'Die Anwendungssignatur ist noch nicht eingerichtet. WINDOWS_CSC_LINK, WINDOWS_CSC_KEY_PASSWORD und WINDOWS_PUBLISHER_NAME werden benoetigt.'
+          }
+      - name: Signierten Windows-Installer bauen
+        shell: pwsh
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+          PUBLISHER_NAME: ${{ vars.WINDOWS_PUBLISHER_NAME }}
+        run: |
+          npx electron-builder --win nsis --x64 --publish never --config.forceCodeSigning=true "--config.win.signtoolOptions.publisherName=$env:PUBLISHER_NAME"
+          if ($LASTEXITCODE -ne 0) { throw 'Der signierte Build ist fehlgeschlagen.' }
+      - name: Installer und Updatemetadaten pruefen
+        shell: pwsh
+        env:
+          PUBLISHER_NAME: ${{ vars.WINDOWS_PUBLISHER_NAME }}
+        run: |
+          $installer = @(Get-ChildItem release -Filter '*-Setup-x64.exe')
+          if ($installer.Count -ne 1) { throw 'Es muss genau ein Windows-Installer vorliegen.' }
+          $signatur = Get-AuthenticodeSignature -LiteralPath $installer[0].FullName
+          if ($signatur.Status -ne 'Valid') { throw 'Die Installersignatur ist nicht gueltig.' }
+          $cn = $signatur.SignerCertificate.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false)
+          if ($cn -cne $env:PUBLISHER_NAME) { throw 'Die Zertifikatsidentitaet passt nicht zum konfigurierten Herausgeber.' }
+          if (-not (Test-Path "release/$($installer[0].Name).blockmap")) { throw 'Die Blockmap fehlt.' }
+          $kanal = if ($env:RELEASE_TAG -match '-([A-Za-z]+)') { $Matches[1] } else { 'latest' }
+          if (-not (Test-Path "release/$kanal.yml")) { throw 'Die Updatemetadaten fehlen.' }
+          $metadata = Get-Content "release/$kanal.yml" -Raw
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($metadata -notmatch "(?m)^version: $([regex]::Escape($version))\s*$" -or $metadata -notmatch 'sha512:') { throw 'Die Updatemetadaten passen nicht zum Build.' }
+          if ((Get-Content 'release/win-unpacked/resources/app-update.yml' -Raw) -notmatch '(?m)^publisherName:') { throw 'Der Herausgeber fehlt in der Updatekonfiguration.' }
+      - name: Deutsche Release Notes erzeugen
+        shell: pwsh
+        run: |
+          $vorher = git describe --tags --abbrev=0 "$env:RELEASE_TAG^" 2>$null
+          $bereich = if ($LASTEXITCODE -eq 0) { "$vorher..$env:RELEASE_TAG" } else { $env:RELEASE_TAG }
+          $aenderungen = @(git log --format='- %s' $bereich)
+          $text = @("ScriptLab $env:RELEASE_TAG fuer Windows 11 x64.", '', 'Entwickelt von Leon Stolz.', '', 'Aenderungen:', '') + $aenderungen + @('', 'ScriptLab erstellt und exportiert Workflows. Die Ausfuehrung erfolgt ausschliesslich eigenstaendig ausserhalb der Anwendung.', '', 'VBScript ist abgekuendigt. Die spaetere Ausfuehrung haengt von Windows-Komponente und Richtlinien ab.')
+          [IO.File]::WriteAllLines((Join-Path $PWD 'release-notizen.md'), $text, [Text.UTF8Encoding]::new($false))
+      - name: Gepruefte Artefakte veroeffentlichen
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $kanal = if ($env:RELEASE_TAG -match '-([A-Za-z]+)') { $Matches[1] } else { 'latest' }
+          $artefakte = @(Get-ChildItem release -File | Where-Object { $_.Extension -eq '.exe' -or $_.Extension -eq '.blockmap' -or $_.Name -eq "$kanal.yml" } | ForEach-Object { $_.FullName })
+          $argumente = @('release', 'create', $env:RELEASE_TAG, '--verify-tag', '--title', "ScriptLab $env:RELEASE_TAG", '--notes-file', 'release-notizen.md')
+          if ($env:RELEASE_TAG.Contains('-')) { $argumente += '--prerelease' }
+          & gh @argumente @artefakte
+          if ($LASTEXITCODE -ne 0) { throw 'Das GitHub Release konnte nicht veroeffentlicht werden.' }

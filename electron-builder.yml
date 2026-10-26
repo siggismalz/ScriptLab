@@ -1,0 +1,55 @@
+appId: de.leonstolz.scriptlab
+productName: ScriptLab
+copyright: Entwickelt von Leon Stolz
+asar: true
+allowMissingDependencies: false
+directories:
+  output: release
+files:
+  - dist/**/*
+  - package.json
+  - THIRD_PARTY_NOTICES.md
+extraResources:
+  - from: scripts/signatur-helper.ps1
+    to: signatur-helper.ps1
+  - from: beispiele
+    to: beispiele
+  - from: THIRD_PARTY_NOTICES.md
+    to: THIRD_PARTY_NOTICES.md
+  - from: README.md
+    to: README.md
+  - from: docs
+    to: docs
+    filter:
+      - '*.md'
+win:
+  icon: assets/scriptlab.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+  requestedExecutionLevel: asInvoker
+  verifyUpdateCodeSignature: true
+  signtoolOptions:
+    signingHashAlgorithms:
+      - sha256
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: false
+  deleteAppDataOnUninstall: false
+  installerLanguages:
+    - de_DE
+  language: 1031
+  createDesktopShortcut: false
+  createStartMenuShortcut: true
+  shortcutName: ScriptLab
+  artifactName: ScriptLab-${version}-Setup-x64.${ext}
+publish:
+  provider: github
+  owner: siggismalz
+  repo: ScriptLab
+  private: false
+  releaseType: release
+electronUpdaterCompatibility: '>= 2.16'

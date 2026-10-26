@@ -24,3 +24,5 @@ Offizielle Grundlagen:
 - [VBScript-Abkündigung](https://learn.microsoft.com/en-us/windows/whats-new/deprecated-features): Die spätere Ausführung hängt von Windows-Komponente und Richtlinien ab. ScriptLab aktiviert keine Features und ändert keine Sicherheitsrichtlinien.
 
 Der Produktionsbuild und die Prüfungen sind für die tatsächliche Kombination maßgeblich, nicht allein die Kompatibilitätsangaben der Pakete.
+
+Die GitHub-Actions wurden ebenfalls gegen die offiziellen Repositories geprüft und auf konkrete Commit-IDs festgelegt: checkout 7.0.1, setup-node 7.1.0 und upload-artifact 7.0.2. Der Windows-Runner verwendet Node.js 24.19.0. Ein Versionswechsel erfordert eine erneute Prüfung.

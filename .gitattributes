@@ -6,3 +6,9 @@
 *.yml text eol=lf
 *.ps1 text eol=crlf
 *.vbs binary
+*.mjs text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.scriptlab text eol=lf
+*.ico binary
+*.png binary
