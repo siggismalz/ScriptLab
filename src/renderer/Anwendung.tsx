@@ -63,6 +63,7 @@ export function Anwendung() {
   const testSperre = useRef(false);
   const testAnfrage = useRef(false);
   const testInhalt = useRef<string | null>(null);
+  const testKontextGesehen = useRef<string | null>(null);
   const [ansicht, setAnsicht] = useState<'start' | 'editor'>('start');
   const [editorBegonnen, setEditorBegonnen] = useState(false);
   const [startZiel, setStartZiel] = useState<'start' | 'hilfe'>('start');
@@ -201,6 +202,8 @@ export function Anwendung() {
     setDatei(aktuell.dateiname);
     setGeaendert(aktuell.geaendert);
     dokumentStatusUebernehmen(aktuell);
+    const kontext = antwort(await window.scriptlab.testLesen());
+    setTestOptionen((alt) => ({ ...alt, basisVerzeichnis: kontext.optionen.basisVerzeichnis }));
     if (!aktuell.geaendert) gespeichertRef.current = JSON.stringify(aktuell.projekt);
   }
 
@@ -381,6 +384,8 @@ export function Anwendung() {
     laedt.current = true;
     try {
       const ws = wsRef.current!;
+      const kontext = antwort(await window.scriptlab.testLesen());
+      setTestOptionen((alt) => ({ ...alt, basisVerzeichnis: kontext.optionen.basisVerzeichnis }));
       if (nurDaten) {
         // Auf der Startseite existiert noch kein sichtbarer Canvas. Erst im Editor rendern,
         // damit Blockly die gespeicherte Ansicht nicht gegen einen Null-Pixel-Bereich klemmt.
@@ -455,6 +460,8 @@ export function Anwendung() {
             setDatei(neu.dateiname);
             setGeaendert(JSON.stringify(projektRef.current) !== gespeichertRef.current);
             dokumentStatusUebernehmen(neu);
+            const kontext = antwort(await window.scriptlab.testLesen());
+            setTestOptionen((alt) => ({ ...alt, basisVerzeichnis: kontext.optionen.basisVerzeichnis }));
             melden('Projekt gespeichert.', 'erfolg');
           } else {
             await dokumentLaden(neu);
@@ -501,6 +508,9 @@ export function Anwendung() {
     const { ansicht: _ansicht, ...inhalt } = p;
     return JSON.stringify(inhalt);
   }
+  function testKontextKennung(optionen = testOptionen): string {
+    return `${projektRef.current.projektKennung}:${optionen.basisVerzeichnis}:${optionen.zeitlimitSekunden}`;
+  }
   function testUebernehmen(neu: TestZustand) {
     const sperren = testAktiv(neu.phase);
     testSperre.current = sperren;
@@ -531,6 +541,14 @@ export function Anwendung() {
       melden(
         'Wähle im Testbereich zuerst einen Basisordner. Relative Dateipfade beziehen sich auf diesen Ordner.',
         'fehler',
+      );
+      return;
+    }
+    if (testKontextGesehen.current !== testKontextKennung()) {
+      testKontextGesehen.current = testKontextKennung();
+      melden(
+        'Prüfe im Testbereich Basisordner und Zeitlimit. Mit „Workflow testen“ startest du danach bewusst.',
+        'hinweis',
       );
       return;
     }
@@ -570,7 +588,12 @@ export function Anwendung() {
   async function testOrdnerWaehlen() {
     try {
       const pfad = antwort(await window.scriptlab.testOrdnerWaehlen());
-      if (pfad) setTestOptionen((alt) => ({ ...alt, basisVerzeichnis: pfad }));
+      if (pfad)
+        setTestOptionen((alt) => {
+          const neu = { ...alt, basisVerzeichnis: pfad };
+          testKontextGesehen.current = testKontextKennung(neu);
+          return neu;
+        });
     } catch (e) {
       melden(e instanceof Error ? e.message : 'Der Ordner konnte nicht gewählt werden.', 'fehler');
     }
@@ -589,11 +612,6 @@ export function Anwendung() {
       clearInterval(timer);
     };
   }, [editorBegonnen]);
-  useEffect(() => {
-    void window.scriptlab.testLesen().then((r) => {
-      if (r.ok) setTestOptionen(r.wert.optionen);
-    });
-  }, [projekt.projektKennung]);
   async function einstellungenSetzen(neu: Einstellungen) {
     einstellungenRef.current = neu;
     setEinstellungen(neu);
@@ -1070,7 +1088,10 @@ export function Anwendung() {
               aria-pressed={testOffen}
               onClick={() => {
                 setTestOffen(!testOffen);
-                if (!testOffen) setVorschauOffen(false);
+                if (!testOffen) {
+                  setVorschauOffen(false);
+                  testKontextGesehen.current = testKontextKennung();
+                }
               }}
             >
               Testausgabe
@@ -1314,7 +1335,10 @@ export function Anwendung() {
                   starten={() => void testStarten()}
                   stoppen={() => void testStoppen()}
                   ordnerWaehlen={() => void testOrdnerWaehlen()}
-                  optionenAendern={setTestOptionen}
+                  optionenAendern={(neu) => {
+                    setTestOptionen(neu);
+                    testKontextGesehen.current = testKontextKennung(neu);
+                  }}
                   kopieren={() =>
                     void window.scriptlab.testAusgabeKopieren().then((r) => {
                       if (!r.ok) melden(r.meldung, 'fehler');

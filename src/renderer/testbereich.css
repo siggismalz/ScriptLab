@@ -37,6 +37,11 @@
   margin: 0 0 var(--abstand-8);
   color: var(--farbe-hinweis);
 }
+.testbereich-kontextkurz {
+  color: var(--farbe-text-sekundaer);
+  overflow-wrap: anywhere;
+  padding-inline: var(--abstand-16);
+}
 .testbereich-wirkung .sl-symbol {
   margin-top: 2px;
   flex-shrink: 0;

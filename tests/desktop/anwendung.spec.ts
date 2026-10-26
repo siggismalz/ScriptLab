@@ -362,7 +362,11 @@ test('sucht mit und ohne Treffer und öffnet das lokale Beispiel über das Proje
   await expect(
     palette.getByRole('button', { name: `Baustein einfügen: ${nachrichtName}`, exact: true }),
   ).toBeVisible();
-  await expect(palette.getByText('Ein- und Ausgaben · Anweisung', { exact: true })).toBeVisible();
+  await expect(
+    palette
+      .getByRole('button', { name: `Baustein ziehen: ${nachrichtName}`, exact: true })
+      .getByText('Ein- und Ausgaben · Anweisung', { exact: true }),
+  ).toBeVisible();
   await suche.fill('kein-baustein-mit-diesem-namen');
   await expect(palette.getByRole('status')).toHaveText('Keine Bausteine gefunden');
   await palette.getByRole('button', { name: 'Suche leeren', exact: true }).first().click();

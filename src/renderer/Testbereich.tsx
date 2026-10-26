@@ -203,6 +203,15 @@ export function Testbereich(props: TestbereichEigenschaften) {
             vorgenommen.
           </span>
         </p>
+        <p className="testbereich-kontextkurz">
+          {aktiv ? 'Basis dieses Tests' : 'Nächster Test'}:{' '}
+          {anzeigeOptionen.basisVerzeichnis
+            ? anzeigeOptionen.basisVerzeichnis.length > 140
+              ? `${anzeigeOptionen.basisVerzeichnis.slice(0, 60)} … ${anzeigeOptionen.basisVerzeichnis.slice(-70)}`
+              : anzeigeOptionen.basisVerzeichnis
+            : 'Noch keinen Basisordner gewählt'}{' '}
+          · Zeitlimit {anzeigeOptionen.zeitlimitSekunden} s
+        </p>
         <div className={`testbereich-arbeitsinhalt ${konfigurationOffen ? 'mit-konfiguration' : ''}`}>
           <div className="testbereich-ergebnis">
             <div className="testbereich-ausgabekopf">
@@ -328,8 +337,8 @@ export function Testbereich(props: TestbereichEigenschaften) {
                 )}
                 {zustand.technischeMeldung && (
                   <>
-                    <h3>Technische Fehlermeldung</h3>
-                    <pre tabIndex={0} aria-label="Technische Testfehlermeldung">
+                    <h3>Technische Meldungen</h3>
+                    <pre tabIndex={0} aria-label="Technisches Testprotokoll">
                       {zustand.technischeMeldung}
                     </pre>
                   </>

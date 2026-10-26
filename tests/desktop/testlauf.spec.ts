@@ -49,7 +49,7 @@ async function bereit() {
     () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))),
   );
 }
-async function oeffnen(p: Projekt) {
+async function oeffnen(p: Projekt, panel = true) {
   const datei = join(ordner, 'Desktoptest.scriptlab');
   await writeFile(datei, JSON.stringify(p));
   await app.evaluate(({ dialog }, pfad) => {
@@ -57,13 +57,27 @@ async function oeffnen(p: Projekt) {
   }, datei);
   await seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
   await bereit();
-  await seite.getByRole('button', { name: 'Testausgabe', exact: true }).click();
-  await expect(seite.getByTestId('test-panel')).toBeVisible();
+  if (panel) {
+    await seite.getByRole('button', { name: 'Testausgabe', exact: true }).click();
+    await expect(seite.getByTestId('test-panel')).toBeVisible();
+  }
   return datei;
 }
 async function fertig() {
   await expect.poll(async () => !testAktiv((await zustand()).phase), { timeout: 15000 }).toBe(true);
   return zustand();
+}
+async function ausgabeErwarten(text: string) {
+  await expect
+    .poll(
+      async () => {
+        const z = await zustand();
+        if (z.phase === 'fehlgeschlagen') throw Error(`${z.meldung}\n${z.technischeMeldung ?? ''}`);
+        return z.ausgabe;
+      },
+      { timeout: 15000 },
+    )
+    .toContain(text);
 }
 test.beforeEach(async () => {
   ordner = await mkdtemp(join(tmpdir(), 'ScriptLab-Testeditor-'));
@@ -147,11 +161,22 @@ test('führt den ungespeicherten Editorstand aus und schreibt relative Dateien a
   await seite.screenshot({ path: 'artifacts/testlauf/editor-ausgabe.png' });
 });
 
+test('zeigt einen neuen Testkontext vor dem tatsächlichen Start sichtbar an', async () => {
+  await oeffnen(projektMit(ausgabe('KONTEXT BEWUSST GEPRÜFT')), false);
+  await seite.getByRole('button', { name: 'Testen', exact: true }).click();
+  await expect(seite.getByTestId('test-panel')).toBeVisible();
+  await expect(seite.getByTestId('test-panel')).toContainText(ordner);
+  expect((await zustand()).laufId).toBeNull();
+  await seite.getByRole('button', { name: 'Workflow testen', exact: true }).click();
+  expect((await fertig()).phase).toBe('beendet');
+  expect((await zustand()).ausgabe).toContain('KONTEXT BEWUSST GEPRÜFT');
+});
+
 test('sperrt Bearbeitung, erhält Auswahl und Zoom und stoppt auch mit zugeklapptem Testpanel', async () => {
   const a = ausgabe('VOR-STOPP');
   await oeffnen(projektMit(a, warten(), ausgabe('DARF NICHT ERSCHEINEN')));
   await seite.getByRole('button', { name: 'Testen', exact: true }).click();
-  await expect.poll(async () => (await zustand()).ausgabe).toContain('VOR-STOPP');
+  await ausgabeErwarten('VOR-STOPP');
   await expect(seite.getByRole('button', { name: 'Testen', exact: true })).toBeDisabled();
   await seite.locator(`g[data-id="${a.id}"]`).click({ position: { x: 60, y: 18 } });
   await expect(seite.locator(`g[data-id="${a.id}"]`)).toHaveClass(/scriptlabAuswahl/);
@@ -291,7 +316,7 @@ test('aktiver Entwurf kann den Test-Stopp-Schutz auch über seine enge IPC nicht
     const s = await window.scriptlab.testStarten(d.projekt, r.wert.optionen);
     if (!s.ok) throw Error(s.meldung);
   }, dat);
-  await expect.poll(async () => (await zustand()).ausgabe).toContain('ENTWURFSCHUTZ');
+  await ausgabeErwarten('ENTWURFSCHUTZ');
   await app.evaluate(({ dialog }) => {
     dialog.showMessageBox = async () => ({ response: 1, checkboxChecked: false });
     dialog.showSaveDialog = async () => {

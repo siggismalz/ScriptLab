@@ -264,10 +264,12 @@ function projektAktivieren(
   hash: string | null,
   ungespeichert = false,
 ): void {
+  const gleicherWorkflow = neu.projektKennung === projekt.projektKennung;
   projekt = { ...neu, projektKennung: neu.projektKennung ?? randomUUID() };
   entwuerfe.neueBearbeitung(projekt.projektKennung!);
   projektPfad = pfad;
-  testOptionen = { ...testOptionen, basisVerzeichnis: pfad ? dirname(pfad) : null };
+  if (!gleicherWorkflow || (!testOptionen.basisVerzeichnis && pfad))
+    testOptionen = { ...testOptionen, basisVerzeichnis: pfad ? dirname(pfad) : null };
   baselineHash = hash;
   gespeichert = JSON.stringify(projekt);
   gespeichertInhalt = ungespeichert ? '' : projektHash(projekt);
