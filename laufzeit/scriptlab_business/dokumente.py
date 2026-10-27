@@ -477,7 +477,18 @@ def pdf_bericht(kontext: Kontext, k: dict, e: dict):
                 raise BusinessFehler("Der PDF-Bericht enthält zu viele Seiten.")
             canvas.setFont(fontname, 9)
             kopftitel = titel.replace("\r\n", " ").replace("\r", " ").replace("\n", " ")
-            canvas.drawString(raender * mm, format[1] - 24, kopftitel[:140])
+            breite = format[0] - 2 * raender * mm
+            if len(kopftitel) > 140 or pdfmetrics.stringWidth(kopftitel, fontname, 9) > breite:
+                schrift_pruefen("...")
+                links, rechts = 0, min(len(kopftitel), 140)
+                while links < rechts:
+                    mitte = (links + rechts + 1) // 2
+                    if pdfmetrics.stringWidth(kopftitel[:mitte] + "...", fontname, 9) <= breite:
+                        links = mitte
+                    else:
+                        rechts = mitte - 1
+                kopftitel = kopftitel[:links].rstrip() + "..."
+            canvas.drawString(raender * mm, format[1] - 24, kopftitel)
             canvas.drawRightString(format[0] - raender * mm, 24, f"Seite {dokument.page}")
         try:
             SimpleDocTemplate(str(temp), pagesize=format, topMargin=max(42, raender * mm), bottomMargin=max(42, raender * mm), leftMargin=raender * mm, rightMargin=raender * mm).build([absatz(titel), Spacer(1, 12), tabelle_pdf], onFirstPage=seitenkopf, onLaterPages=seitenkopf)

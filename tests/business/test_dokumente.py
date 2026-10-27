@@ -290,6 +290,25 @@ class DokumentTests(unittest.TestCase):
         self.assertEqual(ziel.read_bytes(), vorher)
         self.assertFalse(list(self.basis.glob(".scriptlab-*")))
 
+    def test_pdf_kopftitel_bleibt_innerhalb_der_seitenbreite_und_bodytitel_vollstaendig(self):
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import mm
+        from reportlab.pdfbase import pdfmetrics
+        import re
+        k = self.kontext()
+        k.dienste["daten"] = TabellenFixture(["Text"], [("Klare Testdaten",)])
+        titel = "W" * 140 + " Vollständiges Titelende ä €"
+        original_zeichnen = canvas.Canvas.drawString
+        with patch.object(canvas.Canvas, "drawString", autospec=True, side_effect=original_zeichnen) as zeichnen:
+            pdf_bericht(k, {"ziel": "LangerTitel.pdf", "titel": titel, "schrift": "INTERN:VERA"}, {"tabelle": {"tabelle": "bericht"}})
+        kopf = [aufruf.args for aufruf in zeichnen.call_args_list if aufruf.args[2] == A4[1] - 24]
+        self.assertTrue(kopf)
+        for leinwand, _x, _y, text in kopf:
+            self.assertTrue(text.endswith("..."))
+            self.assertLessEqual(pdfmetrics.stringWidth(text, leinwand._fontname, 9), A4[0] - 2 * 12.7 * mm)
+        text = "\n".join(s.extract_text() for s in PdfReader(self.basis / "LangerTitel.pdf").pages)
+        self.assertIn(re.sub(r"\s", "", titel), re.sub(r"\s", "", text))
+
     def test_quellidentitaet_ist_stabil_und_aenderung_verhindert_publikation(self):
         quelle = self.basis / "Quelle.txt"
         quelle.write_text("vorher", encoding="utf-8")
@@ -438,7 +457,8 @@ class DokumentTests(unittest.TestCase):
         (self.basis / "Eingang/Kaputt.csv").write_text("A;B\n1;2;3\n", encoding="utf-8")
         journal = self.basis / "Journal.jsonl"
         config = {"ordner": "Eingang", "zielordner": "Ausgabe", "archivordner": "Archiv", "bei_fehler": "BERICHT"}
-        k = self.kontext(journal_pfad=journal)
+        meldungen = []
+        k = self.kontext(journal_pfad=journal, ereignis_callback=meldungen.append)
         k.beginn_schritt("stapel", config, {})
         r = csv_stapel(k, config, {})
         self.assertEqual(r["status"], "mit_fehlern")
@@ -447,12 +467,55 @@ class DokumentTests(unittest.TestCase):
         self.assertTrue((self.basis / "Eingang/Kaputt.csv").exists())
         self.assertFalse((self.basis / "Ausgabe/Kaputt.csv").exists())
         self.assertIn("001", (self.basis / "Ausgabe/Gut.csv").read_text(encoding="utf-8-sig"))
+        fortschritt = [e for e in meldungen if e["art"] == "fortschritt"]
+        self.assertEqual((fortschritt[0]["erledigt"], fortschritt[0]["gesamt"]), (0, 2))
+        self.assertEqual((fortschritt[-1]["erledigt"], fortschritt[-1]["verarbeitet"], fortschritt[-1]["fehlerhaft"]), (2, 1, 1))
+        self.assertEqual(fortschritt[-1]["status"], "mit_fehlern")
         k.schliessen()
-        neu = self.kontext(journal_pfad=journal, fortsetzen=True)
+        neu_meldungen = []
+        neu = self.kontext(journal_pfad=journal, fortsetzen=True, ereignis_callback=neu_meldungen.append)
         neu.beginn_schritt("stapel", config, {})
         fortgesetzt = csv_stapel(neu, config, {})
         self.assertTrue(any(e["status"] == "wiederverwendet" for e in fortgesetzt["dateien"]))
         self.assertTrue((self.basis / "Eingang/Kaputt.csv").exists())
+        ende = [e for e in neu_meldungen if e["art"] == "fortschritt"][-1]
+        self.assertEqual((ende["erledigt"], ende["gesamt"], ende["verarbeitet"], ende["fehlerhaft"]), (2, 2, 1, 1))
+
+    def test_csv_stapelfortschritt_wird_nur_alle_25_dateien_und_am_ende_gemeldet(self):
+        for name in ("Eingang", "Ausgabe", "Archiv"):
+            (self.basis / name).mkdir()
+        for nummer in range(52):
+            (self.basis / f"Eingang/{nummer:03d}.csv").write_text("ID;Wert\n001;2\n", encoding="utf-8")
+        meldungen = []
+        k = self.kontext("prueflauf", ereignis_callback=meldungen.append)
+        csv_stapel(k, {"ordner": "Eingang", "zielordner": "Ausgabe", "archivordner": "Archiv"}, {})
+        fortschritt = [e for e in meldungen if e["art"] == "fortschritt"]
+        self.assertEqual([e["erledigt"] for e in fortschritt], [0, 25, 50, 52])
+        self.assertTrue(all(e["gesamt"] == 52 and e["einheit"] == "Dateien" for e in fortschritt))
+        self.assertEqual(fortschritt[-1]["status"], "beendet")
+        self.assertEqual(fortschritt[-1]["geplant"], 52)
+        self.assertEqual(list((self.basis / "Ausgabe").iterdir()), [])
+        self.assertEqual(list((self.basis / "Archiv").iterdir()), [])
+
+    def test_abgebrochener_csv_stapel_erfindet_keinen_fertigen_fortschritt(self):
+        for name in ("Eingang", "Ausgabe", "Archiv"):
+            (self.basis / name).mkdir()
+        for name in ("A", "B"):
+            (self.basis / f"Eingang/{name}.csv").write_text("ID;Wert\n001;2\n", encoding="utf-8")
+        meldungen = []
+        k = self.kontext(ereignis_callback=meldungen.append)
+        original_publizieren = publizieren
+        def unterbrechen(kontext, ziel, *args, **kwargs):
+            if Path(ziel) == self.basis / "Ausgabe/B.csv":
+                raise AbbruchFehler("Gezielter Testabbruch vor der zweiten Ausgabe")
+            return original_publizieren(kontext, ziel, *args, **kwargs)
+        with patch("scriptlab_business.dateien.publizieren", side_effect=unterbrechen):
+            with self.assertRaises(AbbruchFehler):
+                csv_stapel(k, {"ordner": "Eingang", "zielordner": "Ausgabe", "archivordner": "Archiv"}, {})
+        fortschritt = [e for e in meldungen if e["art"] == "fortschritt"]
+        self.assertEqual([e["status"] for e in fortschritt], ["begonnen"])
+        self.assertTrue((self.basis / "Eingang/B.csv").exists())
+        self.assertFalse((self.basis / "Ausgabe/B.csv").exists())
 
     def test_prueflauf_csv_stapel_veraendert_keine_fachlichen_dateien(self):
         for name in ("Eingang", "Ausgabe", "Archiv"):
@@ -499,6 +562,7 @@ class DokumentTests(unittest.TestCase):
         self.assertEqual(bericht["modus"], "prueflauf")
         self.assertTrue(bericht["runtime"]["pakete"]["duckdb"])
         self.assertEqual(meldungen[-1]["art"], "abschluss")
+        self.assertEqual(meldungen[-1]["summen"], {"verarbeitet": 0, "uebersprungen": 0, "geplant": 1, "fehlerhaft": 0})
 
     def test_technischer_ordner_und_kooperatives_abbruchsignal(self):
         signal = self.basis / "Technisch/abbruch.signal"
@@ -574,13 +638,14 @@ class DokumentTests(unittest.TestCase):
         with redirect_stderr(ausgang):
             k = kontext_laden(script, {"parameter": []}, token="b" * 32)
             self.addCleanup(k.schliessen)
-            k.ereignis("abschluss", status="zeitlimit", grund="zeitlimit", bericht_pfad=str(self.basis / "Laufbericht ä.json"), ausgaben=["x" * 300000])
+            k.ereignis("abschluss", status="zeitlimit", grund="zeitlimit", bericht_pfad=str(self.basis / "Laufbericht ä.json"), ausgaben=["x" * 300000], summen={"verarbeitet": 1200, "uebersprungen": 7, "geplant": 3, "fehlerhaft": 2, "fremde_daten": ["nicht übernehmen"]})
         zeile = ausgang.getvalue().splitlines()[-1]
         self.assertLessEqual(len(zeile.encode("utf-8")), 256 * 1024)
         ereignis = json.loads(zeile.split("|", 2)[2])
         self.assertEqual(ereignis["status"], "zeitlimit")
         self.assertEqual(ereignis["grund"], "zeitlimit")
         self.assertEqual(ereignis["bericht_pfad"], str(self.basis / "Laufbericht ä.json"))
+        self.assertEqual(ereignis["summen"], {"verarbeitet": 1200, "uebersprungen": 7, "geplant": 3, "fehlerhaft": 2})
         self.assertTrue(ereignis["details_ausgelassen"])
 
     def test_exporthash_verwendet_scriptbytes_statt_metadaten(self):

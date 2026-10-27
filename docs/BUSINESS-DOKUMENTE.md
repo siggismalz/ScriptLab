@@ -93,6 +93,10 @@ Die separate Dateifehlerprüfung bestand mit fünf von fünf Fällen ohne übers
 
 ## Offizielle Grundlagen
 
+Abschlussnachtrag: Vor dem technischen Arbeitsordner und einer neuen fachlichen Zwischenfassung prüft die Laufzeit mindestens 32 MiB freien Platz auf dem jeweiligen Datenträger. Eine nicht lesbare Speicherinformation gilt als Fehler. Das ist eine Momentaufnahme, keine Reservierung oder Zusage für beliebig große Ergebnisse. Platzmangel, Berechtigungsfehler, Windows-Dateisperren und bekannte Netzwerkfehler erhalten verständliche Meldungen mit technischen Originaldetails im Bericht. Ein voller Datenträger und ein echter unterbrochener SMB-Zugriff wurden nicht herbeigeführt; die Fehlerzweige sind ausdrücklich durch gezielte Fault-Injection geprüft.
+
+Der CSV-Stapel meldet den tatsächlich abgegrenzten Dateiumfang zu Beginn, nach jeweils 25 Dateien und am bestätigten Abschluss. Ein abgebrochener Stapel meldet keinen fertigen Fortschritt. Berichtssummen unterscheiden Ausgabedateien von Fehlermeldungen und bleiben auch im gekürzten Abschlussereignis erhalten. PDF-Seitenköpfe werden anhand ihrer tatsächlichen Schriftbreite gekürzt; der vollständige Titel bleibt im mehrzeiligen Dokumentinhalt.
+
 - [openpyxl 3.1: Vorhandene Arbeitsmappen und XML-Schutz](https://openpyxl.readthedocs.io/en/3.1/)
 - [python-docx 1.2: Dokumente und Runs](https://python-docx.readthedocs.io/en/latest/)
 - [pypdf: Textauszug und Seitenoperationen](https://pypdf.readthedocs.io/en/stable/)

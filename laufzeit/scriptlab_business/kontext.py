@@ -9,6 +9,8 @@ from importlib.metadata import PackageNotFoundError, version
 import json
 import os
 import re
+import shutil
+import stat
 import sys
 from pathlib import Path
 import tempfile
@@ -215,6 +217,11 @@ class Kontext:
             technisch.mkdir(parents=True, exist_ok=True)
         self._temp = tempfile.TemporaryDirectory(prefix="arbeitsdaten-" if technisch else "ScriptLab-Business-", dir=technisch)
         self.arbeitsordner = Path(self._temp.name)
+        try:
+            self.platz_pruefen(self.arbeitsordner)
+        except BaseException:
+            self._temp.cleanup()
+            raise
         self.abbruch_datei = Path(abbruch_datei).resolve() if abbruch_datei else None
         self._abbruch_geprueft_am = 0.0
         self._journal: Journal | None = None
@@ -243,6 +250,32 @@ class Kontext:
             raise AbbruchFehler("Der Business-Lauf wurde abgebrochen.")
         if jetzt >= self._deadline:
             raise AbbruchFehler("Das Business-Zeitlimit wurde erreicht.", grund="zeitlimit")
+
+    def platz_pruefen(self, pfad: str | Path, mindestbytes: int = 32 * 1024 * 1024) -> int:
+        """Momentaufnahme des Zielvolumes; keine Reservierung oder Schreibgarantie."""
+        if type(mindestbytes) is not int or mindestbytes < 0:
+            raise BusinessFehler("Die Mindestmenge für freien Speicherplatz muss eine ganze Bytezahl ab 0 sein.")
+        kandidat = Path(pfad)
+        if not kandidat.is_absolute():
+            kandidat = self.basis / kandidat
+        try:
+            while True:
+                try:
+                    vorhanden = kandidat.stat()
+                except FileNotFoundError:
+                    vorhanden = None
+                if vorhanden is not None and stat.S_ISDIR(vorhanden.st_mode):
+                    break
+                eltern = kandidat.parent
+                if eltern == kandidat:
+                    raise BusinessFehler("Der freie Speicherplatz konnte für diesen Pfad nicht ermittelt werden.")
+                kandidat = eltern
+            frei = shutil.disk_usage(kandidat).free
+        except OSError as fehler:
+            raise BusinessFehler("Der freie Speicherplatz konnte nicht geprüft werden. Prüfe Datenträger, Berechtigung und Verbindung.") from fehler
+        if frei < mindestbytes:
+            raise BusinessFehler(f"Auf dem Datenträger ist zu wenig freier Speicherplatz. Für den nächsten Schritt werden mindestens {mindestbytes} freie Bytes verlangt.")
+        return frei
 
     def quelle_merken(self, fingerprint: dict):
         """Nur fachliche Originale registrieren, niemals technische Prüfkopien."""

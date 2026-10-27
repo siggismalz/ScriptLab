@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import hashlib
 from datetime import date, datetime, timezone
 from importlib.metadata import version, PackageNotFoundError
@@ -30,6 +31,19 @@ def _handler():
     except ImportError:
         dokumente = {}
     return {**daten, **dateien, **dokumente}
+
+
+def _io_meldung(fehler: OSError) -> str:
+    windows = getattr(fehler, "winerror", None)
+    if windows in {53, 64, 121}:
+        return "Der Netzwerkpfad ist nicht erreichbar oder die Verbindung wurde unterbrochen. Prüfe die Verbindung und den freigegebenen Ordner."
+    if fehler.errno == errno.ENOSPC or windows == 112:
+        return "Auf dem Datenträger ist nicht genügend freier Speicherplatz. Gib Speicherplatz frei oder wähle ein anderes Ziel."
+    if windows in {32, 33}:
+        return "Die Datei ist durch ein anderes Programm gesperrt. Schließe sie dort und versuche den Schritt erneut."
+    if fehler.errno in {errno.EACCES, errno.EPERM} or windows == 5:
+        return "Der Zugriff auf die Datei oder den Ordner wurde verweigert. Prüfe Berechtigungen und Schreibschutz."
+    return "Die Dateioperation ist fehlgeschlagen. Prüfe Pfad, Datenträger und Verbindung."
 
 
 def _aufloesen(wert, kontext: Kontext, referenzen=False, tiefe=0):
@@ -78,8 +92,12 @@ def schritt(kontext: Kontext, id: str, operation: str, konfiguration: dict, eing
         kontext.ereignis("schritt", operation=operation, status="beendet", ergebnis=ergebnis)
         return ergebnis
     except Exception as fehler:
-        kontext.fehler.append({"block_id": id, "meldung": str(fehler), "unklar": isinstance(fehler, UnklarerZustand)})
-        kontext.ereignis("fehler", operation=operation, meldung=str(fehler), unklar=isinstance(fehler, UnklarerZustand))
+        fachlich = BusinessFehler(_io_meldung(fehler)) if isinstance(fehler, OSError) else fehler
+        technisch = {"technisch": f"{type(fehler).__name__}: {fehler}; errno={fehler.errno}; winerror={getattr(fehler, 'winerror', None)}"} if isinstance(fehler, OSError) else {}
+        kontext.fehler.append({"block_id": id, "meldung": str(fachlich), "unklar": isinstance(fehler, UnklarerZustand), **technisch})
+        kontext.ereignis("fehler", operation=operation, meldung=str(fachlich), unklar=isinstance(fehler, UnklarerZustand), **technisch)
+        if fachlich is not fehler:
+            raise fachlich from fehler
         raise
 
 
@@ -191,6 +209,10 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
                        "bericht_pfad": 32768, "operation": 160, "modus": 160}
             kurz = {name: wert[:grenzen[name]] if isinstance(wert, str) else wert
                     for name, wert in ereignis.items() if name in grenzen}
+            if isinstance(ereignis.get("summen"), dict):
+                kurz["summen"] = {name: wert for name, wert in ereignis["summen"].items()
+                                  if name in {"verarbeitet", "uebersprungen", "geplant", "fehlerhaft"}
+                                  and type(wert) is int and 0 <= wert <= 2 ** 53 - 1}
             text = json.dumps({**kurz, "details_ausgelassen": True, "meldung": "Die Ereignisdetails überschreiten 256 KiB. Vollständige Angaben stehen im Laufbericht."}, ensure_ascii=True, separators=(",", ":"))
         sys.stderr.write(f"SLBUS|{token or ''}|{text}\n")
         sys.stderr.flush()
@@ -202,6 +224,13 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
 def _unklare_schritte(kontext):
     return [key for key, eintrag in (kontext._journal.eintraege.items() if kontext._journal else ())
             if eintrag.get("zustand") in {"vorbereitet", "archiv_vorbereitet"}]
+
+
+def _ausgabesummen(kontext, fehler):
+    return {"verarbeitet": sum(a.get("status") in {"publiziert", "wiederverwendet"} for a in kontext.ausgaben),
+            "uebersprungen": sum(a.get("status") == "uebersprungen" for a in kontext.ausgaben),
+            "geplant": sum(a.get("status") == "geplant" for a in kontext.ausgaben),
+            "fehlerhaft": len(kontext.fehler) + int(bool(fehler) and not any(e.get("meldung") == str(fehler) for e in kontext.fehler))}
 
 
 def _bericht_speichern(kontext, status, fehler):
@@ -217,11 +246,7 @@ def _bericht_speichern(kontext, status, fehler):
             pakete[name] = None
     parameter = {name: "[nicht protokolliert]" if re.search(r"passwort|password|token|secret|credential|api.?key|privat", name, re.I) else wert for name, wert in kontext.parameter.items()}
     unklar = _unklare_schritte(kontext)
-    summen = {"bezug": "Ausgabedateien und Fehlermeldungen",
-              "verarbeitet": sum(a.get("status") in {"publiziert", "wiederverwendet"} for a in kontext.ausgaben),
-              "uebersprungen": sum(a.get("status") == "uebersprungen" for a in kontext.ausgaben),
-              "geplant": sum(a.get("status") == "geplant" for a in kontext.ausgaben),
-              "fehlerhaft": len(kontext.fehler) + int(bool(fehler) and not any(e.get("meldung") == str(fehler) for e in kontext.fehler))}
+    summen = {"bezug": "Ausgabedateien und Fehlermeldungen", **_ausgabesummen(kontext, fehler)}
     bericht = {"version": 1, "quelle": kontext.scriptdatei, "workflow_hash": kontext.workflow_hash, "runtime_hash": kontext.runtime_hash,
                "workflow_id": kontext.metadaten.get("workflow_id"), "projekt_name": kontext.metadaten.get("projekt_name"),
                "lauf_id": kontext.lauf_id, "modus": kontext.modus, "gestartet_am": kontext.gestartet_am,
@@ -253,7 +278,7 @@ def abschliessen(kontext: Kontext, fehler=None):
                 kontext.ereignis("vorschau", **vorschau, abgeschnitten=vorschau.get("gekuerzt", False))
         status = "unklar" if isinstance(fehler, UnklarerZustand) or _unklare_schritte(kontext) or any(e.get("unklar") for e in kontext.fehler) else fehler.grund if isinstance(fehler, AbbruchFehler) else "fehlgeschlagen" if fehler else "mit_fehlern" if kontext.fehler else "erfolgreich"
         bericht = _bericht_speichern(kontext, status, fehler)
-        kontext.ereignis("abschluss", status=status, grund=fehler.grund if isinstance(fehler, AbbruchFehler) else None, ausgaben=kontext.ausgaben, fehler=kontext.fehler, bericht_pfad=str(bericht), meldung=str(fehler) if fehler else None)
+        kontext.ereignis("abschluss", status=status, grund=fehler.grund if isinstance(fehler, AbbruchFehler) else None, ausgaben=kontext.ausgaben, fehler=kontext.fehler, summen=_ausgabesummen(kontext, fehler), bericht_pfad=str(bericht), meldung=str(fehler) if fehler else None)
         return 1 if fehler or status == "unklar" else 2 if kontext.fehler else 0
     finally:
         kontext.schliessen()

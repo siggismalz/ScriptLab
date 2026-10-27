@@ -9,13 +9,15 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "laufzeit"))
 
-from scriptlab_business.dateien import publizieren
-from scriptlab_business.kontext import AbbruchFehler, Kontext, UnklarerZustand
+from scriptlab_business.dateien import publizieren, csv_stapel
+from scriptlab_business.ausfuehrung import schritt
+from scriptlab_business.kontext import AbbruchFehler, BusinessFehler, Kontext, UnklarerZustand
 
 
 @contextmanager
@@ -150,6 +152,109 @@ class DateiFehlerTests(unittest.TestCase):
         self.assertEqual(len(self.staging), 1)
         self.originalzustand_pruefen()
 
+    def test_platzpruefung_real_verwendet_naechsten_vorhandenen_parent(self):
+        import shutil
+        with patch("scriptlab_business.kontext.shutil.disk_usage", wraps=shutil.disk_usage) as auskunft:
+            frei = self.kontext.platz_pruefen(self.basis / "Noch nicht da/Tiefer/Ziel.txt")
+            self.assertGreaterEqual(frei, 32 * 1024 * 1024)
+            self.assertEqual(auskunft.call_args.args[0], self.basis)
+        self.assertGreaterEqual(self.kontext.platz_pruefen(self.ziel), 32 * 1024 * 1024)
+        self.originalzustand_pruefen()
+
+    def test_simulierter_platzmangel_beim_kontextaufbau_bereinigt_nur_eigene_tempdir(self):
+        marker = self.technik / "Unbeteiligte Technikdatei.txt"
+        marker.write_bytes(b"behalten")
+        vorher = {p.name for p in self.technik.iterdir()}
+        with patch("scriptlab_business.kontext.shutil.disk_usage", return_value=SimpleNamespace(free=31 * 1024 * 1024)):
+            with self.assertRaisesRegex(BusinessFehler, "zu wenig freier Speicherplatz"):
+                Kontext(self.basis, "ausfuehren", technischer_ordner=self.technik)
+        self.assertEqual({p.name for p in self.technik.iterdir()}, vorher)
+        self.assertEqual(marker.read_bytes(), b"behalten")
+        self.originalzustand_pruefen()
+
+    def test_simuliert_unlesbare_speicherinfo_gilt_nicht_als_genug_platz(self):
+        fehler = PermissionError(errno.EACCES, "Simuliert verweigerte Speicherinfo")
+        with patch("scriptlab_business.kontext.shutil.disk_usage", side_effect=fehler):
+            with self.assertRaisesRegex(BusinessFehler, "freie Speicherplatz konnte nicht geprüft") as aufgetreten:
+                self.kontext.platz_pruefen(self.basis)
+        self.assertIs(aufgetreten.exception.__cause__, fehler)
+        self.originalzustand_pruefen()
+
+    def test_simulierter_platzmangel_verhindert_fachliche_staginganlage(self):
+        with patch("scriptlab_business.kontext.shutil.disk_usage", return_value=SimpleNamespace(free=0)):
+            with self.assertRaisesRegex(BusinessFehler, "zu wenig freier Speicherplatz"):
+                publizieren(self.kontext, self.ziel, self.staging_schreiben, konflikt="ERSETZEN")
+        self.assertEqual(self.staging, [])
+        self.originalzustand_pruefen()
+
+    def test_runner_uebersetzt_simulierte_lokale_iofehler_und_erhaelt_abbruch_unklar(self):
+        gesperrt = PermissionError(errno.EACCES, "Simulierte Windows-Sperre")
+        gesperrt.winerror = 32
+        for fehler, erwartet in [(OSError(errno.ENOSPC, "Simulierter voller Datenträger"), "Speicherplatz"),
+                                  (PermissionError(errno.EACCES, "Simulierte fehlende Berechtigung"), "Berechtigungen"),
+                                  (gesperrt, "gesperrt")]:
+            with self.subTest(fehler=str(fehler)):
+                def handler(_kontext, _config, _eingaben):
+                    raise fehler
+                with patch("scriptlab_business.ausfuehrung._handler", return_value={"dateien.aktion": handler}):
+                    with self.assertRaisesRegex(BusinessFehler, erwartet) as aufgetreten:
+                        schritt(self.kontext, "fehlerpruefung", "dateien.aktion", {}, {})
+                self.assertIs(aufgetreten.exception.__cause__, fehler)
+                self.assertIn(str(fehler), self.kontext.fehler[-1]["technisch"])
+                self.assertIn("errno=", self.kontext.fehler[-1]["technisch"])
+        for fehler in (AbbruchFehler("Bewusster Abbruch"), UnklarerZustand("Unklare Publikation")):
+            def handler(_kontext, _config, _eingaben):
+                raise fehler
+            with patch("scriptlab_business.ausfuehrung._handler", return_value={"dateien.aktion": handler}):
+                with self.assertRaises(type(fehler)) as aufgetreten:
+                    schritt(self.kontext, "nicht_verdecken", "dateien.aktion", {}, {})
+            self.assertIs(aufgetreten.exception, fehler)
+        self.originalzustand_pruefen()
+
+    def test_runner_meldet_simulierte_windows_netzwerkfehler_mit_technischen_originalcodes(self):
+        for code in (53, 64, 121):
+            with self.subTest(windowsfehler=code):
+                fehler = OSError(errno.EIO, "Gezielt simulierter Netzwerkfehler")
+                fehler.winerror = code
+                def handler(_kontext, _config, _eingaben):
+                    raise fehler
+                with patch("scriptlab_business.ausfuehrung._handler", return_value={"dateien.aktion": handler}):
+                    with self.assertRaisesRegex(BusinessFehler, "Netzwerkpfad") as aufgetreten:
+                        schritt(self.kontext, "netzwerkfehler", "dateien.aktion", {}, {})
+                self.assertIs(aufgetreten.exception.__cause__, fehler)
+                self.assertIn(f"winerror={code}", self.kontext.fehler[-1]["technisch"])
+        self.originalzustand_pruefen()
+
+
+    def test_csv_stapel_erhaelt_konkrete_iofehler_bei_stopp_und_fortsetzen(self):
+        for code, erwartet in ((errno.ENOSPC, "Speicherplatz"), (32, "gesperrt")):
+            for policy in ("STOPP", "BERICHT"):
+                with self.subTest(code=code, policy=policy):
+                    ordner = self.wurzel / f"Stapel-{code}-{policy}"
+                    for name in ("Eingang", "Ausgabe", "Archiv"):
+                        (ordner / name).mkdir(parents=True)
+                    quelle = ordner / "Eingang/Test.csv"
+                    quelle.write_bytes(b"ID;Wert\r\n001;2\r\n")
+                    original = quelle.read_bytes()
+                    fehler = OSError(errno.ENOSPC if code == errno.ENOSPC else errno.EACCES, "Simulierter Stapelfehler")
+                    if code == 32:
+                        fehler.winerror = 32
+                    with Kontext(ordner, "ausfuehren") as k:
+                        config = {"ordner": "Eingang", "zielordner": "Ausgabe", "archivordner": "Archiv", "bei_fehler": policy}
+                        with patch("scriptlab_business.dateien.publizieren", side_effect=fehler):
+                            if policy == "STOPP":
+                                with self.assertRaisesRegex(BusinessFehler, erwartet) as aufgetreten:
+                                    csv_stapel(k, config, {})
+                                self.assertIs(aufgetreten.exception.__cause__, fehler)
+                            else:
+                                r = csv_stapel(k, config, {})
+                                self.assertEqual(r["status"], "mit_fehlern")
+                                self.assertIn(erwartet, r["dateien"][0]["meldung"])
+                        self.assertIn(erwartet, k.fehler[-1]["meldung"])
+                        self.assertIn("Simulierter Stapelfehler", k.fehler[-1]["technisch"])
+                    self.assertEqual(quelle.read_bytes(), original)
+                    self.assertEqual(list((ordner / "Ausgabe").iterdir()), [])
+                    self.assertEqual(list((ordner / "Archiv").iterdir()), [])
 
 if __name__ == "__main__":
     unittest.main()

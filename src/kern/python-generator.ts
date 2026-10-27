@@ -279,11 +279,21 @@ export function pythonErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): 
         if (a.business.operation === 'ablauf.stapel') {
           const ref = a.business.eingaben.dateien as { referenz: string };
           const eintrag = neu();
-          zeile(`for ${eintrag} in sl_business_kontext.ergebnisse[${pythonText(ref.referenz)}]['dateien']:`);
+          const nummer = neu();
+          const dateien = `sl_business_kontext.ergebnisse[${pythonText(ref.referenz)}]['dateien']`;
+          zeile(
+            `sl_business_kontext.ereignis('fortschritt', einheit='Dateien', erledigt=0, gesamt=len(${dateien}))`,
+          );
+          zeile(`for ${nummer}, ${eintrag} in enumerate(${dateien}, 1):`);
           zeile(`sl_block = ${pythonText(a.id)}`, 1);
           zeile(`sl_quellen_pruefen(sl_business_kontext, [${eintrag}])`, 1);
           zeile(`${variable(a.felder.VAR)} = ${eintrag}['pfad']`, 1);
           anweisungen(a.zweige.ABLAUF, tiefe + 1);
+          zeile(`if ${nummer} % 25 == 0 or ${nummer} == len(${dateien}):`, 1);
+          zeile(
+            `sl_business_kontext.ereignis('fortschritt', einheit='Dateien', erledigt=${nummer}, gesamt=len(${dateien}))`,
+            2,
+          );
           continue;
         }
         if (a.business.operation === 'ablauf.fehler') {

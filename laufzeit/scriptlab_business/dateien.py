@@ -195,6 +195,7 @@ def ausgabe(kontext: Kontext, ziel, regel="FEHLER", quellen=(), pruefer=None, au
     if kontext.modus == "ausfuehren" and not zielpfad.parent.is_dir():
         raise BusinessFehler("Der Zielordner fehlt. Lege ihn ausdrücklich vorher an.")
     tempordner = zielpfad.parent if kontext.modus == "ausfuehren" else kontext.arbeitsordner
+    kontext.platz_pruefen(tempordner)
     dateinummer, name = tempfile.mkstemp(prefix=".scriptlab-", suffix=zielpfad.suffix, dir=tempordner)
     os.close(dateinummer)
     temporaer = Path(name)
@@ -469,12 +470,25 @@ def csv_stapel(kontext: Kontext, k: dict, e: dict):
     liste = dateistapel(kontext, {"ordner": str(quelleordner), "muster": k.get("muster", "*.csv")}, {})["dateien"]
     original_key, original_hash = kontext.schritt_key, kontext.aktion_hash
     berichte = []
+    wiederaufnahme = []
     if kontext.modus == "ausfuehren" and kontext.fortsetzen:
+        wiederaufnahme = [(key, eintrag) for key, eintrag in kontext.journal.eintraege.items()
+                          if key.startswith(original_key + ":") and eintrag.get("zustand") == "archiviert"]
+    gesamt = len(liste) + len(wiederaufnahme)
+    def fortschritt(status="laeuft", erzwingen=False):
+        erledigt = len(berichte)
+        if not erzwingen and (erledigt % 25 != 0 or erledigt == gesamt):
+            return
+        kontext.ereignis("fortschritt", einheit="Dateien", erledigt=erledigt, gesamt=gesamt, status=status,
+                         verarbeitet=sum(b["status"] in {"publiziert", "wiederverwendet"} for b in berichte),
+                         uebersprungen=sum(b["status"] == "uebersprungen" for b in berichte),
+                         geplant=sum(b["status"] == "geplant" for b in berichte),
+                         fehlerhaft=sum(b["status"] == "fehler" for b in berichte))
+    fortschritt("begonnen", True)
+    if wiederaufnahme:
         # Bereits archivierte Dateien stehen nicht mehr im Eingang. Ihre bestätigten
         # Ausgaben trotzdem prüfen und im Wiederaufnahmebericht sichtbar erhalten.
-        for schluessel, archiv in kontext.journal.eintraege.items():
-            if not schluessel.startswith(original_key + ":") or archiv.get("zustand") != "archiviert":
-                continue
+        for schluessel, archiv in wiederaufnahme:
             if Path(archiv["quelle"]["pfad"]).exists():
                 raise UnklarerZustand("Eine bereits archivierte Quelle liegt wieder im Eingang. Starte dafür einen neuen Lauf.")
             kontext.quelle_merken(archiv["quelle"])
@@ -488,6 +502,7 @@ def csv_stapel(kontext: Kontext, k: dict, e: dict):
             ergebnis = {"pfad": output["pfad"], "sha256": output["sha256"], "bytes": output["bytes"], "status": "wiederverwendet"}
             kontext.ausgaben.append(ergebnis)
             berichte.append({"quelle": archiv["quelle"]["pfad"], "status": "wiederverwendet", "ausgabe": ergebnis, "archiv": archiv["ziel"]})
+            fortschritt()
     try:
         for source in liste:
             kontext.pruefen()
@@ -521,14 +536,23 @@ def csv_stapel(kontext: Kontext, k: dict, e: dict):
                 # Sicherheit und bewusster Abbruch sind keine überspringbaren CSV-Fehlzeilen.
                 raise
             except (BusinessFehler, OSError, UnicodeError, csv.Error) as fehler:
-                meldung = str(fehler) if isinstance(fehler, BusinessFehler) else "Die CSV-Datei ist ungültig oder nicht lesbar."
-                berichte.append({"quelle": str(quelle), "status": "fehler", "meldung": meldung})
-                kontext.fehler.append({"block_id": kontext.block_id, "meldung": meldung})
+                # Der Runner wird erst beim Aufruf importiert, damit die Handlerregistrierung
+                # keine zyklische Modulinitialisierung auslöst. Beide Wege teilen dieselbe Meldung.
+                from .ausfuehrung import _io_meldung
+                meldung = _io_meldung(fehler) if isinstance(fehler, OSError) else str(fehler) if isinstance(fehler, BusinessFehler) else "Die CSV-Datei ist ungültig oder nicht lesbar."
+                technisch = {"technisch": f"{type(fehler).__name__}: {fehler}; errno={fehler.errno}; winerror={getattr(fehler, 'winerror', None)}"} if isinstance(fehler, OSError) else {}
+                berichte.append({"quelle": str(quelle), "status": "fehler", "meldung": meldung, **technisch})
+                kontext.fehler.append({"block_id": kontext.block_id, "meldung": meldung, **technisch})
+                if len(kontext.fehler) <= 5:
+                    kontext.ereignis("fehler", meldung=meldung, **technisch)
                 if k.get("bei_fehler", "STOPP") == "STOPP":
                     raise BusinessFehler(meldung) from fehler
+            fortschritt()
     finally:
         kontext.schritt_key, kontext.aktion_hash = original_key, original_hash
-    return {"status": "mit_fehlern" if any(b["status"] == "fehler" for b in berichte) else "erfolgreich", "dateien": berichte, "anzahl": len(berichte)}
+    mit_fehlern = any(b["status"] == "fehler" for b in berichte)
+    fortschritt("mit_fehlern" if mit_fehlern else "beendet", True)
+    return {"status": "mit_fehlern" if mit_fehlern else "erfolgreich", "dateien": berichte, "anzahl": len(berichte)}
 
 
 HANDLER = {"dateien.stapel": dateistapel, "dateien.archivieren": archivieren,
