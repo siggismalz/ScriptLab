@@ -8,6 +8,7 @@ import './testbereich.css';
 import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
 import type { PythonStatus } from '../gemeinsam/python';
 import type { ReactNode } from 'react';
+import { BusinessErgebnis } from './BusinessErgebnis';
 
 export interface TestbereichEigenschaften {
   businessVorbereitung?: ReactNode;
@@ -275,6 +276,9 @@ export function Testbereich(props: TestbereichEigenschaften) {
                   </tbody>
                 </table>
               </div>
+            )}
+            {zustand.business && (
+              <BusinessErgebnis business={zustand.business} optionen={anzeigeOptionen} aktiv={aktiv} />
             )}
             {zustand.business?.bericht && (
               <details>

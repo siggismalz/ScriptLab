@@ -18,6 +18,7 @@ export type FachlicherTyp = (typeof fachlicheTypen)[number];
 export type Betriebsmodus = 'vorschau' | 'prueflauf' | 'ausfuehren';
 export type JsonWert = null | boolean | number | string | JsonWert[] | { [name: string]: JsonWert };
 export interface BusinessSchritt {
+  bezeichnung?: string;
   id: string;
   operation: string;
   konfiguration: Record<string, JsonWert>;

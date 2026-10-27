@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import type { Projekt } from '../kern/projekt';
 import type { TestOptionen } from '../gemeinsam/testlauf';
 import { businessSchritte } from '../kern/business';
-import { businessNachTyp } from '../kern/business-katalog';
 import { Auswahlfeld, Feld } from './komponenten/Feld';
 import { Knopf } from './komponenten/Knopf';
 import { ParameterWertEingabe } from './ParameterDialog';
@@ -190,9 +189,7 @@ export function BusinessVorbereitung({
         <ul>
           {schritte.map((s) => (
             <li key={s.id}>
-              <strong>
-                {[...businessNachTyp.values()].find((d) => d.operation === s.operation)?.name ?? s.operation}
-              </strong>
+              <strong>{s.bezeichnung ?? s.operation}</strong>
               <pre>
                 {JSON.stringify(
                   s.konfiguration,

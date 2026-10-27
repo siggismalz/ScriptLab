@@ -9,9 +9,20 @@ export function businessSchritte(projekt: Projekt): BusinessSchritt[] {
       const def = businessNachTyp.get(b.type);
       if (def) {
         try {
-          schritte.push({ id: b.id, operation: def.operation, ...businessDatenLesen(b.type, b.data) });
+          schritte.push({
+            id: b.id,
+            operation: def.operation,
+            bezeichnung: String(b.fields?.NAME ?? def.name),
+            ...businessDatenLesen(b.type, b.data),
+          });
         } catch {
-          schritte.push({ id: b.id, operation: def.operation, konfiguration: {}, eingaben: {} });
+          schritte.push({
+            id: b.id,
+            operation: def.operation,
+            bezeichnung: def.name,
+            konfiguration: {},
+            eingaben: {},
+          });
         }
       }
       for (const e of Object.values(b.inputs ?? {})) lesen(e.block ?? e.shadow);

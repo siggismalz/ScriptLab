@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "stand": "2026-10-27",
+  "tests": {
+    "testdatei": "tests/desktop/business-last.spec.ts",
+    "freigabe": "SCRIPTLAB_LAST_TESTS=1",
+    "bestanden": 2,
+    "fehlgeschlagen": 0,
+    "ausgelassen": 0,
+    "instabil": 0,
+    "dauer_ms": 12482.303,
+    "startzeit": "2026-10-26T23:53:01.843Z"
+  },
+  "quellen": {
+    "bedienung": {
+      "pfad": "artifacts/business-last/million-bedienung.json",
+      "sha256": "d5777e4b5b8a6623b54e4a15da6e009d074f994192e28b180ce4df67aee27f2a"
+    },
+    "stoppen": {
+      "pfad": "artifacts/business-last/million-stoppen.json",
+      "sha256": "99b7cd5e3cb63f005c8b753e213fb1d323caf7fa8298a6578a3da15014b494e8"
+    },
+    "reporter": {
+      "pfad": "artifacts/business-last/playwright-ergebnis.json",
+      "sha256": "d0140456d4fb57dcc964110f72fc7981dcbfdd76a32be35d49d0c31b2d414c1c"
+    }
+  },
+  "testdatei_sha256": "0d127f93f0faa25b5bb219e6b96a606de609a37f3d526d84757063db5a0e77e2",
+  "bedienung": {
+    "version": 1,
+    "synthetischeDaten": true,
+    "zeilen": 1000000,
+    "phaseVorBedienung": "laeuft",
+    "businessSchrittVorBedienung": "last-lesen",
+    "zoomAntwortMs": 88.3409999999999,
+    "verschiebenAntwortMs": 105.59339999999975,
+    "dauerMs": 5121.1899,
+    "phase": "beendet",
+    "exitcode": 0,
+    "ausgabeSha256": "0fae9b294cc23c239a4c3ff9342994844433426d46099721b08301bd6337d909",
+    "ungespeicherteQuelleVerwendet": true
+  },
+  "stoppen": {
+    "version": 1,
+    "synthetischeDaten": true,
+    "zeilen": 1000000,
+    "phaseVorStopp": "laeuft",
+    "phase": "abgebrochen",
+    "exitcode": 3221225786,
+    "stoppenMs": 1162.401899999999,
+    "dauerMs": 3753.08,
+    "ausgabeSha256": "0fae9b294cc23c239a4c3ff9342994844433426d46099721b08301bd6337d909",
+    "ausgabeNachStoppErhalten": true,
+    "editorWiederBearbeitbar": true
+  },
+  "messgrenzen": [
+    "Begrenzter synthetischer CSV-Lese-/Typ-/Filter-/Gruppier-/Exportablauf mit einer Million Zeilen und drei Spalten; kein beliebiger Millionenworkflow.",
+    "Antwortzeiten sind Beobachtungen dieses Laufs, keine allgemeine Latenzzusage. Der Business-Schritt vor der Bedienung wurde tatsächlich als last-lesen gemeldet.",
+    "Keine Messung des Prozess-RAM und kein Nachweis eines harten RAM-Limits; ein Enginebudget begrenzt nicht den gesamten Prozess.",
+    "Screenshots bleiben unter artifacts/business-last, weil sie vollständige temporäre Dateipfade zeigen. Sie wurden durch Root tatsächlich angesehen.",
+    "Keine Umstellung der globalen Windows-Systemskalierung; keine Narrator- oder Testpersonenprüfung."
+  ]
+}

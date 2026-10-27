@@ -142,7 +142,17 @@ export class TestlaufDienst {
       zeilenZuordnung: erzeugt.zeilenZuordnung,
       meldung: 'Workflow und Windows-Laufzeit werden vorbereitet.',
       ...(business.length
-        ? { business: { schritt: null, ereignisse: [], vorschau: null, bericht: null } }
+        ? {
+            business: {
+              schritt: null,
+              schrittnamen: Object.fromEntries(
+                business.map((s) => [s.id, s.bezeichnung ?? 'Business-Baustein']),
+              ),
+              ereignisse: [],
+              vorschau: null,
+              bericht: null,
+            },
+          }
         : {}),
     };
     const lauf: Lauf = {

@@ -53,3 +53,46 @@
   max-width: 320px;
   overflow-wrap: anywhere;
 }
+.business-ergebnis {
+  margin-block: 12px;
+  overflow-wrap: anywhere;
+}
+.business-ergebnis h3,
+.business-ergebnis h4 {
+  margin: 8px 0;
+  font-size: 14px;
+}
+.business-ergebnis-angaben {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 8px 0;
+}
+.business-ergebnis-angaben dt {
+  color: var(--farbe-text-sekundaer);
+}
+.business-ergebnis-angaben dd {
+  margin: 4px 0;
+}
+.business-ergebnis progress {
+  width: min(320px, 100%);
+  accent-color: var(--farbe-akzent);
+}
+.business-ergebnis-pfad {
+  user-select: text;
+}
+.business-ergebnis-bericht {
+  display: grid;
+  gap: 4px;
+}
+.business-ergebnis-bericht textarea {
+  width: 100%;
+  min-width: 0;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-normal);
+  background: var(--farbe-grundflaeche);
+  color: var(--farbe-text);
+  font: inherit;
+}

@@ -29,6 +29,7 @@ export interface ZeilenZuordnung {
 export interface TestZustand {
   business?: {
     schritt: string | null;
+    schrittnamen?: Record<string, string>;
     ereignisse: Record<string, unknown>[];
     vorschau: Record<string, unknown> | null;
     bericht: Record<string, unknown> | null;
