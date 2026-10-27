@@ -1,0 +1,121 @@
+{
+  "formatVersion": 1,
+  "stand": "2026-10-27",
+  "appVersion": "0.2.0",
+  "funktionscommit": "2f10accef0bb06516387d4485bd19e9b38ff29b3",
+  "daten": "ausschließlich eigene synthetische Testdaten",
+  "lokal": {
+    "ziel": "Windows 11 Pro x64, Build 26200",
+    "python": "3.12.6",
+    "fachtests": {
+      "bestanden": 131,
+      "fehlgeschlagen": 0,
+      "ausgelassen": 0,
+      "dauerSekunden": 7.842,
+      "bericht": "artifacts/business-python-geprueft.log",
+      "sha256": "9fbbbba4eb09afb379a2e513f921b1534b364fe0487390601313bde40b7de6d4"
+    },
+    "vitest": {
+      "bestanden": 496,
+      "fehlgeschlagen": 0,
+      "ausgelassen": 0,
+      "bericht": "artifacts/business-windows-finaler-stand.json",
+      "sha256": "01cf02d1f4f6e1ac743bbcca0d9d1efa11d6f2edce907f7cf66d3a4b394a9aca"
+    },
+    "desktop": {
+      "bestanden": 116,
+      "fehlgeschlagen": 0,
+      "ausgelassen": 0,
+      "instabil": 0,
+      "dauerMs": 258036.726,
+      "bericht": "artifacts/business-desktop-finaler-stand.json",
+      "sha256": "d7266e767be6ba246b646f58ffe81fc34c142241cf2399cad355889e712ca65c"
+    },
+    "lastUiAbschluss": {
+      "bedienung": {
+        "version": 1,
+        "synthetischeDaten": true,
+        "zeilen": 1000000,
+        "phaseVorBedienung": "laeuft",
+        "businessSchrittVorBedienung": "last-lesen",
+        "zoomAntwortMs": 103.44859999999971,
+        "verschiebenAntwortMs": 97.05879999999888,
+        "dauerMs": 4875.658799999997,
+        "phase": "beendet",
+        "exitcode": 0,
+        "ausgabeSha256": "0fae9b294cc23c239a4c3ff9342994844433426d46099721b08301bd6337d909",
+        "ungespeicherteQuelleVerwendet": true
+      },
+      "stoppen": {
+        "version": 1,
+        "synthetischeDaten": true,
+        "zeilen": 1000000,
+        "phaseVorStopp": "laeuft",
+        "phase": "abgebrochen",
+        "exitcode": 3221225786,
+        "stoppenMs": 1159.2312999999995,
+        "dauerMs": 3465.916100000002,
+        "ausgabeSha256": "0fae9b294cc23c239a4c3ff9342994844433426d46099721b08301bd6337d909",
+        "ausgabeNachStoppErhalten": true,
+        "editorWiederBearbeitbar": true
+      }
+    },
+    "installer": {
+      "pfad": "artifacts/business-build-020/ScriptLab-0.2.0-Setup-x64.exe",
+      "bytes": 125860178,
+      "sha256": "34af001b2731d2d377345bbad4976a02726eed83cd19aea88ad470d0b214a6bc",
+      "sha512": "+6wSDZH63zIO/heGbM4yu5Ddydu6mgUtggVZ8XdXjwiA5imKEJJ9JEmWRjhdm/C2c+2etyMVkokmua1IO0mLqw==",
+      "authenticode": "NotSigned",
+      "praktischInstalliert": false
+    },
+    "paketpruefung": {
+      "bestanden": true,
+      "pruefungen": 12,
+      "offen": 0,
+      "quellstand": "2f10accef0bb06516387d4485bd19e9b38ff29b3",
+      "saubererQuellstand": true,
+      "bericht": "artifacts/business-build-020/pruefung.json",
+      "sha256": "964107061964f1ec004eb60dc19e607a4aff5deea62d22b9ba9de3ff8a6bd428"
+    }
+  },
+  "githubCi": {
+    "url": "https://github.com/siggismalz/ScriptLab/actions/runs/40495080476",
+    "runId": 40495080476,
+    "jobId": 122158381504,
+    "status": "success",
+    "python": "3.15.2",
+    "fachtests": {
+      "bestanden": 131,
+      "dauerSekunden": 15.661
+    },
+    "vitest": {
+      "bestanden": 492,
+      "ausgelassen": 4,
+      "grund": "Explizite Setup-/Wheelhouse-Freigaben fehlen in CI; lokal mit Freigabe bestanden."
+    },
+    "desktop": {
+      "bestanden": 114,
+      "ausgelassen": 2,
+      "grund": "Optionale Millionen-UI-Fälle nicht freigeschaltet; lokal im vollständigen 116er-Lauf bestanden."
+    },
+    "paketpruefungen": 12,
+    "installerSigniert": false,
+    "artifactId": 12730513993,
+    "artifactName": "ScriptLab-Windows-Testbuild",
+    "artifactLaeuftAb": "2026-11-10T11:27:18Z"
+  },
+  "leistungsnachweise": [
+    "docs/nachweise/business-daten.json",
+    "docs/nachweise/business-stapel.json",
+    "docs/nachweise/business-ui-last.json"
+  ],
+  "sichtnachweise": ["docs/nachweise/business-pdf.json", "docs/bilder/business-bestellvorschlag.png"],
+  "offenePruefungen": [
+    "Tatsächlich voller Datenträger oder Dateisystemkontingent; nur Fault-Injection geprüft.",
+    "Reale Unterbrechung einer SMB-/UNC-Verbindung.",
+    "Globale Windows-Systemskalierung und vollständiger Narrator-/Testpersonendurchlauf.",
+    "Praktische Installation/Deinstallation des neuen lokalen Installers.",
+    "Produktive Signaturinfrastruktur und Updatekette mit zwei installierten signierten Versionen.",
+    "Vollständige Business-Versionsmatrix unter Python 3.13 und 3.14."
+  ]
+}
