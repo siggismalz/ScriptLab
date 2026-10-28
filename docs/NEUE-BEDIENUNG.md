@@ -38,4 +38,4 @@ Beim **Exportieren** werden Projektdatei, Script und Business-Paket unterschiede
 
 ## Nachweisgrenze dieses Stands
 
-Diese Notiz beschreibt die implementierten Bedienwege. Die gemeinsame Prüfung der neuen Oberfläche mit mitgelieferter Laufzeit und der Paketvergleich eines neu erstellten Windows-Builds werden gesondert dokumentiert. Frühere Ansichten, Laufberichte oder Installerprüfungen sind kein Nachweis dieser Umstellung.
+Die tatsächlichen Arbeitswege, aktuellen Windows-Ansichten und verbleibenden Grenzen dokumentiert [OFFICE-UMSETZUNG.md](OFFICE-UMSETZUNG.md). Frühere Ansichten, Laufberichte oder Installerprüfungen bleiben ihrem damaligen Stand zugeordnet.

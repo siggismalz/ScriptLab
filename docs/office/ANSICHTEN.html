@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="de">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ScriptLab · Office-Ansichten</title>
+  <style>
+    :root {
+      font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+      color: #1f2937;
+      background: #f5f6f8;
+      line-height: 1.5;
+    }
+    body {
+      max-width: 1480px;
+      margin: auto;
+      padding: 32px;
+    }
+    h1 {
+      font-size: 24px;
+      line-height: 32px;
+      margin: 0 0 8px;
+    }
+    h2 {
+      font-size: 20px;
+      margin: 32px 0 16px;
+    }
+    p {
+      max-width: 880px;
+      margin: 8px 0 16px;
+    }
+    a {
+      color: #0f6cbd;
+    }
+    nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
+      gap: 24px;
+    }
+    figure {
+      margin: 0;
+      background: white;
+      border: 1px solid #d8dee8;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    figcaption {
+      padding: 12px 16px;
+    }
+    figcaption strong {
+      display: block;
+      font-weight: 600;
+    }
+    figcaption span {
+      font-size: 14px;
+      color: #536176;
+    }
+    a:focus-visible {
+      outline: 3px solid #0f6cbd;
+      outline-offset: 4px;
+    }
+    .alt {
+      max-width: 720px;
+    }
+    footer {
+      margin-top: 32px;
+      color: #536176;
+      font-size: 14px;
+    }
+  </style>
+  <h1>ScriptLab · Office-Ansichten</h1>
+  <p>
+    Tatsächliche Windows-Anwendung vom 28. Oktober 2026. Synthetische Monatsauswertung, echte lokale
+    Verarbeitung. Die Bilder öffnen sich in voller Größe. Hauptgröße: 1280 × 720 logische Pixel; die PNGs
+    berücksichtigen die tatsächliche Windows-Pixeldichte.
+  </p>
+  <nav>
+    <a href="#arbeit">Bearbeitung</a><a href="#daten">Daten</a><a href="#laeufe">Läufe und Export</a
+    ><a href="#darstellung">Darstellung</a><a href="#vorher">Vorher</a
+    ><a href="../OFFICE-UMSETZUNG.md">Umsetzung und Grenzen</a>
+  </nav>
+  <h2 id="arbeit">Einstieg und Bearbeitung</h2>
+  <section id="bilder-arbeit"></section>
+  <h2 id="daten">Quellen, Fehler und Schrittvorschau</h2>
+  <section id="bilder-daten"></section>
+  <h2 id="laeufe">Läufe und Export</h2>
+  <section id="bilder-laeufe"></section>
+  <h2 id="darstellung">Darstellung und verfügbare Fläche</h2>
+  <section id="bilder-darstellung"></section>
+  <h2 id="vorher">Vorher: dokumentierter bisheriger Stand</h2>
+  <p>
+    Historische Aufnahmen aus der vorherigen Weiterentwicklung. Sie zeigen denselben fachlichen Beispielablauf
+    in einem früheren Bedienzustand. Dies ist kein pixelgleicher Vergleich identischer Auswahl- und
+    Laufzustände.
+  </p>
+  <section>
+    <figure>
+      <a href="../weiterentwicklung/workflow-intern-gespeichert.png"
+        ><img
+          loading="lazy"
+          src="../weiterentwicklung/workflow-intern-gespeichert.png"
+          alt="Bisheriger Editor"
+      /></a>
+      <figcaption>
+        <strong>Bisheriger Editor</strong><span>Vor der Office-Farbwelt und den fachlichen Kurztexten.</span>
+      </figcaption>
+    </figure>
+    <figure>
+      <a href="../weiterentwicklung/laufvorbereitung-automatischer-ordner.png"
+        ><img
+          loading="lazy"
+          src="../weiterentwicklung/laufvorbereitung-automatischer-ordner.png"
+          alt="Bisherige Laufvorbereitung"
+      /></a>
+      <figcaption>
+        <strong>Bisherige Laufvorbereitung</strong
+        ><span>Bereits mit automatischer Ablage; die neue Laufzeitintegration war noch nicht vorhanden.</span>
+      </figcaption>
+    </figure>
+  </section>
+  <footer>
+    Keine gestellten Ergebniszahlen. Kein Nutzertest und keine vollständige Prüfung sämtlicher
+    Windows-Anzeigeskalierungen. Die genauen Bedienwege und Ergebnisse stehen in funktionsstand.json.
+  </footer>
+  <script>
+    const gruppen = {
+      arbeit: [
+        ['start-leer-hell', 'Erster Start', 'Hell bei fehlender gespeicherter Wahl.'],
+        ['sprachwahl-hell', 'Neuer Workflow', 'Python und VBS bleiben ausdrücklich wählbar.'],
+        ['start-mit-workflow-dunkel', 'Arbeit fortsetzen', 'Echter intern gespeicherter Testworkflow.'],
+        ['workflowliste-dunkel', 'Gespeicherte Workflows', 'Suche und Sprache gehören zur Workflowliste.'],
+        ['editor-hell', 'Editor · Hell', 'Quelle und kurze Filter-/Gruppierungsangaben.'],
+        ['editor-dunkel', 'Editor · Dunkel', 'Gleicher Workflow im erhaltenen Dunkelthema.'],
+      ],
+      daten: [
+        [
+          'quelle-parameterbindung-hell',
+          'Quelle mit Parameterbindung',
+          'Tatsächlicher Testwert und direkter Weg zur Bearbeitung.',
+        ],
+        ['parameterwerte-hell', 'Parameterwerte', 'Native Dateiauswahl am gebundenen Quellenparameter.'],
+        ['daten-fehlende-spalte-hell', 'Fehlende Angabe', 'Feldmarkierung und fokussierbarer Fehlerlink.'],
+        [
+          'datenvorschau-quelle-hell',
+          'Vorschau der Quelle',
+          'Der ausgewählte Importschritt liefert seine eigenen Spalten.',
+        ],
+        [
+          'datenvorschau-gruppiert-hell',
+          'Vorschau der Gruppierung',
+          'Nord und Süd aus den synthetischen Daten; unfertige Nachfolger sind nicht erforderlich.',
+        ],
+        [
+          'datenvorschau-dunkel',
+          'Datenvorschau · Dunkel',
+          'Neu geladener Ausschnitt nach der späteren Workflowänderung.',
+        ],
+      ],
+      laeufe: [
+        ['laufvorbereitung-hell', 'Laufvorbereitung', 'Prüflauf ohne Zieländerungen als Business-Vorgabe.'],
+        ['prueflauf-ergebnis-hell', 'Prüflauf', 'Tatsächlich abgeschlossene Prüfung.'],
+        ['ergebnisse-hell', 'Ergebnisse · Hell', 'XLSX und PDF wurden im App-Arbeitsordner erzeugt.'],
+        ['ergebnisse-dunkel', 'Ergebnisse · Dunkel', 'Dieselbe echte Ausführung im dunklen Thema.'],
+        [
+          'business-export-hell',
+          'Business-Paket exportieren',
+          'Der externe Zielrechner benötigt eine eigene Python-Umgebung.',
+        ],
+      ],
+      darstellung: [
+        [
+          'einstellungen-darstellung-hell',
+          'Darstellung',
+          'Thema und UI-Textgröße bleiben persönliche Einstellungen.',
+        ],
+        [
+          'einstellungen-laufzeit-hell',
+          'Mitgelieferte Komponenten',
+          'Statusanzeige anstelle von Interpreter- und Installationsauswahl.',
+        ],
+        ['einstellungen-laufzeit-dunkel', 'Komponenten · Dunkel', 'Der geprüfte reale Laufzeitstand.'],
+        [
+          'einstellungen-ui200-dunkel',
+          'Dialog mit 200 Prozent UI-Text',
+          'Vergrößerung der Bedienoberfläche, keine Änderung der Windows-DPI-Einstellung.',
+        ],
+        [
+          'parameterwerte-ui200-dunkel',
+          'Formular mit 200 Prozent UI-Text',
+          'Umbruch und Scrollbereich bei 1280 × 720.',
+        ],
+        [
+          'daten-schmales-fenster-dunkel',
+          'Daten bei 960 × 680',
+          'Umgeordnete Quellen- und Konfigurationsbereiche.',
+        ],
+      ],
+    };
+    for (const [gruppe, bilder] of Object.entries(gruppen))
+      for (const [datei, titel, text] of bilder) {
+        const f = document.createElement('figure'),
+          a = document.createElement('a'),
+          i = document.createElement('img'),
+          c = document.createElement('figcaption'),
+          s = document.createElement('strong'),
+          p = document.createElement('span');
+        a.href = datei + '.png';
+        i.src = a.href;
+        i.alt = titel;
+        i.loading = 'lazy';
+        s.textContent = titel;
+        p.textContent = text;
+        a.append(i);
+        c.append(s, p);
+        f.append(a, c);
+        document.getElementById('bilder-' + gruppe).append(f);
+      }
+  </script>
+</html>

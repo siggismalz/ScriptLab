@@ -42,7 +42,7 @@ Die Startseite bietet **Meine gespeicherten Workflows**, **Entwürfe**, **Beispi
 
 ## Oberfläche
 
-Die Oberfläche gliedert Übersicht, Bearbeitung und Details. Die Office-Farbwelt beginnt bei einer neuen Installation hell; gespeicherte Darstellungswahlen bleiben erhalten. [Neue Bedienung](docs/NEUE-BEDIENUNG.md) und [Designsystem](docs/gestaltung/DESIGNSYSTEM.md) beschreiben den jetzigen Stand. [Ansichten](docs/gestaltung/ANSICHTEN.html), [Informationsebenen](docs/gestaltung/INFORMATIONSEBENEN.md) und [Prüfstand](docs/gestaltung/PRUEFUNG.md) bewahren zusätzlich die zeitlich zugeordneten Entwicklungsnachweise.
+Die Oberfläche gliedert Übersicht, Bearbeitung und Details. Die Office-Farbwelt beginnt bei einer neuen Installation hell; gespeicherte Darstellungswahlen bleiben erhalten. [Neue Bedienung](docs/NEUE-BEDIENUNG.md), [Designsystem](docs/gestaltung/DESIGNSYSTEM.md) und [aktuelle Windows-Ansichten](docs/office/ANSICHTEN.html) beschreiben den jetzigen Stand. [Umsetzung und Prüfgrenzen](docs/OFFICE-UMSETZUNG.md) trennen die aktuelle Sichtprüfung von älteren Entwicklungsnachweisen.
 
 ## Entwicklung
 

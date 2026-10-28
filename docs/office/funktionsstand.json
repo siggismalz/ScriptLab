@@ -1,0 +1,154 @@
+{
+  "datum": "2026-10-28T11:49:37.050Z",
+  "profil": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Office-UaIM7G\\Profil",
+  "fenster": "1280 × 720 CSS-Pixel",
+  "python": {
+    "zustand": "bereit",
+    "auswahl": null,
+    "installation": {
+      "pfad": "C:\\Users\\leons\\ScriptLab\\artifacts\\python-buendel\\python\\python.exe",
+      "version": "3.15.2",
+      "architektur": "x64",
+      "implementierung": "CPython",
+      "tkinter": true
+    },
+    "meldung": "Die mitgelieferten Komponenten für Python, Tabellen und Dokumente sind bereit."
+  },
+  "business": {
+    "installation": {
+      "pfad": "C:\\Users\\leons\\ScriptLab\\artifacts\\python-buendel\\python\\python.exe",
+      "version": "3.15.2",
+      "architektur": "x64",
+      "implementierung": "CPython",
+      "tkinter": null
+    },
+    "profil": "windows-cpython-312-315-x64-v1",
+    "lockSha256": "2eae08ad31ba0543dc3029c6d9167ad734ed990a536dd8f66c74ed600506d371",
+    "pakete": [
+      {
+        "name": "duckdb",
+        "sollVersion": "2.0.0",
+        "version": "2.0.0",
+        "importierbar": true
+      },
+      {
+        "name": "openpyxl",
+        "sollVersion": "3.1.5",
+        "version": "3.1.5",
+        "importierbar": true
+      },
+      {
+        "name": "python-docx",
+        "sollVersion": "1.2.0",
+        "version": "1.2.0",
+        "importierbar": true
+      },
+      {
+        "name": "reportlab",
+        "sollVersion": "5.1.0",
+        "version": "5.1.0",
+        "importierbar": true
+      },
+      {
+        "name": "pypdf",
+        "sollVersion": "6.21.2",
+        "version": "6.21.2",
+        "importierbar": true
+      },
+      {
+        "name": "et-xmlfile",
+        "sollVersion": "2.0.0",
+        "version": "2.0.0",
+        "importierbar": true
+      },
+      {
+        "name": "lxml",
+        "sollVersion": "6.1.3",
+        "version": "6.1.3",
+        "importierbar": true
+      },
+      {
+        "name": "typing-extensions",
+        "sollVersion": "4.16.0",
+        "version": "4.16.0",
+        "importierbar": true
+      },
+      {
+        "name": "pillow",
+        "sollVersion": "13.0.0",
+        "version": "13.0.0",
+        "importierbar": true
+      },
+      {
+        "name": "charset-normalizer",
+        "sollVersion": "3.5.2",
+        "version": "3.5.2",
+        "importierbar": true
+      },
+      {
+        "name": "defusedxml",
+        "sollVersion": "0.7.1",
+        "version": "0.7.1",
+        "importierbar": true
+      }
+    ],
+    "zustand": "bereit",
+    "meldung": "Die feste Business-Laufzeit ist vollständig geprüft."
+  },
+  "pruefungen": [
+    "Abgebrochene Dateiauswahl erhält gebundenen Parameterwert",
+    "Bestätigte Dateiauswahl ändert den Parameterwert und erhält die Bindung",
+    "Fehlende Spaltenangabe wird direkt am Feld erklärt; Fehlerlink fokussiert die Korrektur",
+    "Zwei echte, getrennte Schrittvorschauen; keine XLSX/PDF-Ausgaben; fehlendes späteres Pflichtziel blockiert nicht",
+    "Prüflauf und echte XLSX-/PDF-Erzeugung mit App-Python ohne PATH-Python",
+    "Business-Paket tatsächlich an gewählten Exportort geschrieben",
+    "200 Prozent UI-Text; persönliche Darstellung ändert weder Bausteine noch Speicherzustand"
+  ],
+  "laufIds": [
+    "4199d294-1a7d-4f7a-a143-ebd3fe072931",
+    "d17b944c-db8e-4e0f-bae1-789fb815f3b4",
+    "c5322c40-6a2e-45f1-b617-f623fb13b3b2",
+    "4d0eb4ca-4992-4804-ab88-58102af0bb16"
+  ],
+  "ausgaben": [
+    {
+      "pfad": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Office-UaIM7G\\Profil\\Arbeitsdateien\\564dcea4-7359-47d5-8476-d9c0e65b6b98\\Monatsauswertung.xlsx",
+      "status": "publiziert",
+      "sha256": "5241fa02de9304823659723f4e382bd43eba94029f7d4928a534852eca03d8bc",
+      "bytes": 4953
+    },
+    {
+      "pfad": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Office-UaIM7G\\Profil\\Arbeitsdateien\\564dcea4-7359-47d5-8476-d9c0e65b6b98\\Monatsauswertung.pdf",
+      "status": "publiziert",
+      "sha256": "3d2a210e772c38160dd341e92ddd00f1736a005e6733b4c1b92ca38f17313543",
+      "bytes": 22531
+    }
+  ],
+  "exportziel": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Office-UaIM7G\\Testdaten.zip",
+  "bilder": [
+    "start-leer-hell",
+    "sprachwahl-hell",
+    "editor-hell",
+    "quelle-parameterbindung-hell",
+    "parameterwerte-hell",
+    "daten-fehlende-spalte-hell",
+    "datenvorschau-gruppiert-hell",
+    "datenvorschau-quelle-hell",
+    "laufvorbereitung-hell",
+    "prueflauf-ergebnis-hell",
+    "ergebnisse-hell",
+    "einstellungen-darstellung-hell",
+    "einstellungen-laufzeit-hell",
+    "business-export-hell",
+    "ergebnisse-dunkel",
+    "datenvorschau-dunkel",
+    "editor-dunkel",
+    "einstellungen-laufzeit-dunkel",
+    "einstellungen-ui200-dunkel",
+    "parameterwerte-ui200-dunkel",
+    "daten-schmales-fenster-dunkel",
+    "start-mit-workflow-dunkel",
+    "workflowliste-dunkel"
+  ],
+  "rendererfehler": []
+}
