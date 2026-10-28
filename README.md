@@ -14,32 +14,36 @@ Der Windows-Build erzeugt `release/ScriptLab-<Paketversion>-Setup-x64.exe`; maß
 
 ## Ein erster Workflow
 
-1. ScriptLab öffnen und auf der Startseite **Neuer Workflow** wählen. Im Dialog **Welche Sprache möchtest du verwenden?** Python oder VBScript (VBS) auswählen und **Workflow erstellen** bestätigen. Der Editor öffnet sich mit genau dem Baustein **Workflow starten**.
+1. ScriptLab öffnen und auf der Startseite **Neuer Workflow** wählen. Im Dialog **Neuer Workflow** Python oder VBScript (VBS) auswählen und **Workflow erstellen** bestätigen. Der Editor öffnet sich mit genau dem Baustein **Workflow starten**.
 2. Links nach **Nachricht** suchen und beim Treffer **Nachricht anzeigen** auf Plus klicken.
 3. Als Einfügestelle **Nach „Workflow starten“** wählen. Alternativ lässt sich der Baustein aus der Palette an den Start ziehen.
-4. Den Nachrichtentext direkt am Baustein bearbeiten oder den Baustein auswählen und **Eigenschaften** öffnen (F4). Namen und Beschreibung des Projekts änderst du im **Projektmenü → Projektangaben**.
-5. Mit **Speichern** ein bearbeitbares `.scriptlab`-Projekt sichern. **Codevorschau** öffnet bei Bedarf unten den schreibgeschützten Python- oder VBS-Code.
-6. Mit **Python-Script exportieren** eine `.py`-Datei oder mit **VBS-Script exportieren** eine `.vbs`-Datei speichern.
+4. Den Nachrichtentext direkt am Baustein bearbeiten oder den Baustein auswählen und **Eigenschaften** öffnen (F4). Namen und Beschreibung des Projekts änderst du im **Workflow → Projektangaben**.
+5. Mit **Speichern** ein bearbeitbares `.scriptlab`-Projekt sichern. **Ansicht → Codevorschau öffnen** öffnet bei Bedarf unten den schreibgeschützten Python- oder VBS-Code.
+6. Mit **Exportieren** das Scriptformat wählen und den Ausgabeort festlegen.
 
 Bei der ersten Erstellung ist keine Sprache vorausgewählt. Später schlägt ScriptLab die zuletzt erfolgreich gewählte Sprache vor. **Abbrechen** erhält den bisherigen Workflow. Bestehende Projekte werden nicht auf eine andere Sprache umgestellt.
 
 Danach gilt: **„Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“** „Speicherordner anzeigen“ markiert die Datei im Explorer und startet sie nicht. Es gibt keine Zeitplanung oder automatische Workflowausführung.
 
-Die 48 gemeinsamen Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Die sechs Grundbeispiele – drei je Sprache – und fünf zusätzliche Python-Business-Beispiele sind auf der Startseite unter **Beispielworkflows** und im Projektmenü erreichbar. Sie öffnen sich als bearbeitbare Kopien mit neuer Kennung und **(Kopie)** im Namen. Die Vorlagen in [beispiele](beispiele) bleiben unverändert.
+Die 48 gemeinsamen Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Dateien, Variablen, Listen, Texte, Zahlen sowie Datum und Zeit ab. [Bedienung und Beispiele](docs/BEDIENUNG.md) und [Bausteinreferenz](docs/BAUSTEINE.md) erklären Bedeutung, Pflichtwerte und Dateioperationen. Die sechs Grundbeispiele – drei je Sprache – und fünf zusätzliche Python-Business-Beispiele sind unter **Vorlagen → Beispielworkflows** erreichbar. Sie öffnen sich als bearbeitbare Kopien mit neuer Kennung und **(Kopie)** im Namen. Die Vorlagen in [beispiele](beispiele) bleiben unverändert.
 
 ## Ein erster Geschäftsablauf
 
-1. Unter **Einstellungen → Python-Installation** einen geeigneten CPython-Interpreter prüfen. Die Grundinstallation wird nicht automatisch installiert.
+1. Unter **Einstellungen → Laufzeit → Python-Installation** einen geeigneten CPython-Interpreter prüfen. Die Grundinstallation wird nicht automatisch installiert.
 2. Unter **Business-Laufzeit** entweder eine vorbereitete Umgebung prüfen, **Eigene Umgebung online einrichten** oder **Offline-Paketordner verwenden** wählen. Nur diese bewusste Einrichtung installiert den festen, hashgepinnten Paketsatz in eine neue eigene virtuelle Umgebung. Ein Workflowstart installiert niemals Pakete.
 3. Das Beispiel **Monatliche Auswertung** als Vorlage verwenden. ScriptLab kopiert ausschließlich seine synthetischen Testdateien in einen privaten Beispielordner und bindet die Pfadparameter absolut daran. Speichern, erneutes Öffnen und Entwurfwiederherstellung verlieren diesen Bezug nicht. Für produktive Daten musst du Quellen und Ziele bewusst ändern.
-4. **Testausgabe** öffnen, Parameter und **Quellen, Ziele und Umfang** prüfen. Zunächst **Datenvorschau**, danach **Prüflauf ohne Zieländerungen** wählen. Erst **Ausführen · echte Dateiänderungen** verarbeitet die gewählten Daten und schreibt die fachlichen Ergebnisse.
-5. Das bearbeitbare Projekt speichern. **Business-Paket exportieren** erzeugt ein eigenständiges ZIP mit Python-Script, Business-Modulen, fester Lockdatei, Parametervorlage, Anleitung und Vera-Schrift samt Lizenz. Eigene Vorlagen, Bilder oder Schriften werden nur nach ausdrücklicher Auswahl beigefügt; Geschäftsdaten und Laufprotokolle werden nicht automatisch kopiert.
+4. **Läufe → Vorbereitung** öffnen, Parametersatz und **Quellen und Ausgabeziele** prüfen. Zunächst **Datenvorschau**, danach **Prüflauf ohne Zieländerungen** wählen. Erst **Ausführen · echte Dateiänderungen** verarbeitet die gewählten Daten und schreibt die fachlichen Ergebnisse.
+5. Das bearbeitbare Projekt speichern. **Exportieren → Business-Paket** erzeugt ein eigenständiges ZIP mit Python-Script, Business-Modulen, fester Lockdatei, Parametervorlage, Anleitung und Vera-Schrift samt Lizenz. Eigene Vorlagen, Bilder oder Schriften werden nur nach ausdrücklicher Auswahl beigefügt; Geschäftsdaten und Laufprotokolle werden nicht automatisch kopiert.
 
 Die fünf Beispiele behandeln **Monatsauswertung**, **Bestellungen mit Stammdaten**, **Word-Bestellvorschlag**, **PDF-Dokumenteingang** und **CSV-Dateistapel mit Wiederaufnahme**. Die [Business-Bedienung](docs/BUSINESS-BEDIENUNG.md) führt durch Einrichtung, Modi und Parameter. [Tabellenverarbeitung](docs/BUSINESS-DATEN.md), [Dokumente und Dateisicherheit](docs/BUSINESS-DOKUMENTE.md) und [Business-Laufzeit](docs/BUSINESS-LAUFZEIT.md) beschreiben den tatsächlichen Umfang und seine Grenzen.
 
 Die linke Palette verbindet Suche und Kategorien in einem verstellbaren Bereich. Eigenschaften und Codevorschau sind anfangs geschlossen. Neben Drag-and-drop gibt es anklickbare Einfügestellen zum Hinzufügen, Verbinden und Verschieben. Das Mausrad verschiebt die Arbeitsfläche; Strg+Mausrad zoomt dort. Die [Designnotiz](docs/DESIGNNOTIZ.md) enthält die tatsächlichen UI-Prüfungen, Bildschirmaufnahmen und offenen Punkte.
 
-Die Startseite bietet **Meine gespeicherten Workflows**, **Entwürfe**, **Beispielworkflows** und **Dokumentation und Anleitungen**. Die Projektliste führt nur bekannte, selbst geöffnete oder gespeicherte Dateien; ScriptLab durchsucht keine Laufwerke. **Startseite** im Editor und anschließend **Weiterbearbeiten** erhalten den laufenden Arbeitsstand. Die [Startseitendokumentation](docs/STARTSEITE.md) hält ihre eigenen Bediennachweise fest.
+Die Startseite bietet **Meine gespeicherten Workflows**, **Entwürfe**, **Beispielworkflows** und **Dokumentation und Anleitungen**. Die Projektliste führt nur bekannte, selbst geöffnete oder gespeicherte Dateien; ScriptLab durchsucht keine Laufwerke. **Bereiche → Start** im Editor und anschließend **Weiterbearbeiten** erhalten den laufenden Arbeitsstand. Die [Startseitendokumentation](docs/STARTSEITE.md) hält ihre eigenen Bediennachweise fest.
+
+## Oberfläche
+
+Die Oberfläche gliedert Übersicht, Bearbeitung und Details. [Aktuelle Ansichten](docs/gestaltung/ANSICHTEN.html), [Informationsebenen](docs/gestaltung/INFORMATIONSEBENEN.md) und [Designsystem](docs/gestaltung/DESIGNSYSTEM.md) dokumentieren die Gestaltung; der [Prüfstand](docs/gestaltung/PRUEFUNG.md) trennt durchgeführte Betrachtungen von offenen Grenzen.
 
 ## Entwicklung
 
@@ -70,13 +74,13 @@ npm run verify:package -- artifacts/startseiten-build-final
 
 ## Einen Workflow testen
 
-Öffne **Testausgabe**, wähle über **Ordner auswählen** einen Basisordner und prüfe das Zeitlimit (Standard: 120 Sekunden). **Testen** startet den vollständigen aktuellen Workflow, einschließlich Dateiaktionen und Dialogen. **Text ausgeben** schreibt in die Testausgabe; **Nachricht anzeigen** öffnet einen Dialog. Der [Testlaufleitfaden](docs/TESTLAUF.md) dokumentiert den bisherigen VBS-Prüfstand; die [Python-Dokumentation](docs/PYTHON.md) ergänzt Einrichtung und neue Laufzeitprüfungen.
+Öffne **Läufe → Vorbereitung**, wähle über **Ordner auswählen** einen Basisordner und klappe bei Bedarf **Zeitlimit** auf (Standard: 120 Sekunden). **Workflow ausführen** startet den vollständigen aktuellen Workflow, einschließlich Dateiaktionen und Dialogen. **Text ausgeben** schreibt unter **Protokoll**; **Nachricht anzeigen** öffnet einen Dialog. **Übersicht** und **Ergebnisse** zeigen den zugehörigen Laufstand und seine Ausgaben. Der [Testlaufleitfaden](docs/TESTLAUF.md) dokumentiert den bisherigen VBS-Prüfstand; die [Python-Dokumentation](docs/PYTHON.md) ergänzt Einrichtung und neue Laufzeitprüfungen.
 
 **Stoppen** beendet den Test, macht bereits erfolgte Änderungen aber nicht rückgängig. Relative Pfade beziehen sich beim Test auf den sichtbaren Basisordner. Absolute Pfade können auch außerhalb dieses Ordners wirken. Ein Test speichert weder das Projekt noch eine Exportdatei. Python-Tests benötigen eine geeignete lokale CPython-Installation, VBS-Tests die verfügbare Windows-VBScript-Laufzeit.
 
 ## Python einrichten und selbst ausführen
 
-Unter **Einstellungen → Python-Installation** lässt sich ein konkreter Interpreter auswählen und erneut prüfen. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. ScriptLab zeigt den tatsächlichen Status, die Version und den Interpreterpfad; es installiert keine Python-Grundinstallation und keine Pakete automatisch. Die 48 gemeinsamen Grundbausteintypen benötigen keine zusätzlichen Python-Pakete. Die zusätzlichen Business-Bausteine verwenden den ausdrücklich eingerichteten festen Paketsatz. Dialogbausteine benötigen `tkinter`, dessen Verfügbarkeit erst bei Bedarf geprüft wird. Abläufe ohne Dialoge setzen `tkinter` nicht voraus.
+Unter **Einstellungen → Laufzeit → Python-Installation** lässt sich ein konkreter Interpreter auswählen und erneut prüfen. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. ScriptLab zeigt den tatsächlichen Status, die Version und den Interpreterpfad; es installiert keine Python-Grundinstallation und keine Pakete automatisch. Die 48 gemeinsamen Grundbausteintypen benötigen keine zusätzlichen Python-Pakete. Die zusätzlichen Business-Bausteine verwenden den ausdrücklich eingerichteten festen Paketsatz. Dialogbausteine benötigen `tkinter`, dessen Verfügbarkeit erst bei Bedarf geprüft wird. Abläufe ohne Dialoge setzen `tkinter` nicht voraus.
 
 Ein exportiertes Python-Script kann in PowerShell mit dem vollständigen Pfad des eigenen Interpreters gestartet werden. Die folgenden Beispielpfade müssen durch die tatsächlich vorhandenen Pfade ersetzt werden:
 
@@ -90,7 +94,7 @@ Ein exportiertes Python-Script kann in PowerShell mit dem vollständigen Pfad de
 
 `.scriptlab` enthält den bearbeitbaren JSON-Projektzustand in Schema 3 einschließlich `skriptsprache`, stabiler Variablen-IDs, Ansicht, Parameterdefinitionen und nicht geheimer Test-/Echt-Parametersätze. Alte Projekte in Schema 1 werden als VBS übernommen; Schema 2 behält seine Sprache und erhält die leeren Business-Angaben. Das Laden überschreibt keine Quelldatei. `.py`, `.vbs` und Business-ZIPs sind keine rückimportierbaren Projektformate. Unvollständige Entwürfe dürfen gespeichert werden; Fehler verhindern den Export.
 
-Inhaltliche Änderungen werden nach kurzer Eingabepause zusätzlich als lokale Entwürfe gesichert. **Projektmenü → Als Entwurf sichern** stößt dies ausdrücklich an. Eine Entwurfssicherung lässt die Projektdatei unverändert: **Entwurf lokal gesichert** und **Ungespeicherte Änderungen** können gleichzeitig gelten. Vor einem möglichen Verlust stehen **Speichern**, **Als Entwurf behalten**, **Änderungen verwerfen** und **Abbrechen** zur Wahl. Wurde die Ausgangsdatei von außen verändert oder ist sie nicht erreichbar, muss der Arbeitsstand als separate Projektkopie gespeichert werden.
+Inhaltliche Änderungen werden nach kurzer Eingabepause zusätzlich als lokale Entwürfe gesichert. **Workflow → Als Entwurf sichern** stößt dies ausdrücklich an. Eine Entwurfssicherung lässt die Projektdatei unverändert: **Entwurf lokal gesichert** und **Ungespeicherte Änderungen** können gleichzeitig gelten. Vor einem möglichen Verlust stehen **Speichern**, **Als Entwurf behalten**, **Änderungen verwerfen** und **Abbrechen** zur Wahl. Wurde die Ausgangsdatei von außen verändert oder ist sie nicht erreichbar, muss der Arbeitsstand als separate Projektkopie gespeichert werden.
 
 Python-Quelltext verwendet UTF-8 ohne BOM und CRLF. VBS-Quelltext verwendet UTF-16LE mit BOM und CRLF; die bisherige VBS-Kodierung wurde vom Windows-VBScript-Parser ohne Ausführung bestätigt. Relative Dateipfade beziehen sich beim Export auf den Speicherort der jeweiligen Scriptdatei und beim Test auf den gewählten Basisordner. Textdateien eines Workflows haben eine gesondert ausgewählte Kodierung. Dateiaktionen prüfen Quellen und vorhandene Ziele erst während einer ausdrücklich gestarteten Ausführung; ihre Regeln stehen in der Bausteinhilfe.
 

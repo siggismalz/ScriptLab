@@ -1,0 +1,69 @@
+{
+  "laufend": {
+    "laufId": "ce75d65e-e5fe-4874-bf29-06f4141a41bb",
+    "modus": "ausfuehren"
+  },
+  "abbruch": "abgebrochen",
+  "teil": {
+    "laufId": "67d096ec-68d3-4c18-a505-1c6ac3c1f37f",
+    "phase": "mit_fehlern",
+    "bericht": {
+      "art": "abschluss",
+      "block_id": "qa-fehlt",
+      "status": "mit_fehlern",
+      "grund": null,
+      "ausgaben": [
+        {
+          "pfad": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Gestaltung-cunvgG\\Testdaten-Ergebnis.csv",
+          "status": "publiziert",
+          "sha256": "ea7272c3628b2632742df72eb0874a3d679ee21387e04f12523853c427140873",
+          "bytes": 117
+        }
+      ],
+      "fehler": [
+        {
+          "block_id": "qa-fehlt",
+          "meldung": "Die Quelldatei ist nicht vorhanden.",
+          "unklar": false
+        }
+      ],
+      "summen": {
+        "verarbeitet": 1,
+        "uebersprungen": 0,
+        "geplant": 0,
+        "fehlerhaft": 1
+      },
+      "bericht_pfad": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Gestaltung-cunvgG\\Profil\\business-journale\\bericht-67d096ec-68d3-4c18-a505-1c6ac3c1f37f.json",
+      "meldung": null
+    }
+  },
+  "zuordnungKorrigiert": "qa-lesen",
+  "umgebung": {
+    "displays": [
+      {
+        "id": 1867114912,
+        "scaleFactor": 1.75,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 2195,
+          "height": 1235
+        }
+      },
+      {
+        "id": 1727044735,
+        "scaleFactor": 1.75,
+        "bounds": {
+          "x": 2195,
+          "y": 0,
+          "width": 2195,
+          "height": 1235
+        }
+      }
+    ],
+    "fenster": [
+      1282,
+      721
+    ]
+  }
+}

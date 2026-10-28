@@ -1,0 +1,11 @@
+{
+  "monitorwechsel": {
+    "durchgefuehrt": true,
+    "von": 1867114912,
+    "nach": 1727044735,
+    "skalierungVorher": 1.75,
+    "skalierungNachher": 1.75
+  },
+  "maximieren": true,
+  "wiederherstellen": true
+}

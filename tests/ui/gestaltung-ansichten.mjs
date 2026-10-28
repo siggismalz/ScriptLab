@@ -39,7 +39,9 @@ const seite = await app.firstWindow();
 const fehler = [];
 seite.on('pageerror', (e) => fehler.push(e.message));
 async function bild(name) {
-  await seite.evaluate(() => new Promise((fertig) => requestAnimationFrame(() => requestAnimationFrame(fertig))));
+  await seite.evaluate(
+    () => new Promise((fertig) => requestAnimationFrame(() => requestAnimationFrame(fertig))),
+  );
   await seite.waitForTimeout(150);
   await seite.screenshot({ path: join(ziel, name + '.png') });
 }
@@ -250,6 +252,10 @@ try {
   assert.ok((await readFile(join(basis, 'Testdaten-Ergebnis.csv'), 'utf8')).includes('Nord'));
   await bereich('Ergebnisse');
   await bild('lauf-teilergebnis-dunkel-1280');
+  const berichtDetails = seite.getByTestId('test-panel').locator('.business-ergebnis-bericht');
+  await berichtDetails.locator('summary').click();
+  await bild('lauf-berichtdetails-dunkel-1280');
+  await berichtDetails.locator('summary').click();
   await thema('hell');
   await bild('lauf-teilergebnis-hell-1280');
   await bereich('Protokoll');

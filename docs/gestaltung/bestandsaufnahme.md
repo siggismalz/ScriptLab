@@ -21,18 +21,18 @@ kein Nachweis einer visuellen oder praktischen Abnahme der neuen Gestaltung.
 
 ## Vorhandene Arbeitswege und erhaltenswerte Lösungen
 
-| Weg | Vorhandene Umsetzung | Konsequenz für die Gestaltung |
-| --- | --- | --- |
-| Gespeicherten Workflow öffnen | Lokaler Index, separate Verfügbarkeitsprüfung, Datei öffnen oder neu zuordnen | Keine fremden Dateien als globale Suchtreffer darstellen |
-| Entwurf fortsetzen | Entwurf und Ausgangsdatei werden unterschieden; Speicherentscheidung liegt im Hauptprozess | Entwurfzustand sichtbar halten, Wiederherstellen nicht als Speichern bezeichnen |
-| Beispiel verwenden | Beispiele werden über die bestehende `beispielOeffnen`-Operation geöffnet | Bestehende unabhängige Kopie verwenden |
-| Baustein einfügen | Suchbare Palette, Blockly-Flyout, Liste von Einfügestellen und eigener Dragger | Die vorhandene Zeigeralternative ohne Ziehen erhalten |
-| Konfiguration ändern | Blockly-Felder und `Eigenschaften`/`BusinessEigenschaften` | Längere Eingaben im Eigenschaftenbereich halten |
-| Parameter bearbeiten | Definitionen, Standardwerte sowie Test-/Echtdatensätze | Definition und Werte müssen erkennbar verschieden bleiben |
-| Vorschau/Prüflauf/Ausführung | Getrennte Business-Modi in `TestOptionen`; tatsächliche Ausführung im Hauptprozess | Modus vor und während des Starts durchgängig benennen |
-| Ergebnis prüfen | `BusinessErgebnis` zeigt ausschließlich bestätigte Meldungen, Zähler und Ausgabeziele | Keine geschätzten Erfolgszahlen ergänzen |
-| Fehler nachvollziehen | Lauf-ID, Workflowkennung, Standhash und Fehlerbaustein sind vorhanden | Veraltete Ergebnisse und Blockzuordnungen weiter absichern |
-| Export | Scriptdatei oder Business-ZIP mit nativen Optionen und expliziten Ressourcen | Dateiformate und Auswahlregeln erhalten |
+| Weg                           | Vorhandene Umsetzung                                                                       | Konsequenz für die Gestaltung                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| Gespeicherten Workflow öffnen | Lokaler Index, separate Verfügbarkeitsprüfung, Datei öffnen oder neu zuordnen              | Keine fremden Dateien als globale Suchtreffer darstellen                        |
+| Entwurf fortsetzen            | Entwurf und Ausgangsdatei werden unterschieden; Speicherentscheidung liegt im Hauptprozess | Entwurfzustand sichtbar halten, Wiederherstellen nicht als Speichern bezeichnen |
+| Beispiel verwenden            | Beispiele werden über die bestehende `beispielOeffnen`-Operation geöffnet                  | Bestehende unabhängige Kopie verwenden                                          |
+| Baustein einfügen             | Suchbare Palette, Blockly-Flyout, Liste von Einfügestellen und eigener Dragger             | Die vorhandene Zeigeralternative ohne Ziehen erhalten                           |
+| Konfiguration ändern          | Blockly-Felder und `Eigenschaften`/`BusinessEigenschaften`                                 | Längere Eingaben im Eigenschaftenbereich halten                                 |
+| Parameter bearbeiten          | Definitionen, Standardwerte sowie Test-/Echtdatensätze                                     | Definition und Werte müssen erkennbar verschieden bleiben                       |
+| Vorschau/Prüflauf/Ausführung  | Getrennte Business-Modi in `TestOptionen`; tatsächliche Ausführung im Hauptprozess         | Modus vor und während des Starts durchgängig benennen                           |
+| Ergebnis prüfen               | `BusinessErgebnis` zeigt ausschließlich bestätigte Meldungen, Zähler und Ausgabeziele      | Keine geschätzten Erfolgszahlen ergänzen                                        |
+| Fehler nachvollziehen         | Lauf-ID, Workflowkennung, Standhash und Fehlerbaustein sind vorhanden                      | Veraltete Ergebnisse und Blockzuordnungen weiter absichern                      |
+| Export                        | Scriptdatei oder Business-ZIP mit nativen Optionen und expliziten Ressourcen               | Dateiformate und Auswahlregeln erhalten                                         |
 
 `Startbereich.tsx` hält Suche, Sprachfilter, Sortierung und Scrollpositionen lokal.
 Der gesamte Startbereich bleibt beim Öffnen des Editors eingebunden und wird
@@ -96,16 +96,16 @@ im Hauptprozess wirksam.
 Diese Vorgaben bilden die Arbeitsgrundlage für tatsächliche Ansichten mit
 kenntlich gemachten synthetischen Testdaten in beiden Themen:
 
-| Zustand | Inhalt und Priorität | Echte Datenbasis |
-| --- | --- | --- |
-| Start mit vorhandener Arbeit | Neuer Workflow, Weiterbearbeiten, vier Einstiege, bis zu fünf zuletzt geöffnete Workflows; ein sichtbarer Entwurfzugang | `ProjektBibliothek`, `EntwurfStatus`, aktiver Workflow |
-| Workflowübersicht | Suche ausdrücklich nur in gespeicherten Workflows; Sprachfilter, Sortierung, Name, Beschreibung, Zeitpunkt und Dateizustand; gewählte Zeile zeigt vollständigen Pfad und Aktionen | `ProjektEintrag`, `Verfuegbarkeit` |
-| Business-Editor | Monatsauswertung mit Import, Verarbeitung und Ausgabe; ausgewählter Block plus Eigenschaften; klare Auswahlkontur; keine dauerhafte große Ergebnismenge | Mitgeliefertes Business-Beispiel und Blockly-Auswahl |
-| Datenvorschau mit Zuordnungsfehler | Quelle und Konfiguration getrennt; Pflichtfehler am betroffenen Feld; Baustein anzeigen; Vorschauumfang und Begrenzung sichtbar | Strukturvalidierung und ausdrücklich geladene `business.vorschau` |
-| Vorbereitung und laufender Prozess | Modus, Workflowstand, Parametersatz, Basisordner, relevante Quellen/Ziele, Überschreibregel und Zeitlimit; während des Laufs Status plus Stoppen dauerhaft erreichbar | `TestOptionen`, `TestZustand`, Business-Schritte |
-| Lauf mit Teilergebnis | Verarbeitete Daten, tatsächlich gemeldete Ausgabedateien und verbleibende Hinweise/Fehler; Details für technisches Protokoll | Bestätigter Business-Bericht und Ereignisse |
-| Business-Paketexport | Klare Unterscheidung Projektdatei/Script/Business-Paket, Inhalt und benötigte Umgebung; Ausgabeort über Windows-Dateiauswahl | Vorhandene Exportoperation, Ressourcenliste und Paketdateien |
-| Einstellungen | Darstellung Dunkel/Hell/System, UI-Vergrößerung getrennt vom Canvaszoom; Python-/Business-Laufzeit mit tatsächlichem Status | Lokale Einstellungen und Laufzeit-Brücke |
+| Zustand                            | Inhalt und Priorität                                                                                                                                                              | Echte Datenbasis                                                  |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Start mit vorhandener Arbeit       | Neuer Workflow, Weiterbearbeiten, vier Einstiege, bis zu fünf zuletzt geöffnete Workflows; ein sichtbarer Entwurfzugang                                                           | `ProjektBibliothek`, `EntwurfStatus`, aktiver Workflow            |
+| Workflowübersicht                  | Suche ausdrücklich nur in gespeicherten Workflows; Sprachfilter, Sortierung, Name, Beschreibung, Zeitpunkt und Dateizustand; gewählte Zeile zeigt vollständigen Pfad und Aktionen | `ProjektEintrag`, `Verfuegbarkeit`                                |
+| Business-Editor                    | Monatsauswertung mit Import, Verarbeitung und Ausgabe; ausgewählter Block plus Eigenschaften; klare Auswahlkontur; keine dauerhafte große Ergebnismenge                           | Mitgeliefertes Business-Beispiel und Blockly-Auswahl              |
+| Datenvorschau mit Zuordnungsfehler | Quelle und Konfiguration getrennt; Pflichtfehler am betroffenen Feld; Baustein anzeigen; Vorschauumfang und Begrenzung sichtbar                                                   | Strukturvalidierung und ausdrücklich geladene `business.vorschau` |
+| Vorbereitung und laufender Prozess | Modus, Workflowstand, Parametersatz, Basisordner, relevante Quellen/Ziele, Überschreibregel und Zeitlimit; während des Laufs Status plus Stoppen dauerhaft erreichbar             | `TestOptionen`, `TestZustand`, Business-Schritte                  |
+| Lauf mit Teilergebnis              | Verarbeitete Daten, tatsächlich gemeldete Ausgabedateien und verbleibende Hinweise/Fehler; Details für technisches Protokoll                                                      | Bestätigter Business-Bericht und Ereignisse                       |
+| Business-Paketexport               | Klare Unterscheidung Projektdatei/Script/Business-Paket, Inhalt und benötigte Umgebung; Ausgabeort über Windows-Dateiauswahl                                                      | Vorhandene Exportoperation, Ressourcenliste und Paketdateien      |
+| Einstellungen                      | Darstellung Dunkel/Hell/System, UI-Vergrößerung getrennt vom Canvaszoom; Python-/Business-Laufzeit mit tatsächlichem Status                                                       | Lokale Einstellungen und Laufzeit-Brücke                          |
 
 ## Fachliche Abhängigkeiten und Grenzen
 

@@ -1,12 +1,12 @@
 # ScriptLab bedienen
 
-ScriptLab erstellt, prüft und speichert Windows-Workflows als Bausteine. Beim Export schreibt die Anwendung je nach festgelegter Sprache eine eigenständige Python- oder VBS-Datei. Nur ein bewusst gestarteter **Test** führt den vollständigen aktuellen Workflow in ScriptLab aus. Dabei werden Dateiaktionen tatsächlich vorgenommen. Bearbeiten, Vorschau, Strukturprüfung, Öffnen von Projekten oder Beispielen, Wiederherstellen, Speichern, Export und Signieren lösen keine Workflowaktionen aus.
+ScriptLab erstellt, prüft und speichert Windows-Workflows als Bausteine. Beim Export schreibt die Anwendung je nach festgelegter Sprache eine eigenständige Python- oder VBS-Datei; Business-Workflows erhalten ein ZIP mit den benötigten Komponenten. Nur ein bewusst gestarteter **Test** führt den vollständigen aktuellen Workflow in ScriptLab aus. Dabei werden Dateiaktionen tatsächlich vorgenommen. Bearbeiten, Codevorschau, Strukturprüfung, Öffnen von Projekten oder Beispielen, Wiederherstellen, Speichern, Export und Signieren lösen keine Workflowaktionen aus.
 
 Entwickelt von Leon Stolz.
 
 ## Auf der Startseite beginnen
 
-ScriptLab öffnet zuerst die Startseite. **Neuer Workflow** öffnet die Sprachauswahl; **Workflow öffnen** lädt eine selbst gewählte `.scriptlab`-Datei. Wenn bereits ein Workflow aktiv ist, führt **Weiterbearbeiten** zu demselben Stand zurück. Auch der Wechsel über **Startseite** im Editor erhält Bausteine, Auswahl und Ansicht.
+ScriptLab öffnet zuerst die Startseite. **Neuer Workflow** öffnet die Sprachauswahl; **Workflow öffnen** lädt eine selbst gewählte `.scriptlab`-Datei. Wenn bereits ein Workflow aktiv ist, führt **Weiterbearbeiten** zu demselben Stand zurück. Auch der Wechsel über **Bereiche → Start** im Editor erhält Bausteine, Auswahl und Ansicht.
 
 Die vier Bereiche stehen in dieser Reihenfolge:
 
@@ -14,44 +14,44 @@ Die vier Bereiche stehen in dieser Reihenfolge:
 | ----------------------------- | ------------------------------------------------------------------------------------ |
 | Meine gespeicherten Workflows | Bekannte Projektdateien anhand von Name oder Pfad suchen und weiterbearbeiten.       |
 | Entwürfe                      | Lokal gesicherte Zwischenstände bewusst fortsetzen oder als Projektdatei speichern.  |
-| Beispielworkflows             | Sechs vorhandene Vorlagen – drei je Sprache – als eigene bearbeitbare Kopien öffnen. |
-| Dokumentation und Anleitungen | Sieben lokale Hilfethemen durchsuchen; Treffer führen zur passenden Artikelstelle.   |
+| Beispielworkflows             | Vorhandene Vorlagen als eigene bearbeitbare Kopien öffnen.                          |
+| Dokumentation und Anleitungen | Lokale Hilfethemen durchsuchen; Treffer führen zur passenden Artikelstelle.          |
 
-**Einstellungen**, **Hilfe** und **Über ScriptLab** sind im Kopf der Startseite erreichbar. Die Hilfe funktioniert offline; Beispielverweise darin öffnen ebenfalls eine Vorlage als Kopie.
+**Einstellungen**, **Hilfe** und **Über ScriptLab** sind in der festen Navigation erreichbar, im Editor unter **Bereiche**. Die Hilfe funktioniert offline; Beispielverweise darin öffnen ebenfalls eine Vorlage als Kopie.
 
 ## Eine Sprache wählen
 
-Jede leere Neuanlage über **Neuer Workflow**, **Neu** oder Strg+N beginnt mit **Welche Sprache möchtest du verwenden?** Python und VBScript (VBS) werden gleichgewichtig angeboten. Bei der ersten Erstellung ist nichts vorausgewählt; **Workflow erstellen** wird erst nach einer Auswahl verfügbar. Später ist die zuletzt erfolgreich gewählte Sprache vorgeschlagen. **Abbrechen** lässt den bisherigen Workflow unverändert. Ein Namensdialog ist nicht erforderlich.
+Jede leere Neuanlage über **Neuer Workflow**, **Workflow → Neuer Workflow** oder Strg+N beginnt mit dem Dialog **Neuer Workflow**. Python und VBScript (VBS) werden angeboten. Bei der ersten Erstellung ist nichts vorausgewählt; **Workflow erstellen** wird erst nach einer Auswahl verfügbar. Später ist die zuletzt erfolgreich gewählte Sprache vorgeschlagen. **Abbrechen** lässt den bisherigen Workflow unverändert. Ein Namensdialog ist nicht erforderlich.
 
-Beide Sprachen verwenden dieselben 48 Bausteintypen. Die Wahl bestimmt den erzeugten Scripttext und bleibt für das Projekt fest. Die Sprache steht im Editor, in Listen, Beispielen, Vorschau und Testausgabe. Ein anderes Ausgabeformat erfordert einen neuen Workflow; vorhandene Projekte werden nicht umgestellt. Nach der Wahl schützt ScriptLab einen gegebenenfalls ungespeicherten bisherigen Stand mit den üblichen Speicherentscheidungen.
+Beide Sprachen verwenden dieselben 48 Bausteintypen. Die Wahl bestimmt den erzeugten Scripttext und bleibt für das Projekt fest. Die Sprache steht im Editor, in Listen, Beispielen, Vorschau und Laufdetails. Ein anderes Ausgabeformat erfordert einen neuen Workflow; vorhandene Projekte werden nicht umgestellt. Nach der Wahl schützt ScriptLab einen gegebenenfalls ungespeicherten bisherigen Stand mit den üblichen Speicherentscheidungen.
 
 ## Eine erste Nachricht erstellen
 
 1. Wähle auf der Startseite **Neuer Workflow**, entscheide dich für Python oder VBScript (VBS) und bestätige **Workflow erstellen**. Das neue Projekt enthält nur **Workflow starten** und den Hinweis „Füge links einen Baustein hinzu“.
 2. Suche links nach **Nachricht**. Klicke beim Treffer **Nachricht anzeigen** auf Plus und wähle **Nach „Workflow starten“**. Damit ist die Nachricht bereits mit dem Ablauf verbunden.
 3. Klicke auf das Textfeld am Nachrichtenbaustein und schreibe deine Nachricht. Alternativ wählst du den Baustein aus und öffnest **Eigenschaften** über die Werkzeugleiste oder F4. Dort stehen dieselben Werte in größeren Eingabefeldern.
-4. Öffne das **Projektmenü** neben **Speichern** und wähle **Projektangaben**, wenn du Namen oder Beschreibung ändern möchtest. **Übernehmen** aktualisiert die Angaben; die Projektdatei wird erst mit **Speichern** geschrieben.
-5. Speichere über **Speichern** eine `.scriptlab`-Projektdatei. Diese Datei erhält die Bausteine, ihre Verbindungen, Kommentare und die Ansicht für die spätere Bearbeitung. Zum Prüfen des erzeugten Texts kannst du **Codevorschau** öffnen: Sie erscheint als schreibgeschützter Bereich unten und ist anfangs geschlossen.
-6. Wähle entsprechend der Projektsprache **Python-Script exportieren** oder **VBS-Script exportieren** und einen Speicherort für die `.py`- beziehungsweise `.vbs`-Datei. Ein normaler Export benötigt kein Zertifikat.
+4. Öffne **Workflow → Projektangaben**, wenn du Namen oder Beschreibung ändern möchtest. **Übernehmen** aktualisiert die Angaben; die Projektdatei wird erst mit **Speichern** geschrieben.
+5. Speichere über **Speichern** eine `.scriptlab`-Projektdatei. Diese Datei erhält die Bausteine, ihre Verbindungen, Kommentare und die Ansicht für die spätere Bearbeitung. **Ansicht → Codevorschau öffnen** zeigt den erzeugten Text schreibgeschützt und führt nichts aus.
+6. Wähle **Exportieren**, unter **Inhalt** das Scriptformat deiner Sprache und anschließend **Ausgabeort auswählen** für die `.py`- beziehungsweise `.vbs`-Datei. Ein normaler Export benötigt kein Zertifikat.
 7. Nach erfolgreichem Export erscheint: „Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“ **Speicherordner anzeigen** öffnet den Ordner; ScriptLab startet die Datei dabei nicht.
 
-Der selbstständige Start außerhalb von ScriptLab ist deine eigene Entscheidung. Python benötigt eine passende Python-Installation, VBS die optionale Windows-VBScript-Komponente und Windows Script Host. Die geltenden Richtlinien müssen den jeweiligen Start erlauben. ScriptLab installiert keine Laufzeiten, aktiviert keine Windows-Features und ändert keine Sicherheitsrichtlinien.
+Der selbstständige Start außerhalb von ScriptLab ist deine eigene Entscheidung. Python benötigt eine passende Python-Installation, VBS die optionale Windows-VBScript-Komponente und Windows Script Host. Die geltenden Richtlinien müssen den jeweiligen Start erlauben. ScriptLab installiert keine Python-Grundinstallation, aktiviert keine Windows-Features und ändert keine Sicherheitsrichtlinien. Die gesonderte Business-Einrichtung kann nach deiner Auswahl ihren festen Paketsatz in einer eigenen Umgebung einrichten.
 
 ## Den aktuellen Workflow bewusst testen
 
-Über **Testausgabe** öffnest du das Testpanel, ohne einen Workflow zu starten. Wähle dort mit **Ordner auswählen** einen Basisordner und prüfe **Zeitlimit in Sekunden**. Der Standard ist 120 Sekunden; zulässig sind 1 bis 3600. **Testen** startet immer den vollständigen aktuellen Ablauf, nicht nur den ausgewählten Baustein.
+Öffne **Läufe → Vorbereitung**, ohne einen Workflow zu starten. Wähle dort mit **Ordner auswählen** einen Basisordner und klappe bei Bedarf **Zeitlimit** auf. Der Standard ist 120 Sekunden; zulässig sind 1 bis 28800. **Workflow ausführen** startet immer den vollständigen aktuellen Ablauf, nicht nur den ausgewählten Baustein.
 
-Wurden Basisordner und Zeitlimit für den aktuellen Kontext noch nicht angezeigt, öffnet der erste Startwunsch zunächst das Panel und führt noch nichts aus. Nach dem Prüfen startest du mit einem weiteren bewussten Klick. Wenn du **Testausgabe** bereits bewusst geöffnet, einen Ordner gewählt oder die Optionen geändert hast, ist der Kontext sichtbar gewesen und **Testen** startet direkt. Es gibt keinen zusätzlichen Bestätigungsdialog vor jedem Lauf. Das Speichern desselben Workflows erhält diesen Kontext.
+Wurden Basisordner und Zeitlimit für den aktuellen Kontext noch nicht geprüft, führt der erste Startwunsch zunächst zur Vorbereitung und führt noch nichts aus. Nach dem Prüfen startest du mit einem weiteren bewussten Klick. Das Speichern desselben Workflows erhält diesen Kontext. **Übersicht**, **Ergebnisse** und **Protokoll** zeigen anschließend denselben Lauf; der Ansichtswechsel startet ihn nicht erneut.
 
 **Der Test führt deinen Workflow auf diesem Computer aus. Dateiänderungen werden tatsächlich vorgenommen.** Der Basisordner bestimmt die Auflösung relativer Pfade; er ist keine Sandbox und begrenzt absolute Pfade nicht. Verwende für einen ersten Dateitest einen eigenen Ordner mit entbehrlichen Testdateien. **Stoppen** beendet den Test und macht bereits erfolgte Änderungen nicht rückgängig.
 
-**Text ausgeben** schreibt in die Testausgabe. Nachrichten, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen Dialoge; bei Python wird dafür `tkinter` benötigt. Beachte bei einem wartenden Test auch diese Dialoge. Status, Sprache, die tatsächlich verwendete Python-Version, Ausgabe, Laufkennung, geprüfter Stand und Fehlerzuordnung stehen im Testpanel. Ein Test ersetzt kein Speichern oder Exportieren. Der bisherige VBS-Prüfstand steht in [TESTLAUF.md](TESTLAUF.md); die Python-Erweiterung und ihre tatsächlichen Prüfgrenzen stehen in [PYTHON.md](PYTHON.md).
+**Text ausgeben** schreibt unter **Läufe → Protokoll**. Nachrichten, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen Dialoge; bei Python wird dafür `tkinter` benötigt. Beachte bei einem wartenden Test auch diese Dialoge. **Übersicht → Laufstand und technische Angaben** zeigt den verwendeten Stand; unter **Protokoll → Technische Details** stehen Quelltext und Fehlerzuordnung. Ein Test ersetzt kein Speichern oder Exportieren. Der bisherige VBS-Prüfstand steht in [TESTLAUF.md](TESTLAUF.md); die Python-Erweiterung und ihre tatsächlichen Prüfgrenzen stehen in [PYTHON.md](PYTHON.md).
 
 ## Python einrichten und einen Export selbst starten
 
 Unter **Einstellungen → Python-Installation** zeigt ScriptLab, ob ein geeigneter Interpreter tatsächlich geprüft wurde. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. **Interpreter auswählen** öffnet die Dateiauswahl für eine konkrete Python-Programmdatei; **Erneut prüfen** prüft die Installation neu. Angezeigt werden der tatsächliche absolute Pfad und die Version. Bei einem nicht eingerichteten Python-Test führt **Python einrichten** direkt zu diesen Einstellungen. **Offizielle Python-Hilfe** öffnet eine feste Informationsseite im Browser.
 
-ScriptLab lädt und installiert weder Python noch Pakete. Die angebotenen Bausteine benötigen keine zusätzlichen Python-Pakete. Dialoge setzen `tkinter` voraus; diese Komponente wird bei einem Test mit Dialogbausteinen gesondert geprüft. Ohne Dialoge wird kein `tkinter` verlangt. Bearbeiten, Speichern und Python-Export funktionieren auch ohne Interpreter. Dessen Auswahl ist eine lokale Einstellung und wird nicht in Projekte oder Exportdateien geschrieben.
+ScriptLab lädt und installiert keine Python-Grundinstallation. Die gemeinsamen Grundbausteine benötigen keine zusätzlichen Python-Pakete; Business-Bausteine verwenden den ausdrücklich eingerichteten festen Paketsatz. Ein Workflowstart installiert keine Pakete. Dialoge setzen `tkinter` voraus; diese Komponente wird bei einem Test mit Dialogbausteinen gesondert geprüft. Ohne Dialoge wird kein `tkinter` verlangt. Bearbeiten, Speichern und Python-Export funktionieren auch ohne Interpreter. Dessen Auswahl ist eine lokale Einstellung und wird nicht in Projekte oder Exportdateien geschrieben.
 
 Zum selbstständigen Start eines exportierten Scripts öffnest du PowerShell und verwendest den vollständigen Pfad deines Interpreters sowie die normale `.py`-Datei. Ersetze die Beispielpfade durch die tatsächlich vorhandenen Pfade:
 
@@ -63,15 +63,15 @@ Die empfohlenen Optionen entsprechen dem Teststart: `-I` isoliert die Modulsuche
 
 ## Bausteine verbinden und bearbeiten
 
-Wähle links eine beschriftete Kategorie. **Ein- und Ausgaben** ist anfangs geöffnet. Ziehe einen Baustein am Namen aus der aufgeklappten Liste in den Arbeitsbereich. Die Suchleiste durchsucht alle Kategorien anhand von Name, Kategorie und Hilfe. Treffer zeigen ihre Kategorie; bei „Keine Bausteine gefunden“ kannst du **Suche leeren** wählen. Danach erscheint wieder die zuvor geöffnete Kategorie.
+Die Palette bietet die fachlichen Einstiege **Ablauf steuern**, **Daten verarbeiten**, **Dateien und Ordner**, **Dokumente erstellen** und **Werte und Eingaben**, soweit die gewählte Sprache passende Bausteine enthält. Darunter wählst du eine Kategorie. Die Suche durchsucht alle verfügbaren Bausteine direkt; **Suche leeren** führt zur vorherigen Palettenansicht zurück. Ziehe einen Baustein am Namen aus der Liste in den Arbeitsbereich.
 
 Ein Workflow besitzt genau einen aktiven Startbaustein. Anweisungen werden untereinander verbunden. Ihre Verbindungen legen die Reihenfolge fest; ihre Position auf dem Raster tut das nicht. Werte und Bedingungen passen in die dafür geformten Eingänge. „Wenn / sonst“ und Schleifen nehmen weitere Anweisungen in ihren inneren Abläufen auf.
 
 Ziehe einen verbundenen Baustein heraus, um ihn zu lösen oder neu einzusetzen. Eine Einfügemarkierung zeigt passende Anschlüsse. **Escape** bricht das Ziehen ab und stellt den vorherigen Zustand wieder her. Das dezente Punktraster hilft beim Anordnen.
 
-Das Mausrad, Ziehen am freien Arbeitsbereich, die Bildlaufleisten und die vier Ansichtspfeile verschieben den sichtbaren Ausschnitt. **Strg+Mausrad** zoomt nur über der Arbeitsfläche. In der Palette scrollt das Rad die Bausteinliste. Unten im Arbeitsbereich stehen **Verkleinern**, die aktuelle Prozentanzeige zum Zurücksetzen auf **100 %**, **Vergrößern** und **Alles anzeigen** bereit. Der Zoom reicht von 25 bis 200 Prozent; „Alles anzeigen“ passt den gesamten Workflow ein. Unter **Weitere Funktionen → Einstellungen → UI-Textgröße** lässt sich die Schrift der Bedienelemente getrennt davon vergrößern.
+Das Mausrad, Ziehen am freien Arbeitsbereich, die Bildlaufleisten und die vier Ansichtspfeile verschieben den sichtbaren Ausschnitt. **Strg+Mausrad** zoomt nur über der Arbeitsfläche. In der Palette scrollt das Rad die Bausteinliste. Unten im Arbeitsbereich stehen **Verkleinern**, die aktuelle Prozentanzeige zum Zurücksetzen auf **100 %**, **Vergrößern** und **Alles anzeigen** bereit. Der Zoom reicht von 25 bis 200 Prozent; „Alles anzeigen“ passt den gesamten Workflow ein. Unter **Bereiche → Einstellungen → Darstellung → Textgröße der Oberfläche** lässt sich die Schrift der Bedienelemente getrennt davon vergrößern.
 
-Die Werkzeugleiste enthält **Startseite**, **Neu**, **Öffnen**, **Speichern**, das **Projektmenü**, **Rückgängig**, **Wiederholen**, **Eigenschaften**, **Codevorschau**, **Testen**, **Testausgabe** und je nach Sprache **Python-Script exportieren** oder **VBS-Script exportieren**. Während eines Tests erscheint zusätzlich **Stoppen**. **Speichern unter** und **Als Entwurf sichern** liegen im Projektmenü. **Weitere Funktionen** neben dem Export öffnet unter anderem **Einstellungen**, **Hilfe und Anleitungen**, **Über ScriptLab**, **Kopieren** und **Einfügen**. **Duplizieren**, **Kopieren**, **Verschieben** und **Baustein löschen** findest du auch in den Eigenschaften des ausgewählten Bausteins. Blockly bietet zusätzlich das Kontextmenü per rechter Maustaste. Gelöschte Bausteine lassen sich mit **Rückgängig** wiederherstellen; bereits ausgeführte Dateiaktionen eines Tests nicht.
+Die Werkzeugleiste hält **Speichern**, **Workflow**, **Rückgängig**, **Wiederholen**, **Eigenschaften**, **Testen**, **Exportieren** und **Ansicht** bereit. **Workflow** enthält unter anderem Öffnen, Neuanlage, **Speichern unter** und **Als Entwurf sichern**. **Ansicht** öffnet die Codevorschau oder setzt die Flächenaufteilung zurück. **Bereiche** führt zu Start, Workflows, Vorlagen, Hilfe und Einstellungen. Während eines Laufs bleibt **Stoppen** erreichbar. **Duplizieren**, **Kopieren**, **Verschieben** und **Baustein löschen** findest du in den Eigenschaften des ausgewählten Bausteins. Blockly bietet zusätzlich das Kontextmenü per rechter Maustaste. Gelöschte Bausteine lassen sich mit **Rückgängig** wiederherstellen; bereits ausgeführte Dateiaktionen eines Laufs nicht.
 
 Variablen wählst du in den Bausteinen oder Eigenschaften aus derselben Liste. **Neue Variable anlegen** erstellt eine Variable; das Blockly-Auswahlmenü bietet das Umbenennen. Intern bleiben feste Variablen-IDs erhalten: Eine Umbenennung aktualisiert alle Bezüge derselben Variable. Ein angezeigter Name wird niemals als ungeprüfter Programmcode eingesetzt.
 
@@ -83,9 +83,9 @@ Zum Umordnen wählst du einen vorhandenen Baustein aus, öffnest **Eigenschaften
 
 ## Eigenschaften und Platz im Fenster
 
-Die **Eigenschaften** sind unabhängig von der Codevorschau und anfangs geschlossen. Sie zeigen die Hilfe, ein konkretes Wirkungsbeispiel und die bearbeitbaren Werte des ausgewählten Bausteins. Lange Texte und vollständige Pfade lassen sich in den größeren Feldern auswählen, kopieren und ändern. Änderungen erscheinen zugleich am Baustein.
+Die **Eigenschaften** sind unabhängig von der Codevorschau und anfangs geschlossen. Sie zeigen die primären Werte des ausgewählten Bausteins. Weitere Optionen sowie Name, Hilfe und Wirkungsbeispiel liegen in aufklappbaren Bereichen wie **Importeinstellungen** und **Bausteindetails**. Lange Texte und vollständige Pfade lassen sich in den größeren Feldern auswählen, kopieren und ändern. Änderungen erscheinen zugleich am Baustein.
 
-Bei schmaleren Fenstern liegt der Eigenschaftenbereich über dem rechten Rand der Arbeitsfläche; er verkleinert diese nicht. Bei mindestens 1440 CSS-Pixeln Fensterbreite lässt er sich anheften. **Eigenschaften schließen** gibt den Arbeitsbereich wieder frei. Die linke Palette kannst du über ihren Kopf einklappen und an der Trennlinie verbreitern. Auch **Einstellungen → Breite der Bausteinpalette** bietet dafür ein Feld. Die Höhe der Codevorschau lässt sich an ihrer oberen Trennlinie oder mit ihren Größenknöpfen verändern.
+Bei schmaleren Fenstern liegt der Eigenschaftenbereich über dem rechten Rand der Arbeitsfläche. Bei enger Fläche ersetzt er vorübergehend die Palette; nach dem Schließen erscheint diese wieder. Anheften ist ab 1440 CSS-Pixeln und mit ausreichend verbleibender Arbeitsfläche möglich. **Eigenschaften schließen** gibt den Arbeitsbereich wieder frei. Die linke Palette kannst du über ihren Kopf einklappen und an der Trennlinie verbreitern. Auch **Einstellungen → Darstellung → Breite der Bausteinpalette** bietet dafür ein Feld. Die Höhe der Codevorschau lässt sich an ihrer oberen Trennlinie oder mit ihren Größenknöpfen verändern.
 
 ## Tastenkombinationen
 
@@ -117,9 +117,9 @@ Die angezeigten Strukturprüfungen kontrollieren Verbindungen und Übersetzbarke
 
 ## Projekte und Änderungen erhalten
 
-**Öffnen** lädt `.scriptlab`-Dateien. **Projektmenü → Speichern unter** legt das aktuelle Projekt an einem anderen Ort ab. Die Statusleiste unterscheidet **Neues Projekt**, **Ungespeicherte Änderungen** und **Projekt gespeichert**. Ein erfolgreicher Python- oder VBS-Export speichert die Projektdatei nicht mit.
+**Öffnen** lädt `.scriptlab`-Dateien. **Workflow → Speichern unter** legt das aktuelle Projekt an einem anderen Ort ab. Die Statusleiste unterscheidet **Neues Projekt**, **Ungespeicherte Änderungen** und **Projekt gespeichert**. Ein erfolgreicher Python- oder VBS-Export speichert die Projektdatei nicht mit.
 
-Inhaltliche Änderungen werden nach einer kurzen Eingabepause automatisch als lokaler Entwurf gesichert. **Projektmenü → Als Entwurf sichern** sichert den Zwischenstand ausdrücklich. Ein neuer leerer Startablauf und reine Ansichtsänderungen erzeugen keinen zusätzlichen Entwurf. Die Anzeige **Entwurf lokal gesichert** bestätigt die lokale Sicherung; **Ungespeicherte Änderungen** bleibt bestehen, solange die Projektdatei noch nicht den aktuellen Stand enthält. Eine ausstehende oder fehlgeschlagene Sicherung wird gesondert angezeigt.
+Inhaltliche Änderungen werden nach einer kurzen Eingabepause automatisch als lokaler Entwurf gesichert. **Workflow → Als Entwurf sichern** sichert den Zwischenstand ausdrücklich. Ein neuer leerer Startablauf und reine Ansichtsänderungen erzeugen keinen zusätzlichen Entwurf. Die Anzeige **Entwurf lokal gesichert** bestätigt die lokale Sicherung; **Ungespeicherte Änderungen** bleibt bestehen, solange die Projektdatei noch nicht den aktuellen Stand enthält. Eine ausstehende oder fehlgeschlagene Sicherung wird gesondert angezeigt.
 
 Bei einem Projektwechsel, beim Schließen oder vor einem Update-Neustart fragt die Anwendung nach, wenn Änderungen verloren gingen:
 
@@ -138,15 +138,15 @@ Vor dem Überschreiben prüft ScriptLab, ob die Ausgangsdatei außerhalb der Anw
 
 Einstellungen und Bibliotheksdaten liegen im Nutzerverzeichnis `%APPDATA%\ScriptLab`, außerhalb der Installation: `projektbibliothek.json` enthält bekannte Dateiverweise, `entwuerfe\<UUID>.json` enthält lokale Sicherungen. Deine eigentlichen Projektdateien bleiben an den selbst gewählten Speicherorten. Sichere wichtige Projekte zusätzlich selbst.
 
-Projektdateien sind JSON-Daten. Schema 2 speichert zusätzlich die feste `skriptsprache` und stabile Variablen-IDs. Alte Schema-1-Projekte werden beim Öffnen zu VBS-Projekten migriert; die Originaldatei bleibt dabei unverändert. Erst ein ausdrückliches Speichern schreibt das aktuelle Format. Die Anwendung prüft Struktur und Schemaversion. Neuere unbekannte Formate und unbekannte Bausteintypen werden abgewiesen. Ein Rückimport beliebiger `.py`- oder `.vbs`-Dateien als Bausteine ist nicht vorgesehen.
+Projektdateien sind JSON-Daten. Das aktuelle Schema 3 enthält die feste `skriptsprache`, stabile Variablen-IDs und die Business-Parameter. Alte Schema-1-Projekte werden beim Öffnen zu VBS-Projekten migriert; Schema 2 behält seine Sprache und erhält leere Business-Angaben. Die Originaldatei bleibt dabei unverändert. Erst ein ausdrückliches Speichern schreibt das aktuelle Format. Die Anwendung prüft Struktur und Schemaversion. Neuere unbekannte Formate und unbekannte Bausteintypen werden abgewiesen. Ein Rückimport beliebiger `.py`- oder `.vbs`-Dateien als Bausteine ist nicht vorgesehen.
 
 Ein Projekt darf höchstens 5 MiB als UTF-8-JSON-Datei enthalten. Die Anwendung prüft diese Größe vor dem Ersetzen einer vorhandenen Datei. Außerdem gelten Grenzen von 2.000 Bausteinen und 150 Ebenen im gespeicherten Verbindungsbaum; aufeinanderfolgende Verbindungen zählen dabei ebenfalls als Ebenen.
 
 Eine `.scriptlab`-Datei bleibt bearbeitbar; `.py` beziehungsweise `.vbs` ist das daraus erzeugte Script für Windows. Änderungen am Projekt verändern bereits exportierte Dateien nicht. Exportiere erneut, wenn du eine neue Fassung brauchst.
 
-## Sechs Beispiele in zwei Sprachen
+## Grundbeispiele und Business-Vorlagen
 
-Auf der Startseite bietet **Beispielworkflows** die Vorlagen **Eine Nachricht anzeigen**, **Dateien in einen Sicherungsordner kopieren** und **Dateinamen in eine Textdatei schreiben**, jeweils für Python und VBS. Der Sprachfilter grenzt die Auswahl ein. **Als Vorlage öffnen** erstellt eine eigene bearbeitbare Kopie mit neuer Projektkennung und dem Namenszusatz **(Kopie)**. Die Originalvorlage bleibt unverändert. Die Einträge im **Projektmenü** und **Beispiel öffnen** im neuen Editor bleiben erreichbar. Die Dateien liegen zusätzlich im Ordner `beispiele` des Quellprojekts. Das Öffnen oder Exportieren verändert keine der beschriebenen Testdateien.
+Auf der Startseite bietet **Beispielworkflows** die Grundvorlagen **Eine Nachricht anzeigen**, **Dateien in einen Sicherungsordner kopieren** und **Dateinamen in eine Textdatei schreiben**, jeweils für Python und VBS. Dazu kommen die Python-Business-Beispiele für Monatsauswertung, Stammdatenzuordnung, Word-Bestellvorschlag, Dokumenteingang und Dateistapel. Der Sprachfilter grenzt die Auswahl ein. **Als Vorlage öffnen** erstellt eine eigene bearbeitbare Kopie mit neuer Projektkennung und dem Namenszusatz **(Kopie)**. Die Originalvorlage bleibt unverändert. Die Vorlagen sind auch über **Bereiche → Vorlagen** und **Beispiel öffnen** im neuen Editor erreichbar. Die Dateien liegen zusätzlich im Ordner `beispiele` des Quellprojekts. Das Öffnen oder Exportieren verändert keine der beschriebenen Testdateien.
 
 | Projekt                               | Inhalt und spätere Wirkung                                                                                                                                                                                        |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -163,7 +163,7 @@ Für das Listenbeispiel legst du neben der exportierten Scriptdatei selbst den O
 
 ## Dateipfade und Textkodierung
 
-Relative Pfade beziehen sich beim Export auf den **Speicherort der exportierten Scriptdatei** und beim Test auf den im Testpanel sichtbaren **Basisordner**. Der Projektordner ist keine automatische Pfadbasis. Absolute Laufwerks- und UNC-Pfade sind ebenfalls möglich und können beim Test außerhalb des Basisordners wirken. Platzhalter wie `*` und `?` sind bei Dateioperationen nicht erlaubt.
+Relative Pfade beziehen sich beim Export auf den **Speicherort der exportierten Scriptdatei** und beim Test auf den unter **Läufe → Vorbereitung** sichtbaren **Basisordner**. Der Projektordner ist keine automatische Pfadbasis. Absolute Laufwerks- und UNC-Pfade sind ebenfalls möglich und können beim Test außerhalb des Basisordners wirken. Platzhalter wie `*` und `?` sind bei Dateioperationen nicht erlaubt.
 
 Python-Quelltext wird als UTF-8 ohne BOM mit CRLF gespeichert; VBS-Quelltext als UTF-16LE mit BOM und CRLF. Das ist unabhängig von der Kodierung der Textdateien, mit denen dein Workflow später arbeitet. Die Blöcke zum Lesen, Schreiben und Ergänzen bieten UTF-8, UTF-16LE und Windows-ANSI. Beim Ergänzen muss eine bestehende Datei bereits dieselbe Kodierung haben. Fehlerhafte UTF-8- oder UTF-16LE-Daten werden vor dem Überschreiben zurückgewiesen. UTF-8- und UTF-16LE-Textdateien werden mit BOM geschrieben; Windows-ANSI verwendet die lokale Windows-Codepage.
 
@@ -171,7 +171,7 @@ Der Baustein „Datei löschen (erweitert)“ ist besonders gekennzeichnet. Stan
 
 ## Optionale Signatur und Updates
 
-Bei einem VBS-Projekt kannst du unter **Weitere Funktionen → Einstellungen** „Exportierte Datei signieren“ aktivieren und nach dem Laden der Zertifikate dein eigenes Code-Signing-Zertifikat auswählen. Die Auswahl wird über seinen Fingerabdruck gespeichert. Private Schlüssel und Kennwörter werden nicht im Projekt gespeichert. Ohne geeignetes Zertifikat bleibt der unsignierte Export verfügbar. Bei Python-Projekten sind diese Optionen ausgeblendet: Für `.py` ist kein Signaturverfahren implementiert und es wird kein Signaturprüfergebnis behauptet. Weitere Einrichtungsschritte stehen in der [Signaturdokumentation](SIGNATUR.md).
+Bei einem VBS-Projekt kannst du unter **Bereiche → Einstellungen** „Exportierte Datei signieren“ aktivieren und nach dem Laden der Zertifikate dein eigenes Code-Signing-Zertifikat auswählen. Die Auswahl wird über seinen Fingerabdruck gespeichert. Private Schlüssel und Kennwörter werden nicht im Projekt gespeichert. Ohne geeignetes Zertifikat bleibt der unsignierte Export verfügbar. Bei Python-Projekten sind diese Optionen ausgeblendet: Für `.py` ist kein Signaturverfahren implementiert und es wird kein Signaturprüfergebnis behauptet. Weitere Einrichtungsschritte stehen in der [Signaturdokumentation](SIGNATUR.md).
 
 Eine Signatur hilft, Herausgeber und Änderungen zu prüfen. Sie garantiert weder einen ungefährlichen Workflow noch die Ausführung ohne Windows-, SmartScreen- oder Unternehmenswarnungen.
 
