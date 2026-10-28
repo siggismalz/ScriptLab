@@ -165,6 +165,7 @@
   background: transparent;
   text-align: left;
   font: inherit;
+  font-weight: var(--gewicht-normal);
   cursor: pointer;
 }
 .daten-schritt:hover {
@@ -241,8 +242,34 @@
   border-left: 3px solid var(--farbe-fehler);
   margin-bottom: var(--abstand-16);
 }
-.daten-konfigurationsfehler li {
-  margin: var(--abstand-8) 0;
+.daten-konfigurationskopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--abstand-8) var(--abstand-16);
+  margin-bottom: var(--abstand-12);
+}
+.daten-konfigurationskopf h2 {
+  margin: 0;
+}
+.daten-fehleranzahl {
+  font-weight: var(--gewicht-semibold);
+}
+.daten-feldverweise {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--abstand-16);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.daten-konfigurationsfehler .daten-allgemeine-meldungen {
+  margin-block: var(--abstand-8) 0;
+  padding-inline-start: var(--abstand-16);
+}
+.daten-allgemeine-meldungen li + li {
+  margin-top: var(--abstand-4);
 }
 .daten-eigenschaften {
   border-left: 1px solid var(--farbe-trennung);

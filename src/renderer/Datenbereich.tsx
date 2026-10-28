@@ -16,6 +16,7 @@ import { Knopf } from './komponenten/Knopf';
 import { Auswahlfeld, Feld } from './komponenten/Feld';
 import { Symbol } from './komponenten/Icon';
 import { Statusanzeige } from './komponenten/Statusanzeige';
+import { fehlerFeldverweis, vorschauTyptext } from './daten-darstellung';
 import './datenbereich.css';
 
 export interface DatenbereichEigenschaften {
@@ -130,6 +131,17 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
     ? businessNachTyp.get(block.type)
     : businessDefinitionen.find((d) => d.operation === schritt?.operation);
   const blockMeldungen = meldungen.filter((m) => m.blockId === auswahl);
+  const fehlerAnzahl = blockMeldungen.filter((m) => m.stufe === 'fehler').length;
+  const meldungsverweise = blockMeldungen.map((meldung) => ({
+    meldung,
+    feld: definition && meldung.feldPfad ? fehlerFeldverweis(definition, meldung.feldPfad) : null,
+  }));
+  const feldverweise = [
+    ...new Map(
+      meldungsverweise.filter((m) => m.feld).map((m) => [JSON.stringify(m.meldung.feldPfad), m]),
+    ).values(),
+  ];
+  const allgemeineMeldungen = meldungsverweise.filter((m) => !m.feld);
   const quellenParameter = useMemo(() => {
     const ergebnis: Record<string, { blockId: string; feldPfad: string[] }> = {};
     function blockLesen(b: EditorBlock) {
@@ -294,7 +306,9 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                       >
                         <span className="daten-schrittnummer">{index + 1}</span>
                         <span>
-                          <strong>{s.bezeichnung ?? def?.name ?? 'Business-Baustein'}</strong>
+                          <span className="daten-schritttitel">
+                            {s.bezeichnung ?? def?.name ?? 'Business-Baustein'}
+                          </span>
                           {fehler.length > 0 && (
                             <span className="daten-schrittfehler">
                               <Symbol name="fehler" groesse={16} />
@@ -308,36 +322,54 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                 })}
               </ul>
             ) : (
-              <p>Noch keine Datenquelle. Füge im Bereich „Ablauf“ einen Business-Baustein hinzu.</p>
+              <p>Noch keine Datenbausteine. Füge sie unter „Ablauf“ hinzu.</p>
             )}
           </section>
           <section className="daten-eigenschaften" aria-label="Datenkonfiguration">
-            <h2>{schritt?.bezeichnung ?? 'Konfiguration'}</h2>
+            <div className="daten-konfigurationskopf">
+              <h2>{schritt?.bezeichnung ?? 'Konfiguration'}</h2>
+              {block && workspace && (
+                <Knopf
+                  variante="leise"
+                  symbol="bausteine"
+                  onClick={() => (props.blockAnzeigen ?? props.auswaehlen)(block.id)}
+                >
+                  Baustein anzeigen
+                </Knopf>
+              )}
+            </div>
             {definition && block && workspace ? (
               <>
                 {blockMeldungen.length > 0 && (
                   <div className="daten-konfigurationsfehler">
-                    <h3>Angaben prüfen</h3>
-                    <ul>
-                      {blockMeldungen.map((m, i) => (
-                        <li key={i}>
-                          {m.feldPfad ? (
-                            <button className="daten-fehlerlink" onClick={() => feldFokussieren(m.feldPfad!)}>
-                              {m.text}
+                    <p className="daten-fehleranzahl">
+                      {fehlerAnzahl
+                        ? `${fehlerAnzahl} ${fehlerAnzahl === 1 ? 'Angabe prüfen' : 'Angaben prüfen'}`
+                        : 'Hinweise'}
+                    </p>
+                    {feldverweise.length > 0 && (
+                      <ul className="daten-feldverweise">
+                        {feldverweise.map(({ meldung, feld }) => (
+                          <li key={JSON.stringify(meldung.feldPfad)}>
+                            <button
+                              className="daten-fehlerlink"
+                              title={feld!.titel}
+                              aria-label={`Zum Feld ${feld!.titel}`}
+                              onClick={() => feldFokussieren(meldung.feldPfad!)}
+                            >
+                              {feld!.kurz}
                             </button>
-                          ) : (
-                            m.text
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                    <Knopf
-                      variante="leise"
-                      symbol="bausteine"
-                      onClick={() => (props.blockAnzeigen ?? props.auswaehlen)(block.id)}
-                    >
-                      Baustein anzeigen
-                    </Knopf>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {allgemeineMeldungen.length > 0 && (
+                      <ul className="daten-allgemeine-meldungen">
+                        {allgemeineMeldungen.map(({ meldung }, i) => (
+                          <li key={i}>{meldung.text}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
                 <BusinessEigenschaften
@@ -372,9 +404,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                 </details>
               </>
             ) : (
-              <p>
-                Wähle einen Verarbeitungsschritt, um seine Quelle, Eingaben und Zuordnungen zu bearbeiten.
-              </p>
+              <p>Wähle einen Schritt, um Quelle und Zuordnung zu bearbeiten.</p>
             )}
           </section>
         </section>
@@ -389,9 +419,6 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
           <div className="daten-abschnittskopf">
             <div>
               <h2>Workflowparameter</h2>
-              <p className="daten-hilfetext">
-                Werte für Testdaten, echte Daten oder als Standard bearbeiten.
-              </p>
             </div>
             <Auswahlfeld
               beschriftung="Angezeigte Parameterwerte"
@@ -537,10 +564,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
               })}
             </div>
           ) : (
-            <p>
-              Es sind keine Workflowparameter definiert. Unter „Parameter verwalten“ kannst du
-              wiederverwendbare Eingabewerte anlegen.
-            </p>
+            <p>Noch keine Workflowparameter. Lege sie unter „Parameter verwalten“ an.</p>
           )}
         </section>
         <section
@@ -627,8 +651,8 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
             <>
               {vorschauStand?.veraltet && (
                 <Statusanzeige art="hinweis">
-                  Der Workflow wurde seit dieser Vorschau geändert. Lade nach der Korrektur eine neue
-                  Vorschau, um die geänderten Zuordnungen zu prüfen.
+                  Der Workflow wurde seit dieser Vorschau geändert. Lade die Vorschau nach der Korrektur
+                  erneut.
                 </Statusanzeige>
               )}
               <div className="daten-vorschauwerkzeuge">
@@ -804,7 +828,9 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                                   {s.name}
                                   {sortierung?.spalte === index ? (sortierung.absteigend ? ' ↓' : ' ↑') : ''}
                                 </span>
-                                <span className="daten-hilfetext">{s.typ}</span>
+                                <span className="daten-hilfetext" title={s.typ}>
+                                  {vorschauTyptext(s.typ)}
+                                </span>
                               </button>
                             </th>
                           );
