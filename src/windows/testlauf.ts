@@ -97,6 +97,7 @@ export class TestlaufDienst {
       journaleOrdner: string;
       pruefen: (installation: PythonInstallation, signal: AbortSignal) => Promise<void>;
     },
+    private readonly abgeschlossen?: (zustand: TestZustand) => void | Promise<void>,
   ) {}
 
   lesen(): TestZustand {
@@ -405,6 +406,13 @@ export class TestlaufDienst {
       lauf.beenden = null;
       this.zustand.phase = abschluss;
       this.lauf = null;
+      // Der unveränderliche Abschluss wird auch bei Vorbereitungsfehlern und sofortigem Abbruch gesichert.
+      // Speicherung und ihre Fehler verändern niemals das tatsächliche Prozessergebnis.
+      try {
+        await this.abgeschlossen?.(this.lesen());
+      } catch {
+        /* Die Ablage meldet ihren Fehler getrennt. */
+      }
     }
   }
   private prozessStarten(

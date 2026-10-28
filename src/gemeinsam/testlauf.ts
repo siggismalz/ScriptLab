@@ -9,6 +9,31 @@ export type TestPhase =
   | 'abgebrochen'
   | 'zeitlimit';
 
+export const abgeschlosseneLaufphasen = [
+  'beendet',
+  'mit_fehlern',
+  'fehlgeschlagen',
+  'abgebrochen',
+  'zeitlimit',
+] as const;
+export type AbgeschlosseneLaufphase = (typeof abgeschlosseneLaufphasen)[number];
+export interface LaufEintrag {
+  laufId: string;
+  projektKennung: string;
+  projektName: string;
+  standHash: string;
+  sprache: Skriptsprache;
+  phase: AbgeschlosseneLaufphase;
+  vorbereitetAm: string | null;
+  gestartetAm: string | null;
+  beendetAm: string;
+  modus: 'vorschau' | 'prueflauf' | 'ausfuehren';
+}
+export interface LaufListe {
+  eintraege: LaufEintrag[];
+  hinweis: string | null;
+}
+
 export interface TestOptionen {
   business?: {
     modus: 'vorschau' | 'prueflauf' | 'ausfuehren';

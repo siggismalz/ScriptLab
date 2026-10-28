@@ -11,7 +11,7 @@ import {
   type IpcMainInvokeEvent,
   type IpcMainEvent,
 } from 'electron';
-import { readFile, mkdir, rename, unlink, cp } from 'node:fs/promises';
+import { readFile, mkdir, rename, unlink, cp, stat } from 'node:fs/promises';
 import { join, resolve, extname, dirname, basename, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -26,6 +26,7 @@ import {
   projektHash,
   leererEntwurf,
   windowsPfadSchluessel,
+  mitZeitlimit,
   type Dateistand,
 } from './projektablage';
 import { atomarSchreiben, dateiFehler, projektLesen, projektSchreiben, skriptKodieren } from './dateien';
@@ -41,6 +42,8 @@ import type { BusinessStatus, BusinessFortschritt } from '../gemeinsam/business-
 import { businessSchritte } from '../kern/business';
 import { businessPaketDateien, zipErzeugen } from './business-export';
 import { businessBeispiele } from '../kern/business-beispiele';
+import { Laufablage, laufDateipfad, laufProtokollText } from './laufablage';
+import type { TestZustand } from '../gemeinsam/testlauf';
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'scriptlab', privileges: { standard: true, secure: true, supportFetchAPI: true } },
@@ -93,6 +96,7 @@ let dialogAktiv = false;
 let signaturDienst: SignaturDienst;
 let aktualisierungen: AktualisierungsDienst;
 let testDienst: TestlaufDienst;
+let laufablage: Laufablage;
 let testOptionen: TestOptionen = { basisVerzeichnis: null, zeitlimitSekunden: 120 };
 let pythonPruefAuftrag: Promise<PythonInstallation> | null = null;
 let pythonZustand: PythonStatus = {
@@ -175,7 +179,12 @@ async function lokaleEinstellungenSpeichern(neu: Einstellungen): Promise<void> {
 }
 
 function darstellungUebernehmen(): void {
-  nativeTheme.themeSource = einstellungen.darstellung === 'hell' ? 'light' : einstellungen.darstellung === 'system' ? 'system' : 'dark';
+  nativeTheme.themeSource =
+    einstellungen.darstellung === 'hell'
+      ? 'light'
+      : einstellungen.darstellung === 'system'
+        ? 'system'
+        : 'dark';
   fenster?.setBackgroundColor(farbenNachThema[nativeTheme.shouldUseDarkColors ? 'dunkel' : 'hell'].fenster);
 }
 
@@ -479,7 +488,70 @@ async function mitDialog<T>(funktion: () => Promise<T>): Promise<T> {
   }
 }
 
+async function laufZustandLesen(id: string): Promise<TestZustand> {
+  const kennung = projekt.projektKennung!;
+  const aktuell = testDienst.lesen();
+  let zustand: TestZustand | null = null;
+  if (aktuell.laufId === id && aktuell.projektKennung === kennung && testDienst.aktiv()) zustand = aktuell;
+  else zustand = await laufablage.lesen(kennung, id);
+  if (projekt.projektKennung !== kennung) throw new Error('Der aktive Workflow wurde inzwischen gewechselt.');
+  if (!zustand && aktuell.laufId === id && aktuell.projektKennung === kennung) zustand = aktuell;
+  if (!zustand)
+    throw new Error('Dieser Lauf gehört nicht zum aktiven Workflow oder ist nicht mehr gespeichert.');
+  return zustand;
+}
+
 function ipcEinrichten(): void {
+  registrieren('lauf-liste', async () => {
+    const kennung = projekt.projektKennung!;
+    const liste = await laufablage.liste(kennung);
+    if (projekt.projektKennung !== kennung)
+      throw new Error('Der aktive Workflow wurde inzwischen gewechselt.');
+    return liste;
+  });
+  registrieren('lauf-lesen', async (daten) => {
+    const zustand = await laufZustandLesen(z.string().uuid().parse(daten));
+    return { zustand, standAktuell: zustand.standHash === testStandHash(projekt) };
+  });
+  registrieren('lauf-datei', (daten) =>
+    mitDialog(async () => {
+      const auswahl = z
+        .object({
+          laufId: z.string().uuid(),
+          art: z.enum(['ausgabe', 'bericht']),
+          index: z.number().int().min(0).max(100000).optional(),
+        })
+        .strict()
+        .parse(daten);
+      const kennung = projekt.projektKennung!;
+      const zustand = await laufZustandLesen(auswahl.laufId);
+      const pfad = laufDateipfad(zustand, auswahl.art, auswahl.index);
+      const info = await mitZeitlimit(stat(pfad));
+      if (!info.isFile() && !info.isDirectory())
+        throw new Error('Die gemeldete Ausgabe ist keine erreichbare Datei oder kein Ordner.');
+      if (projekt.projektKennung !== kennung)
+        throw new Error('Der aktive Workflow wurde inzwischen gewechselt.');
+      shell.showItemInFolder(pfad);
+    }),
+  );
+  registrieren('lauf-protokoll-kopieren', async (daten) => {
+    clipboard.writeText(laufProtokollText(await laufZustandLesen(z.string().uuid().parse(daten))));
+  });
+  registrieren('lauf-protokoll-speichern', (daten) =>
+    mitDialog(async () => {
+      const zustand = await laufZustandLesen(z.string().uuid().parse(daten));
+      const ziel = await dialog.showSaveDialog(fenster, {
+        title: 'Laufprotokoll exportieren',
+        defaultPath: `${dateiname(zustand.projektName ?? 'Workflow')}-${zustand.laufId}.txt`,
+        filters: [{ name: 'Textdatei', extensions: ['txt'] }],
+      });
+      if (ziel.canceled || !ziel.filePath) return false;
+      if (extname(ziel.filePath).toLowerCase() !== '.txt')
+        throw new Error('Bitte verwende die Endung .txt für das Laufprotokoll.');
+      await atomarSchreiben(ziel.filePath, '\uFEFF' + laufProtokollText(zustand));
+      return true;
+    }),
+  );
   registrieren('test-lesen', () => ({ zustand: testDienst.lesen(), optionen: testOptionen }));
   registrieren('test-starten', (daten) => {
     if (businessAuftrag)
@@ -1114,6 +1186,7 @@ async function fensterErstellen(): Promise<void> {
       await aktuellenStandAnfordern();
       if (await aenderungenSichern()) {
         await verworfenenEntwurfBereinigen();
+        await laufablage.flush();
         darfSchliessen = true;
         fenster.close();
       }
@@ -1144,6 +1217,8 @@ else {
       projektindex = new Projektindex(join(app.getPath('userData'), 'projektbibliothek.json'));
       await projektindex.initialisieren();
       entwuerfe = new Entwurfspeicher(join(app.getPath('userData'), 'entwuerfe'));
+      laufablage = new Laufablage(join(app.getPath('userData'), 'laufhistorie'));
+      await laufablage.laden();
       try {
         einstellungen = einstellungenSchema.parse(JSON.parse(await readFile(einstellungsPfad(), 'utf8')));
       } catch {
@@ -1169,6 +1244,7 @@ else {
               throw new Error(businessStatus.meldung + ' Öffne Einstellungen → Business-Laufzeit.');
           },
         },
+        (zustand) => laufablage.sichern(zustand),
       );
       aktualisierungen = new AktualisierungsDienst({
         installierteVersion: app.getVersion(),

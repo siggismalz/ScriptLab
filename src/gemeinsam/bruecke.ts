@@ -1,6 +1,6 @@
 import type { Projekt } from '../kern/projekt';
 import type { SignaturErgebnis, Zertifikat } from '../windows/signatur';
-import type { TestOptionen, TestZustand } from './testlauf';
+import type { TestOptionen, TestZustand, LaufListe } from './testlauf';
 import type { Skriptsprache } from '../kern/sprachen';
 import type { PythonStatus } from './python';
 import type { BusinessStatus, BusinessFortschritt } from './business-laufzeit';
@@ -116,6 +116,11 @@ export interface ScriptLabBruecke {
   entwurfLoeschen(id: string): Promise<Antwort<boolean>>;
   entwurfSichern(projekt: Projekt): Promise<Antwort<Dokument>>;
   testLesen(): Promise<Antwort<{ zustand: TestZustand; optionen: TestOptionen }>>;
+  laufListe(): Promise<Antwort<LaufListe>>;
+  laufLesen(laufId: string): Promise<Antwort<{ zustand: TestZustand; standAktuell: boolean }>>;
+  laufDateiAnzeigen(laufId: string, art: 'ausgabe' | 'bericht', index?: number): Promise<Antwort<void>>;
+  laufProtokollKopieren(laufId: string): Promise<Antwort<void>>;
+  laufProtokollSpeichern(laufId: string): Promise<Antwort<boolean>>;
   testStarten(projekt: Projekt, optionen: TestOptionen): Promise<Antwort<TestZustand>>;
   testStoppen(laufId: string): Promise<Antwort<TestZustand>>;
   testAusgabeLeeren(): Promise<Antwort<TestZustand>>;

@@ -44,6 +44,12 @@ const bruecke: ScriptLabBruecke = {
   entwurfLoeschen: (id) => ipcRenderer.invoke('scriptlab:entwurf-loeschen', id),
   entwurfSichern: (projekt) => ipcRenderer.invoke('scriptlab:entwurf-sichern', projekt),
   testLesen: () => ipcRenderer.invoke('scriptlab:test-lesen'),
+  laufListe: () => ipcRenderer.invoke('scriptlab:lauf-liste'),
+  laufLesen: (laufId) => ipcRenderer.invoke('scriptlab:lauf-lesen', laufId),
+  laufDateiAnzeigen: (laufId, art, index) =>
+    ipcRenderer.invoke('scriptlab:lauf-datei', { laufId, art, index }),
+  laufProtokollKopieren: (laufId) => ipcRenderer.invoke('scriptlab:lauf-protokoll-kopieren', laufId),
+  laufProtokollSpeichern: (laufId) => ipcRenderer.invoke('scriptlab:lauf-protokoll-speichern', laufId),
   testStarten: (projekt, optionen) => ipcRenderer.invoke('scriptlab:test-starten', { projekt, optionen }),
   testStoppen: (laufId) => ipcRenderer.invoke('scriptlab:test-stoppen', laufId),
   testAusgabeLeeren: () => ipcRenderer.invoke('scriptlab:test-leeren'),
