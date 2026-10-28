@@ -168,25 +168,52 @@ export function BusinessErgebnis({
       )}
       {ausgaben.length > 0 && (
         <div>
-          <h4>Gemeldete Ausgabeziele</h4>
-          <ul>
-            {ausgaben.slice(0, 5).map((a, i) => (
-              <li key={i}>
-                <span className="business-ergebnis-pfad">{a.pfad as string}</span>
-                {typeof a.status === 'string' && ausgabestatus[a.status] && (
-                  <span> · {ausgabestatus[a.status]}</span>
-                )}
-              </li>
-            ))}
+          <h4>Dateien und Ausgabeziele</h4>
+          <ul className="business-ergebnis-ausgaben">
+            {ausgaben.slice(0, 5).map((a, i) => {
+              const pfad = a.pfad as string;
+              const name = pfad.split(/[\\/]/).filter(Boolean).at(-1) ?? pfad;
+              return (
+                <li key={i}>
+                  <details className="business-ergebnis-datei">
+                    <summary title={pfad}>
+                      <span className="business-ergebnis-dateiname">{name}</span>
+                      {typeof a.status === 'string' && ausgabestatus[a.status] && (
+                        <span className="business-ergebnis-dateistatus"> · {ausgabestatus[a.status]}</span>
+                      )}
+                    </summary>
+                    <label>
+                      Vollständiger Pfad
+                      <textarea readOnly rows={2} value={pfad} aria-label={`Vollständiger Pfad: ${name}`} />
+                    </label>
+                  </details>
+                </li>
+              );
+            })}
           </ul>
           {ausgaben.length > 5 && <p>Weitere Ausgabeziele stehen im vollständigen Laufbericht.</p>}
         </div>
       )}
-      {berichtPfad && (
-        <label className="business-ergebnis-bericht">
-          Vollständiger Laufbericht
-          <textarea readOnly rows={2} value={berichtPfad} aria-label="Pfad des vollständigen Laufberichts" />
-        </label>
+      {(berichtPfad || bericht) && (
+        <details className="business-ergebnis-bericht">
+          <summary>Vollständiger Laufbericht</summary>
+          {berichtPfad && (
+            <label>
+              Speicherort
+              <textarea
+                readOnly
+                rows={2}
+                value={berichtPfad}
+                aria-label="Pfad des vollständigen Laufberichts"
+              />
+            </label>
+          )}
+          {bericht && (
+            <pre tabIndex={0} aria-label="Inhalt des vollständigen Laufberichts">
+              {JSON.stringify(bericht, null, 2)}
+            </pre>
+          )}
+        </details>
       )}
     </section>
   );

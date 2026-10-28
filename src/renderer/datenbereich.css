@@ -57,7 +57,7 @@
 }
 .daten-seitenkopf {
   order: 1;
-  padding: var(--abstand-8) var(--abstand-16) 0;
+  padding: 0;
 }
 .daten-ansichtauswahl {
   order: 0;

@@ -312,7 +312,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
               </Knopf>
             ) : (
               <Knopf
-                variante="primaer"
+                variante={vorbereitung || zustand.phase === 'fehlgeschlagen' ? 'primaer' : 'leise'}
                 symbol={vorbereitung ? 'testen' : 'neu'}
                 onClick={() => {
                   if (vorbereitung) {
@@ -651,12 +651,6 @@ export function Testbereich(props: TestbereichEigenschaften) {
                     </tbody>
                   </table>
                 </div>
-              )}
-              {zustand.business.bericht && (
-                <details className="testbereich-details">
-                  <summary>Vollständiger Laufbericht</summary>
-                  <pre tabIndex={0}>{JSON.stringify(zustand.business.bericht, null, 2)}</pre>
-                </details>
               )}
             </>
           )}

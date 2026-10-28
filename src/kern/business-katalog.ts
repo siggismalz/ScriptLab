@@ -34,6 +34,17 @@ export interface BusinessDefinition {
   schreibt: boolean;
   komponenten: string[];
 }
+
+/** Gleiche fachliche Bezeichnungen in Formularen und zugehörigen Meldungen. */
+export function businessEingabeTitel(name: string, typ: FachlicherTyp): string {
+  const titel: Record<string, string> = {
+    links: 'Erste Tabelle',
+    rechts: 'Zweite Tabelle',
+    dateien: 'Dateien',
+    ausgaben: 'Ausgaben',
+  };
+  return titel[name] ?? (typ === 'Dateiliste' ? 'Dateien' : typ);
+}
 const text = (name: string, titel: string, standard = ''): KonfigFeld => ({
   name,
   titel,

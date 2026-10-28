@@ -1,6 +1,11 @@
 import { definitionNachTyp, type WertTyp } from './katalog';
 import { projektPruefen, type EditorBlock, type Projekt } from './projekt';
-import { businessDatenLesen, businessNachTyp, businessKonfigurationFuerLauf } from './business-katalog';
+import {
+  businessDatenLesen,
+  businessNachTyp,
+  businessKonfigurationFuerLauf,
+  businessEingabeTitel,
+} from './business-katalog';
 import type { BusinessSchritt } from './business-modell';
 import { businessKonfigurationPruefen } from './business-validierung';
 
@@ -262,7 +267,10 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
               !genutzt.has(quelle.id) ||
               quelle.id === b.id
             )
-              fehler(b, `Wähle für „${name}“ ein vorheriges Ergebnis vom Typ ${typ}.`);
+              fehler(
+                b,
+                `Wähle unter „${businessEingabeTitel(name, typ)}“ das Ergebnis eines vorherigen Bausteins aus.`,
+              );
           }
           for (const feld of businessDef.felder)
             if (feld.name === 'pfad' && !business.konfiguration.pfad)

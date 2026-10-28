@@ -149,10 +149,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
   return (
     <section className="datenbereich" data-testid="datenbereich" aria-label="Daten und Parameter">
       <header className="daten-seitenkopf">
-        <div>
-          <h1>Daten und Parameter</h1>
-          <p>Quellen konfigurieren, Zuordnungen prüfen und begrenzte Daten ansehen.</p>
-        </div>
+        <h1>Daten und Parameter</h1>
       </header>
       {gesperrt && (
         <Statusanzeige art="hinweis">

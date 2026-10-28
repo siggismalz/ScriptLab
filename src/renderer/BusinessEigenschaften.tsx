@@ -8,7 +8,12 @@ import {
   type ReactNode,
 } from 'react';
 import * as Blockly from 'blockly/core';
-import { businessDatenLesen, businessNachTyp, type KonfigFeld } from '../kern/business-katalog';
+import {
+  businessDatenLesen,
+  businessNachTyp,
+  businessEingabeTitel,
+  type KonfigFeld,
+} from '../kern/business-katalog';
 import type { JsonWert, WorkflowParameter } from '../kern/business-modell';
 import { Knopf } from './komponenten/Knopf';
 import { Feld, Auswahlfeld } from './komponenten/Feld';
@@ -955,15 +960,7 @@ export function BusinessEigenschaften({
         </datalist>
         {def.schreibt && <p>Verändert Dateien bei echter Ausführung.</p>}
         {Object.entries(def.eingaben).map(([name, typ]) => {
-          const titel =
-            (
-              {
-                links: 'Erste Tabelle',
-                rechts: 'Zweite Tabelle',
-                dateien: 'Dateien',
-                ausgaben: 'Ausgaben',
-              } as Record<string, string>
-            )[name] ?? (typ === 'Dateiliste' ? 'Dateien' : typ);
+          const titel = businessEingabeTitel(name, typ);
           const referenz = String(objekt(daten.eingaben[name] ?? null).referenz ?? '');
           const quellen = ws.getAllBlocks(false).filter((b) => {
             const quelle = businessNachTyp.get(b.type);

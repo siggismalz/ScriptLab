@@ -552,3 +552,109 @@
   font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
   font-weight: var(--gewicht-normal);
 }
+
+.business-ergebnis-ausgaben {
+  list-style: none;
+  padding: 0;
+  margin: var(--abstand-8) 0;
+  border-top: 1px solid var(--farbe-trennung);
+}
+.business-ergebnis-datei {
+  border-bottom: 1px solid var(--farbe-trennung);
+}
+.business-ergebnis-datei > summary,
+.business-ergebnis-bericht > summary {
+  min-height: var(--hoehe-bedienfeld);
+  padding-block: var(--abstand-8);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.business-ergebnis-datei > summary:hover {
+  background: var(--farbe-erhoeht);
+}
+.business-ergebnis-dateiname {
+  font-weight: var(--gewicht-semibold);
+}
+.business-ergebnis-dateistatus {
+  color: var(--farbe-text-sekundaer);
+}
+.business-ergebnis-datei label,
+.business-ergebnis-bericht > label {
+  display: grid;
+  gap: var(--abstand-4);
+  padding-block: var(--abstand-8);
+  color: var(--farbe-text-sekundaer);
+}
+.business-ergebnis-datei textarea {
+  width: 100%;
+  min-width: 0;
+  padding: var(--abstand-8);
+  resize: vertical;
+  background: var(--farbe-grundflaeche);
+  color: var(--farbe-text);
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-normal);
+  font: inherit;
+}
+.testbereich .business-ergebnis-bericht {
+  display: block;
+  border-top: 1px solid var(--farbe-trennung);
+  margin-top: var(--abstand-12);
+}
+.business-ergebnis-bericht > pre {
+  max-height: 45vh;
+  overflow: auto;
+  padding: var(--abstand-12);
+  color: var(--farbe-text);
+  background: var(--farbe-arbeitsflaeche);
+  font-family: var(--schrift-code-familie);
+  font-size: calc(var(--schrift-code) * var(--text-skala, 1));
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Ergebnisabschnitte folgen einem festen Rhythmus statt kumulierter Standardränder. */
+.testbereich .business-ergebnis {
+  display: flex;
+  flex-direction: column;
+  gap: var(--abstand-16);
+}
+.testbereich .business-ergebnis > div,
+.testbereich .business-ergebnis > details {
+  min-width: 0;
+  margin: 0;
+}
+.testbereich .business-ergebnis h3,
+.testbereich .business-ergebnis h4 {
+  margin: 0 0 var(--abstand-8);
+  line-height: 1.5;
+}
+.testbereich .business-ergebnis-angaben {
+  margin: 0;
+  gap: var(--abstand-8) var(--abstand-24);
+}
+.testbereich .business-ergebnis-angaben > div {
+  display: grid;
+  gap: var(--abstand-4);
+}
+.testbereich .business-ergebnis-angaben dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.testbereich .business-ergebnis > div > p {
+  margin-top: var(--abstand-8);
+}
+.testbereich .business-ergebnis ul {
+  margin: 0;
+  padding-left: var(--abstand-24);
+}
+.testbereich .business-ergebnis li + li {
+  margin-top: var(--abstand-4);
+}
+.testbereich .business-ergebnis .business-ergebnis-ausgaben {
+  padding: 0;
+}
+.testbereich .business-ergebnis-ausgaben > li + li {
+  margin-top: 0;
+}
