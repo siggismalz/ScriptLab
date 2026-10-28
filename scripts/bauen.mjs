@@ -1,6 +1,9 @@
 import { build } from 'esbuild';
 import { build as viteBauen } from 'vite';
 import { cp, mkdir } from 'node:fs/promises';
+import { pythonBuendelVorbereiten } from './python-buendel.mjs';
+// Nur der Entwicklerbuild bereitet Originalquellen vor; die installierte App lädt keine Laufzeit nach.
+await pythonBuendelVorbereiten();
 // Der feste Windows-Host gehört zum Build; beim Anwender wird nichts kompiliert.
 await import('./laufzeit-host-bauen.mjs');
 

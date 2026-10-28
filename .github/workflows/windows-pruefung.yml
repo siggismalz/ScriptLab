@@ -56,6 +56,8 @@ jobs:
           if (-not (Test-Path -LiteralPath $interpreter -PathType Leaf)) { throw 'Der erzeugte venv-Interpreter fehlt.' }
           [IO.File]::AppendAllText($env:GITHUB_OUTPUT, "python-path=$interpreter" + [Environment]::NewLine, [Text.UTF8Encoding]::new($false))
       - run: npm ci
+      - name: Vollstaendige Offline-App-Laufzeit vorbereiten
+        run: node scripts/python-buendel.mjs --vorbereiten
       - run: npm run check
       - run: node scripts/laufzeit-host-bauen.mjs
       - name: Feste Business-Umgebung und echte Dateipruefungen

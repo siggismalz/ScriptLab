@@ -10,6 +10,10 @@ files:
   - package.json
   - THIRD_PARTY_NOTICES.md
 extraResources:
+  - from: artifacts/python-buendel/python
+    to: python
+    filter:
+      - '**/*'
   - from: laufzeit
     to: laufzeit
     filter:
@@ -44,6 +48,14 @@ win:
         - x64
   requestedExecutionLevel: asInvoker
   verifyUpdateCodeSignature: true
+  # Die gültigen PSF-Originalsignaturen und Manifest-Hashes der Python-EXEs bleiben erhalten.
+  signExts:
+    - '!python.exe'
+    - '!pythonw.exe'
+    - '!venvlauncher.exe'
+    - '!venvwlauncher.exe'
+    - '!normalizer.exe'
+    - '!x86_64-w64-mingw32-nmakehlp.exe'
   signtoolOptions:
     signingHashAlgorithms:
       - sha256
