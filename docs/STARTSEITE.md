@@ -1,5 +1,19 @@
 # Startseite und lokale Workflowbibliothek
 
+## Aktuelle Navigation und Ablage
+
+**Start** bietet die vier Einstiege **Meine gespeicherten Workflows**, **Entwürfe**, **Beispielworkflows** und **Dokumentation und Anleitungen** sowie zuletzt geöffnete Workflows. **Neuer Workflow** führt zur Sprachwahl. **Weiterbearbeiten** kehrt zum aktiven Workflow zurück. Im Editor führt **Bereiche** zu Start, Workflows, Vorlagen, Hilfe und Einstellungen; **Ablauf**, **Daten und Parameter** und **Läufe** bearbeiten weiterhin denselben Workflow.
+
+**Speichern** sichert ohne Zielauswahl unter `Workflows\<Projektkennung>.scriptlab` im ScriptLab-Nutzerverzeichnis. Extern geöffnete Projekte werden beim Speichern intern übernommen; die externe Quelldatei wird nicht ersetzt. **Workflow → Kopie anlegen** erzeugt eine unabhängige interne Kopie mit neuer Kennung. Auch **Als Projekt speichern** in der Entwurfsliste benötigt keine Zielauswahl. Für eine weiterzugebende `.scriptlab`-Datei verwendest du **Exportieren**.
+
+Die Workflowliste bleibt eine Liste bekannter Dateien, kein Laufwerkscan. Suche, Sprachfilter und Sortierung gelten für diese Liste. Beispielworkflows werden als unabhängige Kopien geöffnet; mitgelieferte Business-Testdateien liegen im Arbeitsordner der Kopie. Ansichtswechsel starten keinen Workflow und verwerfen keine Änderungen. Entwürfe bleiben gesonderte lokale Zwischenstände.
+
+Laufhistorien stehen unter **Läufe** des geöffneten Workflows. **Alle Läufe** führt zur Liste; **Anzeigen** öffnet die Details eines konkreten Laufs. Die aktuelle Bedienung und die Ablagegrenzen stehen in [BEDIENUNG.md](BEDIENUNG.md) und [WEITERENTWICKLUNG.md](WEITERENTWICKLUNG.md). Für die jetzigen Farben und Flächen gelten das [Designsystem](gestaltung/DESIGNSYSTEM.md) und die [Informationsebenen](gestaltung/INFORMATIONSEBENEN.md).
+
+## Historischer Einführungs- und Prüfstand
+
+Die folgenden Farben, Anordnungen und Prüfergebnisse beschreiben die frühere Einführung. Sie bleiben als historische Nachweise erhalten und belegen keine Abnahme der späteren Oberfläche oder Ablage.
+
 Die anschließende Python-Erweiterung ergänzt dieselbe Startseite um die ausdrückliche Sprachauswahl bei Neuanlage, Sprachkennzeichnungen und sechs Vorlagen mit Sprachfilter. Ihre aktuellen Nachweise stehen in [PYTHON.md](PYTHON.md); die unten dokumentierten früheren Prüfungen bleiben ihrem damaligen Umfang zugeordnet.
 
 Historischer Prüfstand vom 26.10.2026, vor Einführung der bewussten Workflowtests. Die Startseite ist in das bestehende ScriptLab integriert. Der Editor und sein VBS-Export bleiben Bestandteil derselben Anwendung; während der hier dokumentierten Startseitenprüfung wurde kein Nutzerworkflow ausgeführt. Die spätere Funktion **Testen** und ihre eigenen Nachweise stehen in [TESTLAUF.md](TESTLAUF.md).

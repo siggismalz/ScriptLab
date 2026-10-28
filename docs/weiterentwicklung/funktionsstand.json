@@ -1,0 +1,36 @@
+{
+  "datum": "2026-10-28T10:29:55.820Z",
+  "profil": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Weiterentwicklung-FO1ClD\\Profil",
+  "workflow": "ee410fea-c67a-426d-9037-3ab39937c905",
+  "projektspeicherungOhneDialog": true,
+  "externesOriginalUnveraendert": true,
+  "prueflauf": "beendet",
+  "ausfuehrung": "beendet",
+  "laufIds": [
+    "418fe40b-867d-4c99-b8e1-3ac77b8df18b",
+    "2d938f88-11af-43ff-9724-f7251b3263f8"
+  ],
+  "historieNachNeustart": 2,
+  "ausgabeordner": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Weiterentwicklung-FO1ClD\\Profil\\Arbeitsdateien\\ee410fea-c67a-426d-9037-3ab39937c905",
+  "ausgaben": [
+    {
+      "pfad": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Weiterentwicklung-FO1ClD\\Profil\\Arbeitsdateien\\ee410fea-c67a-426d-9037-3ab39937c905\\Monatsauswertung.xlsx",
+      "status": "publiziert",
+      "sha256": "ab1cb4f14bf129769385d66adfe54dca14583e90cbb58d79db5c01a2838dea2c",
+      "bytes": 4941
+    },
+    {
+      "pfad": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Weiterentwicklung-FO1ClD\\Profil\\Arbeitsdateien\\ee410fea-c67a-426d-9037-3ab39937c905\\Monatsauswertung.pdf",
+      "status": "publiziert",
+      "sha256": "280fc071bb668a1bf4c48d57377cb257010678d9f3b576d4c4c5daf21096afc2",
+      "bytes": 22323
+    }
+  ],
+  "explorerpfade": [
+    "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Weiterentwicklung-FO1ClD\\Profil\\Arbeitsdateien\\ee410fea-c67a-426d-9037-3ab39937c905\\Monatsauswertung.xlsx"
+  ],
+  "protokollExportiert": true,
+  "projektExportiert": true,
+  "parameterUmbenanntUndRueckgaengig": true,
+  "rendererfehler": []
+}

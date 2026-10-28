@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="de">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ScriptLab · Automatische Ablage und Läufe</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --hintergrund: #172126;
+      --text: #eef3f4;
+      --sekundaer: #b9c6cb;
+      --linie: #3c4d56;
+      --akzent: #8fc2bc;
+    }
+    :root.hell {
+      color-scheme: light;
+      --hintergrund: #f1f4f3;
+      --text: #182c2c;
+      --sekundaer: #4b6260;
+      --linie: #d4deda;
+      --akzent: #24635d;
+    }
+    body {
+      margin: 32px;
+      background: var(--hintergrund);
+      color: var(--text);
+      font:
+        14px/1.5 'Segoe UI Variable',
+        'Segoe UI',
+        system-ui,
+        sans-serif;
+    }
+    main {
+      max-width: 1400px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 24px;
+      line-height: 32px;
+    }
+    h2 {
+      margin-top: 32px;
+      font-size: 20px;
+    }
+    p {
+      color: var(--sekundaer);
+      max-width: 90ch;
+    }
+    a {
+      color: var(--akzent);
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+    button {
+      font: inherit;
+      min-height: 36px;
+      padding: 8px 16px;
+      border: 1px solid var(--linie);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+    }
+    button[aria-pressed='true'] {
+      border-color: var(--akzent);
+      box-shadow: inset 0 -2px var(--akzent);
+    }
+    button:focus-visible,
+    a:focus-visible {
+      outline: 2px solid var(--akzent);
+      outline-offset: 4px;
+    }
+    figure {
+      margin: 16px 0 32px;
+    }
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid var(--linie);
+    }
+    figcaption {
+      margin: 8px 0;
+      color: var(--sekundaer);
+    }
+    @media (max-width: 700px) {
+      body {
+        margin: 16px;
+      }
+    }
+  </style>
+  <main>
+    <h1>ScriptLab · Automatische Ablage und Läufe</h1>
+    <p>
+      Aktuelle Aufnahmen der Windows-Anwendung mit synthetischen Daten. Der Prüflauf und die Ausführung wurden
+      tatsächlich gestartet; die Laufdetails wurden nach einem Neustart wieder geöffnet.
+    </p>
+    <nav aria-label="Ansicht und Dokumentation">
+      <button type="button" aria-pressed="true" data-thema="dunkel">Dunkel</button
+      ><button type="button" aria-pressed="false" data-thema="hell">Hell</button
+      ><a href="../WEITERENTWICKLUNG.md">Funktionen und Ablage</a
+      ><a href="funktionsstand.json">Tatsächlicher Arbeitsweg</a>
+    </nav>
+    <h2>Lauf vorbereiten</h2>
+    <p>Der Arbeitsordner wird automatisch verwaltet. Modus und Parameter bleiben unmittelbar zugänglich.</p>
+    <figure>
+      <a href="laufvorbereitung-automatischer-ordner.png"
+        ><img src="laufvorbereitung-automatischer-ordner.png" alt="Laufvorbereitung ohne Basisordner-Auswahl"
+      /></a>
+    </figure>
+    <h2>Frühere Läufe finden</h2>
+    <figure>
+      <a href="laufhistorie-nach-neustart-dunkel.png"
+        ><img
+          data-wechsel="laufhistorie-nach-neustart"
+          src="laufhistorie-nach-neustart-dunkel.png"
+          alt="Gespeicherte Läufe des geöffneten Workflows nach einem Neustart"
+      /></a>
+      <figcaption>
+        Zeitpunkt, Modus, tatsächlicher Status und Dauer; Details öffnen sich erst nach Auswahl.
+      </figcaption>
+    </figure>
+    <h2>Ergebnisse eines ausgewählten Laufs</h2>
+    <figure>
+      <a href="gespeicherte-ergebnisse-dunkel.png"
+        ><img
+          data-wechsel="gespeicherte-ergebnisse"
+          src="gespeicherte-ergebnisse-dunkel.png"
+          alt="Gespeicherte XLSX- und PDF-Ausgaben mit Exploreraktionen"
+      /></a>
+      <figcaption>
+        Bestätigte Dateien lassen sich im Explorer anzeigen. Vollständige Pfade und Berichte bleiben gezielt
+        erreichbar.
+      </figcaption>
+    </figure>
+    <h2>Projektdatei exportieren</h2>
+    <figure>
+      <a href="projektdatei-exportieren.png"
+        ><img
+          src="projektdatei-exportieren.png"
+          alt="Projektdateiexport mit bewusster Auswahl des Ausgabeorts"
+      /></a>
+      <figcaption>
+        Nur beim Export wird ein Speicherort gewählt. Die interne Workflowdatei bleibt erhalten.
+      </figcaption>
+    </figure>
+  </main>
+  <script>
+    document.querySelectorAll('[data-thema]').forEach((button) =>
+      button.addEventListener('click', () => {
+        const thema = button.dataset.thema;
+        document.documentElement.classList.toggle('hell', thema === 'hell');
+        document
+          .querySelectorAll('[data-thema]')
+          .forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+        document.querySelectorAll('[data-wechsel]').forEach((img) => {
+          img.src = `${img.dataset.wechsel}-${thema}.png`;
+          img.parentElement.href = img.src;
+        });
+      }),
+    );
+  </script>
+</html>

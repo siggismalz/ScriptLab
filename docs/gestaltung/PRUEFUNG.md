@@ -4,6 +4,10 @@ Stand: 28. Oktober 2026.
 
 UI-Quellstand: `9d3f986`. Der aktuelle entpackte Windows-Build liegt lokal unter `release/gestaltung-9d3f986/win-unpacked/ScriptLab.exe`. Der Ausgabeordner trägt den Quellstand, weil die zuvor verwendeten Buildordner beim Ersetzen der Archivdatei gesperrt waren. Das ist kein veröffentlichtes oder signiertes Produktrelease.
 
+## Nachtrag vom 28. Oktober 2026
+
+Nach dem unten dokumentierten UI-Stand wurden automatische Projektablage, feste Workflow-Arbeitsordner und eine dauerhafte lokale Laufhistorie mit Liste und Laufdetails umgesetzt. [WEITERENTWICKLUNG.md](../WEITERENTWICKLUNG.md) beschreibt die neuen Arbeitswege, Ablagegrenzen und den gezielten Windows-Funktionsnachweis. Dessen [Bericht](../weiterentwicklung/funktionsstand.json) dokumentiert unter anderem Speicherung ohne Zielauswahl, unveränderte externe Quelldatei, echte Business-Ausgaben, Läufe nach Neustart und Protokollexport. Die folgenden UI-Aussagen und Aufnahmen bleiben ihrem Quellstand `9d3f986` zugeordnet; der Nachtrag ist keine erneute vollständige Gestaltungsabnahme.
+
 ## Aktuelle UI-Arbeit
 
 Die letzte Überarbeitung konzentriert sich auf die konkrete Oberfläche: Übersicht, ausgewählte Aufgabe und gezielt geöffnete Details. Maßgeblich sind [Informationsebenen](INFORMATIONSEBENEN.md), [Designsystem](DESIGNSYSTEM.md) und die [Ansichtengalerie](ANSICHTEN.html).
@@ -46,7 +50,7 @@ Die Anzeigeseite von Windows wurde zur Vorbereitung geöffnet. Die Systemskalier
 
 - Es fand kein Nutzertest mit externen Fachanwendern statt. Die gestalterische Beurteilung ist eine eigene Sicht- und Bedienprüfung.
 - Eine vollständige Barrierefreiheitsabnahme einschließlich Screenreader, echter Windows-Kontrastdarstellungen und aller Monitor-/DPI-Wechsel steht aus.
-- Eine dauerhafte Laufhistorie benötigt eine Fachschnittstelle. Angezeigt wird der aktuelle beziehungsweise zuletzt gestartete Lauf; fremde Workflows erhalten dessen Ergebnisse nicht als eigene.
+- Zum UI-Stand `9d3f986` fehlte eine dauerhafte Laufhistorie. Diese Grenze wurde mit der im Nachtrag dokumentierten Umsetzung aufgehoben; ihre Aufbewahrungs- und Prüfgrenzen stehen dort.
 - Einige ältere Desktoptests beschreiben noch frühere Menü- oder Disclosure-Wege. Ihre vollständige Angleichung gehört zur abschließenden funktionalen Regression, nicht zur hier behaupteten visuellen Ausarbeitung.
 - Ein entpackter lokaler Windows-Build ist kein veröffentlichtes oder signiertes Produktrelease. Es wurde nichts veröffentlicht.
 

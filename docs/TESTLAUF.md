@@ -1,5 +1,23 @@
 # Workflows bewusst testen
 
+## Aktuelle Bedienung: Arbeitsordner und gespeicherte Läufe
+
+Öffne im Workflow **Läufe → Vorbereitung**. Prüfe Modus, Parameter, Quellen, Ausgabeziele und Zeitlimit, bevor du bewusst startest. Ein Ansichtswechsel startet keine Verarbeitung. ScriptLab verwendet automatisch `Arbeitsdateien\<Projektkennung>` im eigenen Nutzerverzeichnis; eine Basisordner-Auswahl gibt es nicht mehr. Der vollständige Pfad und die Exploreraktion stehen unter **ScriptLab-Arbeitsordner**. Auch ein noch nicht gespeicherter Workflow kann dort ausgeführt werden.
+
+Bei Business-Workflows unterscheiden sich **Datenvorschau**, **Prüflauf ohne Zieländerungen** und **Ausführen · echte Dateiänderungen**. Modus und Workflowstand bleiben dem Lauf zugeordnet. Externe Quellen bleiben lesbar; Schreibziele in ScriptLab müssen innerhalb des ScriptLab-Nutzerverzeichnisses liegen. Unzulässige bestehende Ausgabeziele werden abgewiesen, nicht umgeschrieben. Exportierte Scripts arbeiten eigenständig mit ihrer ursprünglichen Pfadsemantik. **Stoppen** nimmt bereits vorgenommene Änderungen nicht zurück.
+
+Abgeschlossene Läufe werden lokal gespeichert. **Alle Läufe** zeigt nur die Läufe dieses Workflows. Mit **Anzeigen** öffnest du die zugehörigen Ansichten **Übersicht**, **Ergebnisse** und **Protokoll**. Die Auswahl lädt Details, führt aber nichts aus. Ein gespeicherter Lauf eines früheren Workflowstands wird gekennzeichnet; die Fehleraktion **Baustein anzeigen** ist nur bei passendem Stand verfügbar.
+
+Bestätigte Ausgaben und Berichte lassen sich im Explorer anzeigen, sofern die Dateien noch vorhanden sind. Die Laufhistorie kopiert diese Dateien nicht zusätzlich. **Protokoll kopieren** und **Protokoll exportieren** beziehen sich auf den ausgewählten Lauf; der Export öffnet einen nativen Dialog für eine `.txt`-Datei. Eine geleerte Liveanzeige verändert keine bereits gespeicherten Laufdaten.
+
+Die lokale Historie ist insgesamt auf höchstens 200 abgeschlossene Läufe und 64 MiB Detaildaten begrenzt. Ältere Einträge können dadurch entfallen. Ein Speicherfehler erscheint als Hinweis und verändert den tatsächlichen Ausführungsstatus nicht. Die Historie nimmt beim Öffnen keinen Prozess automatisch wieder auf. Das Business-Journal besitzt weiterhin seine eigene ausdrückliche Fortsetzungsfunktion.
+
+[BEDIENUNG.md](BEDIENUNG.md) beschreibt die aktuellen Arbeitswege. [WEITERENTWICKLUNG.md](WEITERENTWICKLUNG.md) dokumentiert Ablage, Schnittstellen und Grenzen.
+
+## Historischer Leitfaden und Prüfstand vor der automatischen Ablage
+
+Die folgenden Bedienbezeichnungen, Ordnerauswahl, Grenzen und Prüfergebnisse gehören zum damaligen Stand. Sie sind kein Nachweis für die spätere Laufhistorie oder die aktuelle Oberfläche.
+
 Dieser Leitfaden und seine ursprünglichen Prüfzahlen dokumentieren die Einführung der VBS-Testfunktion. Die spätere zweite Sprache, Python-Einrichtung, gemeinsame Laufsteuerung und aktuellen zusätzlichen Nachweise stehen in [PYTHON.md](PYTHON.md). Die folgenden alten Installerangaben belegen keinen Build mit Python.
 
 Stand: 26.10.2026. Der Erweiterungsauftrag erlaubt ausdrücklich gestartete Testläufe des vollständigen aktuellen Workflows. Das ersetzt die frühere globale Vorgabe gegen jede Ausführung innerhalb von ScriptLab. Bearbeiten, Öffnen, Wiederherstellen, Strukturprüfung, Vorschau, Speichern, Export und Signaturprüfung starten weiterhin keinen Workflow. Es gibt keine automatische Ausführung, Zeitplanung oder Autostartfunktion.
