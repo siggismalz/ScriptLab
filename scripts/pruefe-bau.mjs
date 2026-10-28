@@ -432,6 +432,7 @@ await pruefen('Vollständiges Offline-Python-Bündel', async () => {
   const lockHash = createHash('sha256').update(lockBytes).digest('hex');
   verlangen(
     manifest?.schemaVersion === 1 &&
+      manifest.bereit === true &&
       manifest.pythonVersion === '3.15.2' &&
       manifest.architektur === 'x64' &&
       manifest.businessLockSha256 === lockHash,
