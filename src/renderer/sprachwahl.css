@@ -27,6 +27,12 @@
 }
 .sprachwahl-karte.ist-gewaehlt {
   border-color: var(--farbe-akzent);
+  background: var(--farbe-auswahl-flaeche);
+  box-shadow: inset 3px 0 var(--farbe-akzent);
+}
+.sprachwahl-karte:focus-within {
+  outline: var(--fokus-kontur) solid var(--farbe-akzent);
+  outline-offset: var(--fokus-abstand);
 }
 .sprachwahl-kopf {
   display: flex;
@@ -70,6 +76,10 @@
   }
   .sprachwahl-karte.ist-gewaehlt {
     border-color: Highlight;
+    box-shadow: inset 3px 0 Highlight;
+  }
+  .sprachwahl-karte:focus-within {
+    outline-color: Highlight;
   }
   .sprachwahl-vorteil,
   .sprachwahl-hinweis,

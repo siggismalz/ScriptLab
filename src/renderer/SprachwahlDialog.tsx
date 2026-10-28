@@ -23,14 +23,14 @@ const sprachen: readonly {
     name: 'Python',
     beschreibung: 'Für Geschäftsprozesse mit Daten, Excel und Dokumenten.',
     vorteil: 'Gemeinsame Grundbausteine und zusätzliche Daten- und Dokumentbausteine.',
-    hinweis: 'Zum Ausführen werden Python und je nach Workflow weitere Komponenten benötigt.',
+    hinweis: 'In ScriptLab mitgeliefert und direkt nutzbar.',
   },
   {
     id: 'vbs',
     name: 'VBS',
     beschreibung: 'Für kleine Windows-Aufgaben und bestehende VBScript-Abläufe.',
     vorteil: 'Nutzt den Windows Script Host und vorhandene Windows-Schnittstellen.',
-    hinweis: 'VBScript muss auf dem Rechner verfügbar sein. Microsoft lässt die Unterstützung auslaufen.',
+    hinweis: 'Benötigt die Windows-VBScript-Komponente. Microsoft lässt die Unterstützung auslaufen.',
   },
 ];
 

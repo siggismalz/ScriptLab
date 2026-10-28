@@ -1,0 +1,51 @@
+.komponenten-status {
+  display: flex;
+  flex-direction: column;
+}
+.komponenten-status > section {
+  display: grid;
+  gap: var(--abstand-8);
+  min-inline-size: 0;
+  padding-block: var(--abstand-16);
+  border-block-end: 1px solid var(--farbe-trennung);
+}
+.komponenten-status h4 {
+  margin: 0;
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+}
+.komponenten-details {
+  min-inline-size: 0;
+}
+.komponenten-details[open] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--abstand-16);
+}
+.komponenten-details dl {
+  display: grid;
+  gap: var(--abstand-8);
+  margin: 0;
+}
+.komponenten-details dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--abstand-16);
+  min-inline-size: 0;
+}
+.komponenten-details dt {
+  color: var(--farbe-text-sekundaer);
+}
+.komponenten-details dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.komponenten-details summary {
+  min-block-size: var(--hoehe-bedienfeld);
+  cursor: pointer;
+}
+.komponenten-details summary:focus-visible {
+  outline: var(--fokus-kontur) solid var(--farbe-akzent);
+  outline-offset: var(--fokus-abstand);
+}

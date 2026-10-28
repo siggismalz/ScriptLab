@@ -64,8 +64,8 @@ export function ExportDialog({
           </p>
         ) : format === 'paket' ? (
           <p>
-            Workflow, Python-Script, Laufzeit, Parameter und Anleitung als ZIP. Weitere Dateien wählst du im
-            nächsten Schritt aus.
+            Python-Script, Business-Module, Parameter und Anleitung als ZIP. Weitere Dateien wählst du im
+            nächsten Schritt aus. Ein Python-Interpreter ist nicht enthalten.
           </p>
         ) : (
           <p>Der erzeugte Quelltext als {projekt.skriptsprache === 'python' ? 'Python' : 'VBS'}-Datei.</p>
@@ -80,7 +80,8 @@ export function ExportDialog({
           ) : format === 'paket' ? (
             <>
               <p>
-                Am Ziel werden Python und die dokumentierten Komponenten benötigt. Quellen und
+                Zum Ausführen außerhalb von ScriptLab benötigt der Zielcomputer Python und die in der
+                Anleitung genannten Pakete. Der Export richtet dort keine Umgebung ein. Quellen und
                 Dokumentvorlagen werden nur nach deiner Auswahl aufgenommen.
               </p>
               <p>Paketsignaturen werden nicht unterstützt.</p>
@@ -90,7 +91,7 @@ export function ExportDialog({
               <p>Die Ausführung verwendet die Dateien, Pfade und Programme des Zielcomputers.</p>
               <p>
                 {projekt.skriptsprache === 'python'
-                  ? 'Python muss installiert sein. Python-Scripts werden hier nicht signiert.'
+                  ? 'Zum Ausführen außerhalb von ScriptLab benötigt der Zielcomputer Python. Python-Scripts werden hier nicht signiert.'
                   : projekt.exportOptionen.signieren
                     ? 'Die eingerichtete Windows-Codesignatur wird angewendet.'
                     : 'VBS-Export ohne Signatur. Eine Codesignatur lässt sich in den Einstellungen einrichten.'}

@@ -8,10 +8,10 @@ import { Knopf } from './komponenten/Knopf';
 import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
 import { Statusanzeige } from './komponenten/Statusanzeige';
 import type { PythonStatus } from '../gemeinsam/python';
-import { BusinessLaufzeit } from './BusinessLaufzeit';
+import type { BusinessStatus } from '../gemeinsam/business-laufzeit';
+import './einstellungen-laufzeit.css';
 
 export function EinstellungenDialog({
-  businessGewechselt = () => {},
   projektOptionenAnzeigen = true,
   offen,
   schliessen,
@@ -62,6 +62,35 @@ export function EinstellungenDialog({
   const [zeitstempelEntwurf, setZeitstempelEntwurf] = useState(projekt.exportOptionen.zeitstempelUrl);
   const [breitenFehler, setBreitenFehler] = useState('');
   const [zeitstempelFehler, setZeitstempelFehler] = useState('');
+  const [businessStatus, setBusinessStatus] = useState<BusinessStatus | null>(null);
+  const [komponentenFehler, setKomponentenFehler] = useState('');
+  const [komponentenLaden, setKomponentenLaden] = useState(false);
+  useEffect(() => {
+    if (bereich === 'signatur' && (!projektOptionenAnzeigen || projekt.skriptsprache !== 'vbs'))
+      setBereich('darstellung');
+  }, [bereich, projektOptionenAnzeigen, projekt.skriptsprache]);
+  useEffect(() => {
+    if (!offen || bereich !== 'laufzeit') return;
+    let aktuell = true;
+    setKomponentenLaden(true);
+    setKomponentenFehler('');
+    void window.scriptlab.businessLesen().then(
+      (r) => {
+        if (!aktuell) return;
+        if (r.ok) setBusinessStatus(r.wert.status);
+        else setKomponentenFehler(r.meldung);
+        setKomponentenLaden(false);
+      },
+      () => {
+        if (!aktuell) return;
+        setKomponentenFehler('Der Komponentenstatus konnte nicht geladen werden.');
+        setKomponentenLaden(false);
+      },
+    );
+    return () => {
+      aktuell = false;
+    };
+  }, [offen, bereich, pythonStatus]);
   useEffect(() => {
     setBreitenEntwurf(String(einstellungen.palettenBreite));
     setBreitenFehler('');
@@ -161,13 +190,13 @@ export function EinstellungenDialog({
           <Auswahlfeld
             beschriftung="Farbschema"
             hilfe="„System“ folgt der Windows-Darstellung."
-            value={einstellungen.darstellung ?? 'dunkel'}
+            value={einstellungen.darstellung ?? 'hell'}
             onChange={(e) =>
               setzen({ ...einstellungen, darstellung: e.target.value as 'dunkel' | 'hell' | 'system' })
             }
           >
-            <option value="dunkel">Dunkel</option>
             <option value="hell">Hell</option>
+            <option value="dunkel">Dunkel</option>
             <option value="system">System</option>
           </Auswahlfeld>
           <Auswahlfeld
@@ -201,74 +230,104 @@ export function EinstellungenDialog({
         aria-labelledby="einstellung-laufzeit"
         hidden={bereich !== 'laufzeit'}
       >
-        <BusinessLaufzeit gewechselt={businessGewechselt} />
-        <section className="einstellungs-abschnitt" aria-labelledby="python-installation-titel">
-          <h3 id="python-installation-titel">Python-Installation</h3>
-          <p>
-            Python wird zum Bearbeiten und Exportieren nicht benötigt. Für einen Python-Test muss eine
-            passende Installation tatsächlich geprüft werden.
-          </p>
-          <div id="python-installation-status">
-            <Statusanzeige
-              art={
-                pythonStatus?.zustand === 'bereit' && pythonStatus.installation
-                  ? 'erfolg'
-                  : pythonStatus?.zustand === 'prueft'
-                    ? 'verarbeitung'
-                    : pythonStatus?.zustand === 'fehler'
-                      ? 'fehler'
-                      : 'neutral'
-              }
-            >
-              {pythonStatus?.meldung ?? 'Der Python-Status wurde noch nicht geladen.'}
-            </Statusanzeige>
+        <section
+          className="einstellungs-abschnitt komponenten-uebersicht"
+          aria-labelledby="komponenten-titel"
+        >
+          <h3 id="komponenten-titel">Mitgelieferte Komponenten</h3>
+          <p>Python sowie die Komponenten für Tabellen und Dokumente gehören zu ScriptLab.</p>
+          <div id="komponenten-status" className="komponenten-status" aria-busy={komponentenLaden}>
+            <section>
+              <h4>Python</h4>
+              <Statusanzeige
+                art={
+                  pythonStatus?.zustand === 'bereit' && pythonStatus.installation
+                    ? 'erfolg'
+                    : pythonStatus?.zustand === 'prueft'
+                      ? 'verarbeitung'
+                      : pythonStatus?.zustand === 'fehler' || pythonStatus?.zustand === 'fehlt'
+                        ? 'fehler'
+                        : 'neutral'
+                }
+              >
+                {pythonStatus?.meldung ?? 'Noch nicht geprüft.'}
+              </Statusanzeige>
+            </section>
+            <section>
+              <h4>Tabellen und Dokumente</h4>
+              <Statusanzeige
+                art={
+                  komponentenFehler
+                    ? 'fehler'
+                    : komponentenLaden
+                      ? 'verarbeitung'
+                      : businessStatus?.zustand === 'bereit'
+                        ? 'erfolg'
+                        : businessStatus
+                          ? 'fehler'
+                          : 'neutral'
+                }
+              >
+                {komponentenFehler ||
+                  (komponentenLaden ? 'Status wird geladen …' : businessStatus?.meldung) ||
+                  'Noch nicht geprüft.'}
+              </Statusanzeige>
+            </section>
           </div>
-          {pythonStatus?.installation && (
-            <>
-              <p>
-                {pythonStatus.installation.implementierung} {pythonStatus.installation.version} ·{' '}
-                {pythonStatus.installation.architektur}
-              </p>
-              <p>
-                {pythonStatus.installation.tkinter === true
-                  ? 'Dialogfunktionen (tkinter) geprüft.'
-                  : pythonStatus.installation.tkinter === false
-                    ? 'Dialogfunktionen (tkinter) sind nicht verfügbar.'
-                    : 'Dialogfunktionen werden bei Bedarf gesondert geprüft.'}
-              </p>
-            </>
-          )}
-          {(pythonStatus?.installation?.pfad || pythonStatus?.auswahl) && (
-            <Textfeld
-              beschriftung="Python-Interpreter"
-              readOnly
-              rows={2}
-              value={pythonStatus.installation?.pfad ?? pythonStatus.auswahl ?? ''}
-            />
-          )}
-          <div className="knopfgruppe umbrechen">
-            <Knopf
-              onClick={() => pythonAktion('waehlen')}
-              disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft'}
-              grundId={verarbeitung ? 'einstellungen-vorgang' : 'python-installation-status'}
-            >
-              Interpreter auswählen
-            </Knopf>
+          <div className="knopfgruppe">
             <Knopf
               onClick={() => pythonAktion('pruefen')}
-              disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft'}
-              grundId={verarbeitung ? 'einstellungen-vorgang' : 'python-installation-status'}
+              disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft' || komponentenLaden}
+              grund={verarbeitung || 'Die Komponenten werden gerade geprüft.'}
             >
               Erneut prüfen
             </Knopf>
-            <Knopf variante="leise" onClick={() => pythonAktion('hilfe')}>
-              Offizielle Python-Hilfe
-            </Knopf>
           </div>
-          <p>
-            Die Auswahl erfolgt über eine Programmdatei. ScriptLab installiert keine Python-Pakete automatisch
-            und bietet hier keine freie Befehlszeile an.
-          </p>
+          <details className="komponenten-details">
+            <summary>Versionen und technische Angaben</summary>
+            {pythonStatus?.installation && (
+              <dl>
+                <div>
+                  <dt>Python</dt>
+                  <dd>
+                    {pythonStatus.installation.implementierung} {pythonStatus.installation.version} ·{' '}
+                    {pythonStatus.installation.architektur}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Dialogfunktionen</dt>
+                  <dd>
+                    {pythonStatus.installation.tkinter === true
+                      ? 'Verfügbar'
+                      : pythonStatus.installation.tkinter === false
+                        ? 'Nicht verfügbar'
+                        : 'Noch nicht geprüft'}
+                  </dd>
+                </div>
+              </dl>
+            )}
+            {pythonStatus?.installation?.pfad && (
+              <Textfeld
+                beschriftung="Mitgelieferte Programmdatei"
+                readOnly
+                rows={2}
+                value={pythonStatus.installation.pfad}
+              />
+            )}
+            {businessStatus && (
+              <dl>
+                {businessStatus.pakete.map((paket) => (
+                  <div key={paket.name}>
+                    <dt>{paket.name}</dt>
+                    <dd>
+                      {paket.version ?? 'Nicht vorhanden'}
+                      {!paket.importierbar && ' · Nicht verwendbar'}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </details>
         </section>
       </div>
       <div
