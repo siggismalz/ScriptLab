@@ -169,6 +169,7 @@ export function ParameterDialog({
   const [entwurf, setEntwurf] = useState(business),
     [fehler, setFehler] = useState('');
   const naechsteZeile = useRef(business.parameter.length);
+  const formular = useRef<HTMLDivElement>(null);
   const [zeilen, setZeilen] = useState<(ParameterBearbeitung & { id: number })[]>(() =>
     business.parameter.map((parameter, id) => ({ id, ursprungsname: parameter.name, parameter })),
   );
@@ -205,6 +206,11 @@ export function ParameterDialog({
                 schliessen();
               } catch (e) {
                 setFehler(e instanceof Error ? e.message : 'Prüfe die Parameter.');
+                requestAnimationFrame(() => {
+                  formular.current?.querySelectorAll<HTMLDetailsElement>('details').forEach((details) => {
+                    details.open = true;
+                  });
+                });
               }
             }}
           >
@@ -213,18 +219,13 @@ export function ParameterDialog({
         </>
       }
     >
-      <div className="business-parameter">
+      <div ref={formular} className="business-parameter">
         {fehler && <p role="alert">{fehler}</p>}
         {zeilen.map(({ id, parameter: p }, i) => (
           <fieldset key={id}>
-            <legend>Parameter {i + 1}</legend>
+            <legend>{p.beschriftung.trim() || `Parameter ${i + 1}`}</legend>
             <Feld
-              beschriftung="Interner Name (Buchstaben, Zahlen, Unterstrich)"
-              value={p.name}
-              onChange={(e) => setzen(id, { ...p, name: e.target.value })}
-            />
-            <Feld
-              beschriftung="Beschriftung im Eingabeformular"
+              beschriftung="Bezeichnung"
               value={p.beschriftung}
               onChange={(e) => setzen(id, { ...p, beschriftung: e.target.value })}
             />
@@ -263,14 +264,26 @@ export function ParameterDialog({
               wert={p.standard}
               aendern={(standard) => setzen(id, { ...p, standard })}
             />
-            <Textfeld
-              beschriftung="Kurze Hilfe"
-              value={p.hilfe}
-              onChange={(e) => setzen(id, { ...p, hilfe: e.target.value })}
-            />
-            <Knopf onClick={() => setZeilen((aktuell) => aktuell.filter((zeile) => zeile.id !== id))}>
-              Parameter entfernen
-            </Knopf>
+            <details className="business-parameterdetails">
+              <summary>Weitere Angaben</summary>
+              <Feld
+                beschriftung="Interner Name"
+                hilfe="Beginnt mit einem Buchstaben, danach Buchstaben, Zahlen oder Unterstriche. Bestehende Verweise werden beim Umbenennen mitgeführt."
+                value={p.name}
+                onChange={(e) => setzen(id, { ...p, name: e.target.value })}
+              />
+              <Textfeld
+                beschriftung="Kurze Hilfe"
+                value={p.hilfe}
+                onChange={(e) => setzen(id, { ...p, hilfe: e.target.value })}
+              />
+              <Knopf
+                variante="leise"
+                onClick={() => setZeilen((aktuell) => aktuell.filter((zeile) => zeile.id !== id))}
+              >
+                Parameter entfernen
+              </Knopf>
+            </details>
           </fieldset>
         ))}
         <Knopf

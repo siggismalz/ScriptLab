@@ -3,6 +3,7 @@ import {
   useContext,
   useRef,
   useState,
+  useId,
   type ChangeEvent,
   type ComponentProps,
   type ReactNode,
@@ -15,7 +16,9 @@ import {
   businessEingabeTitel,
   type KonfigFeld,
 } from '../kern/business-katalog';
-import type { JsonWert, WorkflowParameter } from '../kern/business-modell';
+import { parameterWertLesen, type JsonWert, type WorkflowParameter } from '../kern/business-modell';
+import { businessQuellenVorBlock } from '../editor/businessQuellen';
+import { istQuellenfeld } from '../kern/quellenfeld';
 import { Knopf } from './komponenten/Knopf';
 import { Feld, Auswahlfeld } from './komponenten/Feld';
 import { ParameterWertEingabe, parameterWertAusText } from './ParameterDialog';
@@ -25,14 +28,30 @@ const objekt = (w: JsonWert): Record<string, JsonWert> =>
 const standard = (felder: KonfigFeld[]) =>
   Object.fromEntries(felder.map((f) => [f.name, structuredClone(f.standard)]));
 
+export interface ParameterKontext {
+  parametersatz: 'test' | 'echt';
+  werte: Record<string, WorkflowParameter['standard']>;
+  werteOeffnen?: (name: string) => void;
+}
+export type QuelleWaehlen = (blockId: string, feldPfad: string[]) => Promise<string | null>;
+
 const FormularKontext = createContext<{
   spalten: string[];
   parameter: WorkflowParameter[];
   variablen: { id: string; name: string }[];
+  parameterKontext?: ParameterKontext;
+  quelleWaehlen?: QuelleWaehlen;
+  blockId?: string;
+  blockTyp?: string;
+  konfiguration?: Record<string, JsonWert>;
+  spaltenNachEingabe: Record<string, string[]>;
+  spaltenListe: string;
 }>({
   spalten: [],
   parameter: [],
   variablen: [],
+  spaltenNachEingabe: {},
+  spaltenListe: 'business-spalten',
 });
 
 export function businessAuswahlText(wert: string, feld = ''): string {
@@ -120,8 +139,8 @@ export function businessAuswahlText(wert: string, feld = ''): string {
 }
 
 function SpaltenFeld(props: ComponentProps<typeof Feld>) {
-  const { spalten } = useContext(FormularKontext);
-  return <Feld {...props} list={spalten.length ? 'business-spalten' : undefined} />;
+  const { spalten, spaltenListe } = useContext(FormularKontext);
+  return <Feld {...props} list={spalten.length ? spaltenListe : undefined} />;
 }
 
 /** Eine gewählte Herkunft ersetzt die direkte Eingabe; alternative Quellen öffnen sich erst bei Bedarf. */
@@ -144,6 +163,7 @@ function Wertbindung({
   leererWert?: JsonWert;
   eingabe: ReactNode;
 }) {
+  const formular = useContext(FormularKontext);
   const bereich = useRef<HTMLDivElement>(null);
   const w = objekt(wert);
   const parameterRef = typeof w.parameter === 'string' ? w.parameter : null;
@@ -156,6 +176,17 @@ function Wertbindung({
         ? `parameter:${parameterRef}`
         : 'wert';
   const hatAuswahl = gebunden || parameter.length > 0 || variablen.length > 0;
+  const definition = parameter.find((p) => p.name === parameterRef);
+  const kontext = formular.parameterKontext;
+  const parameterWert = definition ? parameterWertLesen(definition, kontext?.werte ?? {}) : undefined;
+  const wertText =
+    parameterWert === null || parameterWert === ''
+      ? 'Ohne Wert'
+      : parameterWert === false
+        ? 'Nein'
+        : parameterWert === true
+          ? 'Ja'
+          : String(parameterWert ?? '');
   const auswahlAngaben = {
     value: quelle,
     disabled: gesperrt,
@@ -216,9 +247,38 @@ function Wertbindung({
   return (
     <div ref={bereich}>
       {gebunden ? (
-        <Auswahlfeld beschriftung={titel} {...auswahlAngaben}>
-          {optionen}
-        </Auswahlfeld>
+        <>
+          <Auswahlfeld beschriftung={titel} {...auswahlAngaben}>
+            {optionen}
+          </Auswahlfeld>
+          {parameterRef !== null && definition && (
+            <div className="business-bindungswert">
+              <p title={wertText}>
+                <strong>
+                  {kontext
+                    ? kontext.parametersatz === 'test'
+                      ? 'Testdaten'
+                      : 'Echte Daten'
+                    : 'Standardwert'}
+                  :
+                </strong>{' '}
+                <span>{wertText}</span>
+                {kontext && !Object.hasOwn(kontext.werte, definition.name) && <span> · Standardwert</span>}
+              </p>
+              {kontext?.werteOeffnen && (
+                <Knopf variante="leise" onClick={() => kontext.werteOeffnen!(definition.name)}>
+                  Wert bearbeiten
+                </Knopf>
+              )}
+            </div>
+          )}
+          {parameterRef !== null && !definition && (
+            <p className="sl-feld-fehler">Dieser Workflowparameter ist nicht definiert.</p>
+          )}
+          {variableRef !== null && (
+            <p className="business-bindungshinweis">Der Variablenwert entsteht während des Laufs.</p>
+          )}
+        </>
       ) : (
         <>
           {eingabe}
@@ -640,16 +700,29 @@ export function KonfigEingabe({
   aendern,
   parameter = [],
   gesperrt = false,
+  feldPfad = [],
 }: {
   feld: KonfigFeld;
   wert: JsonWert;
   aendern: (w: JsonWert) => void;
   parameter?: WorkflowParameter[];
   gesperrt?: boolean;
+  feldPfad?: string[];
 }) {
   const formular = useContext(FormularKontext);
+  const [waehlt, setWaehlt] = useState(false);
+  const [auswahlFehler, setAuswahlFehler] = useState('');
   const w = objekt(wert);
   const teile = Array.isArray(wert) ? wert : [];
+  const seitenspalten = formular.spaltenNachEingabe[feld.name];
+  const spaltenListe =
+    seitenspalten !== undefined
+      ? seitenspalten.length
+        ? `${formular.spaltenListe}-${feld.name}`
+        : undefined
+      : formular.spalten.length
+        ? formular.spaltenListe
+        : undefined;
   if (w.art === 'wert' && ['text', 'zahl'].includes(feld.art))
     return (
       <LiteralEingabe
@@ -686,6 +759,7 @@ export function KonfigEingabe({
             aendern={(neu) => aendern({ ...w, [f.name]: neu })}
             parameter={parameter}
             gesperrt={gesperrt}
+            feldPfad={[...feldPfad, f.name]}
           />
         ))}
       </fieldset>
@@ -709,7 +783,7 @@ export function KonfigEingabe({
                 beschriftung={`Eintrag ${i + 1}`}
                 list={
                   formular.spalten.length && ['spalten', 'schluessel'].includes(feld.name)
-                    ? 'business-spalten'
+                    ? formular.spaltenListe
                     : undefined
                 }
                 value={String(teil)}
@@ -739,6 +813,7 @@ export function KonfigEingabe({
                   }
                   parameter={parameter}
                   gesperrt={gesperrt}
+                  feldPfad={[...feldPfad, String(i), f.name]}
                 />
               ))
             )}
@@ -763,7 +838,7 @@ export function KonfigEingabe({
           <div key={i}>
             <Feld
               beschriftung="Ausgangswert / Feldname"
-              list={formular.spalten.length && feld.name === 'namen' ? 'business-spalten' : undefined}
+              list={formular.spalten.length && feld.name === 'namen' ? formular.spaltenListe : undefined}
               value={k}
               disabled={gesperrt}
               onChange={(e) => {
@@ -779,6 +854,7 @@ export function KonfigEingabe({
               gesperrt={gesperrt}
               parameter={parameter}
               aendern={(neu) => aendern({ ...w, [k]: neu })}
+              feldPfad={[...feldPfad, k]}
             />
             <Knopf
               disabled={gesperrt}
@@ -879,18 +955,53 @@ export function KonfigEingabe({
       parameter={parameter}
       variablen={feld.art === 'text' || typeof w.variable === 'string' ? formular.variablen : []}
       eingabe={
-        <Feld
-          beschriftung={feld.titel}
-          list={
-            formular.spalten.length && ['spalte', 'links', 'rechts'].includes(feld.name)
-              ? 'business-spalten'
-              : undefined
-          }
-          value={typeof wert === 'object' ? '' : String(wert ?? '')}
-          disabled={gesperrt}
-          type={feld.art === 'zahl' ? 'number' : 'text'}
-          onChange={(e) => aendern(feld.art === 'zahl' ? Number(e.target.value) : e.target.value)}
-        />
+        <>
+          <Feld
+            beschriftung={feld.titel}
+            list={['spalte', 'links', 'rechts'].includes(feld.name) ? spaltenListe : undefined}
+            value={typeof wert === 'object' ? '' : String(wert ?? '')}
+            disabled={gesperrt}
+            type={feld.art === 'zahl' ? 'number' : 'text'}
+            onChange={(e) => aendern(feld.art === 'zahl' ? Number(e.target.value) : e.target.value)}
+          />
+          {formular.quelleWaehlen &&
+            formular.blockId &&
+            formular.blockTyp &&
+            istQuellenfeld(formular.blockTyp, feldPfad, formular.konfiguration ?? {}) && (
+              <Knopf
+                variante="leise"
+                symbol="oeffnen"
+                disabled={gesperrt}
+                grund="Stoppe den Lauf vor Änderungen."
+                verarbeitung={waehlt}
+                onClick={async () => {
+                  setWaehlt(true);
+                  setAuswahlFehler('');
+                  try {
+                    const pfad = await formular.quelleWaehlen!(formular.blockId!, feldPfad);
+                    if (pfad !== null) aendern(pfad);
+                  } catch (fehler) {
+                    setAuswahlFehler(
+                      fehler instanceof Error ? fehler.message : 'Die Quelle konnte nicht ausgewählt werden.',
+                    );
+                  } finally {
+                    setWaehlt(false);
+                  }
+                }}
+              >
+                {feld.name === 'ordner'
+                  ? 'Ordner auswählen'
+                  : feld.name === 'vorlage'
+                    ? 'Vorlage auswählen'
+                    : 'Datei auswählen'}
+              </Knopf>
+            )}
+          {auswahlFehler && (
+            <p className="sl-feld-fehler" role="alert">
+              {auswahlFehler}
+            </p>
+          )}
+        </>
       }
     />
   );
@@ -902,6 +1013,9 @@ export function BusinessEigenschaften({
   gesperrt,
   geaendert,
   spalten = [],
+  spaltenNachQuelle,
+  parameterKontext,
+  quelleWaehlen,
 }: {
   ws: Blockly.WorkspaceSvg;
   block: Blockly.Block;
@@ -909,8 +1023,12 @@ export function BusinessEigenschaften({
   gesperrt: boolean;
   geaendert: () => void;
   spalten?: string[];
+  spaltenNachQuelle?: Record<string, string[]>;
+  parameterKontext?: ParameterKontext;
+  quelleWaehlen?: QuelleWaehlen;
 }) {
   const [, aktualisieren] = useState(0);
+  const spaltenListe = `business-spalten-${useId()}`;
   const def = businessNachTyp.get(block.type)!;
   let daten: ReturnType<typeof businessDatenLesen>;
   try {
@@ -927,6 +1045,20 @@ export function BusinessEigenschaften({
     geaendert();
   };
   const csvEinstellungen = ['sl_biz_lesen_csv', 'sl_biz_schreiben_csv'].includes(def.typ);
+  const spaltenNachEingabe = spaltenNachQuelle
+    ? Object.fromEntries(
+        Object.entries(def.eingaben).map(([name, typ]) => {
+          const referenz = objekt(daten.eingaben[name] ?? null).referenz;
+          const sicher =
+            typeof referenz === 'string' &&
+            businessQuellenVorBlock(ws, block.id, typ).some((b) => b.id === referenz);
+          return [name, sicher ? (spaltenNachQuelle[referenz as string] ?? []) : []];
+        }),
+      )
+    : {};
+  const passendeSpalten = spaltenNachQuelle
+    ? [...new Set(Object.values(spaltenNachEingabe).flat())]
+    : spalten;
   const feldAnzeigen = (f: KonfigFeld) => (
     <KonfigEingabe
       key={f.name}
@@ -935,53 +1067,74 @@ export function BusinessEigenschaften({
       aendern={(wert) => setzen({ ...daten, konfiguration: { ...daten.konfiguration, [f.name]: wert } })}
       parameter={parameter}
       gesperrt={gesperrt}
+      feldPfad={[f.name]}
     />
   );
   return (
     <FormularKontext.Provider
       value={{
         parameter,
+        parameterKontext,
+        quelleWaehlen,
+        blockId: block.id,
+        blockTyp: block.type,
+        konfiguration: daten.konfiguration,
+        spaltenNachEingabe,
+        spaltenListe,
         variablen: ws
           .getVariableMap()
           .getAllVariables()
           .map((v) => ({ id: v.getId(), name: v.getName() })),
         spalten: [
-          ...new Set(spalten.filter((s) => typeof s === 'string' && s.trim() && !s.includes('\0'))),
+          ...new Set(passendeSpalten.filter((s) => typeof s === 'string' && s.trim() && !s.includes('\0'))),
         ].slice(0, 200),
       }}
     >
       <section className="business-formular">
-        <datalist id="business-spalten">
-          {[...new Set(spalten)]
+        <datalist id={spaltenListe}>
+          {[...new Set(passendeSpalten)]
             .filter((s) => typeof s === 'string' && s.trim() && !s.includes('\0'))
             .slice(0, 200)
             .map((s) => (
               <option key={s} value={s} />
             ))}
         </datalist>
+        {Object.entries(spaltenNachEingabe).map(([name, spalten]) => (
+          <datalist key={name} id={`${spaltenListe}-${name}`}>
+            {[...new Set(spalten)]
+              .filter((s) => typeof s === 'string' && s.trim() && !s.includes('\0'))
+              .slice(0, 200)
+              .map((s) => (
+                <option key={s} value={s} />
+              ))}
+          </datalist>
+        ))}
         {def.schreibt && <p>Verändert Dateien bei echter Ausführung.</p>}
         {Object.entries(def.eingaben).map(([name, typ]) => {
           const titel = businessEingabeTitel(name, typ);
           const referenz = String(objekt(daten.eingaben[name] ?? null).referenz ?? '');
-          const quellen = ws.getAllBlocks(false).filter((b) => {
-            const quelle = businessNachTyp.get(b.type);
-            return (
-              b.id !== block.id && quelle?.ausgabe === typ && !('steuerung' in quelle && quelle.steuerung)
-            );
-          });
+          const quellen = businessQuellenVorBlock(ws, block.id, typ);
+          const ungueltig = Boolean(referenz && !quellen.some((b) => b.id === referenz));
+          const bisherigeQuelle = ungueltig ? ws.getAllBlocks(false).find((b) => b.id === referenz) : null;
           return (
             <Auswahlfeld
               key={name}
               beschriftung={titel}
               value={referenz}
               disabled={gesperrt}
+              fehler={ungueltig ? 'Wähle einen passenden vorherigen Schritt im selben Ablauf.' : undefined}
               onChange={(e) =>
                 setzen({ ...daten, eingaben: { ...daten.eingaben, [name]: { referenz: e.target.value } } })
               }
             >
               <option value="">{titel} auswählen</option>
-              {referenz && !quellen.some((b) => b.id === referenz) && (
-                <option value={referenz}>Baustein nicht mehr verfügbar</option>
+              {ungueltig && (
+                <option value={referenz}>
+                  {bisherigeQuelle
+                    ? String(bisherigeQuelle.getFieldValue('NAME') ?? 'Bisherige Zuordnung')
+                    : 'Bisherige Zuordnung'}{' '}
+                  · hier nicht verfügbar
+                </option>
               )}
               {quellen.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -1025,6 +1178,7 @@ export function BusinessEigenschaften({
                             }
                             parameter={parameter}
                             gesperrt={gesperrt}
+                            feldPfad={[f.name, unterfeld.name]}
                           />
                         );
                       })
@@ -1033,12 +1187,12 @@ export function BusinessEigenschaften({
             </div>
           </details>
         )}
-        {spalten.length > 0 && (
+        {passendeSpalten.length > 0 && (
           <details>
             <summary>Zu den Spaltenvorschlägen</summary>
             <p>
-              Die Vorschläge stammen aus der letzten Datenvorschau. Weitere Spaltennamen kannst du direkt
-              eingeben.
+              Die Vorschläge stammen aus der Vorschau der gewählten Eingabetabelle. Weitere Spaltennamen
+              kannst du direkt eingeben.
             </p>
           </details>
         )}

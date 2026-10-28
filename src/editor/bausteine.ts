@@ -4,6 +4,7 @@ import { bausteinDefinitionen } from '../kern/katalog';
 import { deutscheErgaenzungen } from './deutsch';
 import { blockStilNachKategorie } from '../gestaltung/blocklyThema';
 import { Variablenfeld } from './variablenfeld';
+import { blockZusammenfassung } from '../kern/blockZusammenfassung';
 
 export const bausteinKatalog = bausteinDefinitionen.map(({ typ, name, kategorie, hilfe }) => ({
   typ,
@@ -35,6 +36,29 @@ export function registriereBausteine(): void {
     ) as Record<string, string>,
   );
   Blockly.setLocale(deutscheErgaenzungen);
+  Blockly.Extensions.register('scriptlab_business_kurztext', function () {
+    const block = this;
+    if (block.isInFlyout) return;
+    const label = new Blockly.FieldLabel('', 'sl-blockzusammenfassung');
+    block.appendDummyInput('SL_KURZTEXT').appendField(label);
+    const aktualisieren = () => {
+      const text = blockZusammenfassung(block.type, block.data, (id) => {
+        const quelle = block.workspace.getBlockById(id);
+        return quelle ? String(quelle.getFieldValue('NAME') ?? '') : undefined;
+      });
+      if (label.getValue() === text) return;
+      Blockly.Events.disable();
+      try {
+        label.setValue(text);
+      } finally {
+        Blockly.Events.enable();
+      }
+    };
+    block.setOnChange((ereignis) => {
+      if (!ereignis.isUiEvent) aktualisieren();
+    });
+    aktualisieren();
+  });
   Blockly.defineBlocksWithJsonArray(
     bausteinDefinitionen.map((def) => {
       const namen = reihenfolge[def.typ] ?? [
@@ -73,11 +97,11 @@ export function registriereBausteine(): void {
         type: def.typ,
         message0: def.nachricht,
         args0: args,
-        style: def.typ.startsWith('sl_biz_')
-          ? 'dateien'
-          : def.typ === 'sl_delete'
+        style:
+          def.typ === 'sl_delete'
             ? 'datei_loeschen'
             : blockStilNachKategorie[def.kategorie as keyof typeof blockStilNachKategorie],
+        ...(def.typ.startsWith('sl_biz_') ? { extensions: ['scriptlab_business_kurztext'] } : {}),
         tooltip: def.hilfe,
         helpUrl: '',
         inputsInline: !def.eingaben.some((e) => e.typ === 'Statement'),

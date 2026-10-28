@@ -236,16 +236,16 @@ describe('Verständliche, typisierte Business-Formulare', () => {
       { schluessel: ['Region'], aggregate: [{ funktion: 'SUMME', spalte: 'Betrag', name: 'Summe' }] },
       ['Region', 'Betrag', 'Region', ...Array.from({ length: 250 }, (_, i) => `Feld${i}`)],
     );
-    const datalist = html.match(/<datalist id="business-spalten">([\s\S]*?)<\/datalist>/)![1];
+    const datalist = html.match(/<datalist id="business-spalten-[^"]+">([\s\S]*?)<\/datalist>/)![1];
     expect(datalist.match(/<option/g)).toHaveLength(200);
     expect(datalist).toContain('value="Region"');
     expect(datalist).toContain('value="Betrag"');
-    expect(html.match(/list="business-spalten"/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(html.match(/list="business-spalten-[^"]+"/g)?.length).toBeGreaterThanOrEqual(2);
     const join = formular('sl_biz_verknuepfen', { schluessel: [{ links: 'ID', rechts: 'Kunde' }] }, [
       'ID',
       'Kunde',
     ]);
-    expect(join.match(/list="business-spalten"/g)).toHaveLength(2);
+    expect(join.match(/list="business-spalten-[^"]+"/g)).toHaveLength(2);
   });
   it('zeigt Variablen mit stabiler ID als Datenquelle und bewahrt den Parameterweg', () => {
     const html = formular(

@@ -134,3 +134,34 @@
 .business-ergebnis-aktionsfehler {
   color: var(--farbe-fehler);
 }
+
+.business-bindungswert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--abstand-4) var(--abstand-8);
+  margin-top: var(--abstand-4);
+}
+.business-bindungswert p,
+.business-bindungshinweis {
+  margin: 0;
+  color: var(--farbe-text-sekundaer);
+  overflow-wrap: anywhere;
+}
+.business-bindungswert p {
+  flex: 1 1 180px;
+}
+.business-bindungswert strong {
+  font-weight: var(--gewicht-semibold);
+}
+.business-parameterdetails > summary {
+  min-height: var(--hoehe-bedienfeld);
+  padding-block: var(--abstand-8);
+  cursor: pointer;
+}
+.business-parameterdetails[open] > :not(summary) {
+  margin-top: var(--abstand-12);
+}
+.blocklyText.sl-blockzusammenfassung {
+  font-weight: var(--gewicht-normal);
+}
