@@ -5,6 +5,7 @@ import { cp, mkdir } from 'node:fs/promises';
 await import('./laufzeit-host-bauen.mjs');
 
 await mkdir('dist/main', { recursive: true });
+await cp('assets/scriptlab.ico', 'dist/main/scriptlab.ico');
 await build({
   entryPoints: ['src/main/hauptprozess.ts'],
   outfile: 'dist/main/hauptprozess.cjs',

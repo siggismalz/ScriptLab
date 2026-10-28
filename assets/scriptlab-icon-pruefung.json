@@ -1,0 +1,59 @@
+{
+  "datum": "2026-10-28",
+  "quelle": "assets/scriptlab.svg",
+  "ico_header": {
+    "typ": 1,
+    "anzahl": 5
+  },
+  "bilder": [
+    {
+      "breite": 16,
+      "hoehe": 16,
+      "farbtiefe": 32,
+      "png": true,
+      "laenge": 846,
+      "offset": 86
+    },
+    {
+      "breite": 24,
+      "hoehe": 24,
+      "farbtiefe": 32,
+      "png": true,
+      "laenge": 1144,
+      "offset": 932
+    },
+    {
+      "breite": 32,
+      "hoehe": 32,
+      "farbtiefe": 32,
+      "png": true,
+      "laenge": 1260,
+      "offset": 2076
+    },
+    {
+      "breite": 48,
+      "hoehe": 48,
+      "farbtiefe": 32,
+      "png": true,
+      "laenge": 1847,
+      "offset": 3336
+    },
+    {
+      "breite": 256,
+      "hoehe": 256,
+      "farbtiefe": 32,
+      "png": true,
+      "laenge": 7073,
+      "offset": 5183
+    }
+  ],
+  "pruefungen": [
+    "ICO-Ressourcen und separate PNGs pixelgleich, mit Pillow unabhaengig gelesen",
+    "PNG-Abmessungen 16, 24, 32, 48, 256 px",
+    "RGBA mit transparenten Aussenkanten",
+    "Identische Signet-Geometrie in Icon und beiden Wortmarken",
+    "assets/scriptlab.png identisch zur 256-px-Ressource",
+    "Keine eingebetteten Schriftdateien; SVG-Wortmarke verwendet editierbaren Systemschrift-Text"
+  ],
+  "visuelle_pruefung": "Originalgroessen und dreifache Pixelansicht auf dunklem und hellem Hintergrund am 28.10.2026 visuell geprueft. Drei Bausteine und Verbindung sind erkennbar. 16 px zeigt erwartungsgemaess weichere Kanten."
+}

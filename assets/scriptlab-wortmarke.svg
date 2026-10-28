@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="268" height="64" viewBox="0 0 268 64" role="img" aria-labelledby="titel">
+  <title id="titel">ScriptLab</title>
+  <g fill="#24635D">
+    <polyline points="26,15 43,15 43,32 21,32 21,49" fill="none" stroke="#24635D" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="10" y="8" width="22" height="14" rx="3"/>
+    <rect x="32" y="25" width="22" height="14" rx="3"/>
+    <rect x="10" y="42" width="22" height="14" rx="3"/>
+  </g>
+  <text x="76" y="44" fill="#182C2C" font-family="Segoe UI Variable, Segoe UI, system-ui, sans-serif" font-size="36" font-weight="600" letter-spacing="-0.7">ScriptLab</text>
+</svg>

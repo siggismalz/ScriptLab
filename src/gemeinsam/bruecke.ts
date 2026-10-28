@@ -19,6 +19,8 @@ export type BeispielKennung =
   | 'dateiliste-python';
 
 export interface Einstellungen {
+  /** Fehlende Werte älterer lokaler Einstellungen werden im Hauptprozess als dunkel ergänzt. */
+  darstellung?: 'dunkel' | 'hell' | 'system';
   letzteSkriptsprache: Skriptsprache | null;
   pythonInterpreter: string | null;
   automatischeUpdates: boolean;

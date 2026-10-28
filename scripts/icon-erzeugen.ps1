@@ -1,34 +1,112 @@
-# Nur fuer die Entwicklung: zeichnet das eigene einfache ScriptLab-Symbol.
-# Keine Bilddateien oder Netzwerkquellen werden gelesen.
+# Entwicklungswerkzeug: leitet PNG und Windows-ICO aus dem bearbeitbaren SVG ab.
+# Benötigt Windows/.NET System.Drawing; keine Fonts, Downloads oder externen Renderer.
+$ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
-$ordner = Join-Path $PSScriptRoot '..\assets'
-$bild = New-Object Drawing.Bitmap(256, 256)
-$grafik = [Drawing.Graphics]::FromImage($bild)
-$grafik.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::AntiAlias
-$grafik.Clear([Drawing.Color]::Transparent)
-$pfad = New-Object Drawing.Drawing2D.GraphicsPath
-foreach ($bogen in @(@(8,8,116,116,180,90),@(132,8,116,116,270,90),@(132,132,116,116,0,90),@(8,132,116,116,90,90))) {
-    $pfad.AddArc($bogen[0],$bogen[1],$bogen[2],$bogen[3],$bogen[4],$bogen[5])
+$ordner = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\assets'))
+[xml]$quelle = Get-Content -LiteralPath (Join-Path $ordner 'scriptlab.svg') -Raw
+# Dieses kleine Entwicklungswerkzeug rendert bewusst nur die verwendete SVG-Teilmenge.
+# Eine spaetere Asset-Aenderung darf nicht unbemerkt eine abweichende Rasterausgabe liefern.
+if ($quelle.DocumentElement.GetAttribute('viewBox') -ne '0 0 64 64') {
+    throw 'Das Icon benoetigt eine viewBox von 0 0 64 64.'
 }
-$pfad.CloseFigure()
-$farbe = New-Object Drawing.SolidBrush([Drawing.ColorTranslator]::FromHtml('#a69cff'))
-$grafik.FillPath($farbe, $pfad)
-$schrift = New-Object Drawing.Font('Segoe UI', 140, [Drawing.FontStyle]::Bold, [Drawing.GraphicsUnit]::Pixel)
-$textfarbe = New-Object Drawing.SolidBrush([Drawing.ColorTranslator]::FromHtml('#1b1734'))
-$format = New-Object Drawing.StringFormat
-$format.Alignment = [Drawing.StringAlignment]::Center
-$format.LineAlignment = [Drawing.StringAlignment]::Center
-$grafik.DrawString('S', $schrift, $textfarbe, [Drawing.RectangleF]::new(0,0,256,246), $format)
-$strom = New-Object IO.MemoryStream
-$bild.Save($strom, [Drawing.Imaging.ImageFormat]::Png)
-$png = $strom.ToArray()
-[IO.File]::WriteAllBytes((Join-Path $ordner 'scriptlab.png'), $png)
-$icoStrom = New-Object IO.MemoryStream
-$schreiber = New-Object IO.BinaryWriter($icoStrom)
-$schreiber.Write([uint16]0); $schreiber.Write([uint16]1); $schreiber.Write([uint16]1)
-$schreiber.Write([byte]0); $schreiber.Write([byte]0); $schreiber.Write([byte]0); $schreiber.Write([byte]0)
-$schreiber.Write([uint16]1); $schreiber.Write([uint16]32); $schreiber.Write([uint32]$png.Length); $schreiber.Write([uint32]22)
-$schreiber.Write($png)
+foreach ($knoten in $quelle.SelectNodes('//*')) {
+    if ($knoten.LocalName -notin @('svg', 'title', 'g', 'rect', 'polyline')) {
+        throw "Nicht unterstuetztes SVG-Element: $($knoten.LocalName). Generator bewusst anpassen."
+    }
+    if ($knoten.HasAttribute('transform') -or $knoten.HasAttribute('style') -or $knoten.HasAttribute('opacity')) {
+        throw 'Transformationen, CSS und Transparenzeffekte werden vom Icon-Generator nicht unterstuetzt.'
+    }
+}
+$iconOrdner = Join-Path $ordner 'icons'
+[IO.Directory]::CreateDirectory($iconOrdner) | Out-Null
+$groessen = @(16, 24, 32, 48, 256)
+$bilder = @()
+
+function Zahl($knoten, $name, $standard = 0) {
+    if ($knoten.HasAttribute($name)) {
+        return [single]::Parse($knoten.GetAttribute($name), [Globalization.CultureInfo]::InvariantCulture)
+    }
+    return [single]$standard
+}
+function Farbe($knoten, $name) {
+    $aktuell = $knoten
+    while ($aktuell -and $aktuell -is [Xml.XmlElement]) {
+        if ($aktuell.HasAttribute($name)) { return $aktuell.GetAttribute($name) }
+        $aktuell = $aktuell.ParentNode
+    }
+    throw "SVG-Farbe $name fehlt."
+}
+function Rechteckpfad([single]$x, [single]$y, [single]$breite, [single]$hoehe, [single]$radius) {
+    $pfad = [Drawing.Drawing2D.GraphicsPath]::new()
+    if ($radius -le 0) {
+        $pfad.AddRectangle([Drawing.RectangleF]::new($x, $y, $breite, $hoehe))
+    } else {
+        $d = [single]($radius * 2)
+        $pfad.AddArc($x, $y, $d, $d, [single]180, [single]90)
+        $pfad.AddArc([single]($x + $breite - $d), $y, $d, $d, [single]270, [single]90)
+        $pfad.AddArc([single]($x + $breite - $d), [single]($y + $hoehe - $d), $d, $d, [single]0, [single]90)
+        $pfad.AddArc($x, [single]($y + $hoehe - $d), $d, $d, [single]90, [single]90)
+        $pfad.CloseFigure()
+    }
+    return ,$pfad
+}
+
+foreach ($groesse in $groessen) {
+    # Achtfache Auflösung vermeidet gezackte Kanten in den kleinen Windows-Größen.
+    $zwischenbild = [Drawing.Bitmap]::new($groesse * 8, $groesse * 8)
+    $grafik = [Drawing.Graphics]::FromImage($zwischenbild)
+    $grafik.SmoothingMode = [Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $grafik.Clear([Drawing.Color]::Transparent)
+    $faktor = [single]($groesse * 8 / 64)
+    $grafik.ScaleTransform($faktor, $faktor)
+    foreach ($element in $quelle.SelectNodes('//*[local-name()="rect" or local-name()="polyline"]')) {
+        if ($element.LocalName -eq 'rect') {
+            $pfad = Rechteckpfad (Zahl $element 'x') (Zahl $element 'y') (Zahl $element 'width') (Zahl $element 'height') (Zahl $element 'rx')
+            $pinsel = [Drawing.SolidBrush]::new([Drawing.ColorTranslator]::FromHtml((Farbe $element 'fill')))
+            $grafik.FillPath($pinsel, $pfad)
+            $pfad.Dispose(); $pinsel.Dispose()
+        } else {
+            $punkte = [Drawing.PointF[]]@($element.GetAttribute('points').Split(' ', [StringSplitOptions]::RemoveEmptyEntries) | ForEach-Object {
+                $paar = $_.Split(',')
+                [Drawing.PointF]::new([single]::Parse($paar[0], [Globalization.CultureInfo]::InvariantCulture), [single]::Parse($paar[1], [Globalization.CultureInfo]::InvariantCulture))
+            })
+            $stift = [Drawing.Pen]::new([Drawing.ColorTranslator]::FromHtml((Farbe $element 'stroke')), (Zahl $element 'stroke-width'))
+            $stift.LineJoin = [Drawing.Drawing2D.LineJoin]::Round
+            $grafik.DrawLines($stift, $punkte)
+            $stift.Dispose()
+        }
+    }
+    $grafik.Dispose()
+    $bild = [Drawing.Bitmap]::new($groesse, $groesse)
+    $kleinGrafik = [Drawing.Graphics]::FromImage($bild)
+    $kleinGrafik.CompositingQuality = [Drawing.Drawing2D.CompositingQuality]::HighQuality
+    $kleinGrafik.InterpolationMode = [Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+    $kleinGrafik.PixelOffsetMode = [Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+    $kleinGrafik.DrawImage($zwischenbild, [Drawing.Rectangle]::new(0, 0, $groesse, $groesse))
+    $kleinGrafik.Dispose(); $zwischenbild.Dispose()
+    $strom = [IO.MemoryStream]::new()
+    $bild.Save($strom, [Drawing.Imaging.ImageFormat]::Png)
+    $png = $strom.ToArray()
+    [IO.File]::WriteAllBytes((Join-Path $iconOrdner "scriptlab-$groesse.png"), $png)
+    if ($groesse -eq 256) { [IO.File]::WriteAllBytes((Join-Path $ordner 'scriptlab.png'), $png) }
+    $bilder += @{ groesse = $groesse; png = $png }
+    $strom.Dispose(); $bild.Dispose()
+}
+
+# Fünf PNG-Bildressourcen im ICO; 0 steht im Header normgerecht für 256 Pixel.
+$icoStrom = [IO.MemoryStream]::new()
+$schreiber = [IO.BinaryWriter]::new($icoStrom)
+$schreiber.Write([uint16]0); $schreiber.Write([uint16]1); $schreiber.Write([uint16]$bilder.Count)
+$offset = 6 + 16 * $bilder.Count
+foreach ($eintrag in $bilder) {
+    $headerGroesse = if ($eintrag.groesse -eq 256) { 0 } else { $eintrag.groesse }
+    $schreiber.Write([byte]$headerGroesse); $schreiber.Write([byte]$headerGroesse)
+    $schreiber.Write([byte]0); $schreiber.Write([byte]0)
+    $schreiber.Write([uint16]1); $schreiber.Write([uint16]32)
+    $schreiber.Write([uint32]$eintrag.png.Length); $schreiber.Write([uint32]$offset)
+    $offset += $eintrag.png.Length
+}
+foreach ($eintrag in $bilder) { $schreiber.Write([byte[]]$eintrag.png) }
 [IO.File]::WriteAllBytes((Join-Path $ordner 'scriptlab.ico'), $icoStrom.ToArray())
-$schreiber.Dispose(); $icoStrom.Dispose(); $strom.Dispose(); $grafik.Dispose(); $bild.Dispose()
-$schrift.Dispose(); $farbe.Dispose(); $textfarbe.Dispose(); $pfad.Dispose(); $format.Dispose()
+$schreiber.Dispose(); $icoStrom.Dispose()
+Write-Output ('ScriptLab-Icon aus SVG erzeugt: ' + ($groessen -join ', ') + ' px.')

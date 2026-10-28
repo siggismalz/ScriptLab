@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { farben, kategoriefarben, cssVariablen, designTokensAnwenden, masse } from '../src/gestaltung/tokens';
-import { scriptlabThema, blockStilNachKategorie } from '../src/gestaltung/blocklyThema';
+import {
+  farben,
+  farbenNachThema,
+  farbschemaAufloesen,
+  kategoriefarben,
+  cssVariablen,
+  cssVariablenFuer,
+  designTokensAnwenden,
+  masse,
+} from '../src/gestaltung/tokens';
+import { scriptlabThema, scriptlabThemaFuer, blockStilNachKategorie } from '../src/gestaltung/blocklyThema';
 import { Knopf } from '../src/renderer/komponenten/Knopf';
 import { Feld, Textfeld } from '../src/renderer/komponenten/Feld';
 import { Symbol, symbolNamen } from '../src/renderer/komponenten/Icon';
@@ -49,9 +58,9 @@ describe('Tatsächliche Designfarben und Kontraste', () => {
   for (const [kategorie, farbe] of Object.entries(kategoriefarben)) {
     it(`erhält Text, Auswahl und Einfügemarkierung in ${kategorie}`, () => {
       expect(kontrast(farben.text, farbe)).toBeGreaterThanOrEqual(4.5);
-      expect(kontrast(farben.auswahl, farbe)).toBeGreaterThanOrEqual(3);
-      expect(kontrast(farben.canvasFokus, farbe)).toBeGreaterThanOrEqual(3);
-      expect(kontrast(farben.einfuegestelle, farbe)).toBeGreaterThanOrEqual(3);
+      expect(kontrast(farben.blockAuswahl, farbe)).toBeGreaterThanOrEqual(3);
+      expect(kontrast(farben.blockFokus, farbe)).toBeGreaterThanOrEqual(3);
+      expect(kontrast(farben.blockKontur, farbe)).toBeGreaterThanOrEqual(3);
       const stil =
         scriptlabThema.blockStyles[blockStilNachKategorie[kategorie as keyof typeof kategoriefarben]];
       expect(stil.colourPrimary).toBe(farbe);
@@ -73,6 +82,63 @@ describe('Tatsächliche Designfarben und Kontraste', () => {
     expect(masse.iconZiel).toBeGreaterThanOrEqual(32);
     expect(masse.bedienfeld).toBeGreaterThanOrEqual(36);
   });
+});
+
+describe('Helles und dunkles Farbschema', () => {
+  it('behält Dunkel als Erststart und trennt die Systemauflösung von der gespeicherten Wahl', () => {
+    expect(farbschemaAufloesen()).toBe('dunkel');
+    expect(farbschemaAufloesen('dunkel', true)).toBe('dunkel');
+    expect(farbschemaAufloesen('hell', false)).toBe('hell');
+    expect(farbschemaAufloesen('system', true)).toBe('hell');
+    expect(farbschemaAufloesen('system', false)).toBe('dunkel');
+  });
+
+  for (const schema of ['dunkel', 'hell'] as const) {
+    const f = farbenNachThema[schema];
+    for (const hintergrund of [
+      f.fenster,
+      f.navigation,
+      f.arbeitsflaeche,
+      f.grundflaeche,
+      f.erhoeht,
+      f.auswahlFlaeche,
+    ]) {
+      it(`${schema}: Text, Status, Feldgrenzen und Fokus bleiben auf ${hintergrund} erkennbar`, () => {
+        for (const textfarbe of [f.text, f.textSekundaer, f.erfolg, f.hinweis, f.fehler])
+          expect(kontrast(textfarbe, hintergrund)).toBeGreaterThanOrEqual(4.5);
+        expect(kontrast(f.kontur, hintergrund)).toBeGreaterThanOrEqual(3);
+        expect(kontrast(f.akzent, hintergrund)).toBeGreaterThanOrEqual(3);
+      });
+    }
+    it(`${schema}: Hauptaktion bleibt in allen Zuständen lesbar`, () => {
+      for (const hintergrund of [f.akzent, f.akzentHover, f.akzentGedrueckt])
+        expect(kontrast(f.aufAkzent, hintergrund)).toBeGreaterThanOrEqual(4.5);
+    });
+    it(`${schema}: Blöcke und HTML verwenden dieselben Themenrollen ohne Änderung der Fachfarben`, () => {
+      const thema = scriptlabThemaFuer(schema);
+      expect(thema.getComponentStyle('workspaceBackgroundColour')).toBe(f.arbeitsflaeche);
+      expect(cssVariablenFuer(schema)['--farbe-arbeitsflaeche']).toBe(f.arbeitsflaeche);
+      for (const [kategorie, farbe] of Object.entries(kategoriefarben)) {
+        const stil = thema.blockStyles[blockStilNachKategorie[kategorie as keyof typeof kategoriefarben]];
+        expect(stil.colourPrimary).toBe(farbe);
+        expect(kontrast(f.blockText, farbe)).toBeGreaterThanOrEqual(4.5);
+        expect(kontrast(f.blockText, stil.colourSecondary)).toBeGreaterThanOrEqual(4.5);
+        expect(kontrast(f.blockAuswahl, farbe)).toBeGreaterThanOrEqual(3);
+        expect(kontrast(f.blockFokus, farbe)).toBeGreaterThanOrEqual(3);
+        expect(kontrast(f.blockKontur, farbe)).toBeGreaterThanOrEqual(3);
+      }
+      const gesetzt = new Map<string, string>();
+      designTokensAnwenden(
+        {
+          style: {
+            setProperty: (name: string, wert: string) => gesetzt.set(name, wert),
+          } as unknown as CSSStyleDeclaration,
+        },
+        schema,
+      );
+      expect(gesetzt.get('color-scheme')).toBe(schema === 'hell' ? 'light' : 'dark');
+    });
+  }
 });
 
 describe('Beschriftungen und zugängliche Komponenten', () => {

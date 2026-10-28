@@ -7,6 +7,7 @@ import {
   session,
   shell,
   clipboard,
+  nativeTheme,
   type IpcMainInvokeEvent,
   type IpcMainEvent,
 } from 'electron';
@@ -17,7 +18,7 @@ import { z } from 'zod';
 import { neuesProjekt, projektPruefen, type Projekt } from '../kern/projekt';
 import { skriptErzeugen } from '../kern/skript';
 import { sprachdaten } from '../kern/sprachen';
-import { farben } from '../gestaltung/tokens';
+import { farben, farbenNachThema } from '../gestaltung/tokens';
 import {
   Projektindex,
   Entwurfspeicher,
@@ -49,6 +50,7 @@ if (!app.isPackaged && process.env.SCRIPTLAB_TESTDATEN)
   app.setPath('userData', resolve(process.env.SCRIPTLAB_TESTDATEN));
 const einstellungenSchema = z
   .object({
+    darstellung: z.enum(['dunkel', 'hell', 'system']).default('dunkel'),
     letzteSkriptsprache: z.enum(['python', 'vbs']).nullable().default(null),
     pythonInterpreter: z.string().min(1).max(32768).nullable().default(null),
     automatischeUpdates: z.boolean(),
@@ -106,7 +108,7 @@ function dokument(): Dokument {
   return {
     projekt,
     dateiname: projektPfad ? basename(projektPfad) : null,
-    geaendert: wiederhergestellt || JSON.stringify(projekt) !== gespeichert,
+    geaendert: wiederhergestellt || projektHash(projekt) !== gespeichertInhalt,
     projektKennung: projekt.projektKennung!,
     entwurfStatus: entwuerfe?.status(projekt.projektKennung!) ?? {
       id: null,
@@ -169,6 +171,12 @@ function testWerkzeugPfad(): string {
 async function lokaleEinstellungenSpeichern(neu: Einstellungen): Promise<void> {
   await atomarSchreiben(einstellungsPfad(), `${JSON.stringify(neu, null, 2)}\n`);
   einstellungen = neu;
+  darstellungUebernehmen();
+}
+
+function darstellungUebernehmen(): void {
+  nativeTheme.themeSource = einstellungen.darstellung === 'hell' ? 'light' : einstellungen.darstellung === 'system' ? 'system' : 'dark';
+  fenster?.setBackgroundColor(farbenNachThema[nativeTheme.shouldUseDarkColors ? 'dunkel' : 'hell'].fenster);
 }
 
 async function pythonErmitteln(tkinter = false, signal?: AbortSignal): Promise<PythonInstallation> {
@@ -1078,6 +1086,7 @@ async function fensterErstellen(): Promise<void> {
     minWidth: 800,
     minHeight: 600,
     backgroundColor: farben.arbeitsflaeche,
+    icon: join(__dirname, 'scriptlab.ico'),
     title: 'ScriptLab',
     autoHideMenuBar: true,
     webPreferences: {
@@ -1141,6 +1150,7 @@ else {
         /* Fehlende oder beschädigte Einstellungen verwenden sichere Vorgaben. */
       }
       pythonZustand.auswahl = einstellungen.pythonInterpreter;
+      darstellungUebernehmen();
       signaturDienst = new SignaturDienst(
         app.isPackaged
           ? join(process.resourcesPath, 'signatur-helper.ps1')

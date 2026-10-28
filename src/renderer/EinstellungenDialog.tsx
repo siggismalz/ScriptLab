@@ -113,10 +113,22 @@ export function EinstellungenDialog({
       )}
       {fehlerMeldung && <Statusanzeige art="fehler">{fehlerMeldung}</Statusanzeige>}
       <section className="einstellungs-abschnitt">
-        <h3>Ansicht</h3>
+        <h3>Darstellung</h3>
         <Auswahlfeld
-          beschriftung="UI-Textgröße"
-          hilfe="Vergrößert die Bedientexte. Der Zoom des Arbeitsbereichs bleibt getrennt einstellbar."
+          beschriftung="Farbschema"
+          hilfe="System folgt der Windows-Darstellung. Die Auswahl bleibt auf diesem Gerät gespeichert."
+          value={einstellungen.darstellung ?? 'dunkel'}
+          onChange={(e) =>
+            setzen({ ...einstellungen, darstellung: e.target.value as 'dunkel' | 'hell' | 'system' })
+          }
+        >
+          <option value="dunkel">Dunkel</option>
+          <option value="hell">Hell</option>
+          <option value="system">System</option>
+        </Auswahlfeld>
+        <Auswahlfeld
+          beschriftung="Textgröße der Oberfläche"
+          hilfe="Vergrößert Texte in Menüs, Formularen und Dialogen. Windows-Skalierung und Canvas-Zoom bleiben getrennt einstellbar."
           value={einstellungen.textSkalierung}
           onChange={(e) => setzen({ ...einstellungen, textSkalierung: Number(e.target.value) })}
         >
