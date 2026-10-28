@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import * as Blockly from 'blockly/core';
+import { BlockDatenEreignis } from '../editor/parameterEreignis';
 import {
   businessDatenLesen,
   businessNachTyp,
@@ -921,7 +922,7 @@ export function BusinessEigenschaften({
     if (gesperrt) return;
     const vorher = block.data ?? null;
     block.data = JSON.stringify(neu);
-    Blockly.Events.fire(new Blockly.Events.BlockChange(block, 'data', null, vorher, block.data));
+    Blockly.Events.fire(new BlockDatenEreignis(block, vorher, block.data));
     aktualisieren((n) => n + 1);
     geaendert();
   };

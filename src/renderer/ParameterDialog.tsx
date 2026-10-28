@@ -8,6 +8,11 @@ import {
   type BusinessProjekt,
   type WorkflowParameter,
 } from '../kern/business-modell';
+import {
+  parameterAenderungenVorbereiten,
+  type ParameterBearbeitung,
+  type ParameterUmbenennungen,
+} from '../kern/parameterAendern';
 import './business.css';
 
 type ParameterWert = WorkflowParameter['standard'];
@@ -158,19 +163,30 @@ export function ParameterDialog({
 }: {
   offen: boolean;
   business: BusinessProjekt;
-  speichern: (b: BusinessProjekt) => void;
+  speichern: (b: BusinessProjekt, umbenennungen?: ParameterUmbenennungen) => void;
   schliessen: () => void;
 }) {
   const [entwurf, setEntwurf] = useState(business),
     [fehler, setFehler] = useState('');
+  const naechsteZeile = useRef(business.parameter.length);
+  const [zeilen, setZeilen] = useState<(ParameterBearbeitung & { id: number })[]>(() =>
+    business.parameter.map((parameter, id) => ({ id, ursprungsname: parameter.name, parameter })),
+  );
   useEffect(() => {
     if (offen) {
       setEntwurf(structuredClone(business));
+      setZeilen(
+        business.parameter.map((parameter) => ({
+          id: naechsteZeile.current++,
+          ursprungsname: parameter.name,
+          parameter: structuredClone(parameter),
+        })),
+      );
       setFehler('');
     }
   }, [offen]);
-  const setzen = (i: number, p: WorkflowParameter) =>
-    setEntwurf({ ...entwurf, parameter: entwurf.parameter.map((v, n) => (n === i ? p : v)) });
+  const setzen = (id: number, parameter: WorkflowParameter) =>
+    setZeilen((aktuell) => aktuell.map((zeile) => (zeile.id === id ? { ...zeile, parameter } : zeile)));
   return (
     <Dialog
       offen={offen}
@@ -184,7 +200,8 @@ export function ParameterDialog({
             variante="primaer"
             onClick={() => {
               try {
-                speichern(parameterDialogPruefen(entwurf));
+                const uebernahme = parameterAenderungenVorbereiten(entwurf, zeilen);
+                speichern(parameterDialogPruefen(uebernahme.business), uebernahme.umbenennungen);
                 schliessen();
               } catch (e) {
                 setFehler(e instanceof Error ? e.message : 'Prüfe die Parameter.');
@@ -198,24 +215,26 @@ export function ParameterDialog({
     >
       <div className="business-parameter">
         {fehler && <p role="alert">{fehler}</p>}
-        {entwurf.parameter.map((p, i) => (
-          <fieldset key={i}>
+        {zeilen.map(({ id, parameter: p }, i) => (
+          <fieldset key={id}>
             <legend>Parameter {i + 1}</legend>
             <Feld
               beschriftung="Interner Name (Buchstaben, Zahlen, Unterstrich)"
               value={p.name}
-              onChange={(e) => setzen(i, { ...p, name: e.target.value })}
+              onChange={(e) => setzen(id, { ...p, name: e.target.value })}
             />
             <Feld
               beschriftung="Beschriftung im Eingabeformular"
               value={p.beschriftung}
-              onChange={(e) => setzen(i, { ...p, beschriftung: e.target.value })}
+              onChange={(e) => setzen(id, { ...p, beschriftung: e.target.value })}
             />
             <Auswahlfeld
               beschriftung="Wertart"
               hilfe="Ein passender Standardwert bleibt erhalten. Ein unpassender Standardwert wird beim Typwechsel geleert."
               value={p.typ}
-              onChange={(e) => setzen(i, parameterTypWechseln(p, e.target.value as WorkflowParameter['typ']))}
+              onChange={(e) =>
+                setzen(id, parameterTypWechseln(p, e.target.value as WorkflowParameter['typ']))
+              }
             >
               {[
                 'Datei',
@@ -234,7 +253,7 @@ export function ParameterDialog({
               <input
                 type="checkbox"
                 checked={p.erforderlich}
-                onChange={(e) => setzen(i, { ...p, erforderlich: e.target.checked })}
+                onChange={(e) => setzen(id, { ...p, erforderlich: e.target.checked })}
               />
               Pflichtangabe
             </label>
@@ -242,39 +261,42 @@ export function ParameterDialog({
               beschriftung="Standardwert"
               typ={p.typ}
               wert={p.standard}
-              aendern={(standard) => setzen(i, { ...p, standard })}
+              aendern={(standard) => setzen(id, { ...p, standard })}
             />
             <Textfeld
               beschriftung="Kurze Hilfe"
               value={p.hilfe}
-              onChange={(e) => setzen(i, { ...p, hilfe: e.target.value })}
+              onChange={(e) => setzen(id, { ...p, hilfe: e.target.value })}
             />
-            <Knopf
-              onClick={() =>
-                setEntwurf({ ...entwurf, parameter: entwurf.parameter.filter((_, n) => n !== i) })
-              }
-            >
+            <Knopf onClick={() => setZeilen((aktuell) => aktuell.filter((zeile) => zeile.id !== id))}>
               Parameter entfernen
             </Knopf>
           </fieldset>
         ))}
         <Knopf
-          onClick={() =>
-            setEntwurf({
-              ...entwurf,
-              parameter: [
-                ...entwurf.parameter,
+          onClick={() => {
+            const id = naechsteZeile.current++;
+            setZeilen((aktuell) => {
+              const belegt = new Set(aktuell.map((zeile) => zeile.parameter.name.toLowerCase()));
+              let nummer = 1;
+              while (belegt.has(`parameter${nummer}`)) nummer++;
+              return [
+                ...aktuell,
                 {
-                  name: `Parameter${entwurf.parameter.length + 1}`,
-                  beschriftung: 'Neuer Parameter',
-                  typ: 'Text',
-                  erforderlich: true,
-                  standard: '',
-                  hilfe: '',
+                  id,
+                  ursprungsname: null,
+                  parameter: {
+                    name: `Parameter${nummer}`,
+                    beschriftung: 'Neuer Parameter',
+                    typ: 'Text',
+                    erforderlich: true,
+                    standard: '',
+                    hilfe: '',
+                  },
                 },
-              ],
-            })
-          }
+              ];
+            });
+          }}
         >
           Parameter hinzufügen
         </Knopf>
