@@ -14,6 +14,8 @@ Ein Feld kann einen festen Wert, einen Workflowparameter oder eine Variable verw
 
 **Daten und Parameter** bietet mehr Platz für dieselbe Konfiguration und für Parameterwerte. Diese Ansicht erzeugt keine getrennte Projektdatei. **Speichern** sichert intern ohne Zielauswahl; für eine weiterzugebende Projektkopie dient **Exportieren**.
 
+Auf der Startseite steht der aktive Workflow einmal unter **Zuletzt geöffnet**. **Weiterbearbeiten** kehrt zu seinem vorhandenen Stand zurück. Feldfehler führen über kurze Verweise zur Eingabe; ihre vollständige Erklärung steht dort. **Alle Läufe** bleibt direkt im gemeinsamen Laufkopf erreichbar. Die [aktuelle Straffung](UEBERSICHTLICHKEIT.md) dokumentiert diese Details mit Vorher-/Nachher-Ansichten.
+
 ## Ein Tabellenergebnis prüfen
 
 Unter **Datenvorschau** wählst du **Ergebnis bis zu diesem Schritt** und startest bewusst **Datenvorschau laden**. Die Vorschau verarbeitet die notwendigen unterstützten Vorgänger bis einschließlich des gewählten Tabellenschritts. Unfertige Nachfolger werden dafür nicht benötigt; sie werden im bearbeiteten Workflow nicht gelöscht oder geändert.

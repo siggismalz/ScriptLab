@@ -78,6 +78,10 @@ Die Palette benötigt standardmäßig 272 px, Eigenschaften 320 px. Bei 1280 × 
 
 ## Komponenten und Zustände
 
+Die behutsame Straffung vom 28. Oktober 2026 erhält alle direkten Aktionen. Die Startseite führt den aktiven Workflow anhand seiner Kennung einmal in höchstens fünf letzten Zeilen. Einstiegskarten besitzen mindestens 56 px Höhe und wachsen für umbrechenden Text. In Datenlisten trägt die Auswahl Semibold, normale Schritte Regular. Feldfehler stehen einmal vollständig am Feld; die Abschnittszusammenfassung verwendet kurze Ansprunglinks. Historie und Lauftabs teilen sich eine Kopfleiste.
+
+Der Projektkopf ist der dauerhafte Ort des Speicherzustands, auch bei 200 Prozent UI-Text. Entwurfssicherung und Projektdatei bleiben sprachlich unterschieden. Erfolgsbestätigungen bleiben vier Sekunden sichtbar und enden bei einem Kontextwechsel; handlungsbedürftige Fehler verschwinden nicht durch diesen Timer. Die aktuellen Bilder und Prüfgrenzen stehen in [UEBERSICHTLICHKEIT.md](../UEBERSICHTLICHKEIT.md).
+
 - `Knopf`: Standard, leise, Primäraktion, Gefahr; Hover, gedrückt, sichtbar fokussiert, deaktiviert und beschäftigt. Wichtige Aktionen besitzen Text. Deaktivierungsgründe bleiben zugänglich.
 - `Feld`, `Textfeld`, `Auswahlfeld`: dauerhafte Beschriftung, eigener Hilfetext, Fehler unmittelbar am Feld, Eingaben bleiben nach Fehlern erhalten.
 - `Dialog`: nativer HTML-Dialog, sichtbarer Titel, Escape/Abbruch und Fokuswiederherstellung; keine Routineparameter in verschachtelten Dialogen.

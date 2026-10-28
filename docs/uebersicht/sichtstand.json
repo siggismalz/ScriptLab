@@ -1,0 +1,45 @@
+{
+  "datum": "2026-10-28T14:55:18.886Z",
+  "profil": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Uebersicht-Qyl8br\\Profil",
+  "fenster": [
+    "1280 × 720",
+    "960 × 680"
+  ],
+  "uiText": [
+    "100 %",
+    "200 %"
+  ],
+  "pruefungen": [
+    "Aktiver Workflow einmal; Fortsetzen erhält Kennung, Bausteine, Zoom und Speicherzustand ohne Laufstart",
+    "Kurzer Fehlerlink fokussiert die Eingabe; vollständige Meldung einmal; echte Vorschau mit verständlichen Datentypen",
+    "Historischer Lauf eindeutig; Themenwechsel und 200 Prozent UI-Text ohne fachliche Änderung",
+    "Echter Pythonprozess bleibt bei Ansichtswechsel bestehen; Stoppen weiterhin direkt erreichbar",
+    "Erfolgsmeldung verschwindet; Fehler bleibt einmal erreichbar und kehrt nach einem abgebrochenen Folgeversuch nicht zurück"
+  ],
+  "laufIds": [
+    "0ffb9d93-a6d5-4f0e-b4e3-4daf66b44f7d",
+    "3f3fadd0-6414-439f-9cd0-b4d1ca3a4b47",
+    "5ad0039b-e2a4-4e2c-a5e3-955b90a93f9b"
+  ],
+  "bilder": [
+    "start-leer-hell",
+    "start-aktiver-workflow-hell",
+    "editor-hell",
+    "feldfehler-hell",
+    "datenvorschau-hell",
+    "laufvorbereitung-hell",
+    "gespeicherter-lauf-hell",
+    "laufergebnisse-hell",
+    "laufergebnisse-dunkel",
+    "datenvorschau-dunkel",
+    "formular-ui200-dunkel",
+    "formular-schmales-fenster-dunkel",
+    "lauf-stoppen-dunkel",
+    "dauerhafter-fehler-dunkel"
+  ],
+  "rendererfehler": [],
+  "grenzen": [
+    "Eigene Sichtprüfung, kein Nutzertest.",
+    "Keine neue vollständige Regression oder Windows-DPI-Matrix."
+  ]
+}

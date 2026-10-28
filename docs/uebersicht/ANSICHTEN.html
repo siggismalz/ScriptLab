@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="de">
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ScriptLab · Übersichtlichkeit</title>
+  <style>
+    :root {
+      font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+      color: #1f2937;
+      background: #f5f6f8;
+      line-height: 1.5;
+    }
+    body {
+      max-width: 1480px;
+      margin: auto;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 24px;
+      margin: 0 0 8px;
+    }
+    h2 {
+      font-size: 20px;
+      margin: 32px 0 16px;
+    }
+    p {
+      max-width: 90ch;
+    }
+    a {
+      color: #0f6cbd;
+    }
+    section {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    figure {
+      margin: 0;
+      border: 1px solid #d8dee8;
+      border-radius: 8px;
+      overflow: hidden;
+      background: white;
+    }
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    figcaption {
+      padding: 12px 16px;
+    }
+    figcaption strong {
+      display: block;
+      font-weight: 600;
+    }
+    figcaption span {
+      font-size: 14px;
+      color: #536176;
+    }
+    a:focus-visible {
+      outline: 3px solid #0f6cbd;
+      outline-offset: 3px;
+    }
+    nav {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 850px) {
+      section {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <h1>ScriptLab · Weniger Wiederholungen, klarere Ansichten</h1>
+  <p>
+    Tatsächliche Windows-Anwendung mit synthetischen Testdaten, 28. Oktober 2026. Navigation und direkte
+    Aktionen sind erhalten. Die Bilder öffnen sich in voller Größe.
+  </p>
+  <nav>
+    <a href="#start">Start</a><a href="#vergleich">Vorher/Nachher</a><a href="#weitere">Weitere Ansichten</a
+    ><a href="../UEBERSICHTLICHKEIT.md">Umsetzung und Grenzen</a><a href="sichtstand.json">Einzelnachweis</a>
+  </nav>
+  <h2 id="start">Arbeit einmal aufführen</h2>
+  <p>
+    Die vorherige Startaufnahme ist dunkel, die neue hell. Beide verwenden dieselbe Office-Farbwelt; der
+    Vergleich betrifft Wiederholungen und Anordnung.
+  </p>
+  <section id="startbilder"></section>
+  <h2 id="vergleich">Gezielte Straffung im hellen Thema</h2>
+  <p>
+    Links der vorherige, rechts der neue Stand. Auswahl, Workflowtitel und Zeitangaben können abweichen; dies
+    ist kein pixelgleicher Vergleich identischer Sitzungen.
+  </p>
+  <section id="vergleichsbilder"></section>
+  <h2 id="weitere">Bedienung und verfügbare Fläche</h2>
+  <section id="weiterebilder"></section>
+  <p>
+    Hauptgröße: 1280 × 720 logische Pixel, zusätzlich 960 × 680 und 200 Prozent UI-Text. Die PNG-Auflösung
+    berücksichtigt die tatsächliche Windows-Pixeldichte. Keine vollständige Windows-DPI-Matrix und kein
+    Nutzertest.
+  </p>
+  <script>
+    const gruppen = {
+      startbilder: [
+        [
+          '../office/start-mit-workflow-dunkel.png',
+          'Vorher · Start',
+          'Zusätzliches Weiterbearbeitenband und wiederholte gespeicherte Arbeit.',
+        ],
+        [
+          'start-aktiver-workflow-hell.png',
+          'Nachher · Start',
+          'Ein aktiver Eintrag mit Weiterbearbeiten und vier kompaktere Einstiege.',
+        ],
+      ],
+      vergleichsbilder: [
+        [
+          '../office/daten-fehlende-spalte-hell.png',
+          'Vorher · Feldfehler',
+          'Vollständige Erklärung im Abschnitt und noch einmal am Feld.',
+        ],
+        [
+          'feldfehler-hell.png',
+          'Nachher · Feldfehler',
+          'Kurzer Feldverweis, Erklärung einmal an der fokussierten Eingabe.',
+        ],
+        [
+          '../office/laufvorbereitung-hell.png',
+          'Vorher · Laufvorbereitung',
+          'Zusätzliche Leiste für den aktuellen Arbeitsstand.',
+        ],
+        [
+          'laufvorbereitung-hell.png',
+          'Nachher · Laufvorbereitung',
+          'Alle Läufe und Arbeitsansichten teilen sich den Kopf.',
+        ],
+        [
+          '../office/datenvorschau-gruppiert-hell.png',
+          'Vorher · Datenvorschau',
+          'Technische Typbezeichnungen.',
+        ],
+        [
+          'datenvorschau-hell.png',
+          'Nachher · Datenvorschau',
+          'Verständliche Namen; der Originaltyp bleibt zusätzlich zugänglich.',
+        ],
+      ],
+      weiterebilder: [
+        ['editor-hell.png', 'Editor', 'Die vorhandenen Werkzeuge bleiben direkt sichtbar.'],
+        [
+          'gespeicherter-lauf-hell.png',
+          'Gespeicherter Lauf',
+          'Datum, tatsächlicher Modus und Stand bleiben nachvollziehbar.',
+        ],
+        [
+          'laufergebnisse-dunkel.png',
+          'Laufergebnisse · Dunkel',
+          'Ein echter Prüflauf mit geplanten Ausgaben.',
+        ],
+        [
+          'formular-ui200-dunkel.png',
+          'Formular mit 200 Prozent UI-Text',
+          'Speicherzustand im Kopf, ohne Wiederholung in der Statusleiste.',
+        ],
+        [
+          'formular-schmales-fenster-dunkel.png',
+          'Schmales Fenster',
+          'Quellen und Konfiguration bleiben erreichbar.',
+        ],
+        [
+          'lauf-stoppen-dunkel.png',
+          'Aktiver Pythonprozess',
+          'Stoppen bleibt nach dem Wechsel zum Ablauf sichtbar.',
+        ],
+        [
+          'dauerhafter-fehler-dunkel.png',
+          'Dauerhafter Fehler',
+          'Eine fehlende Testdatei; die Erklärung bleibt schließbar erreichbar.',
+        ],
+      ],
+    };
+    for (const [id, bilder] of Object.entries(gruppen))
+      for (const [pfad, titel, text] of bilder) {
+        const f = document.createElement('figure'),
+          a = document.createElement('a'),
+          i = document.createElement('img'),
+          c = document.createElement('figcaption'),
+          s = document.createElement('strong'),
+          p = document.createElement('span');
+        a.href = pfad;
+        i.src = pfad;
+        i.alt = titel;
+        i.loading = 'lazy';
+        s.textContent = titel;
+        p.textContent = text;
+        a.append(i);
+        c.append(s, p);
+        f.append(a, c);
+        document.getElementById(id).append(f);
+      }
+  </script>
+</html>
