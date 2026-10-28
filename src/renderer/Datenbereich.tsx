@@ -1,13 +1,16 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import * as Blockly from 'blockly/core';
-import type { Projekt } from '../kern/projekt';
+import type { Projekt, EditorBlock } from '../kern/projekt';
+import { businessDatenLesen } from '../kern/business-katalog';
+import { istQuellenfeld } from '../kern/quellenfeld';
 import { businessSchritte } from '../kern/business';
 import { businessDefinitionen, businessNachTyp } from '../kern/business-katalog';
 import { parameterStandardwertVerwenden, parameterWertLesen } from '../kern/business-modell';
 import { workflowPruefen } from '../kern/modell';
 import type { TestZustand } from '../gemeinsam/testlauf';
 import { testAktiv } from '../gemeinsam/testlauf';
-import { BusinessEigenschaften } from './BusinessEigenschaften';
+import { BusinessEigenschaften, type ParameterKontext, type QuelleWaehlen } from './BusinessEigenschaften';
+import { datenvorschauHinweis } from '../kern/datenvorschau';
 import { ParameterWertEingabe } from './ParameterDialog';
 import { Knopf } from './komponenten/Knopf';
 import { Auswahlfeld, Feld } from './komponenten/Feld';
@@ -27,6 +30,13 @@ export interface DatenbereichEigenschaften {
   veraltet?: boolean;
   vorschauLaden: (blockId: string) => void;
   parameterOeffnen: () => void;
+  vorschauen?: Record<string, { zustand: TestZustand; veraltet: boolean }>;
+  spaltenNachQuelle?: Record<string, string[]>;
+  parameterKontext?: ParameterKontext;
+  quelleWaehlen?: QuelleWaehlen;
+  parametersatzWaehlen?: (satz: 'test' | 'echt') => void;
+  parameterZiel?: { name: string; anfrage: number } | null;
+  feldZiel?: { blockId: string; pfad: string[]; anfrage: number } | null;
 }
 
 type Spalte = { name: string; typ: string };
@@ -70,7 +80,11 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
   const laufAktiv = testAktiv(lauf.phase);
   const gesperrt = props.gesperrt || laufAktiv;
   const aktuellerLauf = lauf.projektKennung === projekt.projektKennung;
-  const vorschau = aktuellerLauf ? lauf.business?.vorschau : null;
+  const gespeicherteVorschau = auswahl ? props.vorschauen?.[auswahl] : null;
+  const vorschauStand =
+    gespeicherteVorschau?.zustand.projektKennung === projekt.projektKennung ? gespeicherteVorschau : null;
+  const vorschauLauf = vorschauStand?.zustand;
+  const vorschau = vorschauLauf?.business?.vorschau;
   const spalten = useMemo(
     () =>
       Array.isArray(vorschau?.spalten)
@@ -116,6 +130,66 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
     ? businessNachTyp.get(block.type)
     : businessDefinitionen.find((d) => d.operation === schritt?.operation);
   const blockMeldungen = meldungen.filter((m) => m.blockId === auswahl);
+  const quellenParameter = useMemo(() => {
+    const ergebnis: Record<string, { blockId: string; feldPfad: string[] }> = {};
+    function blockLesen(b: EditorBlock) {
+      if (businessNachTyp.has(b.type)) {
+        try {
+          const cfg = businessDatenLesen(b.type, b.data).konfiguration;
+          function wertLesen(w: unknown, pfad: string[]) {
+            if (!w || typeof w !== 'object') return;
+            const objekt = w as Record<string, unknown>;
+            if (
+              Object.keys(w).length === 1 &&
+              typeof objekt.parameter === 'string' &&
+              istQuellenfeld(b.type, pfad, cfg)
+            )
+              ergebnis[objekt.parameter] ??= { blockId: b.id, feldPfad: pfad };
+            else Object.entries(w).forEach(([k, v]) => wertLesen(v, [...pfad, k]));
+          }
+          Object.entries(cfg).forEach(([k, v]) => wertLesen(v, [k]));
+        } catch {
+          /* Beschädigte Bausteine werden über die vorhandene Prüfung gemeldet. */
+        }
+      }
+      Object.values(b.inputs ?? {}).forEach((e) => {
+        if (e.block) blockLesen(e.block);
+        if (e.shadow) blockLesen(e.shadow);
+      });
+      if (b.next?.block) blockLesen(b.next.block);
+    }
+    projekt.editor.blocks?.blocks.forEach(blockLesen);
+    return ergebnis;
+  }, [projekt.editor]);
+  function feldFokussieren(pfad: string[]) {
+    const feld = Array.from(
+      scrollbereich.current?.querySelectorAll<HTMLElement>('[data-konfig-pfad]') ?? [],
+    ).find((e) => e.dataset.konfigPfad === JSON.stringify(pfad));
+    if (!feld) return;
+    for (let el: HTMLElement | null = feld; el; el = el.parentElement)
+      if (el instanceof HTMLDetailsElement) el.open = true;
+    feld.scrollIntoView({ block: 'nearest' });
+    (feld.querySelector<HTMLElement>('input,select,textarea,button') ?? feld).focus();
+  }
+  const vorschauGrund = datenvorschauHinweis(projekt, auswahl);
+  useEffect(() => {
+    if (!props.feldZiel) return;
+    setAuswahl(props.feldZiel.blockId);
+    setDatenansicht('quellen');
+    requestAnimationFrame(() => feldFokussieren(props.feldZiel!.pfad));
+  }, [props.feldZiel]);
+  useEffect(() => {
+    if (!props.parameterZiel) return;
+    setDatenansicht('parameter');
+    if (props.parameterKontext) setParametersatz(props.parameterKontext.parametersatz);
+    requestAnimationFrame(() => {
+      const feld = Array.from(document.querySelectorAll<HTMLElement>('[data-parameter-name]'))
+        .find((e) => e.dataset.parameterName === props.parameterZiel!.name)
+        ?.querySelector<HTMLElement>('input,select,textarea');
+      feld?.scrollIntoView({ block: 'nearest' });
+      feld?.focus();
+    });
+  }, [props.parameterZiel]);
   const geladeneZeilen = useMemo(() => {
     const suche = filter.trim().toLocaleLowerCase('de');
     const gefiltert = zeilen
@@ -246,7 +320,15 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                     <h3>Angaben prüfen</h3>
                     <ul>
                       {blockMeldungen.map((m, i) => (
-                        <li key={i}>{m.text}</li>
+                        <li key={i}>
+                          {m.feldPfad ? (
+                            <button className="daten-fehlerlink" onClick={() => feldFokussieren(m.feldPfad!)}>
+                              {m.text}
+                            </button>
+                          ) : (
+                            m.text
+                          )}
+                        </li>
                       ))}
                     </ul>
                     <Knopf
@@ -264,7 +346,12 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                   block={block}
                   parameter={projekt.business.parameter}
                   gesperrt={gesperrt}
-                  spalten={spalten.map((s) => s.name)}
+                  spaltenNachQuelle={props.spaltenNachQuelle}
+                  parameterKontext={props.parameterKontext}
+                  quelleWaehlen={props.quelleWaehlen}
+                  feldFehler={blockMeldungen.flatMap((m) =>
+                    m.feldPfad ? [{ feldPfad: m.feldPfad, text: m.text }] : [],
+                  )}
                   geaendert={() =>
                     props.aendern({ ...projekt, editor: Blockly.serialization.workspaces.save(workspace) })
                   }
@@ -302,7 +389,9 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
           <div className="daten-abschnittskopf">
             <div>
               <h2>Workflowparameter</h2>
-              <p className="daten-hilfetext">Den Parametersatz für einen Lauf wählst du unter „Läufe“.</p>
+              <p className="daten-hilfetext">
+                Werte für Testdaten, echte Daten oder als Standard bearbeiten.
+              </p>
             </div>
             <Auswahlfeld
               beschriftung="Angezeigte Parameterwerte"
@@ -329,7 +418,13 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                 const satzwerte =
                   parametersatz === 'standard' ? null : projekt.business.parametersaetze[parametersatz];
                 const eigenerWert = satzwerte !== null && Object.hasOwn(satzwerte, p.name);
-                const wert = satzwerte === null ? p.standard : parameterWertLesen(p, satzwerte);
+                const laufwert =
+                  parametersatz === props.parameterKontext?.parametersatz &&
+                  Object.hasOwn(props.parameterKontext.laufwerte ?? {}, p.name);
+                const wert =
+                  satzwerte === null
+                    ? p.standard
+                    : parameterWertLesen(p, laufwert ? props.parameterKontext!.werte : satzwerte);
                 const wertquelle = eigenerWert
                   ? wert === null || wert === ''
                     ? 'Ohne Wert'
@@ -339,9 +434,20 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                   <div
                     className="daten-parameterfeld"
                     key={feldschluessel}
+                    data-parameter-name={p.name}
                     onChangeCapture={() => parameterEingaben.current.add(feldschluessel)}
                   >
                     <ParameterWertEingabe
+                      dateiWaehlen={
+                        props.quelleWaehlen && quellenParameter[p.name]
+                          ? async () => {
+                              const quelle = quellenParameter[p.name];
+                              const pfad = await props.quelleWaehlen!(quelle.blockId, quelle.feldPfad);
+                              if (pfad !== null) parameterEingaben.current.add(feldschluessel);
+                              return pfad;
+                            }
+                          : undefined
+                      }
                       typ={p.typ}
                       beschriftung={p.beschriftung + (p.erforderlich ? ' (Pflichtangabe)' : '')}
                       hilfe={p.hilfe && enthaeltFormatvorgabe(p.hilfe) ? p.hilfe : undefined}
@@ -374,6 +480,11 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                         });
                       }}
                     />
+                    {laufwert && (
+                      <p className="daten-hilfetext">
+                        Für den nächsten Lauf angepasst. Eine Änderung hier wird im Parametersatz gespeichert.
+                      </p>
+                    )}
                     {satzwerte !== null && parametersatz !== 'standard' && (
                       <details className="daten-wertoptionen">
                         <summary aria-label={`Wertoptionen für ${p.beschriftung}: ${wertquelle}`}>
@@ -440,130 +551,179 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
           aria-labelledby={`${ansichtenId}-vorschau`}
           hidden={datenansicht !== 'vorschau'}
         >
-          <div className="daten-abschnittskopf">
-            <div>
-              <h2>Datenvorschau</h2>
-            </div>
+          <h2 className="sl-nur-vorlesen">Datenvorschau</h2>
+          <div className="daten-vorschauwahl">
+            <Auswahlfeld
+              beschriftung="Ergebnis bis zu diesem Schritt"
+              value={auswahl ?? ''}
+              onChange={(e) => waehlen(e.target.value)}
+              disabled={gesperrt}
+            >
+              <option value="">Tabellenschritt auswählen</option>
+              {auswahl &&
+                !schritte.some(
+                  (s) =>
+                    s.id === auswahl &&
+                    businessDefinitionen.find((d) => d.operation === s.operation)?.ausgabe === 'Tabelle',
+                ) && <option value={auswahl}>Dieser Schritt liefert keine Tabelle</option>}
+              {schritte
+                .filter(
+                  (s) => businessDefinitionen.find((d) => d.operation === s.operation)?.ausgabe === 'Tabelle',
+                )
+                .map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.bezeichnung ?? businessDefinitionen.find((d) => d.operation === s.operation)?.name}
+                  </option>
+                ))}
+            </Auswahlfeld>
+            {props.parametersatzWaehlen && (
+              <Auswahlfeld
+                beschriftung="Verwendete Werte"
+                value={props.parameterKontext?.parametersatz ?? 'test'}
+                disabled={gesperrt}
+                onChange={(e) => props.parametersatzWaehlen!(e.target.value as 'test' | 'echt')}
+              >
+                <option value="test">Testdaten</option>
+                <option value="echt">Echte Daten</option>
+              </Auswahlfeld>
+            )}
             <Knopf
+              variante="primaer"
               symbol="testen"
               onClick={() => props.vorschauLaden(auswahl ?? '')}
-              disabled={gesperrt || !schritte.length}
-              grund={
-                gesperrt
-                  ? 'Warte auf das Ende des laufenden Prozesses.'
-                  : 'Füge zuerst eine Business-Datenquelle im Ablauf hinzu.'
-              }
+              disabled={gesperrt || Boolean(vorschauGrund)}
+              grund={gesperrt ? 'Warte auf das Ende des laufenden Prozesses.' : (vorschauGrund ?? undefined)}
             >
-              Datenvorschau vorbereiten
+              Datenvorschau laden
             </Knopf>
           </div>
-          {aktuellerLauf && ['fehlgeschlagen', 'mit_fehlern'].includes(lauf.phase) && (
-            <div className="daten-vorschaufehler">
-              <Statusanzeige art="fehler">
-                {lauf.meldung ||
-                  'Die Daten konnten nicht vollständig verarbeitet werden. Prüfe den zugeordneten Baustein.'}
-              </Statusanzeige>
-              {lauf.fehlerBlockId && (
-                <Knopf
-                  symbol="bausteine"
-                  onClick={() => {
-                    waehlen(lauf.fehlerBlockId!);
-                    datenansichtWechseln('quellen');
-                  }}
-                >
-                  Betroffenen Baustein auswählen
-                </Knopf>
-              )}
-            </div>
+          {gesperrt && lauf.optionen.business?.vorschauBlockId === auswahl && (
+            <Statusanzeige art="verarbeitung">
+              Die Datenvorschau wird geladen. Du kannst den Prozess oben stoppen.
+            </Statusanzeige>
           )}
+          {aktuellerLauf &&
+            lauf.optionen.business?.vorschauBlockId === auswahl &&
+            ['fehlgeschlagen', 'mit_fehlern'].includes(lauf.phase) && (
+              <div className="daten-vorschaufehler">
+                <Statusanzeige art="fehler">
+                  {lauf.meldung ||
+                    'Die Daten konnten nicht vollständig verarbeitet werden. Prüfe den zugeordneten Baustein.'}
+                </Statusanzeige>
+                {lauf.fehlerBlockId && (
+                  <Knopf
+                    symbol="bausteine"
+                    onClick={() => {
+                      waehlen(lauf.fehlerBlockId!);
+                      datenansichtWechseln('quellen');
+                    }}
+                  >
+                    Betroffenen Baustein auswählen
+                  </Knopf>
+                )}
+              </div>
+            )}
           {vorschau ? (
             <>
-              {props.veraltet && (
+              {vorschauStand?.veraltet && (
                 <Statusanzeige art="hinweis">
                   Der Workflow wurde seit dieser Vorschau geändert. Lade nach der Korrektur eine neue
                   Vorschau, um die geänderten Zuordnungen zu prüfen.
                 </Statusanzeige>
               )}
-              <p>
-                {zeilen.length.toLocaleString('de-DE')} geladene Vorschauzeilen · höchstens 200 Zeilen und 256
-                KiB. Die Gesamtzahl der Quelldaten ist hier nicht bekannt.
-              </p>
-              <details className="daten-herkunft">
-                <summary>Herkunft und Laufstand</summary>
-                <dl>
-                  <div>
-                    <dt>Workflow</dt>
-                    <dd>{lauf.projektName ?? projekt.name}</dd>
-                  </div>
-                  <div>
-                    <dt>Umfang</dt>
-                    <dd>
-                      Letzte verfügbare Tabelle des Workflow-Datenplans. Die Auswahl oben lädt keine einzelne
-                      Quelle nach.
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Arbeitsordner des Laufs</dt>
-                    <dd>{lauf.optionen.basisVerzeichnis ?? 'Nicht bekannt'}</dd>
-                  </div>
-                  <div>
-                    <dt>Lauf-ID</dt>
-                    <dd>
-                      <code>{lauf.laufId ?? 'Nicht bekannt'}</code>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Vollständige Standkennung</dt>
-                    <dd>
-                      <code>{lauf.standHash ?? 'Nicht bekannt'}</code>
-                    </dd>
-                  </div>
-                </dl>
-              </details>
+              <div className="daten-vorschauwerkzeuge">
+                <div>
+                  <p className="daten-vorschauumfang">
+                    {zeilen.length.toLocaleString('de-DE')} Vorschauzeilen geladen · Gesamtzahl der Quelldaten
+                    unbekannt.
+                  </p>
+                  <details className="daten-herkunft">
+                    <summary>Herkunft und Laufstand</summary>
+                    <dl>
+                      <div>
+                        <dt>Workflow</dt>
+                        <dd>{vorschauLauf?.projektName ?? projekt.name}</dd>
+                      </div>
+                      <div>
+                        <dt>Umfang</dt>
+                        <dd>
+                          Ergebnis bis zum ausgewählten Schritt einschließlich seiner notwendigen Vorgänger.
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Begrenzung</dt>
+                        <dd>
+                          Höchstens 200 Zeilen und 256 KiB. Suche und Sortierung gelten nur für diesen
+                          Ausschnitt.
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Arbeitsordner des Laufs</dt>
+                        <dd>{vorschauLauf?.optionen.basisVerzeichnis ?? 'Nicht bekannt'}</dd>
+                      </div>
+                      <div>
+                        <dt>Lauf-ID</dt>
+                        <dd>
+                          <code>{vorschauLauf?.laufId ?? 'Nicht bekannt'}</code>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Vollständige Standkennung</dt>
+                        <dd>
+                          <code>{vorschauLauf?.standHash ?? 'Nicht bekannt'}</code>
+                        </dd>
+                      </div>
+                    </dl>
+                  </details>
+                </div>
+                <Feld
+                  beschriftung="In geladenen Vorschauzeilen suchen"
+                  type="search"
+                  value={filter}
+                  onChange={(e) => {
+                    setFilter(e.target.value);
+                    setZeilenseite(0);
+                  }}
+                />
+              </div>
               {(vorschau.gekuerzt || vorschau.abgeschnitten || vorschau.zellen_gekuerzt) && (
                 <Statusanzeige art="hinweis">
                   Der Ausschnitt wurde begrenzt. Weitere Zeilen oder lange Zelltexte werden nicht vollständig
                   angezeigt.
                 </Statusanzeige>
               )}
-              <Feld
-                beschriftung="In geladenen Vorschauzeilen suchen"
-                type="search"
-                value={filter}
-                onChange={(e) => {
-                  setFilter(e.target.value);
-                  setZeilenseite(0);
-                }}
-              />
-              <div className="daten-tabellensteuerung">
-                <p>
-                  {geladeneZeilen.length} Treffer in {zeilen.length} geladenen Zeilen · Sortierung gilt nur
-                  für diesen Ausschnitt.
-                </p>
-                {geladeneZeilen.length > 50 && (
-                  <div className="knopfgruppe">
-                    <Knopf
-                      variante="leise"
-                      onClick={() => setZeilenseite(Math.max(0, aktiveZeilenseite - 1))}
-                      disabled={aktiveZeilenseite === 0}
-                      grund="Die erste Seite ist bereits sichtbar."
-                    >
-                      Vorherige Zeilen
-                    </Knopf>
-                    <span>
-                      Seite {aktiveZeilenseite + 1} von {maxZeilenseite + 1}
-                    </span>
-                    <Knopf
-                      variante="leise"
-                      onClick={() => setZeilenseite(aktiveZeilenseite + 1)}
-                      disabled={aktiveZeilenseite === maxZeilenseite}
-                      grund="Die letzte Seite ist bereits sichtbar."
-                    >
-                      Weitere Zeilen
-                    </Knopf>
-                  </div>
-                )}
-              </div>
+              {(filter || geladeneZeilen.length > 50) && (
+                <div className="daten-tabellensteuerung">
+                  {filter && (
+                    <p>
+                      {geladeneZeilen.length} Treffer in {zeilen.length} geladenen Vorschauzeilen.
+                    </p>
+                  )}
+                  {geladeneZeilen.length > 50 && (
+                    <div className="knopfgruppe">
+                      <Knopf
+                        variante="leise"
+                        onClick={() => setZeilenseite(Math.max(0, aktiveZeilenseite - 1))}
+                        disabled={aktiveZeilenseite === 0}
+                        grund="Die erste Seite ist bereits sichtbar."
+                      >
+                        Vorherige Zeilen
+                      </Knopf>
+                      <span>
+                        Seite {aktiveZeilenseite + 1} von {maxZeilenseite + 1}
+                      </span>
+                      <Knopf
+                        variante="leise"
+                        onClick={() => setZeilenseite(aktiveZeilenseite + 1)}
+                        disabled={aktiveZeilenseite === maxZeilenseite}
+                        grund="Die letzte Seite ist bereits sichtbar."
+                      >
+                        Weitere Zeilen
+                      </Knopf>
+                    </div>
+                  )}
+                </div>
+              )}
               {spalten.length > 20 && (
                 <div className="daten-tabellensteuerung">
                   <p>
@@ -721,7 +881,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
             <p>
               {testAktiv(lauf.phase) && aktuellerLauf
                 ? 'Der Lauf ist aktiv. Sobald eine begrenzte Datenvorschau vorliegt, wird sie hier angezeigt.'
-                : 'Noch keine Datenvorschau für diesen Workflow. Prüfe Quellen und Zuordnungen und bereite anschließend eine Vorschau vor.'}
+                : 'Für diesen Schritt ist noch keine Datenvorschau geladen. Wähle einen Tabellenschritt und klicke auf „Datenvorschau laden“.'}
             </p>
           )}
         </section>

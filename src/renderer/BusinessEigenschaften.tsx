@@ -30,6 +30,7 @@ const standard = (felder: KonfigFeld[]) =>
 
 export interface ParameterKontext {
   parametersatz: 'test' | 'echt';
+  laufwerte?: Record<string, string | number | boolean | null>;
   werte: Record<string, WorkflowParameter['standard']>;
   werteOeffnen?: (name: string) => void;
 }
@@ -276,6 +277,9 @@ function Wertbindung({
                 </strong>{' '}
                 <span>{wertText}</span>
                 {kontext && !Object.hasOwn(kontext.werte, definition.name) && <span> · Standardwert</span>}
+                {kontext?.laufwerte && Object.hasOwn(kontext.laufwerte, definition.name) && (
+                  <span> · Für den nächsten Lauf angepasst</span>
+                )}
               </p>
               {kontext?.werteOeffnen && (
                 <Knopf variante="leise" onClick={() => kontext.werteOeffnen!(definition.name)}>

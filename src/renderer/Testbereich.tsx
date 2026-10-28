@@ -119,6 +119,10 @@ export function Testbereich(props: TestbereichEigenschaften) {
   const vorbereitung = ansicht === 'vorbereitung';
   const fokussierteVorbereitung = vorbereitung && !aktiv && Boolean(props.businessVorbereitung);
   const anzeigeOptionen = vorbereitung && !aktiv ? optionen : laufOptionen;
+  const vorschauZiel = anzeigeOptionen.business?.vorschauBlockId;
+  const vorschauSchritt = vorschauZiel
+    ? (zustand.business?.schrittnamen?.[vorschauZiel] ?? vorschauZiel)
+    : null;
   const [zeitlimitEntwurf, setZeitlimitEntwurf] = useState(
     String(aktiv ? zustand.optionen.zeitlimitSekunden : optionen.zeitlimitSekunden),
   );
@@ -316,6 +320,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
           <p className="testbereich-modus" hidden={fokussierteVorbereitung}>
             <strong>{vorbereitung && !aktiv ? 'Nächster Lauf' : 'Modus dieses Laufs'}:</strong>{' '}
             {modusName(anzeigeOptionen)}
+            {vorschauSchritt && <> bis „{vorschauSchritt}“</>}
           </p>
           <div className="knopfgruppe testbereich-aktionen">
             {aktiv ? (
@@ -353,7 +358,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
         </header>
       </div>
       <div ref={inhalt} className="testbereich-inhalt">
-        {veraltet && hatLauf && (
+        {veraltet && hatLauf && !vorbereitung && (
           <Statusanzeige art="hinweis">
             Der Workflow wurde seit diesem Lauf geändert. Die Ergebnisse gehören zum angezeigten früheren
             Stand.
@@ -469,7 +474,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
                     <p className="testbereich-hilfe">
                       {props.pythonStatus?.meldung ?? 'Die Python-Laufzeit wird vor dem Start geprüft.'}
                     </p>
-                    <Knopf onClick={props.pythonEinrichten}>Python einrichten</Knopf>
+                    <Knopf onClick={props.pythonEinrichten}>Komponentenstatus anzeigen</Knopf>
                   </details>
                 )}
               {!props.businessVorbereitung && (
@@ -727,7 +732,8 @@ export function Testbereich(props: TestbereichEigenschaften) {
             tabIndex={0}
             onScroll={ausgabeScrollen}
           >
-            {zustand.ausgabe || (hatLauf ? 'Dieser Lauf hat keine Textausgabe gemeldet.' : 'Noch keine Ausgabe.')}
+            {zustand.ausgabe ||
+              (hatLauf ? 'Dieser Lauf hat keine Textausgabe gemeldet.' : 'Noch keine Ausgabe.')}
           </pre>
           {!amEnde && (
             <Knopf

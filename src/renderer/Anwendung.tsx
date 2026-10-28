@@ -76,6 +76,13 @@ function antwort<T>(r: Antwort<T>): T {
 
 export function Anwendung() {
   const [test, setTest] = useState<TestZustand>(testBereit);
+  const [vorschauen, setVorschauen] = useState<
+    Record<string, { zustand: TestZustand; inhalt: string; parameter: string }>
+  >({});
+  const vorschauAnfrage = useRef<{ inhalt: string; parameter: string } | null>(null);
+  const vorschauGemerkt = useRef<string | null>(null);
+  const [parameterZiel, setParameterZiel] = useState<{ name: string; anfrage: number } | null>(null);
+  const [feldZiel, setFeldZiel] = useState<{ blockId: string; pfad: string[]; anfrage: number } | null>(null);
   const [testOptionen, setTestOptionen] = useState<TestOptionen>({
     basisVerzeichnis: null,
     zeitlimitSekunden: 120,
@@ -527,7 +534,13 @@ export function Anwendung() {
       },
     );
   }
-  function blockAnzeigen(id?: string) {
+  function blockAnzeigen(id?: string, feldPfad?: string[]) {
+    if (id && feldPfad) {
+      auswaehlen(id);
+      setArbeitsbereich('daten');
+      setFeldZiel({ blockId: id, pfad: feldPfad, anfrage: Date.now() });
+      return;
+    }
     setArbeitsbereich('ablauf');
     const ws = wsRef.current;
     if (!ws || !id) return;
@@ -553,7 +566,10 @@ export function Anwendung() {
       const neu = antwort(await window.scriptlab.exportieren(standLesen()));
       if (neu) {
         setExportiert(neu);
-        melden('Script gespeichert.', neu.signatur?.status === 'vertrauen-offen' ? 'hinweis' : 'erfolg');
+        melden(
+          neu.dateiname.endsWith('.zip') ? 'Business-Paket gespeichert.' : 'Script gespeichert.',
+          neu.signatur?.status === 'vertrauen-offen' ? 'hinweis' : 'erfolg',
+        );
       }
     });
   }
@@ -572,6 +588,47 @@ export function Anwendung() {
   }
   function testKontextKennung(optionen = testOptionen): string {
     return `${projektRef.current.projektKennung}:${JSON.stringify(optionen)}`;
+  }
+  function vorschauParameterKennung() {
+    return JSON.stringify({
+      satz: testOptionen.business?.parametersatz ?? 'test',
+      werte: testOptionen.business?.parameter ?? {},
+    });
+  }
+  async function datenvorschauLaden(blockId: string) {
+    if (testAnfrage.current || testSperre.current || busy.current) return;
+    const stand = structuredClone(standLesen());
+    testAnfrage.current = true;
+    testInhalt.current = testInhaltsText(stand);
+    vorschauAnfrage.current = { inhalt: testInhalt.current, parameter: vorschauParameterKennung() };
+    setDauerfehler(null);
+    try {
+      testUebernehmen({
+        ...testBereit(),
+        phase: 'vorbereitung',
+        projektKennung: stand.projektKennung ?? null,
+        projektName: stand.name,
+        meldung: 'Die Datenvorschau des ausgewählten Schritts wird geladen.',
+      });
+      testUebernehmen(antwort(await window.scriptlab.datenvorschauStarten(stand, blockId, testOptionen)));
+    } catch (e) {
+      testUebernehmen({
+        ...testBereit(),
+        phase: 'fehlgeschlagen',
+        projektKennung: stand.projektKennung ?? null,
+        meldung: e instanceof Error ? e.message : 'Die Datenvorschau konnte nicht geladen werden.',
+      });
+      melden(e instanceof Error ? e.message : 'Die Datenvorschau konnte nicht geladen werden.', 'fehler');
+    } finally {
+      testAnfrage.current = false;
+    }
+  }
+  function parameterWertOeffnen(name: string) {
+    setArbeitsbereich('daten');
+    setParameterZiel({ name, anfrage: Date.now() });
+  }
+  async function quelleWaehlen(blockId: string, feldPfad: string[]) {
+    return antwort(await window.scriptlab.quelleWaehlen(blockId, feldPfad));
   }
   function testUebernehmen(neu: TestZustand) {
     const sperren = testAktiv(neu.phase);
@@ -597,7 +654,8 @@ export function Anwendung() {
       setPruefungAngefordert(true);
       setHinweiseOffen(true);
       melden('Vervollständige die markierten Bausteine vor dem Test.', 'hinweis');
-      blockAnzeigen(pruefung.meldungen.find((m) => m.stufe === 'fehler')?.blockId);
+      const erstesProblem = pruefung.meldungen.find((m) => m.stufe === 'fehler');
+      blockAnzeigen(erstesProblem?.blockId, erstesProblem?.feldPfad);
       return;
     }
     if (testKontextGesehen.current !== testKontextKennung()) {
@@ -665,6 +723,61 @@ export function Anwendung() {
       clearInterval(timer);
     };
   }, [editorBegonnen]);
+  useEffect(() => {
+    setVorschauen({});
+    vorschauAnfrage.current = null;
+    vorschauGemerkt.current = null;
+  }, [projekt.projektKennung]);
+  useEffect(() => {
+    const id = test.optionen.business?.vorschauBlockId;
+    if (
+      !id ||
+      !test.business?.vorschau ||
+      testAktiv(test.phase) ||
+      test.projektKennung !== projekt.projektKennung ||
+      !test.laufId ||
+      vorschauGemerkt.current === test.laufId ||
+      !vorschauAnfrage.current
+    )
+      return;
+    vorschauGemerkt.current = test.laufId;
+    const kontext = vorschauAnfrage.current;
+    setVorschauen((alt) =>
+      Object.fromEntries(
+        [...Object.entries(alt).filter(([k]) => k !== id), [id, { zustand: test, ...kontext }]].slice(-12),
+      ),
+    );
+  }, [test, projekt.projektKennung]);
+  const aktuelleVorschauen = Object.fromEntries(
+    Object.entries(vorschauen)
+      .filter(([, v]) => v.zustand.projektKennung === projekt.projektKennung)
+      .map(([id, v]) => [
+        id,
+        {
+          zustand: v.zustand,
+          veraltet: v.inhalt !== testInhaltsText(projekt) || v.parameter !== vorschauParameterKennung(),
+        },
+      ]),
+  );
+  const spaltenNachQuelle = Object.fromEntries(
+    Object.entries(aktuelleVorschauen)
+      .filter(([, v]) => !v.veraltet)
+      .map(([id, v]) => [
+        id,
+        Array.isArray(v.zustand.business?.vorschau?.spalten)
+          ? (v.zustand.business!.vorschau!.spalten as { name: string }[]).map((s) => s.name)
+          : [],
+      ]),
+  );
+  const parameterKontext = {
+    parametersatz: testOptionen.business?.parametersatz ?? ('test' as const),
+    laufwerte: testOptionen.business?.parameter ?? {},
+    werte: {
+      ...projekt.business.parametersaetze[testOptionen.business?.parametersatz ?? 'test'],
+      ...testOptionen.business?.parameter,
+    },
+    werteOeffnen: parameterWertOeffnen,
+  };
   async function einstellungenSetzen(neu: Einstellungen) {
     einstellungenRef.current = neu;
     setEinstellungen(neu);
@@ -740,6 +853,7 @@ export function Anwendung() {
       setPlatzierung(null);
       setZiele([]);
       auswaehlen(b.id);
+      if (auftrag.art === 'einfuegen') setEigenschaftenOffen(true);
       aendern(standLesen());
       melden(auftrag.art === 'einfuegen' ? 'Baustein eingefügt.' : 'Baustein verschoben.');
     } catch (e) {
@@ -1184,7 +1298,7 @@ export function Anwendung() {
             </>
           )}
           <div className="hauptaktion">
-            {arbeitsbereich !== 'laeufe' && !testAktiv(test.phase) && (
+            {arbeitsbereich === 'ablauf' && !testAktiv(test.phase) && (
               <Knopf
                 variante="primaer"
                 symbol="testen"
@@ -1549,7 +1663,7 @@ export function Anwendung() {
                           key={i}
                           variante="leise"
                           symbol={m.stufe === 'fehler' ? 'fehler' : 'hinweis'}
-                          onClick={() => blockAnzeigen(m.blockId)}
+                          onClick={() => blockAnzeigen(m.blockId, m.feldPfad)}
                         >
                           {m.text}
                         </Knopf>
@@ -1563,12 +1677,12 @@ export function Anwendung() {
             </section>
             {eigenschaftenOffen && (
               <Eigenschaften
-                spalten={
-                  test.projektKennung === projekt.projektKennung &&
-                  Array.isArray(test.business?.vorschau?.spalten)
-                    ? (test.business.vorschau.spalten as { name: string }[]).map((s) => s.name)
-                    : []
-                }
+                spaltenNachQuelle={spaltenNachQuelle}
+                parameterKontext={parameterKontext}
+                quelleWaehlen={quelleWaehlen}
+                feldFehler={ergebnis.meldungen.flatMap((m) =>
+                  m.blockId === auswahl && m.feldPfad ? [{ feldPfad: m.feldPfad, text: m.text }] : [],
+                )}
                 parameter={projekt.business.parameter}
                 ws={workspace}
                 blockId={auswahl}
@@ -1604,33 +1718,59 @@ export function Anwendung() {
             workspace={workspace}
             blockId={auswahl}
             auswaehlen={auswaehlen}
-            aendern={aendern}
+            aendern={(neu) => {
+              const satz = testOptionen.business?.parametersatz ?? 'test';
+              const vorher = projekt.business.parametersaetze[satz];
+              const nachher = neu.business.parametersaetze[satz];
+              const ersetzt = Object.keys(testOptionen.business?.parameter ?? {}).filter(
+                (name) =>
+                  Object.hasOwn(vorher, name) !== Object.hasOwn(nachher, name) ||
+                  vorher[name] !== nachher[name],
+              );
+              if (ersetzt.length)
+                setTestOptionen((alt) =>
+                  alt.business
+                    ? {
+                        ...alt,
+                        business: {
+                          ...alt.business,
+                          parameter: Object.fromEntries(
+                            Object.entries(alt.business.parameter).filter(
+                              ([name]) => !ersetzt.includes(name),
+                            ),
+                          ),
+                        },
+                      }
+                    : alt,
+                );
+              aendern(neu);
+            }}
             gesperrt={testAktiv(test.phase)}
             testZustand={test}
             blockAnzeigen={blockAnzeigen}
             veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
             parameterOeffnen={() => setDialog('parameter')}
-            vorschauLaden={() => {
+            vorschauLaden={(id) => void datenvorschauLaden(id)}
+            vorschauen={aktuelleVorschauen}
+            spaltenNachQuelle={spaltenNachQuelle}
+            parameterKontext={parameterKontext}
+            quelleWaehlen={quelleWaehlen}
+            parameterZiel={parameterZiel}
+            feldZiel={feldZiel}
+            parametersatzWaehlen={(satz) =>
               setTestOptionen((alt) => ({
                 ...alt,
-                zeitlimitSekunden: 15,
                 business: {
-                  ...(alt.business ?? {
-                    parametersatz: 'test',
-                    parameter: {},
-                    speicherMB: 512,
-                    tempGB: 4,
-                    fortsetzen: false,
-                  }),
-                  modus: 'vorschau',
+                  modus: 'prueflauf',
+                  speicherMB: 512,
+                  tempGB: 4,
+                  fortsetzen: false,
+                  ...alt.business,
+                  parametersatz: satz,
+                  parameter: {},
                 },
-              }));
-              setArbeitsbereich('laeufe');
-              melden(
-                'Datenvorschau ausgewählt. Prüfe die Laufvorbereitung und lade die Vorschau bewusst.',
-                'hinweis',
-              );
-            }}
+              }))
+            }
           />
         </div>
         <div

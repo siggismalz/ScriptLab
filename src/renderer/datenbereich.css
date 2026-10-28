@@ -15,6 +15,17 @@
 .datenbereich[hidden] {
   display: none;
 }
+.daten-fehlerlink {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 4px 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
 .daten-ansichtauswahl {
   display: flex;
   flex-wrap: wrap;
@@ -447,6 +458,43 @@
 }
 .daten-vorschau > .sl-feld {
   max-width: 480px;
+}
+.daten-vorschauwahl {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--abstand-16);
+  margin-block: var(--abstand-12);
+  max-width: 1120px;
+}
+.daten-vorschauwahl > * {
+  min-width: 0;
+}
+.daten-vorschauumfang {
+  color: var(--farbe-text-sekundaer);
+}
+.daten-vorschauwerkzeuge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 380px);
+  gap: var(--abstand-16);
+  align-items: start;
+  margin-top: var(--abstand-16);
+}
+.daten-vorschauwerkzeuge > * {
+  min-width: 0;
+}
+.daten-vorschauwerkzeuge .daten-herkunft {
+  margin-block: 0;
+}
+@container (max-width: 60em) {
+  .daten-vorschauwahl,
+  .daten-vorschauwerkzeuge {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .daten-vorschauwahl > :is(button, .sl-knopf-mit-grund) {
+    justify-self: start;
+  }
 }
 .daten-vorschau > .daten-hilfetext {
   font-size: calc(var(--schrift-meta) * var(--text-skala, 1));

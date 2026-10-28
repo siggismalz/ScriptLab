@@ -19,7 +19,7 @@ export function laufprofilWert(sekunden: number): string {
   );
 }
 export const businessVorgaben: NonNullable<TestOptionen['business']> = {
-  modus: 'ausfuehren',
+  modus: 'prueflauf',
   parametersatz: 'test',
   parameter: {},
   speicherMB: 512,

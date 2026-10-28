@@ -19,6 +19,7 @@ function darstellen(lauf: TestZustand, veraltet = false) {
       gesperrt: false,
       testZustand: lauf,
       veraltet,
+      vorschauen: { lesen: { zustand: lauf, veraltet } },
       vorschauLaden: nichts,
       parameterOeffnen: nichts,
     }),
@@ -32,7 +33,19 @@ function vorschau(kennung = 'aktueller-workflow'): TestZustand {
     laufId: 'lauf-123',
     standHash: 'a'.repeat(64),
     phase: 'beendet',
-    optionen: { basisVerzeichnis: 'C:\\Testdaten\\Eingang', zeitlimitSekunden: 15 },
+    optionen: {
+      basisVerzeichnis: 'C:\\Testdaten\\Eingang',
+      zeitlimitSekunden: 15,
+      business: {
+        modus: 'vorschau',
+        vorschauBlockId: 'lesen',
+        parametersatz: 'test',
+        parameter: {},
+        speicherMB: 512,
+        tempGB: 4,
+        fortsetzen: false,
+      },
+    },
     business: {
       schritt: null,
       ereignisse: [],
@@ -48,14 +61,14 @@ describe('Datenansicht mit echten Laufgrenzen', () => {
     lauf.business!.vorschau!.zeilen = [['FREMDER-DATENBESTAND']];
     const html = darstellen(lauf);
     expect(html).not.toContain('FREMDER-DATENBESTAND');
-    expect(html).toContain('Noch keine Datenvorschau für diesen Workflow');
+    expect(html).toContain('Für diesen Schritt ist noch keine Datenvorschau geladen');
   });
   it('ordnet die lesende Vorschau dem tatsächlichen Lauf und Basisordner zu', () => {
     const html = darstellen(vorschau());
     expect(html).toContain('lauf-123');
     expect(html).toContain('C:\\Testdaten\\Eingang');
     expect(html).toContain('a'.repeat(64));
-    expect(html).toContain('Die Gesamtzahl der Quelldaten ist hier nicht bekannt');
+    expect(html).toContain('Gesamtzahl der Quelldaten');
     expect(html).toContain('Schreibgeschützte Daten');
     expect(html).not.toContain('contenteditable');
   });
@@ -64,6 +77,7 @@ describe('Datenansicht mit echten Laufgrenzen', () => {
       ...testBereit(),
       projektKennung: 'aktueller-workflow',
       phase: 'fehlgeschlagen',
+      optionen: vorschau().optionen,
       meldung: 'Die Testdatei wird von einem anderen Programm verwendet.',
     });
     expect(html).toContain('Die Testdatei wird von einem anderen Programm verwendet.');
@@ -75,7 +89,7 @@ describe('Datenansicht mit echten Laufgrenzen', () => {
     lauf.business!.vorschau!.zeilen = Array.from({ length: 200 }, (_, i) => [`Zeile ${i + 1}`]);
     const html = darstellen(lauf, true);
     expect(html).toContain('Der Workflow wurde seit dieser Vorschau geändert');
-    expect(html).toContain('200 geladene Vorschauzeilen');
+    expect(html).toContain('200 Vorschauzeilen geladen');
     expect(html).toContain('Zeile 50');
     expect(html).not.toContain('Zeile 51');
     expect(html).toContain('Seite 1 von 4');
