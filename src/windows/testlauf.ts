@@ -98,6 +98,7 @@ export class TestlaufDienst {
       pruefen: (installation: PythonInstallation, signal: AbortSignal) => Promise<void>;
     },
     private readonly abgeschlossen?: (zustand: TestZustand) => void | Promise<void>,
+    private readonly ausgabeWurzel?: string,
   ) {}
 
   lesen(): TestZustand {
@@ -125,7 +126,11 @@ export class TestlaufDienst {
       );
     const id = randomUUID(),
       token = randomBytes(24).toString('hex');
-    const erzeugt = skriptErzeugen(projekt, { modus: 'test', token });
+    const erzeugt = skriptErzeugen(projekt, {
+      modus: 'test',
+      token,
+      ...(this.ausgabeWurzel ? { ausgabeWurzel: this.ausgabeWurzel } : {}),
+    });
     if (!erzeugt.code)
       throw new Error('Vervollständige den Workflow. Die Hinweise nennen die betroffenen Bausteine.');
     this.zustand = {
@@ -217,12 +222,7 @@ export class TestlaufDienst {
             if (lauf.abbruch.signal.aborted) return abbrechen();
             lauf.abbruch.signal.addEventListener('abort', abbrechen, { once: true });
             timer = setTimeout(
-              () =>
-                ablehnen(
-                  new Error(
-                    'Der Testordner ist nicht rechtzeitig erreichbar. Wähle einen lokalen Ordner aus.',
-                  ),
-                ),
+              () => ablehnen(new Error('Der ScriptLab-Arbeitsordner ist nicht rechtzeitig erreichbar.')),
               4000,
             );
           }),
@@ -238,7 +238,7 @@ export class TestlaufDienst {
         throw new Error('Das fest mitgelieferte Testwerkzeug fehlt. Bitte installiere ScriptLab erneut.');
       if (lauf.grund) return;
       if (!(await pruefen(stat(optionen.basisVerzeichnis!))).isDirectory())
-        throw new Error('Wähle einen erreichbaren Basisordner aus.');
+        throw new Error('Der ScriptLab-Arbeitsordner ist nicht erreichbar.');
       await pruefen(mkdir(lauf.ordner, { recursive: true }));
       if (lauf.grund) return;
       if (lauf.sprache === 'python') {
@@ -293,6 +293,7 @@ export class TestlaufDienst {
             JSON.stringify({
               version: 1,
               basis: optionen.basisVerzeichnis,
+              ...(this.ausgabeWurzel ? { ausgabe_wurzel: this.ausgabeWurzel } : {}),
               modus: b.modus,
               parameter,
               grenzen: {
@@ -378,7 +379,7 @@ export class TestlaufDienst {
         this.zustand.meldung =
           e instanceof Error && !('code' in e)
             ? e.message
-            : 'Der Test konnte nicht vorbereitet werden. Prüfe Basisordner und Installation.';
+            : 'Der Lauf konnte nicht vorbereitet werden. Prüfe Arbeitsordner und Installation.';
         this.zustand.technischeMeldung ??= e instanceof Error ? e.message : String(e);
       }
     } finally {

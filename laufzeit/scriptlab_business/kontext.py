@@ -175,12 +175,15 @@ class Kontext:
                  grenzen: Grenzen | dict | None = None, journal_pfad: str | Path | None = None,
                  fortsetzen: bool = False, workflow_hash: str = "", ereignis_callback: Callable | None = None,
                  lauf_id: str | None = None, technischer_ordner: str | Path | None = None,
-                 abbruch_datei: str | Path | None = None):
+                 abbruch_datei: str | Path | None = None, ausgabe_wurzel: str | Path | None = None):
         if modus not in {"vorschau", "prueflauf", "ausfuehren"}:
             raise BusinessFehler("Der Business-Laufmodus ist ungültig.")
         self.basis = Path(basis).resolve()
         if not self.basis.is_dir():
             raise BusinessFehler("Der Business-Basisordner fehlt.")
+        self.ausgabe_wurzel = Path(ausgabe_wurzel).resolve() if ausgabe_wurzel is not None else None
+        if self.ausgabe_wurzel is not None and not self.ausgabe_wurzel.is_dir():
+            raise BusinessFehler("Der ScriptLab-Appdatenordner für Ausgaben ist nicht erreichbar.")
         if parameter is not None and not isinstance(parameter, dict):
             raise BusinessFehler("Parameter müssen als benanntes Objekt übergeben werden.")
         self.modus = modus
@@ -235,7 +238,7 @@ class Kontext:
         daten = json.loads(quelle.read_text(encoding="utf-8"))
         if not isinstance(daten, dict) or daten.pop("version", None) != 1:
             raise BusinessFehler("Die Business-Kontextdatei hat ein unbekanntes Format.")
-        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei"}
+        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei", "ausgabe_wurzel"}
         if set(daten) - erlaubt or "basis" not in daten:
             raise BusinessFehler("Die Business-Kontextdatei enthält ungültige Angaben.")
         return cls(**daten)
@@ -298,7 +301,10 @@ class Kontext:
             kandidat = self.basis / kandidat
         if kandidat.is_symlink():
             raise BusinessFehler("Symbolische Dateiverweise werden für Business-Dateien nicht verwendet.")
-        return kandidat.resolve()
+        aufgeloest = kandidat.resolve()
+        if schreiben and self.ausgabe_wurzel is not None and not aufgeloest.is_relative_to(self.ausgabe_wurzel):
+            raise BusinessFehler(f"Ausgaben dieses Laufs müssen im ScriptLab-Appdatenordner gespeichert werden: {aufgeloest}")
+        return aufgeloest
 
     def _fachliche_eingaben(self, wert):
         if isinstance(wert, dict):

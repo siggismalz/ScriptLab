@@ -163,7 +163,7 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
         daten = json.loads(pfad.read_text(encoding="utf-8"))
         if not isinstance(daten, dict) or daten.pop("version", None) != 1:
             raise BusinessFehler("Die technische Business-Kontextdatei ist ungültig.")
-        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei"}
+        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei", "ausgabe_wurzel"}
         if set(daten) - erlaubt:
             raise BusinessFehler("Die technische Kontextdatei enthält unbekannte Angaben.")
         kontext = Kontext(**daten)

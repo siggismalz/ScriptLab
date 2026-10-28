@@ -2,7 +2,18 @@ import { vbsKodierungsHelfer } from './vbs-kodierung';
 import { projektPruefen, type Projekt } from './projekt';
 import { workflowPruefen, type Anweisung, type Ausdruck, type Meldung } from './modell';
 
-export type GeneratorOptionen = { modus: 'export' } | { modus: 'test'; token: string };
+export type GeneratorOptionen =
+  { modus: 'export' } | { modus: 'test'; token: string; ausgabeWurzel?: string };
+
+/** Nur intern übergebene Windows-Appdatenpfade; kein Bestandteil exportierter Scripts. */
+export function ausgabeWurzelGueltig(wert: unknown): wert is string {
+  return (
+    typeof wert === 'string' &&
+    wert.length <= 32768 &&
+    !/[\0\r\n*?"<>|]/.test(wert) &&
+    /^(?:[A-Za-z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+)/.test(wert)
+  );
+}
 /** Zeilennummern sind einsbasiert und einschließlich beider Grenzen, bezogen auf den vollständigen Code. */
 export interface ZeilenZuordnung {
   von: number;
@@ -29,7 +40,8 @@ function testTokenPruefen(optionen: unknown): string | null {
   if (
     werte.modus === 'test' &&
     Object.hasOwn(werte, 'token') &&
-    Object.keys(werte).every((name) => name === 'modus' || name === 'token') &&
+    Object.keys(werte).every((name) => name === 'modus' || name === 'token' || name === 'ausgabeWurzel') &&
+    (!Object.hasOwn(werte, 'ausgabeWurzel') || ausgabeWurzelGueltig(werte.ausgabeWurzel)) &&
     typeof werte.token === 'string' &&
     /^[A-Za-z0-9_-]{32,128}$/.test(werte.token)
   )
@@ -344,7 +356,12 @@ export function vbsErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): Gen
     '',
     testToken ? testGrundHelfer(testToken) : grundHelfer,
     ...(benutztDateien
-      ? [pfadHelfer(testToken ? 'sl_basis' : 'sl_fso.GetParentFolderName(WScript.ScriptFullName)')]
+      ? [
+          pfadHelfer(
+            testToken ? 'sl_basis' : 'sl_fso.GetParentFolderName(WScript.ScriptFullName)',
+            optionen?.modus === 'test' ? optionen.ausgabeWurzel : undefined,
+          ),
+        ]
       : []),
     ...Object.entries(helferTexte)
       .filter(([name]) => helfer.has(name))
@@ -404,6 +421,7 @@ ${systemfehlerHelfer}`;
 /** Der Ausdruck für den Basisordner stammt ausschließlich aus den zwei festgelegten Generatormodi. */
 function pfadHelfer(
   basisAusdruck: 'sl_basis' | 'sl_fso.GetParentFolderName(WScript.ScriptFullName)',
+  ausgabeWurzel?: string,
 ): string {
   return `Function SL_Pfad(wert)
   Dim pfad, nummer, beschreibung
@@ -420,6 +438,37 @@ function pfadHelfer(
   nummer = Err.Number : beschreibung = Err.Description
   On Error GoTo 0
   SL_Systemfehler nummer, beschreibung, "Pfad prüfen"
+End Function
+
+Function SL_Zielpfad(wert)
+  Dim pfad${ausgabeWurzel ? ', wurzel, grenze, pruefpfad, eltern, eintrag' : ''}
+  pfad = SL_Pfad(wert)${
+    ausgabeWurzel
+      ? `
+  wurzel = sl_fso.GetAbsolutePathName(${vbsText(ausgabeWurzel)})
+  grenze = wurzel
+  If Right(grenze, 1) <> "\\" Then grenze = grenze & "\\"
+  If StrComp(pfad, wurzel, vbTextCompare) <> 0 And StrComp(Left(pfad, Len(grenze)), grenze, vbTextCompare) <> 0 Then SL_Fehler "Ausgaben dieses Laufs müssen im ScriptLab-Appdatenordner gespeichert werden: " & pfad
+  ' GetAbsolutePathName löst keine Windows-Verknüpfungen auf. Alle vorhandenen
+  ' Vorfahren werden daher vor der ersten Schreibwirkung auf Reparsepunkte geprüft.
+  pruefpfad = pfad
+  Do
+    Set eintrag = Nothing
+    If sl_fso.FileExists(pruefpfad) Then
+      Set eintrag = sl_fso.GetFile(pruefpfad)
+    ElseIf sl_fso.FolderExists(pruefpfad) Then
+      Set eintrag = sl_fso.GetFolder(pruefpfad)
+    End If
+    If Not (eintrag Is Nothing) Then
+      If (eintrag.Attributes And 1024) <> 0 Then SL_Fehler "Der Ausgabepfad enthält eine Windows-Verknüpfung. Verwende einen direkten Ordner im ScriptLab-Appdatenordner."
+    End If
+    eltern = sl_fso.GetParentFolderName(pruefpfad)
+    If Len(eltern) = 0 Or StrComp(eltern, pruefpfad, vbTextCompare) = 0 Then Exit Do
+    pruefpfad = eltern
+  Loop`
+      : ''
+  }
+  SL_Zielpfad = pfad
 End Function`;
 }
 
@@ -452,7 +501,7 @@ End Function`,
 End Function`,
   SL_Ordner: `Sub SL_Ordner(wert)
   Dim pfad, eltern, nummer, beschreibung
-  pfad = SL_Pfad(wert)
+  pfad = SL_Zielpfad(wert)
   If sl_fso.FileExists(pfad) Then SL_Fehler "Am Ordnerpfad ist bereits eine Datei vorhanden: " & pfad
   If sl_fso.FolderExists(pfad) Then Exit Sub
   eltern = sl_fso.GetParentFolderName(pfad)
@@ -466,7 +515,7 @@ End Function`,
 End Sub`,
   SL_Kopieren: `Sub SL_Kopieren(von, nach, ersetzen, verschieben)
   Dim quelle, ziel, eltern, nummer, beschreibung
-  quelle = SL_Pfad(von) : ziel = SL_Pfad(nach)
+  quelle = SL_Pfad(von) : ziel = SL_Zielpfad(nach)
   If StrComp(quelle, ziel, vbTextCompare) = 0 Then SL_Fehler "Quelle und Ziel dürfen nicht dieselbe Datei sein."
   If Not sl_fso.FileExists(quelle) Then SL_Fehler "Die Quelldatei fehlt: " & quelle
   If sl_fso.FolderExists(ziel) Then SL_Fehler "Bitte einen vollständigen Zieldateinamen angeben: " & ziel
@@ -492,7 +541,7 @@ End Sub`,
   For Each zeichen In Array("\\", "/", ":", "*", "?", Chr(34), "<", ">", "|", vbCr, vbLf)
     If InStr(name, zeichen) > 0 Then SL_Fehler "Der neue Dateiname darf keinen Pfad oder ungültige Zeichen enthalten."
   Next
-  ziel = sl_fso.BuildPath(sl_fso.GetParentFolderName(quelle), name)
+  ziel = SL_Zielpfad(sl_fso.BuildPath(sl_fso.GetParentFolderName(quelle), name))
   If StrComp(quelle, ziel, vbTextCompare) = 0 Then SL_Fehler "Quelle und neuer Name sind gleich."
   If Not sl_fso.FileExists(quelle) Then SL_Fehler "Die Quelldatei fehlt: " & quelle
   If sl_fso.FileExists(ziel) Or sl_fso.FolderExists(ziel) Then SL_Fehler "Der neue Dateiname ist bereits belegt: " & ziel
@@ -592,7 +641,7 @@ End Function`,
 End Function`,
   SL_Schreiben: `Sub SL_Schreiben(wert, inhalt, kodierung, anhaengen)
   Dim pfad, eltern, strom, text, nummer, beschreibung, zeichensatz
-  pfad = SL_Pfad(wert) : text = CStr(inhalt)
+  pfad = SL_Zielpfad(wert) : text = CStr(inhalt)
   If sl_fso.FolderExists(pfad) Then SL_Fehler "Der Textdateipfad bezeichnet einen Ordner: " & pfad
   eltern = sl_fso.GetParentFolderName(pfad)
   If Not sl_fso.FolderExists(eltern) Then SL_Fehler "Der Zielordner fehlt: " & eltern

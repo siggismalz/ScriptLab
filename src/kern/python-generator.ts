@@ -2,6 +2,7 @@ import { PythonGenerator, Order } from 'blockly/python';
 import { projektPruefen, type Projekt } from './projekt';
 import { workflowPruefen, type Ausdruck, type Anweisung } from './modell';
 import type { GeneratorErgebnis, GeneratorOptionen, ZeilenZuordnung } from './generator';
+import { ausgabeWurzelGueltig } from './generator';
 import { pythonHelfer } from './python-helfer';
 import { businessDefinitionen } from './business-katalog';
 import type { JsonWert } from './business-modell';
@@ -91,7 +92,8 @@ function testTokenLesen(optionen: unknown): string | null {
   if (
     werte.modus === 'test' &&
     Object.hasOwn(werte, 'token') &&
-    Object.keys(werte).every((name) => name === 'modus' || name === 'token') &&
+    Object.keys(werte).every((name) => name === 'modus' || name === 'token' || name === 'ausgabeWurzel') &&
+    (!Object.hasOwn(werte, 'ausgabeWurzel') || ausgabeWurzelGueltig(werte.ausgabeWurzel)) &&
     typeof werte.token === 'string' &&
     /^[A-Za-z0-9_-]{32,128}$/.test(werte.token)
   )
@@ -483,6 +485,10 @@ export function pythonErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): 
   }
   hinzufuegen('');
   hinzufuegen(`sl_block = ${pythonText(workflow.startId)}`, [workflow.startId]);
+  if (mitDateien)
+    hinzufuegen(
+      `sl_ausgabe_wurzel = ${optionen?.modus === 'test' && optionen.ausgabeWurzel ? pythonText(optionen.ausgabeWurzel) : 'None'}`,
+    );
   if (mitDateien && !token) hinzufuegen('sl_basis = os.path.dirname(os.path.abspath(__file__))');
   hinzufuegen(`
 def sl_wert(kennung, auswerten):

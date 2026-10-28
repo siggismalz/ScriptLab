@@ -140,7 +140,7 @@ export class Laufablage {
   private readonly grenzen: { anzahl: number; detailBytes: number; gesamtBytes: number; indexBytes: number };
   constructor(
     private readonly ordner: string,
-    grenzen: Partial<typeof laufablageGrenzen> = {},
+    grenzen: Partial<Record<keyof typeof laufablageGrenzen, number>> = {},
   ) {
     this.grenzen = Object.fromEntries(
       Object.entries(laufablageGrenzen).map(([name, standard]) => {
@@ -240,12 +240,13 @@ export class Laufablage {
         if (entfernen.length) {
           await this.indexSchreiben(behalten);
           this.eintraege = behalten;
-          for (const alt of entfernen) {
+          for (let n = 0; n < entfernen.length; n++) {
+            const alt = entfernen[n];
             try {
               await unlink(this.detailPfad(alt.laufId));
             } catch (error) {
               if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-                this.fremdvolumen += alt.groesse;
+                this.fremdvolumen += entfernen.slice(n).reduce((summe, e) => summe + e.groesse, 0);
                 throw error;
               }
             }

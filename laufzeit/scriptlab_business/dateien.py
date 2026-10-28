@@ -279,7 +279,7 @@ def archivieren(kontext: Kontext, konfiguration: dict, eingaben: dict):
         if kontext.modus == "ausfuehren" and datei_fingerabdruck(kontext, output["pfad"])["sha256"] != output["sha256"]:
             raise BusinessFehler("Eine Ausgabe wurde verändert. Die Quelle bleibt erhalten.")
     if kontext.modus != "ausfuehren":
-        return {"status": "geplant", "quelle": str(quelle), "ziel": str(kontext.pfad(konfiguration["ziel"]))}
+        return {"status": "geplant", "quelle": str(quelle), "ziel": str(kontext.pfad(konfiguration["ziel"], schreiben=True))}
     vorher = datei_fingerabdruck(kontext, quelle)
     def kopieren(temp):
         with quelle.open("rb") as eingang, temp.open("wb") as ausgang:
@@ -349,7 +349,7 @@ def datei_aktion(kontext: Kontext, k: dict, e: dict):
     quelle = kontext.pfad(k["quelle"])
     if aktion == "UMBENENNEN":
         if not Path(k["ziel"]).is_absolute() and Path(k["ziel"]).name == k["ziel"]:
-            ziel = quelle.parent / k["ziel"]
+            ziel = kontext.pfad(quelle.parent / k["ziel"], schreiben=True)
         if quelle.parent != ziel.parent:
             raise BusinessFehler("Umbenennen bleibt im selben Ordner. Verwende Verschieben für einen anderen Ordner.")
     vorher = datei_fingerabdruck(kontext, quelle)
@@ -391,13 +391,13 @@ def zip_erstellen(kontext: Kontext, k: dict, e: dict):
 
 
 def zip_entpacken(kontext: Kontext, k: dict, e: dict):
-    quelle, zielordner = kontext.pfad(k["quelle"]), kontext.pfad(k["ziel"])
+    quelle, zielordner = kontext.pfad(k["quelle"]), kontext.pfad(k["ziel"], schreiben=True)
     zip_pruefen(kontext, quelle)
     ausgaben = []
     with quellkopie(kontext, quelle) as kopie, zipfile.ZipFile(kopie) as archiv:
         for eintrag in sorted(archiv.infolist(), key=lambda i: i.filename.casefold()):
             kontext.pruefen()
-            ziel = (zielordner / eintrag.filename.replace("\\", "/")).resolve()
+            ziel = kontext.pfad(zielordner / eintrag.filename.replace("\\", "/"), schreiben=True)
             if not ziel.is_relative_to(zielordner):
                 raise BusinessFehler("Ein ZIP-Ziel verlässt den gewählten Ausgabeordner.")
             if eintrag.is_dir():
@@ -450,7 +450,7 @@ def beleg_ablegen(kontext: Kontext, k: dict, e: dict):
         raise BusinessFehler("Das gefundene Belegdatum ist ungültig.") from fehler
     nummer = next(iter(nummern))
     sicher = re.sub(r"[^A-Za-z0-9_-]", "_", nummer)
-    ordner = kontext.pfad(k["zielordner"]) / datum.strftime("%Y-%m")
+    ordner = kontext.pfad(kontext.pfad(k["zielordner"], schreiben=True) / datum.strftime("%Y-%m"), schreiben=True)
     if kontext.modus == "ausfuehren":
         ordner.mkdir(parents=True, exist_ok=True)
     ergebnis = _kopieren(kontext, quelle, ordner / (sicher + ".pdf"), k.get("konflikt", "FEHLER"), "beleg")
@@ -459,7 +459,7 @@ def beleg_ablegen(kontext: Kontext, k: dict, e: dict):
 
 def csv_stapel(kontext: Kontext, k: dict, e: dict):
     quelleordner = kontext.pfad(k["ordner"])
-    zielordner, archivordner = kontext.pfad(k["zielordner"]), kontext.pfad(k["archivordner"])
+    zielordner, archivordner = kontext.pfad(k["zielordner"], schreiben=True), kontext.pfad(k["archivordner"], schreiben=True)
     if len({quelleordner, zielordner, archivordner}) != 3:
         raise BusinessFehler("Eingang, Ausgabe und Archiv müssen verschiedene Ordner sein.")
     trennzeichen = k.get("trennzeichen", ";")

@@ -329,6 +329,21 @@ def sl_datum(wert, format):
         pfad = os.path.join(sl_basis, pfad)
     return os.path.abspath(pfad)
 
+def sl_zielpfad(wert):
+    pfad = sl_pfad(wert)
+    if sl_ausgabe_wurzel is not None:
+        # realpath löst auch vorhandene Elternordner und Windows-Junctions auf.
+        wurzel = os.path.normcase(os.path.realpath(sl_ausgabe_wurzel))
+        ziel = os.path.normcase(os.path.realpath(pfad))
+        try:
+            innerhalb = os.path.commonpath((wurzel, ziel)) == wurzel
+        except ValueError:
+            innerhalb = False
+        if not innerhalb:
+            raise ValueError("Ausgaben dieses Laufs müssen im ScriptLab-Appdatenordner gespeichert werden: " + pfad)
+        return os.path.realpath(pfad)
+    return pfad
+
 def sl_vorhanden(wert, ordner):
     pfad = sl_pfad(wert)
     return os.path.isdir(pfad) if ordner else os.path.isfile(pfad)
@@ -358,7 +373,7 @@ def sl_dateiname(wert):
   ordner: {
     braucht: ['pfad'],
     code: `def sl_ordner(wert):
-    pfad = sl_pfad(wert)
+    pfad = sl_zielpfad(wert)
     if os.path.isfile(pfad):
         raise ValueError("Am Ordnerpfad ist bereits eine Datei vorhanden: " + pfad)
     os.makedirs(pfad, exist_ok=True)`,
@@ -367,7 +382,7 @@ def sl_dateiname(wert):
     importe: ['import shutil'],
     braucht: ['pfad'],
     code: `def sl_kopieren(von, nach, ersetzen, verschieben):
-    quelle, ziel = sl_pfad(von), sl_pfad(nach)
+    quelle, ziel = sl_pfad(von), sl_zielpfad(nach)
     if os.path.normcase(quelle) == os.path.normcase(ziel) or (os.path.exists(ziel) and os.path.exists(quelle) and os.path.samefile(quelle, ziel)):
         raise ValueError("Quelle und Ziel dürfen nicht dieselbe Datei sein.")
     if not os.path.isfile(quelle):
@@ -390,7 +405,7 @@ def sl_dateiname(wert):
     quelle, name = sl_pfad(von), sl_text(neuer_name)
     if not name.strip() or name in (".", "..") or any(zeichen in name for zeichen in '\\\\/:*?"<>|\\r\\n'):
         raise ValueError("Der neue Dateiname darf keinen Pfad oder ungültige Windows-Zeichen enthalten.")
-    ziel = os.path.join(os.path.dirname(quelle), name)
+    ziel = sl_zielpfad(os.path.join(os.path.dirname(quelle), name))
     if os.path.normcase(quelle) == os.path.normcase(ziel):
         raise ValueError("Quelle und neuer Name sind gleich.")
     if not os.path.isfile(quelle):
@@ -427,7 +442,7 @@ def sl_dateiname(wert):
   schreiben: {
     braucht: ['lesen'],
     code: `def sl_schreiben(wert, inhalt, kodierung, anhaengen):
-    pfad, text = sl_pfad(wert), sl_text(inhalt)
+    pfad, text = sl_zielpfad(wert), sl_text(inhalt)
     if os.path.isdir(pfad):
         raise ValueError("Der Textdateipfad bezeichnet einen Ordner: " + pfad)
     if not os.path.isdir(os.path.dirname(pfad)):

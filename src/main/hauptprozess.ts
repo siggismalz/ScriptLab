@@ -311,59 +311,62 @@ function registrieren(kanal: string, funktion: (daten: unknown) => unknown | Pro
   });
 }
 
+function arbeitsordnerFuer(kennung = projekt.projektKennung!): string {
+  return join(app.getPath('userData'), 'Arbeitsdateien', z.string().uuid().parse(kennung));
+}
+function projektpfadFuer(kennung: string): string {
+  return join(app.getPath('userData'), 'Workflows', `${z.string().uuid().parse(kennung)}.scriptlab`);
+}
 async function speichern(unter: boolean): Promise<Dokument | null> {
   if (testDienst.aktiv())
-    throw new Error('Stoppe den Test vor dem Speichern. Dein Arbeitsstand bleibt erhalten.');
+    throw new Error('Stoppe den Lauf vor dem Speichern. Dein Arbeitsstand bleibt erhalten.');
   try {
     await entwurfAktuellSichern();
   } catch {
-    /* Eine Projektdatei kann auch bei fehlgeschlagener lokaler Sicherung gespeichert werden. */
+    /* Die interne Projektdatei bleibt eine unabhängige Sicherung. */
   }
-  let ziel = projektPfad;
-  if (projektPfad && baselineHash) {
+  const alteKennung = projekt.projektKennung!;
+  let kennung = unter ? randomUUID() : alteKennung;
+  let ziel = projektpfadFuer(kennung);
+  const gleicherPfad = !!projektPfad && windowsPfadSchluessel(projektPfad) === windowsPfadSchluessel(ziel);
+  if (gleicherPfad && baselineHash && !unter) {
     try {
-      konflikt = (await dateistandLesen(projektPfad)).hash !== baselineHash;
-    } catch {
-      konflikt = true;
-    }
-  }
-  if (!ziel || unter || konflikt) {
-    const auswahl = await dialog.showSaveDialog(fenster, {
-      title: konflikt ? 'Separate Projektkopie speichern' : 'ScriptLab-Projekt speichern',
-      defaultPath: `${dateiname(projekt.name)}${konflikt ? '-Kopie' : ''}.scriptlab`,
-      filters: [{ name: 'ScriptLab-Projekt', extensions: ['scriptlab'] }],
-    });
-    if (auswahl.canceled || !auswahl.filePath) return null;
-    ziel = auswahl.filePath;
-    if (extname(ziel).toLowerCase() !== '.scriptlab')
-      throw new Error('Bitte speichere Projekte mit der Endung .scriptlab.');
-  }
-  if (konflikt && projektPfad && windowsPfadSchluessel(ziel) === windowsPfadSchluessel(projektPfad))
-    throw new Error(
-      'Die Ausgangsdatei wurde außerhalb von ScriptLab geändert oder ist nicht mehr erreichbar. Speichere deine Änderungen unter einem anderen Dateinamen.',
-    );
-  if (projektPfad && baselineHash && windowsPfadSchluessel(ziel) === windowsPfadSchluessel(projektPfad)) {
-    try {
-      konflikt = (await dateistandLesen(projektPfad)).hash !== baselineHash;
+      konflikt = (await dateistandLesen(ziel)).hash !== baselineHash;
     } catch {
       konflikt = true;
     }
     if (konflikt)
       throw new Error(
-        'Die Ausgangsdatei wurde inzwischen geändert. Speichere deine Änderungen als separate Projektkopie.',
+        'Der gespeicherte Workflow wurde außerhalb von ScriptLab geändert oder ist nicht erreichbar. Speichere deine Änderungen als interne Kopie.',
       );
   }
-  const alteKennung = projekt.projektKennung!;
-  const kopie = projektPfad && windowsPfadSchluessel(ziel) !== windowsPfadSchluessel(projektPfad);
+  if (!gleicherPfad) {
+    // Eine importierte gleiche UUID darf niemals eine bereits vorhandene interne Datei überschreiben.
+    try {
+      await stat(ziel);
+      kennung = randomUUID();
+      ziel = projektpfadFuer(kennung);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+  }
   const stand = projektPruefen({
     ...projekt,
-    projektKennung: projektindex.kennungFuerPfad(ziel, kopie ? randomUUID() : projekt.projektKennung!),
+    projektKennung: kennung,
+    ...(unter ? { name: `${projekt.name} (Kopie)` } : {}),
   });
+  await mkdir(dirname(ziel), { recursive: true });
+  await mkdir(arbeitsordnerFuer(kennung), { recursive: true });
   await projektSchreiben(ziel, stand);
   const dateistand = await dateistandLesen(ziel);
-  await verweisMerken(ziel, { ...dateistand, projekt: stand }, false);
+  // Beim internen Übernehmen eines Imports bleibt seine Identität samt Laufzuordnung erhalten.
+  const bestehend =
+    !unter && kennung === alteKennung
+      ? projektindex.lesen().find((e) => e.projektKennung === alteKennung)?.id
+      : undefined;
+  await verweisMerken(ziel, { ...dateistand, projekt: stand }, false, bestehend);
   await entwuerfe.aktivenEntwurfEntfernen(alteKennung);
-  projektAktivieren(stand, ziel, dateistand.hash, false, testOptionen.basisVerzeichnis ?? dirname(ziel));
+  projektAktivieren(stand, ziel, dateistand.hash);
   wartetAufDarstellung = false;
   return dokument();
 }
@@ -388,12 +391,16 @@ function projektAktivieren(
   pfad: string | null,
   hash: string | null,
   ungespeichert = false,
-  basisVerzeichnis = pfad ? dirname(pfad) : null,
+  _fruehererBasisordner?: string | null,
 ): void {
+  const alteKennung = projekt.projektKennung;
   projekt = { ...neu, projektKennung: neu.projektKennung ?? randomUUID() };
   entwuerfe.neueBearbeitung(projekt.projektKennung!);
   projektPfad = pfad;
-  testOptionen = { basisVerzeichnis, zeitlimitSekunden: 120 };
+  testOptionen = {
+    ...(alteKennung === projekt.projektKennung ? testOptionen : { zeitlimitSekunden: 120 }),
+    basisVerzeichnis: arbeitsordnerFuer(),
+  };
   baselineHash = hash;
   gespeichert = JSON.stringify(projekt);
   gespeichertInhalt = ungespeichert ? '' : projektHash(projekt);
@@ -552,8 +559,11 @@ function ipcEinrichten(): void {
       return true;
     }),
   );
-  registrieren('test-lesen', () => ({ zustand: testDienst.lesen(), optionen: testOptionen }));
-  registrieren('test-starten', (daten) => {
+  registrieren('test-lesen', () => ({
+    zustand: testDienst.lesen(),
+    optionen: { ...testOptionen, basisVerzeichnis: arbeitsordnerFuer() },
+  }));
+  registrieren('test-starten', async (daten) => {
     if (businessAuftrag)
       throw new Error(
         'Die Business-Laufzeit wird gerade eingerichtet oder geprüft. Warte bis zum Abschluss.',
@@ -561,9 +571,14 @@ function ipcEinrichten(): void {
     if (dialogAktiv) throw new Error('Schließe zuerst den geöffneten Dialog.');
     if (testDienst.aktiv()) throw new Error('Es läuft bereits ein Test.');
     if (pythonPruefAuftrag) throw new Error('Python wird gerade geprüft. Warte kurz auf das Ergebnis.');
-    const auswahl = z.object({ projekt: z.unknown(), optionen: testOptionenSchema }).strict().parse(daten);
+    const auswahl = z
+      .object({ projekt: z.unknown(), optionen: z.record(z.string(), z.unknown()) })
+      .strict()
+      .parse(daten);
     const stand = structuredClone(uebernehmen(auswahl.projekt));
-    testOptionen = auswahl.optionen;
+    const basis = arbeitsordnerFuer();
+    testOptionen = testOptionenSchema.parse({ ...auswahl.optionen, basisVerzeichnis: basis });
+    await mkdir(basis, { recursive: true });
     return testDienst.starten(stand, testOptionen);
   });
   registrieren('test-stoppen', (daten) => {
@@ -576,17 +591,21 @@ function ipcEinrichten(): void {
     await clipboard.writeText(testDienst.lesen().ausgabe);
   });
   registrieren('test-verlassen', () => mitDialog(testBeendenVorWechsel));
-  registrieren('test-ordner', () =>
+  // Kompatibler alter Aufruf: keine freie Ordnerauswahl mehr.
+  registrieren('test-ordner', async () => {
+    const pfad = arbeitsordnerFuer();
+    await mkdir(pfad, { recursive: true });
+    return pfad;
+  });
+  registrieren('arbeitsordner-anzeigen', () =>
     mitDialog(async () => {
-      if (testDienst.aktiv()) throw new Error('Das Basisverzeichnis ist während eines Tests festgelegt.');
-      const auswahl = await dialog.showOpenDialog(fenster, {
-        title: 'Basisordner für Workflowtests wählen',
-        properties: ['openDirectory'],
-        ...(testOptionen.basisVerzeichnis ? { defaultPath: testOptionen.basisVerzeichnis } : {}),
-      });
-      if (auswahl.canceled || auswahl.filePaths.length !== 1) return null;
-      testOptionen = { ...testOptionen, basisVerzeichnis: resolve(auswahl.filePaths[0]) };
-      return testOptionen.basisVerzeichnis;
+      const kennung = projekt.projektKennung!;
+      const pfad = arbeitsordnerFuer(kennung);
+      await mkdir(pfad, { recursive: true });
+      if (projekt.projektKennung !== kennung)
+        throw new Error('Der aktive Workflow wurde inzwischen gewechselt.');
+      const fehler = await shell.openPath(pfad);
+      if (fehler) throw new Error('Der ScriptLab-Arbeitsordner konnte nicht im Explorer geöffnet werden.');
     }),
   );
   ipcMain.on('scriptlab:stand-antwort', (event, daten: unknown) => {
@@ -687,9 +706,11 @@ function ipcEinrichten(): void {
         : join(app.getAppPath(), 'beispiele');
       const geladen = await projektLesen(join(basis, dateien[auswahl.beispiel]));
       if (!(await aenderungenSichern())) return null;
+      const beispielKennung = randomUUID();
       let beispielBasis: string | undefined;
       if (auswahl.beispiel.startsWith('business-')) {
-        beispielBasis = join(app.getPath('userData'), 'beispieldaten', randomUUID());
+        beispielBasis = arbeitsordnerFuer(beispielKennung);
+        await mkdir(dirname(beispielBasis), { recursive: true });
         await cp(dirname(join(basis, dateien[auswahl.beispiel])), beispielBasis, {
           recursive: true,
           errorOnExist: true,
@@ -718,7 +739,7 @@ function ipcEinrichten(): void {
       }
       await verworfenenEntwurfBereinigen();
       projektAktivieren(
-        { ...geladen, projektKennung: randomUUID(), name: `${geladen.name} (Kopie)` },
+        { ...geladen, projektKennung: beispielKennung, name: `${geladen.name} (Kopie)` },
         null,
         null,
         true,
@@ -824,35 +845,16 @@ function ipcEinrichten(): void {
         await entwurfAktuellSichern();
         entwurf = await entwuerfe.lesen(auswahl.id);
       } else if (!(await aenderungenSichern())) return null;
-      const ziel = await dialog.showSaveDialog(fenster, {
-        title: 'Entwurf als Projektdatei speichern',
-        defaultPath: `${dateiname(entwurf.projekt.name)}.scriptlab`,
-        filters: [{ name: 'ScriptLab-Projekt', extensions: ['scriptlab'] }],
-      });
-      if (ziel.canceled || !ziel.filePath) return null;
-      if (extname(ziel.filePath).toLowerCase() !== '.scriptlab')
-        throw new Error('Bitte speichere Projekte mit der Endung .scriptlab.');
-      if (
-        entwurf.ausgangspfad &&
-        windowsPfadSchluessel(ziel.filePath) === windowsPfadSchluessel(entwurf.ausgangspfad)
-      )
-        throw new Error('Wähle für diese Entwurfskopie einen anderen Dateinamen als die Ausgangsdatei.');
-      const stand = {
-        ...entwurf.projekt,
-        projektKennung: projektindex.kennungFuerPfad(ziel.filePath, randomUUID()),
-      };
-      await projektSchreiben(ziel.filePath, stand);
-      const gelesen = await dateistandLesen(ziel.filePath);
-      await verweisMerken(ziel.filePath, gelesen, false);
+      const stand = projektPruefen({ ...entwurf.projekt, projektKennung: randomUUID() });
+      const ziel = projektpfadFuer(stand.projektKennung!);
+      await mkdir(dirname(ziel), { recursive: true });
+      await mkdir(arbeitsordnerFuer(stand.projektKennung!), { recursive: true });
+      await projektSchreiben(ziel, stand);
+      const gelesen = await dateistandLesen(ziel);
+      await verweisMerken(ziel, gelesen, false);
       await entwuerfe.entfernen(entwurf.id);
       await verworfenenEntwurfBereinigen();
-      projektAktivieren(
-        stand,
-        ziel.filePath,
-        gelesen.hash,
-        false,
-        aktiverEntwurf ? (testOptionen.basisVerzeichnis ?? dirname(ziel.filePath)) : dirname(ziel.filePath),
-      );
+      projektAktivieren(stand, ziel, gelesen.hash);
       return dokument();
     }),
   );
@@ -872,6 +874,26 @@ function ipcEinrichten(): void {
       if (antwort.response !== 0) return false;
       await entwuerfe.entfernen(entwurf.id);
       return true;
+    }),
+  );
+  registrieren('projekt-exportieren', (daten) =>
+    mitDialog(async () => {
+      const stand = projektPruefen(structuredClone(daten));
+      if (stand.projektKennung !== projekt.projektKennung || stand.skriptsprache !== projekt.skriptsprache)
+        throw new Error('Exportiere den aktuell geöffneten Workflow.');
+      const ziel = await dialog.showSaveDialog(fenster, {
+        title: 'Projektdatei exportieren',
+        defaultPath: `${dateiname(stand.name)}.scriptlab`,
+        filters: [{ name: 'ScriptLab-Projekt', extensions: ['scriptlab'] }],
+      });
+      if (ziel.canceled || !ziel.filePath) return null;
+      if (extname(ziel.filePath).toLowerCase() !== '.scriptlab')
+        throw new Error('Bitte verwende die Endung .scriptlab.');
+      if (projektPfad && windowsPfadSchluessel(ziel.filePath) === windowsPfadSchluessel(projektPfad))
+        throw new Error('Wähle für den Export einen anderen Dateinamen als die aktive Projektdatei.');
+      await projektSchreiben(ziel.filePath, stand);
+      exportPfad = ziel.filePath;
+      return { dateiname: basename(ziel.filePath), skriptsprache: stand.skriptsprache, signatur: null };
     }),
   );
   registrieren('exportieren', (daten) =>
@@ -1245,6 +1267,7 @@ else {
           },
         },
         (zustand) => laufablage.sichern(zustand),
+        app.getPath('userData'),
       );
       aktualisierungen = new AktualisierungsDienst({
         installierteVersion: app.getVersion(),

@@ -101,6 +101,8 @@ export interface ScriptLabBruecke {
   beispielOeffnen(projekt: Projekt, beispiel: BeispielKennung): Promise<Antwort<Dokument | null>>;
   speichern(projekt: Projekt, unter: boolean): Promise<Antwort<Dokument | null>>;
   exportieren(projekt: Projekt): Promise<Antwort<ExportErgebnis | null>>;
+  projektExportieren(projekt: Projekt): Promise<Antwort<ExportErgebnis | null>>;
+  arbeitsordnerAnzeigen(): Promise<Antwort<void>>;
   exportOrdnerAnzeigen(): Promise<Antwort<void>>;
   zertifikate(): Promise<Antwort<Zertifikat[]>>;
   einstellungenSpeichern(einstellungen: Einstellungen): Promise<Antwort<Einstellungen>>;
