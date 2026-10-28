@@ -22,15 +22,41 @@ const vergleiche = [
 ];
 const aggregate = ['SUMME', 'ANZAHL', 'ANZAHL_WERTE', 'ANZAHL_VERSCHIEDEN', 'MIN', 'MAX', 'MITTELWERT'];
 
-/** Prüft ausschließlich gespeicherte Angaben. Dynamische Werte und Dateiinhalte bleiben Laufzeitprüfungen. */
+export interface BusinessFeldfehler {
+  text: string;
+  /** Relativ zur Business-Konfiguration; nur ein belegter Feldbezug wird angegeben. */
+  feldPfad?: string[];
+}
+
 export function businessKonfigurationPruefen(
   def: BusinessDefinition,
   konfiguration: Record<string, JsonWert>,
   parameter: WorkflowParameter[],
 ): string[] {
-  const fehler: string[] = [];
+  return businessKonfigurationFeldfehler(def, konfiguration, parameter).map((fehler) => fehler.text);
+}
+
+/** Prüft ausschließlich gespeicherte Angaben. Dynamische Werte und Dateiinhalte bleiben Laufzeitprüfungen. */
+export function businessKonfigurationFeldfehler(
+  def: BusinessDefinition,
+  konfiguration: Record<string, JsonWert>,
+  parameter: WorkflowParameter[],
+): BusinessFeldfehler[] {
+  const fehler: BusinessFeldfehler[] = [];
+  let feldPfad: string[] | undefined;
   const melden = (text: string) => {
-    if (!fehler.includes(text)) fehler.push(text);
+    const bekannt = fehler.find((f) => f.text === text);
+    if (!bekannt) fehler.push({ text, ...(feldPfad ? { feldPfad: [...feldPfad] } : {}) });
+    else if (!bekannt.feldPfad && feldPfad) bekannt.feldPfad = [...feldPfad];
+  };
+  const imFeld = (pfad: string[], pruefen: () => void) => {
+    const vorher = feldPfad;
+    feldPfad = pfad;
+    try {
+      pruefen();
+    } finally {
+      feldPfad = vorher;
+    }
   };
   const k = { ...Object.fromEntries(def.felder.map((f) => [f.name, f.standard])), ...konfiguration };
   const op = def.operation;
@@ -272,7 +298,10 @@ export function businessKonfigurationPruefen(
         melden('Prüfe leere Werte mit „ist leer“ oder „ist nicht leer“.');
     }
   }
-  function feld(f: KonfigFeld, wert: JsonWert | undefined, titel = f.titel) {
+  function feld(f: KonfigFeld, wert: JsonWert | undefined, titel = f.titel, pfad = [f.name]) {
+    imFeld(pfad, () => feldInhalt(f, wert, titel, pfad));
+  }
+  function feldInhalt(f: KonfigFeld, wert: JsonWert | undefined, titel: string, pfad: string[]) {
     if (verweis(wert, titel)) return;
     if (wert === undefined) wert = f.standard;
     if (f.art === 'text') {
@@ -293,12 +322,21 @@ export function businessKonfigurationPruefen(
       if (!objekt(wert)) melden(`Ergänze für „${titel}“ eine Zuordnung mit benannten Feldern.`);
     } else if (f.art === 'objekt') {
       if (!objekt(wert)) melden(`Prüfe die Angaben für „${titel}“.`);
-      else f.felder?.forEach((unter) => feld(unter, wert[unter.name], `${titel}: ${unter.titel}`));
+      else
+        f.felder?.forEach((unter) =>
+          feld(unter, wert[unter.name], `${titel}: ${unter.titel}`, [...pfad, unter.name]),
+        );
     } else if (f.art === 'liste') {
       liste(wert, titel, 0).forEach((eintrag, i) => {
         if (!objekt(eintrag)) melden(`Prüfe Eintrag ${i + 1} bei „${titel}“.`);
         else
-          f.felder?.forEach((unter) => feld(unter, eintrag[unter.name], `${titel} ${i + 1}: ${unter.titel}`));
+          f.felder?.forEach((unter) =>
+            feld(unter, eintrag[unter.name], `${titel} ${i + 1}: ${unter.titel}`, [
+              ...pfad,
+              String(i),
+              unter.name,
+            ]),
+          );
       });
     }
   }
@@ -306,7 +344,8 @@ export function businessKonfigurationPruefen(
   // nach der fachlichen Art statt nach unbenutzten Formularfeldern geprüft.
   for (const f of def.felder)
     if (!['regeln', 'abschnitte', 'aggregate', 'formate'].includes(f.name)) feld(f, k[f.name]);
-  const benoetigt = (name: string, titel: string, endung?: string) => pfad(k[name], titel, endung);
+  const benoetigt = (name: string, titel: string, endung?: string) =>
+    imFeld([name], () => pfad(k[name], titel, endung));
   const paarVerschieden = (a: string, b: string) => {
     if (typeof k[a] === 'string' && k[a] && k[a] === k[b])
       melden('Quelle, Ausgabe und Archiv müssen verschiedene Pfade verwenden.');

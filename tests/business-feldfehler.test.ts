@@ -1,0 +1,103 @@
+import { describe, expect, it } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import * as Blockly from 'blockly/core';
+import { businessNachTyp, standardKonfiguration } from '../src/kern/business-katalog';
+import {
+  businessKonfigurationFeldfehler,
+  businessKonfigurationPruefen,
+} from '../src/kern/business-validierung';
+import { workflowPruefen } from '../src/kern/modell';
+import { businessTestProjekt } from './hilfen/business-projekt';
+import { BusinessEigenschaften } from '../src/renderer/BusinessEigenschaften';
+import { registriereBausteine } from '../src/editor/bausteine';
+
+registriereBausteine();
+
+describe('Belegte Feldbezüge für Quelle und Zuordnung', () => {
+  it('liefert erforderliche Pfadfelder strukturiert und erhält die bisherigen Prüfmeldungen', () => {
+    const definition = businessNachTyp.get('sl_biz_lesen_csv')!;
+    const konfiguration = { ...standardKonfiguration(definition), pfad: '' };
+    const fehler = businessKonfigurationFeldfehler(definition, konfiguration, []);
+    expect(fehler.some((m) => m.feldPfad?.join('.') === 'pfad')).toBe(true);
+    expect(fehler.map((m) => m.text)).toEqual(businessKonfigurationPruefen(definition, konfiguration, []));
+    const verweis = businessKonfigurationFeldfehler(
+      definition,
+      { ...konfiguration, pfad: { parameter: 'NichtDefiniert' } },
+      [],
+    );
+    expect(verweis.find((m) => m.text.includes('definierten Workflowparameter'))?.feldPfad).toEqual(['pfad']);
+  });
+
+  it('erhält präzise Unterfeldpfade aus der Feldprüfung ohne Fehlermeldungen zu zerlegen', () => {
+    const definition = businessNachTyp.get('sl_biz_lesen_csv')!;
+    const fehler = businessKonfigurationFeldfehler(
+      definition,
+      {
+        ...standardKonfiguration(definition),
+        pfad: 'test.csv',
+        optionen: { trennzeichen: ';', kopfzeile: 'ungültig' },
+      },
+      [],
+    );
+    expect(fehler.find((m) => m.text.includes('Ja oder Nein'))?.feldPfad).toEqual(['optionen', 'kopfzeile']);
+  });
+
+  it('lässt feldübergreifende Konflikte ohne erfundenen Einzelbezug', () => {
+    const definition = businessNachTyp.get('sl_biz_kopieren')!;
+    const fehler = businessKonfigurationFeldfehler(
+      definition,
+      {
+        ...standardKonfiguration(definition),
+        quelle: 'test.csv',
+        ziel: 'test.csv',
+      },
+      [],
+    );
+    const konflikt = fehler.find((m) => m.text.includes('verschiedene Pfade'));
+    expect(konflikt).toBeDefined();
+    expect(konflikt?.feldPfad).toBeUndefined();
+  });
+
+  it('ordnet Modellfehler ausdrücklich Konfiguration oder Eingabereferenz zu', () => {
+    const projekt = businessTestProjekt();
+    const lesen = projekt.editor.blocks!.blocks[0].next!.block;
+    const schreiben = lesen.next!.block;
+    const daten = JSON.parse(lesen.data!);
+    daten.konfiguration.pfad = '';
+    lesen.data = JSON.stringify(daten);
+    const ausgabe = JSON.parse(schreiben.data!);
+    ausgabe.eingaben.tabelle.referenz = 'NichtVorhanden';
+    schreiben.data = JSON.stringify(ausgabe);
+    const meldungen = workflowPruefen(projekt).meldungen;
+    expect(
+      meldungen.some((m) => m.blockId === lesen.id && m.feldPfad?.join('.') === 'konfiguration.pfad'),
+    ).toBe(true);
+    expect(
+      meldungen.some((m) => m.blockId === schreiben.id && m.feldPfad?.join('.') === 'eingaben.tabelle'),
+    ).toBe(true);
+  });
+
+  it('stellt Zielcontainer und zugängliche Feldfehler am tatsächlichen Eingabefeld bereit', () => {
+    const ws = new Blockly.Workspace();
+    try {
+      const block = ws.newBlock('sl_biz_lesen_csv');
+      const text = 'Wähle eine Quelldatei.';
+      const html = renderToStaticMarkup(
+        createElement(BusinessEigenschaften, {
+          ws: ws as Blockly.WorkspaceSvg,
+          block,
+          parameter: [],
+          gesperrt: false,
+          geaendert: () => {},
+          feldFehler: [{ feldPfad: ['konfiguration', 'pfad'], text }],
+        }),
+      );
+      expect(html).toContain('data-konfig-pfad="[&quot;konfiguration&quot;,&quot;pfad&quot;]"');
+      expect(html).toMatch(/<input[^>]+aria-invalid="true"[^>]+aria-describedby=/);
+      expect(html).toContain(text);
+    } finally {
+      ws.dispose();
+    }
+  });
+});

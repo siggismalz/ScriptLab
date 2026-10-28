@@ -7,10 +7,11 @@ import {
   businessEingabeTitel,
 } from './business-katalog';
 import type { BusinessSchritt } from './business-modell';
-import { businessKonfigurationPruefen } from './business-validierung';
+import { businessKonfigurationFeldfehler } from './business-validierung';
 
 export interface Meldung {
   blockId?: string;
+  feldPfad?: string[];
   text: string;
   stufe: 'fehler' | 'hinweis';
 }
@@ -54,8 +55,8 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
   const genutzt = new Set<string>();
   const variablen = new Set<string>();
   const referenzen: { name: string; blockId: string }[] = [];
-  const fehler = (block: EditorBlock, text: string): void => {
-    meldungen.push({ blockId: block.id, text, stufe: 'fehler' });
+  const fehler = (block: EditorBlock, text: string, feldPfad?: string[]): void => {
+    meldungen.push({ blockId: block.id, text, stufe: 'fehler', ...(feldPfad ? { feldPfad } : {}) });
   };
   const aktiv = (b: EditorBlock): boolean => b.enabled !== false && !b.disabledReasons?.length;
   const sammeln = (b: EditorBlock): void => {
@@ -239,12 +240,12 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
         try {
           business = { id: b.id, operation: businessDef.operation, ...businessDatenLesen(b.type, b.data) };
           business.konfiguration = businessKonfigurationFuerLauf(business.operation, business.konfiguration);
-          for (const meldung of businessKonfigurationPruefen(
+          for (const meldung of businessKonfigurationFeldfehler(
             businessDef,
             business.konfiguration,
             projekt.business.parameter,
           ))
-            fehler(b, meldung);
+            fehler(b, meldung.text, meldung.feldPfad ? ['konfiguration', ...meldung.feldPfad] : undefined);
           const variableRefs = (wert: unknown) => {
             if (!wert || typeof wert !== 'object') return;
             if (
@@ -270,11 +271,12 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
               fehler(
                 b,
                 `Wähle unter „${businessEingabeTitel(name, typ)}“ das Ergebnis eines vorherigen Bausteins aus.`,
+                ['eingaben', name],
               );
           }
           for (const feld of businessDef.felder)
             if (feld.name === 'pfad' && !business.konfiguration.pfad)
-              fehler(b, 'Wähle einen Dateipfad oder einen Workflowparameter aus.');
+              fehler(b, 'Wähle einen Dateipfad oder einen Workflowparameter aus.', ['konfiguration', 'pfad']);
         } catch (e) {
           fehler(b, e instanceof Error ? e.message : 'Prüfe die Einstellungen dieses Bausteins.');
         }
@@ -375,6 +377,7 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
             meldungen.push({
               blockId: a.id,
               stufe: 'fehler',
+              feldPfad: ['eingaben', name],
               text: `Das Ergebnis für „${name}“ ist hier nicht sicher vorhanden. Wähle einen vorherigen Schritt im selben Ablauf.`,
             });
         sicher.add(a.id);

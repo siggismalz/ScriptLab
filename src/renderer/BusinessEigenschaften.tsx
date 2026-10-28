@@ -34,6 +34,10 @@ export interface ParameterKontext {
   werteOeffnen?: (name: string) => void;
 }
 export type QuelleWaehlen = (blockId: string, feldPfad: string[]) => Promise<string | null>;
+export interface KonfigFeldFehler {
+  feldPfad: string[];
+  text: string;
+}
 
 const FormularKontext = createContext<{
   spalten: string[];
@@ -46,12 +50,14 @@ const FormularKontext = createContext<{
   konfiguration?: Record<string, JsonWert>;
   spaltenNachEingabe: Record<string, string[]>;
   spaltenListe: string;
+  feldFehler: KonfigFeldFehler[];
 }>({
   spalten: [],
   parameter: [],
   variablen: [],
   spaltenNachEingabe: {},
   spaltenListe: 'business-spalten',
+  feldFehler: [],
 });
 
 export function businessAuswahlText(wert: string, feld = ''): string {
@@ -153,6 +159,8 @@ function Wertbindung({
   variablen,
   leererWert = '',
   eingabe,
+  feldFehlerId,
+  feldUngueltig,
 }: {
   titel: string;
   wert: JsonWert;
@@ -162,6 +170,8 @@ function Wertbindung({
   variablen: { id: string; name: string }[];
   leererWert?: JsonWert;
   eingabe: ReactNode;
+  feldFehlerId?: string;
+  feldUngueltig?: boolean;
 }) {
   const formular = useContext(FormularKontext);
   const bereich = useRef<HTMLDivElement>(null);
@@ -190,6 +200,8 @@ function Wertbindung({
   const auswahlAngaben = {
     value: quelle,
     disabled: gesperrt,
+    'aria-invalid': feldUngueltig || undefined,
+    'aria-describedby': feldFehlerId,
     title:
       variableRef !== null
         ? `Variable · ${variablen.find((v) => v.id === variableRef)?.name ?? 'Nicht mehr vorhanden'}`
@@ -694,21 +706,55 @@ function BedingungFeld({
     </div>
   );
 }
-export function KonfigEingabe({
-  feld,
-  wert,
-  aendern,
-  parameter = [],
-  gesperrt = false,
-  feldPfad = [],
-}: {
+interface KonfigEingabeEigenschaften {
   feld: KonfigFeld;
   wert: JsonWert;
   aendern: (w: JsonWert) => void;
   parameter?: WorkflowParameter[];
   gesperrt?: boolean;
   feldPfad?: string[];
-}) {
+}
+
+export function KonfigEingabe(eigenschaften: KonfigEingabeEigenschaften) {
+  const formular = useContext(FormularKontext);
+  const fehlerId = useId();
+  const pfad = eigenschaften.feldPfad?.length ? ['konfiguration', ...eigenschaften.feldPfad] : undefined;
+  const fehler = pfad
+    ? formular.feldFehler.filter((f) => JSON.stringify(f.feldPfad) === JSON.stringify(pfad))
+    : [];
+  return (
+    <div
+      data-konfig-pfad={pfad ? JSON.stringify(pfad) : undefined}
+      role="group"
+      aria-label={eigenschaften.feld.titel}
+      aria-invalid={fehler.length ? true : undefined}
+      aria-describedby={fehler.length ? fehlerId : undefined}
+      tabIndex={pfad ? -1 : undefined}
+    >
+      <KonfigEingabeInhalt
+        {...eigenschaften}
+        feldFehlerId={fehler.length ? fehlerId : undefined}
+        feldUngueltig={fehler.length > 0}
+      />
+      {fehler.length > 0 && (
+        <p id={fehlerId} className="sl-feld-fehler">
+          {fehler.map((f) => f.text).join(' ')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function KonfigEingabeInhalt({
+  feld,
+  wert,
+  aendern,
+  parameter = [],
+  gesperrt = false,
+  feldPfad = [],
+  feldFehlerId,
+  feldUngueltig,
+}: KonfigEingabeEigenschaften & { feldFehlerId?: string; feldUngueltig?: boolean }) {
   const formular = useContext(FormularKontext);
   const [waehlt, setWaehlt] = useState(false);
   const [auswahlFehler, setAuswahlFehler] = useState('');
@@ -881,6 +927,8 @@ export function KonfigEingabe({
       <>
         <Auswahlfeld
           beschriftung={feld.titel}
+          aria-invalid={feldUngueltig || undefined}
+          aria-describedby={feldFehlerId}
           disabled={gesperrt}
           value={typeof wert === 'object' ? 'DEZIMAL' : String(wert)}
           onChange={(e) =>
@@ -920,6 +968,8 @@ export function KonfigEingabe({
       <label className="business-checkbox">
         <input
           type="checkbox"
+          aria-invalid={feldUngueltig || undefined}
+          aria-describedby={feldFehlerId}
           checked={wert === true}
           disabled={gesperrt}
           onChange={(e) => aendern(e.target.checked)}
@@ -931,6 +981,8 @@ export function KonfigEingabe({
     return (
       <Auswahlfeld
         beschriftung={feld.titel}
+        aria-invalid={feldUngueltig || undefined}
+        aria-describedby={feldFehlerId}
         value={String(wert)}
         disabled={gesperrt}
         onChange={(e) => aendern(e.target.value)}
@@ -953,11 +1005,15 @@ export function KonfigEingabe({
       aendern={aendern}
       gesperrt={gesperrt}
       parameter={parameter}
+      feldFehlerId={feldFehlerId}
+      feldUngueltig={feldUngueltig}
       variablen={feld.art === 'text' || typeof w.variable === 'string' ? formular.variablen : []}
       eingabe={
         <>
           <Feld
             beschriftung={feld.titel}
+            aria-invalid={feldUngueltig || undefined}
+            aria-describedby={feldFehlerId}
             list={['spalte', 'links', 'rechts'].includes(feld.name) ? spaltenListe : undefined}
             value={typeof wert === 'object' ? '' : String(wert ?? '')}
             disabled={gesperrt}
@@ -1016,6 +1072,7 @@ export function BusinessEigenschaften({
   spaltenNachQuelle,
   parameterKontext,
   quelleWaehlen,
+  feldFehler = [],
 }: {
   ws: Blockly.WorkspaceSvg;
   block: Blockly.Block;
@@ -1026,6 +1083,7 @@ export function BusinessEigenschaften({
   spaltenNachQuelle?: Record<string, string[]>;
   parameterKontext?: ParameterKontext;
   quelleWaehlen?: QuelleWaehlen;
+  feldFehler?: KonfigFeldFehler[];
 }) {
   const [, aktualisieren] = useState(0);
   const spaltenListe = `business-spalten-${useId()}`;
@@ -1075,6 +1133,7 @@ export function BusinessEigenschaften({
       value={{
         parameter,
         parameterKontext,
+        feldFehler,
         quelleWaehlen,
         blockId: block.id,
         blockTyp: block.type,
@@ -1116,32 +1175,45 @@ export function BusinessEigenschaften({
           const quellen = businessQuellenVorBlock(ws, block.id, typ);
           const ungueltig = Boolean(referenz && !quellen.some((b) => b.id === referenz));
           const bisherigeQuelle = ungueltig ? ws.getAllBlocks(false).find((b) => b.id === referenz) : null;
+          const zuordnungsFehler = feldFehler.find(
+            (f) => JSON.stringify(f.feldPfad) === JSON.stringify(['eingaben', name]),
+          );
           return (
-            <Auswahlfeld
+            <div
               key={name}
-              beschriftung={titel}
-              value={referenz}
-              disabled={gesperrt}
-              fehler={ungueltig ? 'Wähle einen passenden vorherigen Schritt im selben Ablauf.' : undefined}
-              onChange={(e) =>
-                setzen({ ...daten, eingaben: { ...daten.eingaben, [name]: { referenz: e.target.value } } })
-              }
+              data-konfig-pfad={JSON.stringify(['eingaben', name])}
+              role="group"
+              aria-label={titel}
+              tabIndex={-1}
             >
-              <option value="">{titel} auswählen</option>
-              {ungueltig && (
-                <option value={referenz}>
-                  {bisherigeQuelle
-                    ? String(bisherigeQuelle.getFieldValue('NAME') ?? 'Bisherige Zuordnung')
-                    : 'Bisherige Zuordnung'}{' '}
-                  · hier nicht verfügbar
-                </option>
-              )}
-              {quellen.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {String(b.getFieldValue('NAME') ?? businessNachTyp.get(b.type)!.name)}
-                </option>
-              ))}
-            </Auswahlfeld>
+              <Auswahlfeld
+                beschriftung={titel}
+                value={referenz}
+                disabled={gesperrt}
+                fehler={
+                  zuordnungsFehler?.text ??
+                  (ungueltig ? 'Wähle einen passenden vorherigen Schritt im selben Ablauf.' : undefined)
+                }
+                onChange={(e) =>
+                  setzen({ ...daten, eingaben: { ...daten.eingaben, [name]: { referenz: e.target.value } } })
+                }
+              >
+                <option value="">{titel} auswählen</option>
+                {ungueltig && (
+                  <option value={referenz}>
+                    {bisherigeQuelle
+                      ? String(bisherigeQuelle.getFieldValue('NAME') ?? 'Bisherige Zuordnung')
+                      : 'Bisherige Zuordnung'}{' '}
+                    · hier nicht verfügbar
+                  </option>
+                )}
+                {quellen.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {String(b.getFieldValue('NAME') ?? businessNachTyp.get(b.type)!.name)}
+                  </option>
+                ))}
+              </Auswahlfeld>
+            </div>
           );
         })}
         {def.felder

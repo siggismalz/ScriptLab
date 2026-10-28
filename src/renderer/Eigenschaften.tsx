@@ -6,7 +6,12 @@ import { bausteinBeispiele } from '../editor/beispieleHilfe';
 import { Knopf } from './komponenten/Knopf';
 import { Menue } from './komponenten/Menue';
 import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
-import { BusinessEigenschaften, type ParameterKontext, type QuelleWaehlen } from './BusinessEigenschaften';
+import {
+  BusinessEigenschaften,
+  type ParameterKontext,
+  type QuelleWaehlen,
+  type KonfigFeldFehler,
+} from './BusinessEigenschaften';
 import { businessNachTyp } from '../kern/business-katalog';
 import type { WorkflowParameter } from '../kern/business-modell';
 
@@ -16,6 +21,7 @@ export function Eigenschaften({
   spaltenNachQuelle,
   parameterKontext,
   quelleWaehlen,
+  feldFehler,
   ws,
   blockId,
   angeheftet,
@@ -32,6 +38,7 @@ export function Eigenschaften({
   spaltenNachQuelle?: Record<string, string[]>;
   parameterKontext?: ParameterKontext;
   quelleWaehlen?: QuelleWaehlen;
+  feldFehler?: KonfigFeldFehler[];
   ws: Blockly.WorkspaceSvg | null;
   blockId: string | null;
   angeheftet: boolean;
@@ -146,6 +153,7 @@ export function Eigenschaften({
                 spaltenNachQuelle={spaltenNachQuelle}
                 parameterKontext={parameterKontext}
                 quelleWaehlen={quelleWaehlen}
+                feldFehler={feldFehler}
                 gesperrt={schreibgeschuetzt}
                 geaendert={() => beruehrt(block.id)}
               />
