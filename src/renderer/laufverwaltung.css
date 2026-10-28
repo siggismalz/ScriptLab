@@ -25,6 +25,12 @@
   align-items: baseline;
   gap: var(--abstand-8) var(--abstand-16);
 }
+.laufverwaltung-kontext h2 {
+  margin: 0;
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+  line-height: 1.5;
+}
 .laufverwaltung-kontext > div:first-child > span,
 .laufverwaltung-umfang,
 .laufverwaltung-stand {

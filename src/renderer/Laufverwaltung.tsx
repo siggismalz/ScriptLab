@@ -33,6 +33,12 @@ function modus(art: string | undefined) {
 export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
   const { zustand: aktuell } = props;
   const aktiv = testAktiv(aktuell.phase);
+  const laufStatus =
+    aktuell.phase === 'vorbereitung'
+      ? 'Lauf wird vorbereitet.'
+      : aktuell.phase === 'stoppt'
+        ? 'Wird gestoppt.'
+        : 'Ein Workflow läuft weiter.';
   const [eintraege, setEintraege] = useState<LaufEintrag[]>([]);
   const [listeOffen, setListeOffen] = useState(false);
   const [laedt, setLaedt] = useState(false);
@@ -146,49 +152,41 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
 
   return (
     <section className="laufverwaltung" aria-label="Läufe dieses Workflows">
-      {(eintraege.length > 0 || listeOffen) && (
-        <div className="laufverwaltung-kontext">
+      {listeOffen && (
+        <header className="laufverwaltung-kontext">
           <div>
-            <strong>
-              {listeOffen
-                ? 'Gespeicherte Läufe'
-                : historisch
-                  ? `Lauf vom ${zeit(zustand.gestartetAm ?? zustand.vorbereitetAm)}`
-                  : aktiv
-                    ? 'Aktueller Lauf'
-                    : 'Aktueller Arbeitsstand'}
-            </strong>
+            <h2>Gespeicherte Läufe</h2>
+            {aktiv && <span role="status">{laufStatus}</span>}
           </div>
           <div className="knopfgruppe">
-            {!listeOffen ? (
+            <Knopf
+              variante={aktiv ? 'leise' : 'primaer'}
+              onClick={() => {
+                if (aktiv) {
+                  setAuswahl(null);
+                  setListeOffen(false);
+                } else vorbereiten();
+              }}
+            >
+              {aktiv ? 'Aktuellen Lauf anzeigen' : 'Neuen Lauf vorbereiten'}
+            </Knopf>
+            {aktiv && (
               <Knopf
-                variante="leise"
-                onClick={() => {
-                  setListeOffen(true);
-                  requestAnimationFrame(() => listeRef.current?.focus());
-                }}
+                variante="gefahr"
+                symbol="stoppen"
+                onClick={props.stoppen}
+                disabled={aktuell.phase === 'stoppt'}
+                grund="Der Prozess wird bereits gestoppt."
               >
-                Alle Läufe ({eintraege.length})
-              </Knopf>
-            ) : (
-              <Knopf
-                variante={aktiv ? 'leise' : 'primaer'}
-                onClick={() => {
-                  if (aktiv) {
-                    setAuswahl(null);
-                    setListeOffen(false);
-                  } else vorbereiten();
-                }}
-              >
-                {aktiv ? 'Aktuellen Lauf anzeigen' : 'Neuen Lauf vorbereiten'}
+                Stoppen
               </Knopf>
             )}
           </div>
-        </div>
+        </header>
       )}
-      {aktiv && (historisch || listeOffen) && (
+      {aktiv && historisch && !listeOffen && (
         <div className="laufverwaltung-aktiv" role="status">
-          <span>Ein Workflow läuft weiter.</span>
+          <span>{laufStatus}</span>
           <div className="knopfgruppe">
             <Knopf
               variante="leise"
@@ -340,6 +338,17 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
           historisch={historisch}
           vorbereitungAnfordern={vorbereitung}
           neuenLaufVorbereiten={vorbereiten}
+          kopfNavigation={
+            <Knopf
+              variante="leise"
+              onClick={() => {
+                setListeOffen(true);
+                requestAnimationFrame(() => listeRef.current?.focus());
+              }}
+            >
+              Alle Läufe{eintraege.length > 0 ? ` (${eintraege.length})` : ''}
+            </Knopf>
+          }
           gesperrt={props.gesperrt || (historisch && aktiv)}
           kopieren={() => void kopieren()}
           protokollSpeichern={() => {

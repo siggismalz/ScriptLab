@@ -9,6 +9,7 @@ import {
   zeitlimitAusText,
   type TestbereichEigenschaften,
 } from '../src/renderer/Testbereich';
+import { Laufverwaltung } from '../src/renderer/Laufverwaltung';
 
 function darstellung(zustand = testBereit(), angaben: Partial<TestbereichEigenschaften> = {}): string {
   const nichts = () => {};
@@ -55,13 +56,71 @@ function lauf(angaben: Partial<TestZustand> = {}): TestZustand {
 }
 
 describe('Kontrollierte Darstellung des Testbereichs', () => {
-  it('bietet für ungeprüftes Python einen Einrichtungsweg und zeigt eine alte Version nur aus dem Teststand', () => {
+  it('hält den Listenrückweg in derselben Kopfleiste wie Ansichten und Startaktion', () => {
+    const html = darstellung(testBereit(), {
+      kopfNavigation: createElement('button', { type: 'button' }, 'Alle Läufe'),
+      businessVorbereitung: createElement('div', {}, 'Modus und Parameter'),
+    });
+    const kopf = html.slice(
+      html.indexOf('class="lauf-kopfleiste"'),
+      html.indexOf('class="testbereich-inhalt"'),
+    );
+    expect(kopf).toContain('Alle Läufe');
+    expect(kopf).toContain('Ansichten des Laufs');
+    expect(kopf).toContain('Workflow ausführen');
+    expect(darstellung()).not.toContain('class="lauf-kopfnavigation"');
+  });
+
+  it('ordnet einen historischen Lauf in der Kopfleiste mit Datum, Modus und Stand ein', () => {
+    const html = darstellung(lauf({ phase: 'beendet', exitcode: 0 }), {
+      historisch: true,
+      kopfNavigation: createElement('button', { type: 'button' }, 'Alle Läufe'),
+    });
+    const kopf = html.slice(
+      html.indexOf('class="lauf-kopfleiste"'),
+      html.indexOf('class="testbereich-inhalt"'),
+    );
+    expect(kopf).toContain('Lauf vom');
+    expect(kopf).toContain('dateTime="2026-10-26T12:00:00Z"');
+    expect(kopf).toContain('Echte Ausführung');
+    expect(kopf).toContain('Stand aaaaaaaa');
+    expect(kopf).toContain('Neuen Lauf vorbereiten');
+    expect(kopf).not.toMatch(/role="tab"[^>]*>Vorbereitung<\/button>/);
+  });
+
+  it('zeigt in der Laufverwaltung keinen zusätzlichen Arbeitsstandkopf über der Vorbereitung', () => {
+    const nichts = () => {};
+    const html = renderToStaticMarkup(
+      createElement(Laufverwaltung, {
+        projektKennung: 'projekt-1',
+        workflowStand: 'stand-1',
+        sichtbar: true,
+        vorbereitungAnfrage: 0,
+        zustand: testBereit(),
+        optionen: { basisVerzeichnis: 'C:\\Testdaten', zeitlimitSekunden: 120 },
+        veraltet: false,
+        schliessen: nichts,
+        starten: nichts,
+        stoppen: nichts,
+        ordnerWaehlen: nichts,
+        optionenAendern: nichts,
+        kopieren: nichts,
+        leeren: nichts,
+        blockAnzeigen: nichts,
+      }),
+    );
+    expect(html).toContain('Alle Läufe');
+    expect(html).not.toContain('Aktueller Arbeitsstand');
+    expect(html).not.toContain('class="laufverwaltung-kontext"');
+  });
+
+  it('bietet für ungeprüftes Python den Komponentenstatus und zeigt eine alte Version nur aus dem Teststand', () => {
     const ungeprueft = darstellung(testBereit(), {
       sprache: 'python',
       pythonStatus: null,
       pythonEinrichten: () => {},
     });
-    expect(ungeprueft).toContain('Python einrichten');
+    expect(ungeprueft).toContain('Komponentenstatus anzeigen');
     const vorherigerTest = darstellung(
       lauf({ phase: 'beendet', skriptsprache: 'python', pythonVersion: '3.12.8', exitcode: 0 }),
       {
@@ -85,15 +144,16 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
     expect(vorherigerTest).not.toContain('3.15.0');
     expect(vorherigerTest).toContain('Skriptsprache</dt><dd>Python');
   });
-  it('erklärt reale Auswirkungen und verlangt vor dem ersten Test einen Basisordner', () => {
+  it('erklärt reale Auswirkungen und zeigt vor dem ersten Test den automatisch verwalteten Arbeitsordner', () => {
     const html = darstellung(testBereit(), { optionen: { basisVerzeichnis: null, zeitlimitSekunden: 120 } });
     expect(html).toContain(
       'Dateiänderungen werden tatsächlich vorgenommen. Stoppen macht sie nicht rückgängig.',
     );
     expect(html).toContain('Keine Sandbox');
     expect(html).toContain('nicht rückgängig');
-    expect(html).toContain('Wähle vor dem Start einen Basisordner aus.');
-    expect(knopf(html, 'Workflow ausführen')).toContain('disabled=""');
+    expect(html).toContain('Wird von ScriptLab festgelegt.');
+    expect(html).toContain('automatisch verwalteten Ordner dieses Workflows');
+    expect(knopf(html, 'Workflow ausführen')).not.toContain('disabled=""');
     expect(knopf(html, 'Workflow ausführen')).toContain('sl-knopf--primaer');
     expect(html).not.toContain('>Stoppen<');
     expect(html).toMatch(/min="1"[^>]+max="28800"[^>]+value="120"/);
@@ -101,14 +161,14 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
     expect(html).toMatch(/role="tab" aria-selected="true"[^>]*>Vorbereitung<\/button>/);
     expect(knopf(html, 'Ausgabe leeren')).toContain('disabled=""');
     expect(knopf(html, 'Ausgabe kopieren')).toContain('disabled=""');
-    expect(html).not.toContain('sl-knopf-mit-grund');
+    expect(html).toContain('Für diesen Workflow liegt noch kein Laufprotokoll vor.');
   });
 
   it('verhindert einen zweiten Start und hält Stoppen auch bei sonst gesperrter Oberfläche erreichbar', () => {
     const html = darstellung(lauf(), { gesperrt: true });
     expect(html).not.toContain('>Workflow ausführen<');
     expect(knopf(html, 'Stoppen')).not.toContain('disabled=""');
-    expect(knopf(html, 'Ordner auswählen')).toContain('disabled=""');
+    expect(knopf(html, 'Im Explorer anzeigen')).not.toContain('disabled=""');
     expect(knopf(html, 'Ausgabe leeren')).not.toContain('disabled=""');
     expect(knopf(html, 'Ausgabe kopieren')).not.toContain('disabled=""');
     expect(html).not.toContain('Stoppe den Test, bevor du die Anzeige leerst.');

@@ -504,6 +504,15 @@
   flex: 0 0 auto;
   border-bottom: 1px solid var(--farbe-trennung);
 }
+.lauf-kopfnavigation {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: var(--abstand-4) var(--abstand-8);
+}
+.testbereich-stand {
+  white-space: nowrap;
+}
 .lauf-kopfleiste .lauf-tabs {
   flex: 0 1 auto;
   border-bottom: 0;

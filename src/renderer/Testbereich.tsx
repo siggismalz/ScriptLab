@@ -33,6 +33,7 @@ export interface TestbereichEigenschaften {
   neuenLaufVorbereiten?: () => void;
   protokollSpeichern?: () => void;
   dateiAnzeigen?: (art: 'ausgabe' | 'bericht', index?: number) => Promise<void>;
+  kopfNavigation?: ReactNode;
 }
 
 const phasen: Record<TestPhase, string> = {
@@ -279,6 +280,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
   return (
     <section className="testbereich" data-testid="test-panel" aria-labelledby={titelId}>
       <div className="lauf-kopfleiste">
+        {props.kopfNavigation && <div className="lauf-kopfnavigation">{props.kopfNavigation}</div>}
         <div className="lauf-tabs" role="tablist" aria-label="Ansichten des Laufs">
           {sichtbareAnsichten.map((tab, index) => (
             <button
@@ -318,9 +320,27 @@ export function Testbereich(props: TestbereichEigenschaften) {
             </Statusanzeige>
           </div>
           <p className="testbereich-modus" hidden={fokussierteVorbereitung}>
-            <strong>{vorbereitung && !aktiv ? 'Nächster Lauf' : 'Modus dieses Laufs'}:</strong>{' '}
+            {props.historisch ? (
+              <>
+                Lauf vom{' '}
+                <time dateTime={zustand.gestartetAm ?? zustand.vorbereitetAm ?? undefined}>
+                  {zeitpunktAnzeigen(zustand.gestartetAm ?? zustand.vorbereitetAm)}
+                </time>{' '}
+                ·{' '}
+              </>
+            ) : (
+              <>
+                <strong>{vorbereitung && !aktiv ? 'Nächster Lauf' : 'Modus dieses Laufs'}:</strong>{' '}
+              </>
+            )}
             {modusName(anzeigeOptionen)}
             {vorschauSchritt && <> bis „{vorschauSchritt}“</>}
+            {props.historisch && (
+              <span className="testbereich-stand" title={zustand.standHash ?? undefined}>
+                {' '}
+                · {zustand.standHash ? `Stand ${zustand.standHash.slice(0, 8)}` : 'Stand nicht verfügbar'}
+              </span>
+            )}
           </p>
           <div className="knopfgruppe testbereich-aktionen">
             {aktiv ? (
