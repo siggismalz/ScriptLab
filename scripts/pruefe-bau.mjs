@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { readFile, readdir, stat, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, readdir, stat, lstat, writeFile, mkdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { basename, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,6 +37,7 @@ const bericht = {
     'Der im NSIS-Installer eingebettete Anwendungspayload wird nicht entpackt. Seine Identität mit win-unpacked wird hier nicht unabhängig nachgewiesen.',
     `Blockmap-Struktur und Größenabdeckung werden geprüft; die einzelnen Blockmap-Chunk-Prüfsummen werden nicht unabhängig nachgerechnet. Der vollständige Installer wird gegen SHA-512 aus ${metadatenName} geprüft.`,
     'Es werden weder Desktoptestergebnisse noch eine produktive Updatekette aus anderen Berichten übernommen.',
+    'Die Offline-Python-Dateien werden gegen das lokale Build-Bündel und dessen Manifest verglichen. Der Interpreter wird nicht gestartet; Tcl/Tk- und Paketimportproben werden hier nicht wiederholt.',
   ],
 };
 
@@ -121,15 +122,17 @@ async function byteVergleichen(quelle, ziel, gepackt = false) {
   const original = await readFile(quelle);
   const enthalten = gepackt ? asar.extractFile(archiv, ziel.replaceAll('/', sep)) : await readFile(ziel);
   const gleich = original.equals(enthalten);
-  bericht.bytevergleiche.push({
+  const vergleich = {
     quelle: relativ(quelle),
     ziel: gepackt ? `${relativ(archiv)}!/${ziel}` : relativ(ziel),
     bytes: enthalten.length,
     sha256Quelle: createHash('sha256').update(original).digest('hex'),
     sha256Paket: createHash('sha256').update(enthalten).digest('hex'),
     identisch: gleich,
-  });
+  };
+  bericht.bytevergleiche.push(vergleich);
   verlangen(gleich, `${relativ(quelle)} stimmt nicht mit dem Paketinhalt überein.`);
+  return vergleich;
 }
 
 function windowsMetadatenLesen(pfad) {
@@ -409,6 +412,145 @@ await pruefen('Business-Laufzeit, Schrift und Lizenzbeilagen', async () => {
     dateien: dateien.length,
     pythonModule: dateien.filter((pfad) => pfad.endsWith('.py')).length,
     alleBytegleich: true,
+  };
+});
+
+await pruefen('Vollständiges Offline-Python-Bündel', async () => {
+  const quelle = join(wurzel, 'artifacts', 'python-buendel', 'python');
+  const ziel = join(ressourcen, 'python');
+  const manifestName = 'scriptlab-laufzeit.json';
+  for (const ordner of [quelle, ziel])
+    verlangen((await lstat(ordner)).isDirectory(), `Der Python-Ressourcenordner fehlt: ${relativ(ordner)}`);
+  const manifestPfad = join(quelle, manifestName);
+  const info = await lstat(manifestPfad);
+  verlangen(
+    info.isFile() && info.size > 0 && info.size <= 16 * 1024 ** 2,
+    'Das Python-Manifest fehlt oder überschreitet die zulässige Größe.',
+  );
+  const manifest = JSON.parse(await readFile(manifestPfad, 'utf8'));
+  const lockBytes = await readFile(join(wurzel, 'laufzeit', 'requirements-business.lock'));
+  const lockHash = createHash('sha256').update(lockBytes).digest('hex');
+  verlangen(
+    manifest?.schemaVersion === 1 &&
+      manifest.pythonVersion === '3.15.2' &&
+      manifest.architektur === 'x64' &&
+      manifest.businessLockSha256 === lockHash,
+    'Das Python-Manifest passt nicht zur vorgesehenen CPython-Version, Architektur oder Business-Lockdatei.',
+  );
+  verlangen(
+    Array.isArray(manifest.dateien) && manifest.dateien.length > 0 && manifest.dateien.length <= 100_000,
+    'Das Python-Manifest enthält keine zulässige Dateiliste.',
+  );
+  const namen = new Set();
+  for (const eintrag of manifest.dateien) {
+    verlangen(
+      eintrag &&
+        typeof eintrag.pfad === 'string' &&
+        eintrag.pfad.length <= 1024 &&
+        !/[\\<>:"|?*\u0000-\u001f]/.test(eintrag.pfad) &&
+        eintrag.pfad.split('/').every((teil) => teil && teil !== '.' && teil !== '..') &&
+        eintrag.pfad !== manifestName &&
+        Number.isSafeInteger(eintrag.bytes) &&
+        eintrag.bytes >= 0 &&
+        typeof eintrag.sha256 === 'string' &&
+        /^[a-f0-9]{64}$/.test(eintrag.sha256),
+      'Ein Dateieintrag im Python-Manifest ist ungültig.',
+    );
+    const name = eintrag.pfad.toLocaleLowerCase('en-US');
+    verlangen(!namen.has(name), `Doppelter Windows-Dateipfad im Python-Manifest: ${eintrag.pfad}`);
+    namen.add(name);
+  }
+  const erwartet = manifest.dateien.map((e) => e.pfad).sort();
+  const vollstaendig = [...erwartet, manifestName].sort();
+  for (const ordner of [quelle, ziel])
+    verlangen(
+      JSON.stringify(await dateienSammeln(ordner)) === JSON.stringify(vollstaendig),
+      `Das vollständige Python-Bündel enthält fehlende oder zusätzliche Dateien: ${relativ(ordner)}`,
+    );
+  // Keine Endungsfilter: Native Module, Tcl/Tk, Standardbibliothek und Lizenzbeilagen gehören dazu.
+  for (const pfad of [
+    'python.exe',
+    'pythonw.exe',
+    'python315.dll',
+    'DLLs/_tkinter.pyd',
+    'DLLs/tcl90.dll',
+    'DLLs/tcl9tk90.dll',
+    'Lib/tkinter/__init__.py',
+    'requirements-business.lock',
+    'LICENSE.txt',
+    'LIZENZEN-BUSINESS.md',
+  ])
+    verlangen(
+      erwartet.includes(pfad),
+      `Erforderlicher Bestandteil des Offline-Python-Bündels fehlt: ${pfad}`,
+    );
+  for (const art of ['tcl', 'tk'])
+    verlangen(
+      erwartet.some((p) => new RegExp(`^tcl/lib${art}9\\.0\\.\\d+\\.zip$`).test(p)),
+      `Die mitgelieferten ${art === 'tcl' ? 'Tcl' : 'Tk'}-Skriptressourcen fehlen.`,
+    );
+  const pins = lockBytes
+    .toString('utf8')
+    .replace(/\\\r?\n/g, ' ')
+    .split(/\r?\n/)
+    .map((zeile) => zeile.trim())
+    .filter((zeile) => zeile && !zeile.startsWith('#'))
+    .map((zeile) => {
+      const teile = /^([a-z0-9-]+)==(\d+\.\d+(?:\.\d+)?)\s+((?:--hash=sha256:[a-f0-9]{64}\s*)+)$/.exec(zeile);
+      verlangen(teile, 'Die feste Business-Lockdatei enthält ein nicht unterstütztes Paketformat.');
+      return {
+        name: teile[1],
+        version: teile[2],
+        hashes: [...teile[3].matchAll(/sha256:([a-f0-9]{64})/g)].map((m) => m[1]),
+      };
+    });
+  verlangen(
+    pins.length > 0 &&
+      new Set(pins.map((p) => p.name)).size === pins.length &&
+      Array.isArray(manifest.pakete) &&
+      manifest.pakete.length === pins.length,
+    'Die Paketliste des Python-Bündels stimmt nicht mit der festen Business-Lockdatei überein.',
+  );
+  const paketnamen = new Set();
+  for (const paket of manifest.pakete) {
+    const pin = pins.find((p) => p.name === paket?.name);
+    verlangen(
+      pin &&
+        !paketnamen.has(pin.name) &&
+        paket.version === pin.version &&
+        typeof paket.wheel === 'string' &&
+        /^[A-Za-z0-9_.-]+\.whl$/.test(paket.wheel) &&
+        paket.wheel.startsWith(`${pin.name.replaceAll('-', '_')}-${pin.version}-`) &&
+        pin.hashes.includes(paket.sha256),
+      'Eine Paketversion oder Wheel-Prüfsumme im Python-Manifest ist nicht durch die Lockdatei gedeckt.',
+    );
+    paketnamen.add(pin.name);
+  }
+  await byteVergleichen(manifestPfad, join(ziel, manifestName));
+  let bytes = 0;
+  for (const eintrag of manifest.dateien) {
+    const vergleich = await byteVergleichen(join(quelle, eintrag.pfad), join(ziel, eintrag.pfad));
+    verlangen(
+      vergleich.bytes === eintrag.bytes && vergleich.sha256Quelle === eintrag.sha256,
+      `Der Python-Dateiinhalt stimmt nicht mit dem Manifest überein: ${eintrag.pfad}`,
+    );
+    bytes += vergleich.bytes;
+  }
+  await byteVergleichen(
+    join(wurzel, 'laufzeit', 'requirements-business.lock'),
+    join(ziel, 'requirements-business.lock'),
+  );
+  await byteVergleichen(join(wurzel, 'laufzeit', 'business-notices.md'), join(ziel, 'LIZENZEN-BUSINESS.md'));
+  return {
+    pythonVersion: manifest.pythonVersion,
+    architektur: manifest.architektur,
+    dateienOhneManifest: erwartet.length,
+    nativeModule: erwartet.filter((p) => /\.(?:dll|pyd)$/i.test(p)).length,
+    businessPakete: manifest.pakete.map(({ name, version }) => ({ name, version })),
+    bytes,
+    businessLockSha256: lockHash,
+    alleBytegleich: true,
+    interpreterGestartet: false,
   };
 });
 
