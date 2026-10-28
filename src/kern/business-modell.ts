@@ -75,6 +75,25 @@ export function businessProjektPruefen(wert: unknown): BusinessProjekt {
     );
   return p.data;
 }
+/** Ein ausdrücklich leerer Wert bleibt leer; nur ein fehlender Eintrag erbt den Standard. */
+export function parameterWertLesen(
+  definition: Pick<WorkflowParameter, 'name' | 'standard'>,
+  werte: Readonly<Record<string, WorkflowParameter['standard']>>,
+): WorkflowParameter['standard'] {
+  return Object.hasOwn(werte, definition.name) ? werte[definition.name] : definition.standard;
+}
+
+/** Entfernt die Überschreibung, damit auch spätere Änderungen am Standard übernommen werden. */
+export function parameterStandardwertVerwenden(
+  werte: Record<string, WorkflowParameter['standard']>,
+  name: string,
+): Record<string, WorkflowParameter['standard']> {
+  if (!Object.hasOwn(werte, name)) return werte;
+  const ohneUeberschreibung = { ...werte };
+  delete ohneUeberschreibung[name];
+  return ohneUeberschreibung;
+}
+
 export function parameterWertePruefen(
   definitionen: WorkflowParameter[],
   werte: Record<string, string | number | boolean | null>,
@@ -83,7 +102,7 @@ export function parameterWertePruefen(
     throw new Error('Ein Parametersatz enthält unbekannte Parameternamen. Prüfe die Parameterdefinitionen.');
   const ergebnis: Record<string, string | number | boolean | null> = {};
   for (const p of definitionen) {
-    const wert = Object.hasOwn(werte, p.name) ? werte[p.name] : p.standard;
+    const wert = parameterWertLesen(p, werte);
     if (p.erforderlich && (wert === null || wert === ''))
       throw new Error(`Fülle den Workflowparameter „${p.beschriftung}“ aus.`);
     if (wert === null || wert === '') {

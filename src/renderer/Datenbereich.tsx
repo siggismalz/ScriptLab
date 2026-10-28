@@ -3,6 +3,7 @@ import * as Blockly from 'blockly/core';
 import type { Projekt } from '../kern/projekt';
 import { businessSchritte } from '../kern/business';
 import { businessDefinitionen, businessNachTyp } from '../kern/business-katalog';
+import { parameterStandardwertVerwenden, parameterWertLesen } from '../kern/business-modell';
 import { workflowPruefen } from '../kern/modell';
 import type { TestZustand } from '../gemeinsam/testlauf';
 import { testAktiv } from '../gemeinsam/testlauf';
@@ -65,6 +66,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
   const ansichtenId = useId();
   const scrollbereich = useRef<HTMLDivElement>(null);
   const scrollpositionen = useRef<Partial<Record<Datenansicht, number>>>({});
+  const parameterEingaben = useRef(new Set<string>());
   const laufAktiv = testAktiv(lauf.phase);
   const gesperrt = props.gesperrt || laufAktiv;
   const aktuellerLauf = lauf.projektKennung === projekt.projektKennung;
@@ -322,50 +324,106 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
           </div>
           {projekt.business.parameter.length ? (
             <div className="daten-parameterfelder">
-              {projekt.business.parameter.map((p) => (
-                <div className="daten-parameterfeld" key={`${parametersatz}-${p.name}`}>
-                  <ParameterWertEingabe
-                    typ={p.typ}
-                    beschriftung={p.beschriftung + (p.erforderlich ? ' (Pflichtangabe)' : '')}
-                    hilfe={p.hilfe && enthaeltFormatvorgabe(p.hilfe) ? p.hilfe : undefined}
-                    gesperrt={gesperrt}
-                    wert={
-                      parametersatz === 'standard'
-                        ? p.standard
-                        : (projekt.business.parametersaetze[parametersatz][p.name] ?? p.standard)
-                    }
-                    aendern={(wert) =>
-                      props.aendern({
-                        ...projekt,
-                        business:
-                          parametersatz === 'standard'
-                            ? {
-                                ...projekt.business,
-                                parameter: projekt.business.parameter.map((eintrag) =>
-                                  eintrag.name === p.name ? { ...eintrag, standard: wert } : eintrag,
-                                ),
-                              }
-                            : {
-                                ...projekt.business,
-                                parametersaetze: {
-                                  ...projekt.business.parametersaetze,
-                                  [parametersatz]: {
-                                    ...projekt.business.parametersaetze[parametersatz],
-                                    [p.name]: wert,
+              {projekt.business.parameter.map((p) => {
+                const feldschluessel = `${parametersatz}-${p.name}`;
+                const satzwerte =
+                  parametersatz === 'standard' ? null : projekt.business.parametersaetze[parametersatz];
+                const eigenerWert = satzwerte !== null && Object.hasOwn(satzwerte, p.name);
+                const wert = satzwerte === null ? p.standard : parameterWertLesen(p, satzwerte);
+                const wertquelle = eigenerWert
+                  ? wert === null || wert === ''
+                    ? 'Ohne Wert'
+                    : 'Eigener Wert'
+                  : 'Standardwert';
+                return (
+                  <div
+                    className="daten-parameterfeld"
+                    key={feldschluessel}
+                    onChangeCapture={() => parameterEingaben.current.add(feldschluessel)}
+                  >
+                    <ParameterWertEingabe
+                      typ={p.typ}
+                      beschriftung={p.beschriftung + (p.erforderlich ? ' (Pflichtangabe)' : '')}
+                      hilfe={p.hilfe && enthaeltFormatvorgabe(p.hilfe) ? p.hilfe : undefined}
+                      gesperrt={gesperrt}
+                      wert={wert}
+                      aendern={(neu) => {
+                        // Das gemeinsame Eingabefeld meldet auch Blur. Nur eine bewusste Eingabe
+                        // darf den geerbten Standard als eigenen Wert im Parametersatz speichern.
+                        if (!parameterEingaben.current.delete(feldschluessel) || neu === wert) return;
+                        props.aendern({
+                          ...projekt,
+                          business:
+                            parametersatz === 'standard'
+                              ? {
+                                  ...projekt.business,
+                                  parameter: projekt.business.parameter.map((eintrag) =>
+                                    eintrag.name === p.name ? { ...eintrag, standard: neu } : eintrag,
+                                  ),
+                                }
+                              : {
+                                  ...projekt.business,
+                                  parametersaetze: {
+                                    ...projekt.business.parametersaetze,
+                                    [parametersatz]: {
+                                      ...projekt.business.parametersaetze[parametersatz],
+                                      [p.name]: neu,
+                                    },
                                   },
                                 },
-                              },
-                      })
-                    }
-                  />
-                  {p.hilfe && !enthaeltFormatvorgabe(p.hilfe) && (
-                    <details className="daten-feldhilfe">
-                      <summary aria-label={`Hinweis zu ${p.beschriftung}`}>Hinweis</summary>
-                      <p>{p.hilfe}</p>
-                    </details>
-                  )}
-                </div>
-              ))}
+                        });
+                      }}
+                    />
+                    {satzwerte !== null && parametersatz !== 'standard' && (
+                      <details className="daten-wertoptionen">
+                        <summary aria-label={`Wertoptionen für ${p.beschriftung}: ${wertquelle}`}>
+                          {wertquelle}
+                        </summary>
+                        <p>
+                          Standardwert:{' '}
+                          <span>
+                            {p.standard === null || p.standard === ''
+                              ? 'Ohne Wert'
+                              : p.standard === true
+                                ? 'Ja'
+                                : p.standard === false
+                                  ? 'Nein'
+                                  : String(p.standard)}
+                          </span>
+                        </p>
+                        {eigenerWert && (
+                          <Knopf
+                            variante="leise"
+                            disabled={gesperrt}
+                            grund="Stoppe den Lauf vor Änderungen an Parameterwerten."
+                            onClick={(event) => {
+                              event.currentTarget.closest('details')?.querySelector('summary')?.focus();
+                              props.aendern({
+                                ...projekt,
+                                business: {
+                                  ...projekt.business,
+                                  parametersaetze: {
+                                    ...projekt.business.parametersaetze,
+                                    [parametersatz]: parameterStandardwertVerwenden(satzwerte, p.name),
+                                  },
+                                },
+                              });
+                            }}
+                          >
+                            Standardwert verwenden
+                          </Knopf>
+                        )}
+                      </details>
+                    )}
+                    {p.hilfe && !enthaeltFormatvorgabe(p.hilfe) && (
+                      <details className="daten-feldhilfe">
+                        <summary aria-label={`Hinweis zu ${p.beschriftung}`}>Hinweis</summary>
+                        <p>{p.hilfe}</p>
+                      </details>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p>

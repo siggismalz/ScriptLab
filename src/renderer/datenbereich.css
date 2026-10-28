@@ -200,12 +200,24 @@
 .daten-parameterfeld {
   min-width: 0;
 }
-.daten-feldhilfe {
+.daten-feldhilfe,
+.daten-wertoptionen {
   color: var(--farbe-text-sekundaer);
 }
-.daten-feldhilfe summary {
+.daten-feldhilfe summary,
+.daten-wertoptionen summary {
   width: fit-content;
   padding-block: var(--abstand-4);
+}
+.daten-wertoptionen > p {
+  margin: var(--abstand-4) 0 var(--abstand-8);
+  overflow-wrap: anywhere;
+}
+.daten-wertoptionen > p > span {
+  color: var(--farbe-text);
+}
+.daten-wertoptionen .sl-knopf {
+  max-width: 100%;
 }
 .daten-schrittfehler {
   display: flex;
