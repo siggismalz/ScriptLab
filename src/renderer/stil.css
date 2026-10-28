@@ -628,11 +628,6 @@ summary {
   min-height: 32px;
   padding-block: 0;
 }
-.projektstatus {
-  white-space: nowrap;
-  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
-  color: var(--farbe-text-sekundaer);
-}
 .status-aktion {
   flex: 1;
   overflow: hidden;

@@ -193,7 +193,6 @@
   gap: 16px;
   padding: 8px 16px;
   min-height: 48px;
-  border-bottom: 1px solid var(--farbe-trennung);
   background: var(--farbe-navigation);
   flex: 0 0 auto;
   min-width: 0;
@@ -215,8 +214,9 @@
   min-width: 0;
   flex: 1;
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 16px;
+  gap: 0 var(--abstand-16);
 }
 .workflow-identitaet h1 {
   min-width: 0;
@@ -231,7 +231,8 @@
   color: var(--farbe-text-sekundaer);
   font-size: calc(12px * var(--text-skala, 1));
   line-height: 1.5;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
 }
 .werkzeugleiste {
   background: var(--farbe-grundflaeche);
@@ -413,9 +414,6 @@
   display: none;
 }
 @media (max-height: 760px) {
-  .anwendung[style*='--text-skala: 2'] .workflow-identitaet p {
-    display: none;
-  }
   .anwendung[style*='--text-skala: 2'] .workflow-bereichsauswahl .sl-marke {
     display: none;
   }
@@ -685,9 +683,6 @@
 }
 .paletten-block {
   min-height: 36px;
-}
-.anwendung:not([style*='--text-skala: 2']) .statusleiste .projektstatus {
-  display: none;
 }
 
 /* Programmgesteuertes Ansagen einer Überschrift erzeugt keinen scheinbaren Eingaberahmen. */

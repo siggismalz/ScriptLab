@@ -145,6 +145,7 @@ export function Anwendung() {
   const [codeUmbruch, setCodeUmbruch] = useState(false);
   const [status, setStatus] = useState('Füge links einen Baustein hinzu.');
   const [statusArt, setStatusArt] = useState<'neutral' | 'erfolg' | 'hinweis' | 'fehler'>('neutral');
+  const [meldungsNummer, setMeldungsNummer] = useState(0);
   const [dauerfehler, setDauerfehler] = useState<string | null>(null);
   const [verarbeitung, setVerarbeitung] = useState<string | null>(null);
   const [dialog, setDialog] = useState<
@@ -156,6 +157,25 @@ export function Anwendung() {
   const [update, setUpdate] = useState<UpdateZustand | null>(null);
   const [exportiert, setExportiert] = useState<ExportErgebnis | null>(null);
   const [pythonStatus, setPythonStatus] = useState<PythonStatus | null>(null);
+  const meldungsKontext = `${ansicht}:${arbeitsbereich}:${projekt.projektKennung}`;
+  const letzteMeldungsansicht = useRef({ kontext: meldungsKontext, nummer: meldungsNummer });
+  useEffect(() => {
+    if (statusArt !== 'erfolg') return;
+    const timer = setTimeout(() => {
+      setStatus('');
+      setStatusArt('neutral');
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [meldungsNummer, statusArt]);
+  useEffect(() => {
+    const vorher = letzteMeldungsansicht.current;
+    letzteMeldungsansicht.current = { kontext: meldungsKontext, nummer: meldungsNummer };
+    // Eine neue Bestätigung desselben Ansichtswechsels bleibt kurz sichtbar.
+    if (vorher.kontext !== meldungsKontext && vorher.nummer === meldungsNummer && statusArt === 'erfolg') {
+      setStatus('');
+      setStatusArt('neutral');
+    }
+  }, [meldungsKontext, meldungsNummer, statusArt]);
   const ergebnis = useMemo(
     () => skriptErzeugen(projekt),
     [projekt.editor, projekt.exportOptionen, projekt.skriptsprache, projekt.business],
@@ -274,7 +294,7 @@ export function Anwendung() {
             setGeaendert(neu.geaendert);
           }
           editorZeigen();
-          melden(art === 'entwurf-speichern' ? 'Projekt gespeichert.' : 'Workflow zum Bearbeiten geöffnet.');
+          melden(art === 'entwurf-speichern' ? 'Projekt gespeichert.' : 'Workflow geöffnet.', 'erfolg');
         } else await abgebrocheneAktionAbgleichen();
         await bibliothekAktualisieren();
       },
@@ -313,7 +333,7 @@ export function Anwendung() {
         neu.entwurfStatus.phase === 'gesichert'
           ? 'Entwurf lokal gesichert. Die Projektdatei bleibt unverändert.'
           : 'Ein unveränderter leerer Workflow benötigt keinen Entwurf.',
-        'hinweis',
+        neu.entwurfStatus.phase === 'gesichert' ? 'erfolg' : 'hinweis',
       );
       await bibliothekAktualisieren();
     });
@@ -357,16 +377,24 @@ export function Anwendung() {
   }, [ansicht]);
 
   function melden(text: string, art: 'neutral' | 'erfolg' | 'hinweis' | 'fehler' = 'neutral') {
+    setMeldungsNummer((nummer) => nummer + 1);
     setStatus(text);
     setStatusArt(art);
     if (art === 'fehler') setDauerfehler(text);
+  }
+  function fehlerSchliessen() {
+    if (statusArt === 'fehler' && status === dauerfehler) {
+      setStatus('');
+      setStatusArt('neutral');
+    }
+    setDauerfehler(null);
   }
   async function aktion(name: string, funktion: () => Promise<void>) {
     if (busy.current) return;
     aktionsFokus.current = document.activeElement;
     busy.current = true;
     setVerarbeitung(name);
-    setDauerfehler(null);
+    fehlerSchliessen();
     try {
       await funktion();
     } catch (e) {
@@ -525,7 +553,10 @@ export function Anwendung() {
               einstellungenRef.current = aktuell;
               setEinstellungen(aktuell);
             }
-            melden(art === 'neu' ? 'Füge links einen Baustein hinzu.' : 'Projekt geöffnet.');
+            melden(
+              art === 'neu' ? 'Füge links einen Baustein hinzu.' : 'Workflow geöffnet.',
+              art === 'neu' ? 'neutral' : 'erfolg',
+            );
           }
         } else {
           await abgebrocheneAktionAbgleichen();
@@ -553,7 +584,7 @@ export function Anwendung() {
   }
   async function exportieren() {
     setExportiert(null);
-    setDauerfehler(null);
+    fehlerSchliessen();
     const p = skriptErzeugen(standLesen());
     if (!p.code || p.meldungen.some((m) => m.stufe === 'fehler')) {
       setPruefungAngefordert(true);
@@ -601,7 +632,7 @@ export function Anwendung() {
     testAnfrage.current = true;
     testInhalt.current = testInhaltsText(stand);
     vorschauAnfrage.current = { inhalt: testInhalt.current, parameter: vorschauParameterKennung() };
-    setDauerfehler(null);
+    fehlerSchliessen();
     try {
       testUebernehmen({
         ...testBereit(),
@@ -647,7 +678,7 @@ export function Anwendung() {
     setArbeitsbereich('laeufe');
     setVorschauOffen(false);
     setExportiert(null);
-    setDauerfehler(null);
+    fehlerSchliessen();
     const stand = structuredClone(standLesen());
     const pruefung = skriptErzeugen(stand);
     if (!pruefung.code) {
@@ -855,7 +886,7 @@ export function Anwendung() {
       auswaehlen(b.id);
       if (auftrag.art === 'einfuegen') setEigenschaftenOffen(true);
       aendern(standLesen());
-      melden(auftrag.art === 'einfuegen' ? 'Baustein eingefügt.' : 'Baustein verschoben.');
+      melden(auftrag.art === 'einfuegen' ? 'Baustein eingefügt.' : 'Baustein verschoben.', 'erfolg');
     } catch (e) {
       melden(e instanceof Error ? e.message : 'Diese Verbindung ist nicht möglich.', 'fehler');
     }
@@ -878,13 +909,14 @@ export function Anwendung() {
     if (art === 'loeschen') {
       b.dispose(true);
       auswaehlen(null);
-      melden('Baustein gelöscht. Rückgängig stellt ihn wieder her.');
+      melden('Baustein gelöscht. Rückgängig stellt ihn wieder her.', 'erfolg');
       return;
     }
     const daten = Blockly.clipboard.copy(b);
     if (art === 'duplizieren' && daten) Blockly.clipboard.paste(daten, ws);
     melden(
       art === 'kopieren' ? 'Baustein kopiert.' : 'Baustein dupliziert. Verbinde die Kopie mit dem Ablauf.',
+      art === 'kopieren' ? 'erfolg' : 'neutral',
     );
   }
   async function updateAktion(art: 'status' | 'pruefen' | 'laden' | 'installieren') {
@@ -1128,20 +1160,18 @@ export function Anwendung() {
           laden={bibliothekLaedt}
           fehler={bibliothekFehler ?? dauerfehler}
           fehlerErneutLaden={bibliothekFehler ? () => void bibliothekAktualisieren() : undefined}
-          fehlerSchliessen={
-            !bibliothekFehler && dauerfehler
-              ? () => {
-                  setDauerfehler(null);
-                  setStatus('');
-                  setStatusArt('neutral');
-                }
-              : undefined
-          }
+          fehlerSchliessen={!bibliothekFehler && dauerfehler ? fehlerSchliessen : undefined}
           verarbeitung={verarbeitung}
           meldung={statusArt === 'erfolg' || statusArt === 'hinweis' ? status : null}
           aktiveInfo={
             editorBegonnen
-              ? { name: projekt.name, dateiname: datei, geaendert, skriptsprache: projekt.skriptsprache }
+              ? {
+                  projektKennung: projekt.projektKennung!,
+                  name: projekt.name,
+                  dateiname: datei,
+                  geaendert,
+                  skriptsprache: projekt.skriptsprache,
+                }
               : null
           }
           verfuegbarkeiten={verfuegbarkeiten}
@@ -1193,7 +1223,7 @@ export function Anwendung() {
           </div>
           <div className="workflow-identitaet">
             <h1 title={projekt.name}>{projekt.name}</h1>
-            <p>
+            <p aria-label="Projektstatus" role="status">
               {geaendert
                 ? 'Ungespeicherte Änderungen'
                 : datei
@@ -1840,7 +1870,7 @@ export function Anwendung() {
               variante="leise"
               symbol="schliessen"
               aria-label="Fehlermeldung schließen"
-              onClick={() => setDauerfehler(null)}
+              onClick={fehlerSchliessen}
             />
           </section>
         )}
@@ -1863,9 +1893,6 @@ export function Anwendung() {
           </section>
         )}
         <footer className="statusleiste" data-testid="statusleiste">
-          <span className="projektstatus" aria-label="Projektstatus">
-            {geaendert ? 'Ungespeicherte Änderungen' : datei ? 'Projekt gespeichert' : 'Neues Projekt'}
-          </span>
           {entwurfStatus?.phase === 'gesichert' && (
             <span
               className="entwurf-status"
@@ -1882,7 +1909,7 @@ export function Anwendung() {
             </span>
           )}
           <span id="status-aktion" role="status" className={`status-aktion status-aktion--${statusArt}`}>
-            {verarbeitung ?? status}
+            {verarbeitung ?? (statusArt === 'fehler' && dauerfehler === status ? '' : status)}
           </span>
           <Knopf
             variante="leise"

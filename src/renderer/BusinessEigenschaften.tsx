@@ -288,7 +288,7 @@ function Wertbindung({
               )}
             </div>
           )}
-          {parameterRef !== null && !definition && (
+          {parameterRef !== null && !definition && !feldUngueltig && (
             <p className="sl-feld-fehler">Dieser Workflowparameter ist nicht definiert.</p>
           )}
           {variableRef !== null && (
