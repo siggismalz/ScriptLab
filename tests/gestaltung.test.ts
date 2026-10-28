@@ -57,15 +57,15 @@ describe('Tatsächliche Designfarben und Kontraste', () => {
   });
   for (const [kategorie, farbe] of Object.entries(kategoriefarben)) {
     it(`erhält Text, Auswahl und Einfügemarkierung in ${kategorie}`, () => {
-      expect(kontrast(farben.text, farbe)).toBeGreaterThanOrEqual(4.5);
+      expect(kontrast(farben.blockText, farbe)).toBeGreaterThanOrEqual(4.5);
       expect(kontrast(farben.blockAuswahl, farbe)).toBeGreaterThanOrEqual(3);
       expect(kontrast(farben.blockFokus, farbe)).toBeGreaterThanOrEqual(3);
       expect(kontrast(farben.blockKontur, farbe)).toBeGreaterThanOrEqual(3);
       const stil =
         scriptlabThema.blockStyles[blockStilNachKategorie[kategorie as keyof typeof kategoriefarben]];
       expect(stil.colourPrimary).toBe(farbe);
-      expect(kontrast(farben.text, stil.colourSecondary)).toBeGreaterThanOrEqual(4.5);
-      expect(stil.colourSecondary).toBe(farben.arbeitsflaeche);
+      expect(kontrast(farben.blockText, stil.colourSecondary)).toBeGreaterThanOrEqual(4.5);
+      expect(stil.colourSecondary).toBe(farben.blockFeld);
     });
   }
   it('wendet die HTML-Variablen aus derselben Quelle ohne DOM beim Import an', () => {
@@ -85,8 +85,10 @@ describe('Tatsächliche Designfarben und Kontraste', () => {
 });
 
 describe('Helles und dunkles Farbschema', () => {
-  it('behält Dunkel als Erststart und trennt die Systemauflösung von der gespeicherten Wahl', () => {
-    expect(farbschemaAufloesen()).toBe('dunkel');
+  it('verwendet Hell beim Erststart und erhält eine gespeicherte Wahl unabhängig vom System', () => {
+    expect(farbschemaAufloesen()).toBe('hell');
+    expect(farben).toBe(farbenNachThema.hell);
+    expect(scriptlabThema).toBe(scriptlabThemaFuer('hell'));
     expect(farbschemaAufloesen('dunkel', true)).toBe('dunkel');
     expect(farbschemaAufloesen('hell', false)).toBe('hell');
     expect(farbschemaAufloesen('system', true)).toBe('hell');
