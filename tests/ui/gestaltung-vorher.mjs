@@ -1,0 +1,27 @@
+import { _electron as electron } from 'playwright';
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { resolve, join } from 'node:path';
+import { tmpdir } from 'node:os';
+
+const profil = await mkdtemp(join(tmpdir(), 'ScriptLab-Gestaltung-Vorher-'));
+await writeFile(join(profil, 'einstellungen.json'), JSON.stringify({ automatischeUpdates: false }));
+const ziel = resolve('docs/gestaltung/vorher');
+await mkdir(ziel, { recursive: true });
+const app = await electron.launch({ args: [resolve('.')], env: { ...process.env, SCRIPTLAB_TESTDATEN: profil } });
+const seite = await app.firstWindow();
+await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
+await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).waitFor();
+await seite.screenshot({ path: join(ziel, 'start-1280.png') });
+await app.evaluate(({ dialog }, datei) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [datei] }); }, resolve('beispiele/business/A-Monatsauswertung/workflow.scriptlab'));
+await seite.getByRole('button', { name: 'Workflow öffnen', exact: true }).click();
+await seite.getByTestId('arbeitsbereich').waitFor();
+await seite.screenshot({ path: join(ziel, 'editor-1280.png') });
+await seite.getByRole('button', { name: 'Testausgabe', exact: true }).click();
+await seite.getByTestId('test-panel').waitFor();
+await seite.screenshot({ path: join(ziel, 'lauf-1280.png') });
+await seite.getByRole('button', { name: 'Weitere Funktionen', exact: true }).click();
+await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+await seite.getByRole('dialog', { name: 'Einstellungen', exact: true }).waitFor();
+await seite.screenshot({ path: join(ziel, 'einstellungen-1280.png') });
+console.log(JSON.stringify({ profil, ziel }));
+await app.evaluate(({ app }) => app.exit(0));
