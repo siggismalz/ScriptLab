@@ -221,12 +221,14 @@ async function pythonErmitteln(_tkinter = false, signal?: AbortSignal): Promise<
       };
       return ergebnis.installation;
     } catch (error) {
+      const abgebrochen = signal?.aborted;
       pythonZustand = {
-        zustand: 'fehler',
+        zustand: abgebrochen ? 'ungeprueft' : 'fehler',
         auswahl: null,
         installation: null,
-        meldung:
-          'Die mitgelieferten App-Komponenten sind nicht verfügbar. Installiere ScriptLab erneut. Bearbeiten und Exportieren bleiben möglich.',
+        meldung: abgebrochen
+          ? 'Die Vorbereitung wurde abgebrochen. ScriptLab prüft seine Komponenten beim nächsten Start erneut.'
+          : 'Die mitgelieferten App-Komponenten sind nicht verfügbar. Installiere ScriptLab erneut. Bearbeiten und Exportieren bleiben möglich.',
       };
       businessStatus = null;
       throw new Error(pythonZustand.meldung, { cause: error });
