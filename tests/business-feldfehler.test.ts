@@ -15,6 +15,54 @@ import { registriereBausteine } from '../src/editor/bausteine';
 registriereBausteine();
 
 describe('Belegte Feldbezüge für Quelle und Zuordnung', () => {
+  it('ordnet die erforderliche Spalte der Datentypumwandlung dem tatsächlichen Spaltenfeld zu', () => {
+    const definition = businessNachTyp.get('sl_biz_typ')!;
+    const konfiguration = { ...standardKonfiguration(definition), spalte: '' };
+    const fehler = businessKonfigurationFeldfehler(definition, konfiguration, []);
+    expect(fehler.find((m) => m.text.includes('Spaltenname'))?.feldPfad).toEqual(['spalte']);
+  });
+
+  it('erhält bei Aggregatfehlern den ursprünglichen Zeilenindex und lässt Namenskonflikte ohne Einzelpfad', () => {
+    const definition = businessNachTyp.get('sl_biz_gruppieren')!;
+    const konfiguration = {
+      ...standardKonfiguration(definition),
+      schluessel: ['Region'],
+      aggregate: [null, { funktion: 'SUMME', spalte: '', name: 'Region' }],
+    };
+    const fehler = businessKonfigurationFeldfehler(definition, konfiguration, []);
+    expect(fehler.find((m) => m.text.includes('Wertspalte'))?.feldPfad).toEqual(['aggregate', '1', 'spalte']);
+    const konflikt = fehler.find((m) => m.text.includes('eindeutige Namen'));
+    expect(konflikt).toBeDefined();
+    expect(konflikt?.feldPfad).toBeUndefined();
+  });
+
+  it('ordnet Prüfregelspalten zu und belässt den Vergleich zweier Grenzen beim Baustein', () => {
+    const definition = businessNachTyp.get('sl_biz_pruefen')!;
+    const fehler = businessKonfigurationFeldfehler(
+      definition,
+      {
+        ...standardKonfiguration(definition),
+        regeln: [
+          {
+            art: 'BEREICH',
+            spalte: '',
+            minimum: { art: 'wert', typ: 'ZAHL', wert: 5 },
+            maximum: { art: 'wert', typ: 'ZAHL', wert: 3 },
+          },
+        ],
+      },
+      [],
+    );
+    expect(fehler.find((m) => m.text.includes('Geprüfte Spalte'))?.feldPfad).toEqual([
+      'regeln',
+      '0',
+      'spalte',
+    ]);
+    const konflikt = fehler.find((m) => m.text.includes('Minimum einer Prüfregel'));
+    expect(konflikt).toBeDefined();
+    expect(konflikt?.feldPfad).toBeUndefined();
+  });
+
   it('liefert erforderliche Pfadfelder strukturiert und erhält die bisherigen Prüfmeldungen', () => {
     const definition = businessNachTyp.get('sl_biz_lesen_csv')!;
     const konfiguration = { ...standardKonfiguration(definition), pfad: '' };

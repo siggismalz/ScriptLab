@@ -350,14 +350,24 @@ export function businessKonfigurationFeldfehler(
     if (typeof k[a] === 'string' && k[a] && k[a] === k[b])
       melden('Quelle, Ausgabe und Archiv müssen verschiedene Pfade verwenden.');
   };
-  function eintraege(wert: unknown, titel: string, minimum = 1) {
-    return liste(wert, titel, minimum).filter((w, i): w is Objekt => {
+  function indizierteEintraege(wert: unknown, titel: string, minimum = 1) {
+    return liste(wert, titel, minimum).flatMap((w, index) => {
       if (!objekt(w)) {
-        melden(`Prüfe Eintrag ${i + 1} bei „${titel}“.`);
-        return false;
+        melden(`Prüfe Eintrag ${index + 1} bei „${titel}“.`);
+        return [];
       }
-      return true;
+      return [{ eintrag: w, index }];
     });
+  }
+  function eintraege(wert: unknown, titel: string, minimum = 1) {
+    return indizierteEintraege(wert, titel, minimum).map(({ eintrag }) => eintrag);
+  }
+  function dateneintraege(name: string, titel: string) {
+    let ergebnis: { eintrag: Objekt; index: number }[] = [];
+    imFeld([name], () => {
+      ergebnis = indizierteEintraege(k[name], titel);
+    });
+    return ergebnis;
   }
   function seiten(wert: unknown, titel: string, optional = false) {
     if (verweis(wert, titel) || (optional && !vorhanden(wert))) return;
@@ -424,7 +434,7 @@ export function businessKonfigurationFeldfehler(
       }
     }
   } else if (op === 'daten.spalten') {
-    if (k.aktion === 'AUSWAEHLEN') spalten(k.spalten, 'Ausgewählte Spalten');
+    if (k.aktion === 'AUSWAEHLEN') imFeld(['spalten'], () => spalten(k.spalten, 'Ausgewählte Spalten'));
     else if (k.aktion === 'UMBENENNEN') {
       if (!objekt(k.namen) || !Object.keys(k.namen).length)
         melden('Ordne mindestens einer vorhandenen Spalte einen neuen Namen zu.');
@@ -439,34 +449,39 @@ export function businessKonfigurationFeldfehler(
         if (new Set(namen).size !== namen.length) melden('Die neuen Spaltennamen müssen eindeutig sein.');
       }
     } else {
-      text(k.spalte, 'Spaltenname');
+      imFeld(['spalte'], () => text(k.spalte, 'Spaltenname'));
       if (k.aktion === 'TYP' && k.tausendertrennzeichen && k.tausendertrennzeichen === k.dezimaltrennzeichen)
         melden('Dezimal- und Tausendertrennzeichen müssen verschieden sein.');
     }
   } else if (op === 'daten.werte') {
-    spalten(k.spalten, 'Bearbeitete Spalten');
+    imFeld(['spalten'], () => spalten(k.spalten, 'Bearbeitete Spalten'));
     if (k.aktion === 'ERSETZEN') {
-      literal(k.suchen, 'Gesuchter Wert');
-      literal(k.ersatz, 'Ersatzwert');
+      imFeld(['suchen'], () => literal(k.suchen, 'Gesuchter Wert'));
+      imFeld(['ersatz'], () => literal(k.ersatz, 'Ersatzwert'));
     }
-    if (k.aktion === 'LEERWERTE' && k.leere === 'ERSETZEN') literal(k.ersatz, 'Ersatzwert');
-  } else if (op === 'daten.dubletten') spalten(k.schluessel, 'Verglichene Spalten');
+    if (k.aktion === 'LEERWERTE' && k.leere === 'ERSETZEN')
+      imFeld(['ersatz'], () => literal(k.ersatz, 'Ersatzwert'));
+  } else if (op === 'daten.dubletten')
+    imFeld(['schluessel'], () => spalten(k.schluessel, 'Verglichene Spalten'));
   else if (op === 'daten.sortieren')
-    eintraege(k.schluessel, 'Sortierspalten').forEach((s) => text(s.spalte, 'Sortierspalte'));
+    dateneintraege('schluessel', 'Sortierspalten').forEach(({ eintrag: s, index }) =>
+      imFeld(['schluessel', String(index), 'spalte'], () => text(s.spalte, 'Sortierspalte')),
+    );
   else if (op === 'daten.verknuepfen')
-    eintraege(k.schluessel, 'Verknüpfungsschlüssel').forEach((s) => {
-      text(s.links, 'Schlüssel der ersten Tabelle');
-      text(s.rechts, 'Schlüssel der zweiten Tabelle');
+    dateneintraege('schluessel', 'Verknüpfungsschlüssel').forEach(({ eintrag: s, index }) => {
+      imFeld(['schluessel', String(index), 'links'], () => text(s.links, 'Schlüssel der ersten Tabelle'));
+      imFeld(['schluessel', String(index), 'rechts'], () => text(s.rechts, 'Schlüssel der zweiten Tabelle'));
     });
   else if (op === 'daten.gruppieren') {
-    spalten(k.schluessel, 'Gruppenspalten', 0);
+    imFeld(['schluessel'], () => spalten(k.schluessel, 'Gruppenspalten', 0));
     const namen = Array.isArray(k.schluessel)
       ? k.schluessel.filter((s): s is string => typeof s === 'string').map((s) => s.toLocaleLowerCase('de'))
       : [];
-    eintraege(k.aggregate, 'Berechnungen').forEach((a) => {
-      wahl(a.funktion, aggregate, 'Zusammenfassung');
-      text(a.name, 'Name der Ergebnisspalte');
-      if (a.funktion !== 'ANZAHL') text(a.spalte, 'Wertspalte');
+    dateneintraege('aggregate', 'Berechnungen').forEach(({ eintrag: a, index }) => {
+      imFeld(['aggregate', String(index), 'funktion'], () => wahl(a.funktion, aggregate, 'Zusammenfassung'));
+      imFeld(['aggregate', String(index), 'name'], () => text(a.name, 'Name der Ergebnisspalte'));
+      if (a.funktion !== 'ANZAHL')
+        imFeld(['aggregate', String(index), 'spalte'], () => text(a.spalte, 'Wertspalte'));
       if (typeof a.name === 'string') {
         const name = a.name.toLocaleLowerCase('de');
         if (namen.includes(name)) melden('Ergebnisspalten und Gruppenspalten müssen eindeutige Namen haben.');
@@ -474,20 +489,34 @@ export function businessKonfigurationFeldfehler(
       }
     });
   } else if (op === 'daten.pruefen') {
-    eintraege(k.regeln, 'Prüfregeln').forEach((r) => {
-      wahl(r.art, ['NICHT_LEER', 'EINDEUTIG', 'BEREICH', 'TYP', 'ERLAUBTE_WERTE', 'ZEILENZAHL'], 'Prüfregel');
-      if (r.art === 'EINDEUTIG') spalten(r.spalten ?? [r.spalte ?? ''], 'Eindeutige Schlüsselspalten');
-      else if (r.art !== 'ZEILENZAHL') text(r.spalte, 'Geprüfte Spalte');
-      if (r.art === 'TYP') typ(r.typ, 'Erwarteter Datentyp');
+    dateneintraege('regeln', 'Prüfregeln').forEach(({ eintrag: r, index }) => {
+      const pfad = (name: string) => ['regeln', String(index), name];
+      imFeld(pfad('art'), () =>
+        wahl(
+          r.art,
+          ['NICHT_LEER', 'EINDEUTIG', 'BEREICH', 'TYP', 'ERLAUBTE_WERTE', 'ZEILENZAHL'],
+          'Prüfregel',
+        ),
+      );
+      if (r.art === 'EINDEUTIG')
+        imFeld(pfad(r.spalten !== undefined && r.spalten !== null ? 'spalten' : 'spalte'), () =>
+          spalten(r.spalten ?? [r.spalte ?? ''], 'Eindeutige Schlüsselspalten'),
+        );
+      else if (r.art !== 'ZEILENZAHL') imFeld(pfad('spalte'), () => text(r.spalte, 'Geprüfte Spalte'));
+      if (r.art === 'TYP') imFeld(pfad('typ'), () => typ(r.typ, 'Erwarteter Datentyp'));
       if (r.art === 'ERLAUBTE_WERTE')
-        liste(r.werte, 'Erlaubte Werte').forEach((w) => literal(w, 'Erlaubter Wert', false));
+        imFeld(pfad('werte'), () =>
+          liste(r.werte, 'Erlaubte Werte').forEach((w) => literal(w, 'Erlaubter Wert', false)),
+        );
       if (r.art === 'BEREICH' || r.art === 'ZEILENZAHL') {
         if (!vorhanden(r.minimum) && !vorhanden(r.maximum)) melden('Gib mindestens eine Prüfgrenze an.');
         for (const name of ['minimum', 'maximum'])
           if (vorhanden(r[name])) {
             if (r.art === 'ZEILENZAHL')
-              zahl(r[name], `Zeilenzahl: ${name === 'minimum' ? 'Minimum' : 'Maximum'}`, 0);
-            else literal(r[name], 'Bereichsgrenze', false);
+              imFeld(pfad(name), () =>
+                zahl(r[name], `Zeilenzahl: ${name === 'minimum' ? 'Minimum' : 'Maximum'}`, 0),
+              );
+            else imFeld(pfad(name), () => literal(r[name], 'Bereichsgrenze', false));
           }
         const min = objekt(r.minimum) ? r.minimum.wert : r.minimum,
           max = objekt(r.maximum) ? r.maximum.wert : r.maximum;
@@ -495,7 +524,7 @@ export function businessKonfigurationFeldfehler(
           melden('Das Minimum einer Prüfregel darf nicht größer als das Maximum sein.');
       }
     });
-  } else if (op === 'daten.vorschau') zahl(k.limit, 'Angezeigte Zeilen', 1, 200);
+  } else if (op === 'daten.vorschau') imFeld(['limit'], () => zahl(k.limit, 'Angezeigte Zeilen', 1, 200));
   else if (op === 'dateien.stapel' || op === 'dateien.csv_stapel') {
     benoetigt('ordner', 'Eingangsordner');
     text(k.muster, 'Dateimuster');
