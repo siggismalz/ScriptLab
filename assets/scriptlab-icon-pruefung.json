@@ -1,6 +1,7 @@
 {
   "datum": "2026-10-28",
   "quelle": "assets/scriptlab.svg",
+  "farbwelt": "Office-Blau",
   "ico_header": {
     "typ": 1,
     "anzahl": 5
@@ -11,7 +12,7 @@
       "hoehe": 16,
       "farbtiefe": 32,
       "png": true,
-      "laenge": 846,
+      "laenge": 841,
       "offset": 86
     },
     {
@@ -19,41 +20,40 @@
       "hoehe": 24,
       "farbtiefe": 32,
       "png": true,
-      "laenge": 1144,
-      "offset": 932
+      "laenge": 1169,
+      "offset": 927
     },
     {
       "breite": 32,
       "hoehe": 32,
       "farbtiefe": 32,
       "png": true,
-      "laenge": 1260,
-      "offset": 2076
+      "laenge": 1316,
+      "offset": 2096
     },
     {
       "breite": 48,
       "hoehe": 48,
       "farbtiefe": 32,
       "png": true,
-      "laenge": 1847,
-      "offset": 3336
+      "laenge": 1897,
+      "offset": 3412
     },
     {
       "breite": 256,
       "hoehe": 256,
       "farbtiefe": 32,
       "png": true,
-      "laenge": 7073,
-      "offset": 5183
+      "laenge": 7121,
+      "offset": 5309
     }
   ],
   "pruefungen": [
-    "ICO-Ressourcen und separate PNGs pixelgleich, mit Pillow unabhaengig gelesen",
-    "PNG-Abmessungen 16, 24, 32, 48, 256 px",
-    "RGBA mit transparenten Aussenkanten",
-    "Identische Signet-Geometrie in Icon und beiden Wortmarken",
-    "assets/scriptlab.png identisch zur 256-px-Ressource",
-    "Keine eingebetteten Schriftdateien; SVG-Wortmarke verwendet editierbaren Systemschrift-Text"
+    "ICO-Ressourcen bytegleich zu den einzeln erzeugten PNGs",
+    "PNG-Abmessungen und 32-Bit-ICO-Einträge gelesen",
+    "scriptlab.png bytegleich zur 256-px-Ressource",
+    "Geometrie der vorhandenen Marke unverändert; nur Farbrollen angepasst",
+    "Keine Schriftdateien eingebettet"
   ],
-  "visuelle_pruefung": "Originalgroessen und dreifache Pixelansicht auf dunklem und hellem Hintergrund am 28.10.2026 visuell geprueft. Drei Bausteine und Verbindung sind erkennbar. 16 px zeigt erwartungsgemaess weichere Kanten."
+  "visuelle_pruefung": "Blaue Wortmarken und einfarbiges Signet im installierten Chrome gerendert und betrachtet. Icon in 16, 24, 32, 48 und 256 px auf beiden Themenflächen betrachtet; kleine Größen zusätzlich dreifach mit sichtbaren Pixeln. Drei Bausteine und Verbindung erkennbar, bei 16 px erwartungsgemäß weichere Kanten."
 }

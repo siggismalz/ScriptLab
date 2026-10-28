@@ -4,7 +4,7 @@ Stand und Prüfung: 28. Oktober 2026.
 
 ## Richtung
 
-Die Schreibweise lautet **ScriptLab**. Die bestehende Idee eines S-Signets wurde als verbundene Folge aus drei Bausteinen weiterentwickelt. Die einfache Geometrie verbindet den visuellen Baukasten mit einem nachvollziehbaren Ablauf. Sie funktioniert ohne Farbe, Verläufe, Schatten oder Glanz. Schiefer und Petrol passen zum ruhigen Arbeitswerkzeug. Kundenunterlagen behalten ihre eigenen Vorlagen und Absenderangaben.
+Die Schreibweise lautet **ScriptLab**. Die bestehende Idee eines S-Signets wurde als verbundene Folge aus drei Bausteinen weiterentwickelt. Die einfache Geometrie verbindet den visuellen Baukasten mit einem nachvollziehbaren Ablauf. Sie funktioniert ohne Farbe, Verläufe, Schatten oder Glanz. Mit der Office-Farbwelt wurde Petrol durch Blau ersetzt; Form und Systemtypografie bleiben erhalten. Kundenunterlagen behalten ihre eigenen Vorlagen und Absenderangaben.
 
 Die Wortmarke verwendet Semibold und bleibt in den SVG-Dateien als echter, bearbeitbarer Text erhalten. Der Schriftstapel lautet `Segoe UI Variable, Segoe UI, system-ui, sans-serif`. Es werden keine Windows-Schriftdateien eingebettet, kopiert oder im Anwendungspaket ergänzt. Auf Systemen mit anderen Schriften kann die Laufweite abweichen. Die Anwendung soll die Wortmarke deshalb als Text und das Signet als Vektor darstellen. Die Entwicklercredits **Leon Stolz** stehen in den Produktinformationen.
 
@@ -12,7 +12,7 @@ Die Wortmarke verwendet Semibold und bleibt in den SVG-Dateien als echter, bearb
 
 | Datei | Verwendung |
 | --- | --- |
-| [scriptlab.svg](../../assets/scriptlab.svg) | Bearbeitbare Vektorquelle für das Windows-Anwendungsicon; Petrol auf abgerundeter Schieferfläche. |
+| [scriptlab.svg](../../assets/scriptlab.svg) | Bearbeitbare Vektorquelle für das Windows-Anwendungsicon; Blau auf abgerundeter dunkelblauer Neutralfläche. |
 | [scriptlab-signet.svg](../../assets/scriptlab-signet.svg) | Einfarbiges Signet mit `currentColor`, transparentem Hintergrund und identischer Geometrie. |
 | [scriptlab-wortmarke.svg](../../assets/scriptlab-wortmarke.svg) | Wortmarke mit Signet für helle Flächen. |
 | [scriptlab-wortmarke-dunkel.svg](../../assets/scriptlab-wortmarke-dunkel.svg) | Wortmarke mit Signet für dunkle Flächen. |
@@ -23,7 +23,7 @@ Die Wortmarke verwendet Semibold und bleibt in den SVG-Dateien als echter, bearb
 | [Wortmarken-Prüftafel](../../assets/scriptlab-marke-pruefung.png) | Beide Wortmarken sowie einfarbiges Signet, im installierten Chrome gerendert. |
 | [Technischer Prüfdatensatz](../../assets/scriptlab-icon-pruefung.json) | Tatsächlich gelesene ICO-Einträge und Prüfungen. |
 
-Das einfarbige Signet benötigt eine explizite Vordergrundfarbe. Ein externes SVG in einem HTML-`img` erbt `currentColor` nicht aus dem umgebenden Dokument. Für die Oberfläche daher ein Inline-SVG oder eine CSS-Maske mit der jeweiligen Akzentrolle verwenden. Auf dunklen Flächen ist `#8FC2BC`, auf hellen Flächen `#24635D` vorgesehen. Das Windows-Icon bleibt unabhängig vom Anwendungsthema gleich.
+Das einfarbige Signet benötigt eine explizite Vordergrundfarbe. Ein externes SVG in einem HTML-`img` erbt `currentColor` nicht aus dem umgebenden Dokument. Für die Oberfläche daher ein Inline-SVG oder eine CSS-Maske mit der jeweiligen Akzentrolle verwenden. Auf dunklen Flächen ist `#86B9EF`, auf hellen Flächen `#0F6CBD` vorgesehen. Das Windows-Icon verwendet `#86B9EF` auf `#101720` und bleibt unabhängig vom Anwendungsthema gleich.
 
 ## Reproduzierbare Erzeugung
 
@@ -37,15 +37,14 @@ Der Generator liest die Rechtecke und Verbindung aus der SVG-Quelle, rendert jed
 
 ## Tatsächlich durchgeführte Prüfung
 
-Der Generator wurde am 28. Oktober 2026 erneut erfolgreich ausgeführt. Ein unabhängiger Python/Pillow-Lesevorgang hat anschließend geprüft:
+Der Generator wurde am 28. Oktober 2026 nach der Umstellung auf Office-Blau erneut erfolgreich ausgeführt. Ein unabhängiger Node-Lesevorgang hat anschließend geprüft:
 
 - ICO-Typ 1, genau fünf Einträge und jeweils 32 Bit Farbtiefe.
 - Tatsächliche PNG-Abmessungen 16, 24, 32, 48 und 256 Pixel.
-- Alle ICO-Bildressourcen sind pixelgleich zu den separaten PNGs.
+- Alle ICO-Bildressourcen sind bytegleich zu den separaten PNGs.
 - `scriptlab.png` ist identisch zur 256-Pixel-Ressource.
-- Die äußeren Ecken sind transparent; die Iconfläche bleibt geschlossen.
-- Die Signet-Geometrie stimmt in Anwendungsicon, einfarbigem Signet und beiden Wortmarken überein.
+- Die bestehende Vektorgeometrie wurde beibehalten; der Generator leitet die Rasterdateien weiter aus derselben Quelle ab.
 
-Die Icon-Prüftafel wurde visuell bei Originalgröße und dreifacher Pixelvergrößerung auf beiden Hintergrundfarben betrachtet. Drei Bausteine und Verbindung bleiben erkennbar. Bei 16 Pixeln sind die Konturen erwartungsgemäß weicher. Die Wortmarken wurden mit den installierten Systemschriften im vorhandenen Chrome gerendert und visuell geprüft. Der Text endet bei etwa 222 von 268 verfügbaren SVG-Pixeln; er wird nicht abgeschnitten.
+Die neue Icon-Prüftafel wurde visuell bei 16, 24, 32, 48 und 256 Pixeln auf beiden Hintergrundfarben betrachtet; kleine Größen zusätzlich bei dreifacher Pixelvergrößerung. Drei Bausteine und Verbindung bleiben erkennbar. Bei 16 Pixeln sind die Konturen erwartungsgemäß weicher. Die blauen Wortmarken und das einfarbige Signet wurden mit den installierten Systemschriften im vorhandenen Chrome gerendert und visuell geprüft. Der Text wird nicht abgeschnitten.
 
 Diese Asset-Prüfung bestätigt die Dateien und ihre Darstellung. Sie ersetzt keine Kontrolle der Windows-Taskleiste, des Installers oder aller Fensterzustände der fertig gebauten Anwendung; die Produktprüfung wird separat dokumentiert.

@@ -1,4 +1,5 @@
 # Entwicklungswerkzeug: leitet PNG und Windows-ICO aus dem bearbeitbaren SVG ab.
+# Farben und Geometrie stammen vollständig aus scriptlab.svg, auch nach einem Markenfarbwechsel.
 # Benötigt Windows/.NET System.Drawing; keine Fonts, Downloads oder externen Renderer.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
