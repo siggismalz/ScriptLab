@@ -6,7 +6,7 @@ ScriptLab erstellt, prüft und speichert Workflows für Windows. **Python ist di
 
 Ein bewusst gestarteter Test kann den vollständigen aktuellen Workflow auf diesem Computer ausführen und echte Dateien verändern. Er ist keine Sandbox. Für Business-Abläufe gibt es zusätzlich eine begrenzte **Datenvorschau** und einen **Prüflauf ohne fachliche Zieländerungen**. Öffnen, Wiederherstellen, Bearbeiten, Codevorschau, Speichern, Export und Signaturprüfung starten keine Verarbeitung. Exportierte Scripts kannst du eigenständig außerhalb der Anwendung ausführen.
 
-Zielsystem der ersten Version: Windows 11 x64. Weitere Windows-Versionen sind derzeit nicht freigegeben. Bearbeiten, Speichern und Exportieren benötigen weder eine Python-Installation noch die Windows-VBScript-Komponente.
+Zielsystem der ersten Version: Windows 11 x64. Weitere Windows-Versionen sind derzeit nicht freigegeben. Python 3.15.2 mit Dialogfunktionen und dem festen Business-Paketsatz gehört zur Anwendung. Für Python-Workflows innerhalb von ScriptLab ist keine externe Einrichtung erforderlich. VBS-Ausführung benötigt weiterhin die verfügbare Windows-VBScript-Komponente; Bearbeiten, Speichern und Exportieren funktionieren auch ohne diese Komponente.
 
 ## Installation
 
@@ -29,13 +29,12 @@ Die 48 gemeinsamen Bausteintypen decken Ein-/Ausgabe, Bedingungen, Schleifen, Da
 
 ## Ein erster Geschäftsablauf
 
-1. Unter **Einstellungen → Laufzeit → Python-Installation** einen geeigneten CPython-Interpreter prüfen. Die Grundinstallation wird nicht automatisch installiert.
-2. Unter **Business-Laufzeit** entweder eine vorbereitete Umgebung prüfen, **Eigene Umgebung online einrichten** oder **Offline-Paketordner verwenden** wählen. Nur diese bewusste Einrichtung installiert den festen, hashgepinnten Paketsatz in eine neue eigene virtuelle Umgebung. Ein Workflowstart installiert niemals Pakete.
-3. Das Beispiel **Monatliche Auswertung** als Vorlage verwenden. ScriptLab legt einen unabhängigen Workflow an und kopiert seine synthetischen Testdateien in dessen ScriptLab-Arbeitsordner. Speichern, erneutes Öffnen und Entwurfwiederherstellung erhalten diesen Bezug. Für produktive Daten musst du die Quellen bewusst ändern.
-4. **Läufe → Vorbereitung** öffnen, Parametersatz und **Quellen und Ausgabeziele** prüfen. Zunächst **Datenvorschau**, danach **Prüflauf ohne Zieländerungen** wählen. Erst **Ausführen · echte Dateiänderungen** verarbeitet die gewählten Daten und schreibt die fachlichen Ergebnisse.
-5. Das bearbeitbare Projekt speichern. **Exportieren → Business-Paket** erzeugt ein eigenständiges ZIP mit Python-Script, Business-Modulen, fester Lockdatei, Parametervorlage, Anleitung und Vera-Schrift samt Lizenz. Eigene Vorlagen, Bilder oder Schriften werden nur nach ausdrücklicher Auswahl beigefügt; Geschäftsdaten und Laufprotokolle werden nicht automatisch kopiert.
+1. Das Beispiel **Monatliche Auswertung** als Vorlage verwenden. ScriptLab legt einen unabhängigen Workflow an und kopiert seine synthetischen Testdateien in dessen ScriptLab-Arbeitsordner. Speichern, erneutes Öffnen und Entwurfwiederherstellung erhalten diesen Bezug. Für produktive Daten musst du die Quellen bewusst ändern.
+2. Baustein auswählen und Quelle oder Einstellungen unter **Eigenschaften** prüfen. Die kurzen Zusammenfassungen im Ablauf zeigen wesentliche Angaben. Unter **Daten und Parameter → Datenvorschau** lässt sich das Ergebnis bis zu einem unterstützten Tabellenschritt bewusst laden; unfertige Nachfolger werden dafür nicht benötigt.
+3. **Läufe → Vorbereitung** öffnen und Parametersatz sowie **Quellen und Ausgabeziele** prüfen. Business-Workflows beginnen mit **Prüflauf ohne Zieländerungen**. Erst **Ausführen · echte Dateiänderungen** verarbeitet die gewählten Daten und schreibt die fachlichen Ergebnisse.
+4. Den bearbeitbaren Workflow speichern. **Exportieren → Business-Paket** erzeugt ein eigenständiges ZIP mit Python-Script, Business-Modulen, fester Lockdatei, Parametervorlage, Anleitung und Vera-Schrift samt Lizenz. Eigene Vorlagen, Bilder oder Schriften werden nur nach ausdrücklicher Auswahl beigefügt; Geschäftsdaten und Laufprotokolle werden nicht automatisch kopiert. Der Python-Interpreter der Anwendung gehört nicht zum Export.
 
-Die fünf Beispiele behandeln **Monatsauswertung**, **Bestellungen mit Stammdaten**, **Word-Bestellvorschlag**, **PDF-Dokumenteingang** und **CSV-Dateistapel mit Wiederaufnahme**. Die [Business-Bedienung](docs/BUSINESS-BEDIENUNG.md) führt durch Einrichtung, Modi und Parameter. [Tabellenverarbeitung](docs/BUSINESS-DATEN.md), [Dokumente und Dateisicherheit](docs/BUSINESS-DOKUMENTE.md) und [Business-Laufzeit](docs/BUSINESS-LAUFZEIT.md) beschreiben den tatsächlichen Umfang und seine Grenzen.
+Die fünf Beispiele behandeln **Monatsauswertung**, **Bestellungen mit Stammdaten**, **Word-Bestellvorschlag**, **PDF-Dokumenteingang** und **CSV-Dateistapel mit Wiederaufnahme**. [Neue Bedienung](docs/NEUE-BEDIENUNG.md) beschreibt den aktuellen Arbeitsweg mit mitgelieferter Laufzeit; ältere Einrichtungsnachweise bleiben ihrem damaligen Stand zugeordnet. [Tabellenverarbeitung](docs/BUSINESS-DATEN.md) sowie [Dokumente und Dateisicherheit](docs/BUSINESS-DOKUMENTE.md) beschreiben Fachfunktionen und Grenzen.
 
 Die linke Palette verbindet Suche und Kategorien in einem verstellbaren Bereich. Eigenschaften und Codevorschau sind anfangs geschlossen. Neben Drag-and-drop gibt es anklickbare Einfügestellen zum Hinzufügen, Verbinden und Verschieben. Das Mausrad verschiebt die Arbeitsfläche; Strg+Mausrad zoomt dort. Die [Designnotiz](docs/DESIGNNOTIZ.md) enthält die tatsächlichen UI-Prüfungen, Bildschirmaufnahmen und offenen Punkte.
 
@@ -43,7 +42,7 @@ Die Startseite bietet **Meine gespeicherten Workflows**, **Entwürfe**, **Beispi
 
 ## Oberfläche
 
-Die Oberfläche gliedert Übersicht, Bearbeitung und Details. [Aktuelle Ansichten](docs/gestaltung/ANSICHTEN.html), [Informationsebenen](docs/gestaltung/INFORMATIONSEBENEN.md) und [Designsystem](docs/gestaltung/DESIGNSYSTEM.md) dokumentieren die Gestaltung; der [Prüfstand](docs/gestaltung/PRUEFUNG.md) trennt durchgeführte Betrachtungen von offenen Grenzen.
+Die Oberfläche gliedert Übersicht, Bearbeitung und Details. Die Office-Farbwelt beginnt bei einer neuen Installation hell; gespeicherte Darstellungswahlen bleiben erhalten. [Neue Bedienung](docs/NEUE-BEDIENUNG.md) und [Designsystem](docs/gestaltung/DESIGNSYSTEM.md) beschreiben den jetzigen Stand. [Ansichten](docs/gestaltung/ANSICHTEN.html), [Informationsebenen](docs/gestaltung/INFORMATIONSEBENEN.md) und [Prüfstand](docs/gestaltung/PRUEFUNG.md) bewahren zusätzlich die zeitlich zugeordneten Entwicklungsnachweise.
 
 ## Entwicklung
 
@@ -60,9 +59,11 @@ npm run dev
 
 `npm run dev` baut die Anwendung und öffnet das lokale Electron-Fenster; es startet keinen Webserver und lädt keine entfernten Bibliotheken. Nach Codeänderungen neu bauen und starten.
 
+Der Build bereitet außerdem das feste Windows-x64-Python-Bündel vor. Beim ersten Vorbereiten werden die festgelegten Originalquellen und hashgepinnten Wheels benötigt. Ein unverändert vorhandenes Bündel wird anhand seines Manifests lokal geprüft und wiederverwendet; Endnutzer führen diese Entwicklungsschritte nicht aus. Gezielt lässt es sich mit `node scripts/python-buendel.mjs --vorbereiten` erzeugen und mit `--pruefen` ausschließlich lokal prüfen. Das fertige Bündel liegt unter `artifacts/python-buendel/python`; die Herkunft und Beilagen dokumentiert [laufzeit/python-herkunft.md](laufzeit/python-herkunft.md).
+
 `npm run package` baut den Windows-Installer. `npm run package:dir` erzeugt ein entpacktes Programmpaket. Beide arbeiten mit `electron-builder` 26. Der [Releaseprozess](docs/RELEASES.md) beschreibt GitHub Actions, erforderliche Secrets und geprüfte Updateartefakte. Gewöhnliche Commits veröffentlichen kein Release.
 
-Nach `npm run package` prüft `npm run verify:package` Installergröße, Update-Prüfsummen, Blockmap und die Übereinstimmung des entpackten Pakets mit `dist`, Beispielen und Beilagen. Der tatsächliche Bericht liegt unter `release/pruefung.json`. Diese lesende Prüfung ersetzt weder eine Installation noch den Vergleich zweier installierter Updateversionen.
+Nach `npm run package` prüft `npm run verify:package` Installergröße, Update-Prüfsummen, Blockmap und die Übereinstimmung des entpackten Pakets mit `dist`, Beispielen und Beilagen. Hinzu kommt das vollständige Offline-Python-Bündel unter `resources/python`: Dateibestand, Manifest, Größen, Prüfsummen, Business-Lockdatei und Bytevergleich mit dem Build-Bündel. Es wird kein Interpreter gestartet. Der tatsächliche Bericht liegt unter `release/pruefung.json`. Diese lesende Prüfung ersetzt weder eine Installation noch den Vergleich zweier installierter Updateversionen; ein älterer Paketbericht belegt die neue Bündelprüfung nicht.
 
 Falls ältere Builddateien gesperrt sind, kann ein eigener Ausgabeordner verwendet werden. Die Prüfung akzeptiert denselben Ordner als Argument und schreibt ihren Bericht dort; ihre Prüfungen bleiben gleich:
 
@@ -78,11 +79,11 @@ npm run verify:package -- artifacts/startseiten-build-final
 
 Abgeschlossene Läufe werden lokal mit Modus, Status und verwendetem Workflowstand aufbewahrt. **Alle Läufe** öffnet die Liste dieses Workflows. **Anzeigen** lädt die Details des gewählten Laufs mit **Übersicht**, **Ergebnisse** und **Protokoll**. Das Protokoll lässt sich kopieren oder als Textdatei exportieren. Ein Ansichtswechsel oder das Öffnen eines alten Laufs startet keine Verarbeitung. Der [Testlaufleitfaden](docs/TESTLAUF.md) trennt diese aktuelle Bedienung vom historischen VBS-Prüfstand.
 
-**Stoppen** beendet den Test, macht bereits erfolgte Änderungen aber nicht rückgängig. Relative Pfade verwenden den ScriptLab-Arbeitsordner. Ausgaben der Ausführung in ScriptLab müssen innerhalb des ScriptLab-Nutzerverzeichnisses liegen; bestehende absolute Ziele außerhalb werden abgewiesen und nicht umgeschrieben. Externe Quellen bleiben lesbar. Das ist keine allgemeine Sandbox. Ein Test speichert weder das Projekt noch eine Exportdatei. Python-Tests benötigen eine geeignete lokale CPython-Installation, VBS-Tests die verfügbare Windows-VBScript-Laufzeit.
+**Stoppen** beendet den Test, macht bereits erfolgte Änderungen aber nicht rückgängig. Relative Pfade verwenden den ScriptLab-Arbeitsordner. Ausgaben der Ausführung in ScriptLab müssen innerhalb des ScriptLab-Nutzerverzeichnisses liegen; bestehende absolute Ziele außerhalb werden abgewiesen und nicht umgeschrieben. Externe Quellen bleiben lesbar. Das ist keine allgemeine Sandbox. Ein Test speichert weder das Projekt noch eine Exportdatei. Python-Läufe verwenden die mitgelieferte Laufzeit; VBS-Läufe die verfügbare Windows-VBScript-Laufzeit.
 
-## Python einrichten und selbst ausführen
+## Mitgelieferte Komponenten und eigenständige Exporte
 
-Unter **Einstellungen → Laufzeit → Python-Installation** lässt sich ein konkreter Interpreter auswählen und erneut prüfen. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. ScriptLab zeigt den tatsächlichen Status, die Version und den Interpreterpfad; es installiert keine Python-Grundinstallation und keine Pakete automatisch. Die 48 gemeinsamen Grundbausteintypen benötigen keine zusätzlichen Python-Pakete. Die zusätzlichen Business-Bausteine verwenden den ausdrücklich eingerichteten festen Paketsatz. Dialogbausteine benötigen `tkinter`, dessen Verfügbarkeit erst bei Bedarf geprüft wird. Abläufe ohne Dialoge setzen `tkinter` nicht voraus.
+Unter **Einstellungen → Laufzeit** zeigt ScriptLab den Status der mitgelieferten Python- und Business-Komponenten. **Erneut prüfen** überprüft diesen Bestand. Versionen und Programmdatei stehen unter technischen Angaben; eine Interpreterwahl und Online-/Offline-Paketinstallation gehören nicht mehr zur normalen Bedienung. Ein Workflowstart lädt oder installiert keine Pakete.
 
 Ein exportiertes Python-Script kann in PowerShell mit dem vollständigen Pfad des eigenen Interpreters gestartet werden. Die folgenden Beispielpfade müssen durch die tatsächlich vorhandenen Pfade ersetzt werden:
 
@@ -90,7 +91,7 @@ Ein exportiertes Python-Script kann in PowerShell mit dem vollständigen Pfad de
 & "C:\Python315\python.exe" -I -u -X utf8 "C:\Meine Workflows\Begruessung.py"
 ```
 
-`-I` isoliert die Python-Modulsuche und ignoriert Python-Umgebungsvariablen, `-u` liefert ungepufferte Ausgabe und `-X utf8` aktiviert den UTF-8-Modus. Das ist keine Sicherheits-Sandbox. Ein Doppelklick auf `.py` ist von Windows-Dateizuordnungen abhängig und wird nicht vorausgesetzt. Der Interpreterpfad ist eine lokale Einstellung und gehört nicht in Projekt- oder Exportdateien. Weitere Hinweise stehen in [docs/PYTHON.md](docs/PYTHON.md) und der [offiziellen CPython-Dokumentation](https://docs.python.org/3.15/using/cmdline.html).
+`-I` isoliert die Python-Modulsuche und ignoriert Python-Umgebungsvariablen, `-u` liefert ungepufferte Ausgabe und `-X utf8` aktiviert den UTF-8-Modus. Das ist keine Sicherheits-Sandbox. Ein Doppelklick auf `.py` ist von Windows-Dateizuordnungen abhängig und wird nicht vorausgesetzt. Der mitgelieferte Interpreter ist Teil der Anwendung, nicht Bestandteil der exportierten Datei. Weitere Hinweise stehen in der [offiziellen CPython-Dokumentation](https://docs.python.org/3.15/using/cmdline.html).
 
 ## Projekt und Export
 
@@ -122,12 +123,12 @@ Automatische Updateprüfung ist standardmäßig aus. Download und Installation e
 - [Versionen und offizielle Quellen](docs/VERSIONEN.md).
 - [Prüfplan](docs/PRUEFPLAN.md), [Business-Abnahmestand](docs/BUSINESS-ABNAHME.md) und [historische Abnahme](docs/ABNAHME.md).
 
-Anwendungscode und Hilfen sind deutsch. Einstellungen, `projektbibliothek.json`, Entwürfe, gespeicherte Workflows unter `Workflows\<UUID>.scriptlab`, Arbeitsdateien unter `Arbeitsdateien\<UUID>` und die `laufhistorie` liegen außerhalb der Installation im Electron-Nutzerverzeichnis (gewöhnlich `%APPDATA%\ScriptLab`). Dort liegen auch eigene Laufzeiten und lokale Business-Journale. Die Laufhistorie ist auf höchstens 200 abgeschlossene Läufe und 64 MiB Detaildaten insgesamt begrenzt; sie nimmt keine Prozesse automatisch wieder auf. Die [Weiterentwicklung](docs/WEITERENTWICKLUNG.md) beschreibt Ablage und Grenzen. Die Bibliotheken und zehn lokalen Hilfethemen werden mitgeliefert. Bearbeiten, Projektspeicherung, Hilfe und unsignierter Export benötigen kein Netzwerk.
+Anwendungscode und Hilfen sind deutsch. Einstellungen, `projektbibliothek.json`, Entwürfe, gespeicherte Workflows unter `Workflows\<UUID>.scriptlab`, Arbeitsdateien unter `Arbeitsdateien\<UUID>` und die `laufhistorie` liegen außerhalb der Installation im Electron-Nutzerverzeichnis (gewöhnlich `%APPDATA%\ScriptLab`). Dort liegen auch lokale Business-Journale. Die Python-Laufzeit liegt dagegen bei den Programmressourcen. Die Laufhistorie ist auf höchstens 200 abgeschlossene Läufe und 64 MiB Detaildaten insgesamt begrenzt; sie nimmt keine Prozesse automatisch wieder auf. Die [Weiterentwicklung](docs/WEITERENTWICKLUNG.md) beschreibt Ablage und Grenzen. Die Bibliotheken und zehn lokalen Hilfethemen werden mitgeliefert. Bearbeiten, Projektspeicherung, Hilfe und unsignierter Export benötigen kein Netzwerk.
 
 ## Rechte und Drittanbieter
 
 Die Projektlizenz hat Leon Stolz noch nicht festgelegt. `UNLICENSED` kennzeichnet diese ausstehende Freigabe und erteilt keine Nutzungslizenz. Fremdbibliotheken behalten ihre jeweiligen Lizenzen. [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) inventarisiert die ausgelieferten Produktionsabhängigkeiten und enthält die vorhandenen Originalhinweise; der fehlende vollständige Originaltext des Pakets `lazy-val@1.0.5` ist ausdrücklich vermerkt. Die Originaldateien `LICENSE.electron.txt` und `LICENSES.chromium.html` liegen der Windows-Distribution bei.
 
-Der feste optionale Python-Paketsatz besitzt eigene [Business-Lizenzhinweise](laufzeit/business-notices.md). Die unverändert mitgelieferte Vera-Schrift liegt zusammen mit ihrer Original-Lizenz im Business-Paket; Windows-Schriften werden nicht weiterverteilt.
+Der feste mitgelieferte Python-Paketsatz besitzt eigene [Business-Lizenzhinweise](laufzeit/business-notices.md); [Python-Herkunft](laufzeit/python-herkunft.md) beschreibt das Anwendungsbündel. Die unverändert mitgelieferte Vera-Schrift liegt zusammen mit ihrer Original-Lizenz im Business-Paket; Windows-Schriften werden nicht weiterverteilt.
 
 Die Lizenzhinweise werden offline mit `node scripts/lizenzhinweise.mjs` erzeugt und mit `node scripts/lizenzhinweise.mjs --check` auf Aktualität geprüft. Die öffentliche Quellcodeablage ist keine zusätzliche Lizenzfreigabe.

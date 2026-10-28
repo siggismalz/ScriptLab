@@ -2,39 +2,51 @@
 
 ## Marke und Sprache
 
-ScriptLab ist ein sachliches Arbeitswerkzeug für Menschen ohne Programmierkenntnisse. Die Oberfläche spricht Deutsch, verwendet „Workflow“, „Entwurf“, „Vorlage“, „Datenvorschau“, „Lauf“, „Ergebnisse“ und „Export“ mit ihren fachlichen Bedeutungen. Speichern erzeugt eine bearbeitbare Projektdatei; Export erstellt ein Script oder ein Paket. Der tägliche Einstieg beginnt mit vorhandener Arbeit. Eine zusätzliche Begrüßungsfläche ist nicht vorgesehen.
+ScriptLab ist ein sachliches Arbeitswerkzeug für Menschen ohne Programmierkenntnisse. Die Oberfläche spricht Deutsch, verwendet „Workflow“, „Entwurf“, „Vorlage“, „Datenvorschau“, „Lauf“, „Ergebnisse“ und „Export“ mit ihren fachlichen Bedeutungen. Speichern sichert den bearbeitbaren Workflow intern; Export erstellt eine weiterzugebende Projektkopie, ein Script oder ein Paket. Der tägliche Einstieg beginnt mit vorhandener Arbeit. Eine zusätzliche Begrüßungsfläche ist nicht vorgesehen.
 
 Signet und Wortmarken sind bearbeitbare SVGs unter `assets/`; Windows-Icon und Größenprüfung beschreibt [MARKE.md](MARKE.md). Die Anwendung rendert das Signet direkt aus derselben SVG-Quelle. „Leon Stolz“ steht in den Produktinformationen. Kundendokumente behalten ihre eigenen Vorlagen und ihre Gestaltung.
 
 ## Farbrollen
 
-Verbindliche Quelle ist `src/gestaltung/tokens.ts`. `farbenNachThema` erzeugt über `cssVariablenFuer` die Rollen für HTML; `scriptlabThemaFuer` verwendet dieselben Grundlagen für Blockly. Komponenten erhalten keine eigene Akzentpalette.
+Verbindliche Quelle ist `src/gestaltung/tokens.ts`. Die Office-Farbwelt verbindet leicht blaue Neutralflächen mit einer blauen Markenaktion. `farbenNachThema` erzeugt über `cssVariablenFuer` die Rollen für HTML; `scriptlabThemaFuer` verwendet dieselben Grundlagen für Blockly. Komponenten erhalten keine eigene Akzentpalette.
 
 | Rolle                              | Dunkel  | Hell    |
 | ---------------------------------- | ------- | ------- |
-| Fenster                            | #172126 | #F1F4F3 |
-| Navigation                         | #131D22 | #E7EDEA |
-| Inhalt                             | #202D33 | #FFFFFF |
-| Erhöhte Fläche                     | #2A3942 | #F8FAF9 |
-| Arbeitsfläche                      | #1A252B | #E9EFED |
-| Dezente Trennung                   | #3C4D56 | #D4DEDA |
-| Bedienelementkontur                | #81939D | #6F827B |
-| Text                               | #EEF3F4 | #182C2C |
-| Sekundärtext                       | #B9C6CB | #4B6260 |
-| Primäraktion und aktive Navigation | #8FC2BC | #24635D |
-| Text auf Primäraktion              | #102D2A | #FFFFFF |
-| Auswahlfläche                      | #2E4648 | #DFECE8 |
+| Fenster                            | #141B24 | #F5F6F8 |
+| Navigation                         | #101720 | #EDF0F4 |
+| Inhalt                             | #1C2633 | #FFFFFF |
+| Erhöhte Fläche                     | #243244 | #F8FAFC |
+| Arbeitsfläche                      | #151F2C | #F1F4F8 |
+| Dezente Trennung                   | #3E4E63 | #D8DEE8 |
+| Bedienelementkontur                | #8A9AB0 | #6B778C |
+| Text                               | #F3F5F8 | #1F2937 |
+| Sekundärtext                       | #B8C4D4 | #536176 |
+| Primäraktion und aktive Navigation | #86B9EF | #0F6CBD |
+| Text auf Primäraktion              | #12263E | #FFFFFF |
+| Auswahlfläche                      | #243E5A | #E8F1FB |
 | Erfolg                             | #92C7A1 | #2E6545 |
 | Warnung                            | #E2BD79 | #805C14 |
 | Fehler                             | #E9A5A3 | #A2403F |
 
-Dunkel ist der Erststart. Dunkel/Hell/System ist eine lokale Einstellung außerhalb der Workflowdatei. System folgt Änderungen der Farbschemameldung. Native Windows-Titelleiste und Fensterhintergrund folgen der Wahl ebenfalls. Die normale Windows-Fenstersteuerung bleibt erhalten.
+Hell ist der Erststart. Eine bereits gespeicherte Wahl bleibt erhalten. Hell/Dunkel/System ist eine lokale Einstellung außerhalb der Workflowdatei. System folgt Änderungen der Farbschemameldung. Native Windows-Titelleiste und Fensterhintergrund folgen der Wahl ebenfalls. Die normale Windows-Fenstersteuerung bleibt erhalten.
+
+Primäraktionen verwenden bei Hover `#A1CAF4`/`#0D5EA6`, beim Drücken `#70A6DF`/`#0A4E8A` (Dunkel/Hell). Text auf der Aktion bleibt an die jeweilige Rolle gebunden. Deaktivierte Elemente verwenden erhöhte Fläche, Sekundärtext und Bedienelementkontur ihres Themas; sie werden nicht durch globale Transparenz unlesbar. Tastaturfokus erhält eine blaue 2-px-Kontur mit Abstand. Eine ausgewählte Karte ergänzt die Auswahlfläche um Kontur beziehungsweise eine seitliche Markierung.
 
 Farbe trennt vier Aufgaben: Grundflächen, Markenaktion/Navigation, tatsächlicher Status und fachliche Bausteinkategorie. Auswahl besitzt zusätzlich eine Kontur beziehungsweise eine textliche Auswahlkennung. Eine grüne Kategorie bestätigt keinen erfolgreichen Lauf.
 
 ### Blockly
 
-Die vorhandene gedämpfte Kategorienpalette und die Blockly-Verbindungen bleiben erhalten. Blockly-Blöcke besitzen in beiden Themen helle Beschriftungen auf dunklen Kategorieflächen. Dunkle Eingabeflächen, helle Feldkonturen und eine zweifarbige Auswahlkontur mit heller innerer Markierung sind eigene `--farbe-block-*`-Rollen. Diese systematische Ergänzung verhindert im hellen Thema dunkle Beschriftungen auf dunklen Blöcken. Canvasfokus und HTML-Formularfokus folgen dagegen dem jeweiligen Thema. Fehlermarkierungen erhalten die Kategoriefläche und werden durch Meldung und Warnsymbol ergänzt.
+Die Blockly-Struktur und Verbindungen bleiben erhalten. Fünf gedämpfte Fachfarben sind in beiden Themen gleich; Kategorienamen und Formen vermitteln die Bedeutung zusätzlich.
+
+| Fachaufgabe         | Farbe   | Zugeordnete Kategorien                                                   |
+| ------------------- | ------- | ------------------------------------------------------------------------ |
+| Ablauf steuern      | #365E8B | Ablauf, Bedingungen, Schleifen, Variablen und Listen, Geschäftsablauf    |
+| Daten verarbeiten   | #4F6291 | Daten laden, aufbereiten, verbinden, zusammenfassen, prüfen und ausgeben |
+| Dateien und Ordner  | #5F6651 | Dateien und Ordner, Geschäftsdateien, erweitertes Löschen                |
+| Dokumente erstellen | #7D5369 | Word, Excel, PDF                                                         |
+| Werte und Eingaben  | #4D6977 | Ein- und Ausgaben, Texte, Zahlen, Datum und Zeit                         |
+
+Blockly-Blöcke besitzen in beiden Themen helle Beschriftungen (`#F3F5F8`) auf dunklen Kategorieflächen. Eingabefläche `#151F2C`, Feldkontur `#B8C4D4` und die zweifarbige Auswahlkontur mit heller innerer Markierung sind eigene `--farbe-block-*`-Rollen. Canvasfokus und HTML-Formularfokus folgen dagegen dem jeweiligen Thema. Fehlermarkierungen erhalten die Kategoriefläche und werden durch Meldung und Warnsymbol ergänzt. Die kurze Business-Zusammenfassung wird aus der vorhandenen Konfiguration abgeleitet; sie ändert keine gespeicherten Fachdaten.
 
 ## Schrift und Maße
 
@@ -72,8 +84,9 @@ Die Palette benötigt standardmäßig 272 px, Eigenschaften 320 px. Bei 1280 × 
 - `Menue`: Pfeil-/Home-/End-/Escape-Bedienung und Rückkehr zum Auslöser. Bereichsmenüs liegen oberhalb der Befehlsleiste.
 - `Arbeitsbereiche` und Lauftabs: ARIA-Tablist, ausgewählter Tab mit Textgewicht und Unterstreichung; Pfeiltasten, Home und End.
 - Workflowliste: Suche und Sprachfilter beziehen sich auf bekannte ScriptLab-Projektdateien. Zeilenhöhe etwa 52 px; bis zu 50 Zeilen pro Seite; Filter durchsuchen vorher den gesamten Bestand. Speicherort und Dateistatus stehen in aufklappbaren Details. Auswahl, Suche, Sortierung, Seite und Scrollposition bleiben beim Rückweg erhalten.
-- Datenvorschau: ausschließlich lesend; höchstens 200 geladene Zeilen/256 KiB gemäß Laufzeitlimit, je 50 sichtbare Zeilen und 20 Spalten. Spaltenbreiten, Ausschnittsuche und Ausschnittsortierung ändern keine Daten. Quelle, Lauf-ID, Standkennung und Grenzen bleiben nachvollziehbar.
-- Läufe: Vorbereitung, Übersicht, Ergebnisse, Protokoll. Modus und Status bleiben sichtbar. Fertige Läufe zeigen ihre damaligen Optionen; die nächste Vorbereitung überschreibt diese Angaben nicht. Stoppen ist während des Laufs unabhängig vom Arbeitsbereich erreichbar.
+- Datenvorschau: ausdrücklich geladenes, ausschließlich lesendes Ergebnis bis zum gewählten unterstützten Tabellenschritt. Höchstens 200 geladene Zeilen/256 KiB gemäß Laufzeitlimit, je 50 sichtbare Zeilen und 20 Spalten. Spaltenbreiten, Ausschnittsuche und Ausschnittsortierung ändern keine Daten. Quelle, Laufkennung, Standkennung und Grenzen bleiben nachvollziehbar. Nicht unterstützte Schleifen oder Verzweigungen werden erklärt, nicht als verfügbare Einzelvorschau dargestellt.
+- Läufe: Liste des geöffneten Workflows, danach Übersicht, Ergebnisse und Protokoll des ausgewählten Laufs. Vorbereitung bleibt eine eigene bewusste Aktion. Modus und Status bleiben sichtbar. Fertige Läufe zeigen ihre damaligen Optionen; die nächste Vorbereitung überschreibt diese Angaben nicht. Stoppen ist während des Laufs unabhängig vom Arbeitsbereich erreichbar.
+- Laufzeit: nur Status der mitgelieferten App-Komponenten und erneute Prüfung. Technische Versionen stehen in Details. Interpreterwahl und Paketinstallation gehören nicht in den normalen Arbeitsweg; externe Voraussetzungen werden beim Export erklärt.
 - Leere Inhalte erklären den nächsten Schritt. Ladefehler sind eigene Zustände. Handlungsbedürftige Fehler bleiben sichtbar; technische Meldungen stehen zusätzlich im Protokoll.
 
 Die Palette ordnet vorhandene Kategorien in fünf fachliche Einstiege (Python) beziehungsweise drei verfügbare Einstiege (VBS). Suche bleibt über alle verfügbaren Bausteine möglich.
@@ -82,7 +95,7 @@ Die vorhandene Einfügestellenliste bietet eine Zeigeralternative ohne Ziehen un
 
 ## Bewusste Grenzen
 
-Der Hauptprozess liefert den aktuellen beziehungsweise zuletzt gestarteten Lauf. Es wurde keine historische Datenhaltung erfunden. Ein fremder Workflow erhält keine Ergebnisse des zuvor geöffneten Workflows als eigene Läufe. Exportformate und Signaturunterstützung bleiben wie implementiert: VBS-Script optional signierbar, Business-Paket ohne vorgetäuschte ZIP-Signatur. Dokumentvorlagen werden über die vorhandene unabhängige Beispielkopie einschließlich Ressourcen verwendet.
+Der Hauptprozess ordnet aktuelle und lokal gespeicherte Läufe dem geöffneten Workflow zu. Die dauerhafte Historie ist mengen- und größenbegrenzt; Details stehen in [WEITERENTWICKLUNG.md](../WEITERENTWICKLUNG.md). Sie ist keine automatische Wiederaufnahme laufender Prozesse. Exportformate und Signaturunterstützung bleiben wie implementiert: VBS-Script optional signierbar, Business-Paket ohne vorgetäuschte ZIP-Signatur. Exportierte Scripts benötigen ihre externe Laufzeit; der mitgelieferte Interpreter gehört zur Anwendung. Dokumentvorlagen werden über die vorhandene unabhängige Beispielkopie einschließlich Ressourcen verwendet.
 
 Die vollständige Abnahme und ihre Grenzen stehen in [PRUEFUNG.md](PRUEFUNG.md). Kontrastprüfungen und eigene Sichtprüfung sind keine vollständige Barrierefreiheitszertifizierung oder Nutzertests.
 
