@@ -66,7 +66,7 @@ export const beispiele: readonly BeispielInfo[] = [
     beschreibung: b.beschreibung,
     lernziele: [b.erwartung, 'Parameter, Strukturprüfung, Vorschau und echte Ausführung unterscheiden'],
     vorbereitung:
-      'Benötigt die bewusst eingerichtete Business-Laufzeit. „Als Vorlage verwenden“ erzeugt eine private Kopie der synthetischen Testdateien und bindet die Pfadparameter absolut daran. Der Bezug bleibt beim Speichern und Wiederherstellen erhalten. Für eigene Geschäftsdaten Quellen und Ziele bewusst ändern. PDF-Berichte können die mitgelieferte Vera-Schrift verwenden. Öffnen startet keine Verarbeitung.',
+      'Verwendet die mitgelieferten Business-Komponenten. „Als Vorlage verwenden“ kopiert die synthetischen Testdateien in den Arbeitsordner eines eigenen Workflows. Der Bezug bleibt beim Speichern und Wiederherstellen erhalten. Für eigene Geschäftsdaten die Quellen bewusst ändern und Ausgabeziele prüfen. PDF-Berichte können die mitgelieferte Vera-Schrift verwenden. Öffnen startet keine Verarbeitung.',
   })),
   ...vbsBeispiele,
   ...vbsBeispiele.map((beispiel): BeispielInfo => ({
@@ -105,7 +105,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         titel: 'Deinen ersten Ablauf erstellen',
         texte: [
           'Mit „Neuer Workflow“ auf der Startseite, „Workflow → Neuer Workflow“ im Editor oder Strg+N wählst du zuerst Python oder VBScript (VBS). Beim ersten Mal ist keine Sprache vorausgewählt. Erst „Workflow erstellen“ öffnet den Editor mit einem Startbaustein. Abbrechen lässt den bisherigen Workflow unverändert. Die zuletzt erfolgreich gewählte Sprache wird bei der nächsten Erstellung vorgeschlagen.',
-          'Die Sprache bleibt für dieses Projekt fest. Python wird für Geschäftsprozesse empfohlen. Die 48 Grundbausteintypen gibt es in beiden Sprachen; Python bietet zusätzlich 47 Business-Bausteintypen für Tabellen, Excel, Word, PDF und Geschäftsdateien. Für eine andere Sprache erstellst du einen neuen Workflow. Bestehende Projekte werden nicht umgestellt.',
+          'Die beiden Sprachkarten bleiben ausdrücklich wählbar. Python und seine Daten-, Dokument- und Dialogkomponenten sind in ScriptLab mitgeliefert. VBS verwendet die verfügbare Windows-Komponente. Die Sprache bleibt für dieses Projekt fest. Die 48 Grundbausteintypen gibt es in beiden Sprachen; Python bietet zusätzlich 47 Business-Bausteintypen. Für eine andere Sprache erstellst du einen neuen Workflow.',
         ],
         schritte: [
           'Suche links nach „Nachricht“.',
@@ -131,8 +131,8 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         texte: [
           'Öffne „Läufe → Vorbereitung“ und prüfe Modus, Parameter, Quellen und Ausgabeziele. Der Ansichtswechsel startet keinen Workflow. ScriptLab verwendet automatisch den Arbeitsordner dieses Workflows. Unter „ScriptLab-Arbeitsordner“ kannst du den vollständigen Pfad lesen und den Ordner im Explorer öffnen.',
           'Klappe bei Bedarf „Zeitlimit“ auf: gewöhnlich 120 Sekunden, erlaubt 1 bis 28800. Business-Profile bieten eigene Vorgaben bis acht Stunden. Für den ersten Lauf ist kein vorheriges Speichern nötig. Nutze zuerst entbehrliche Dateien.',
-          '„Testen“ im Editor und „Workflow ausführen“ beziehen sich auf den vollständigen aktuellen Hauptablauf, nicht nur den ausgewählten Baustein. Ist der Laufkontext noch nicht geprüft, erscheint zuerst die Vorbereitung. Während eines Laufs sind inhaltliche Änderungen gesperrt. Ein Lauf speichert weder dein Projekt noch eine Exportdatei.',
-          '„Text ausgeben“ schreibt unter „Läufe → Protokoll“. „Nachricht anzeigen“, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen Dialoge; bei Python ist dafür tkinter erforderlich. Stoppen und das Zeitlimit beenden den Lauf; bereits erfolgte Änderungen bleiben bestehen.',
+          '„Testen“ im Editor und „Workflow ausführen“ beziehen sich auf den vollständigen aktuellen Hauptablauf, nicht nur den ausgewählten Baustein. Ist der Laufkontext noch nicht geprüft, erscheint zuerst die Vorbereitung. Die direkte Schrittvorschau in der Datenansicht startet dagegen dort und endet am gewählten Tabellenschritt. Während eines Laufs sind inhaltliche Änderungen gesperrt. Ein Lauf speichert weder dein Projekt noch eine Exportdatei.',
+          '„Text ausgeben“ schreibt unter „Läufe → Protokoll“. „Nachricht anzeigen“, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen Dialoge; Tcl/Tk ist für Python bereits mitgeliefert. Stoppen und das Zeitlimit beenden den Lauf; bereits erfolgte Änderungen bleiben bestehen.',
           '„Übersicht“ zeigt den Laufstatus, „Ergebnisse“ die zugehörigen Ausgaben und Prüfhinweise. Unter „Laufstand und technische Angaben“ stehen Sprache, verwendete Python-Version, Laufkennung, Workflowstand, Zeiten, Arbeitsordner und Exitcode. Exitcode 0 bestätigt ein Ende ohne gemeldeten Fehler, nicht das fachlich gewünschte Dateiergebnis. Nach einer Workflowänderung erscheint ein Hinweis auf den früheren Stand.',
           'Beim Hochscrollen im „Protokoll“ folgt die Anzeige neuen Zeilen nicht automatisch; „Zum Ausgabeende“ führt zurück. „Ausgabe leeren“ leert die aktuelle Liveanzeige, ohne bereits gespeicherte Läufe zu ändern. „Technische Details“ zeigt den schreibgeschützten Laufquelltext und vorhandene Fehlerzuordnungen. „Baustein anzeigen“ ist nur bei passendem Workflowstand verfügbar.',
         ],
@@ -257,7 +257,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         titel: 'Prüfen und als Script speichern',
         texte: [
           'Unter „Exportieren“ wählst du Projektdatei, Script oder Business-Paket als Inhalt und danach den Ausgabeort. Die Projektdatei erhält den bearbeitbaren Stand, auch wenn noch Angaben fehlen. Vor einem Script- oder Paketexport werden die Bausteine geprüft. Fehlende Pflichtwerte, falsche Verbindungen und lose aktive Anweisungen verhindern diesen Export. Die Hinweisübersicht führt zum betroffenen Baustein.',
-          'Gewöhnliche Python-Projekte erzeugen einzelne .py-Dateien, VBS-Projekte .vbs-Dateien. Python-Business-Projekte erzeugen ein ZIP mit Script, eigenen Modulen, Requirements, Anleitung und Parameterbeispiel. Alle Varianten funktionieren ohne ScriptLab oder Node.js. Die 48 Grundbausteintypen benötigen keine zusätzlichen Python-Pakete; Business-Bausteine den bewusst vorbereiteten festen Paketsatz. Dialoge benötigen tkinter.',
+          'Gewöhnliche Python-Projekte erzeugen einzelne .py-Dateien, VBS-Projekte .vbs-Dateien. Python-Business-Projekte erzeugen ein ZIP mit Script, eigenen Modulen, Requirements, Anleitung und Parameterbeispiel. Das ZIP enthält keinen Python-Interpreter. Beim Empfänger sind eine passende eigene Python-Umgebung und für Business-Workflows die festen Pakete erforderlich; exportierte Dialogworkflows benötigen auch Tcl/Tk. ScriptLab oder Node.js werden dort nicht benötigt.',
           'Die optionale Codevorschau zeigt ausschließlich Text. Sie führt den Ablauf nicht aus. Nach dem Export erscheint: „Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“ „Speicherordner anzeigen“ öffnet nur den Ordner und startet die Datei nicht.',
           'Python-Exporte werden als UTF-8 ohne BOM, VBS-Exporte als UTF-16LE mit BOM geschrieben. Beide verwenden Windows-Zeilenenden (CRLF). Identische Workflows und Exportoptionen erzeugen denselben unsignierten Quelltext.',
         ],
@@ -274,12 +274,12 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
       },
       {
         id: 'python-verfuegbarkeit',
-        titel: 'Python-Installation prüfen',
+        titel: 'Mitgelieferte Komponenten prüfen',
         texte: [
-          'Bearbeiten und Python-Export funktionieren auch ohne Python-Installation. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. „Bereiche → Einstellungen“ zeigt den tatsächlichen Prüfstatus, die Version und den geprüften Interpreterpfad. „Interpreter auswählen“ wählt eine konkrete Programmdatei; „Erneut prüfen“ prüft die Installation neu. Unter „Läufe → Vorbereitung → Laufzeitumgebung“ führt „Python einrichten“ zu diesen Einstellungen.',
-          'Ein Python-Test verwendet den geprüften Interpreter. Dialogbausteine benötigen tkinter; die Prüfung erfolgt nur bei Bedarf. Abläufe ohne Dialoge benötigen es nicht. ScriptLab installiert keine Python-Grundinstallation und keine Pakete automatisch. Nur die ausdrückliche Business-Einrichtung installiert ihren festen Paketsatz. Eine freie Shell wird nicht angeboten. Der Interpreterpfad bleibt eine lokale Einstellung.',
+          'ScriptLab verwendet mitgeliefertes CPython 3.15.2 x64 einschließlich Tcl/Tk und aller festen Business-Pakete. Für Workflows innerhalb der Anwendung ist keine externe Installation oder Einrichtung nötig. Die Sprachwahl zwischen Python und VBS bleibt erhalten.',
+          '„Bereiche → Einstellungen → Laufzeit“ zeigt den tatsächlichen Status der App-Komponenten. „Erneut prüfen“ prüft den Bestand. Versionen und Programmdatei stehen lesend in technischen Angaben. Eine Interpreterauswahl und Online-/Offline-Paketinstallation werden nicht angeboten. Ein fehlender oder beschädigter Bestandteil wird als Fehler gemeldet; ein Workflowstart lädt und installiert keine Pakete.',
           'Zum selbstständigen Start einer exportierten .py-Datei verwendest du in PowerShell den tatsächlichen vollständigen Interpreterpfad und den Scriptpfad, zum Beispiel: & "C:\\Python315\\python.exe" -I -u -X utf8 "C:\\Meine Workflows\\Mein Workflow.py". Ersetze beide Beispielpfade durch deine vorhandenen Pfade. Die Optionen isolieren die Modulsuche, entpuffern die Ausgabe und aktivieren UTF-8; sie bilden keine Sicherheits-Sandbox. Ein Doppelklick hängt von Windows-Dateizuordnungen ab und wird nicht vorausgesetzt.',
-          '„Offizielle Python-Hilfe“ in den Einstellungen öffnet die fest hinterlegte offizielle Informationsseite. Die lokale Hilfe und die Bearbeitung benötigen keine Internetverbindung.',
+          'Die externe Python-Umgebung wird erst für exportierte Scripts benötigt. Die lokale Hilfe und die normale Workflowverarbeitung mit den mitgelieferten Komponenten benötigen keine Internetverbindung.',
         ],
       },
       {
@@ -320,21 +320,20 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
   },
   {
     id: 'business-einrichten',
-    titel: 'Business-Laufzeit, Parameter und Modi',
+    titel: 'Daten prüfen, Parameter und Laufmodi',
     beschreibung: 'Tabellen- und Dokumentabläufe bewusst vorbereiten und sicher unterscheiden.',
     abschnitte: [
       {
         id: 'business-laufzeit',
-        titel: 'Den festen Paketsatz bewusst einrichten',
+        titel: 'Mitgelieferte Business-Komponenten',
         texte: [
-          'Die Python-Business-Bausteine benötigen den festgelegten Paketsatz für Daten, Excel, Word und PDF. Bearbeiten, Speichern und Export funktionieren auch ohne diese Laufzeit. Zuerst in den Einstellungen eine geeignete CPython-Installation prüfen.',
-          'Unter „Business-Laufzeit“ prüft „Business-Komponenten prüfen“ die tatsächlichen Imports und Versionen. „Eigene Umgebung online einrichten“ erstellt bewusst eine neue private virtuelle Umgebung und lädt nur den festen, hashgeprüften Paketsatz. Eine globale Installation wird nicht überschrieben.',
-          '„Offline-Paketordner verwenden“ wählt einen von der IT vorbereiteten Ordner mit passenden Original-Wheels. Es werden keine freien Paketnamen oder Befehle angeboten. „Einrichtung abbrechen“ beendet die Einrichtung. Ein Workflowstart installiert niemals Pakete; Python selbst wird nicht automatisch installiert.',
+          'Python 3.15.2 x64 und die festen Komponenten für Daten, Excel, Word und PDF gehören vollständig offline zu ScriptLab. Du musst keine eigene Python-Umgebung oder Pakete einrichten.',
+          'Unter „Einstellungen → Laufzeit“ stehen Komponentenstatus und „Erneut prüfen“. Technische Versionen sind bei Bedarf lesend erreichbar. Ein Workflowstart installiert keine Pakete. Nur für exportierte Scripts benötigt der Empfänger eine eigene passende Umgebung.',
         ],
         schritte: [
-          'Einstellungen öffnen und die Python-Installation prüfen.',
-          'Business-Komponenten prüfen oder die gewünschte Online-/Offline-Einrichtung bewusst wählen.',
-          'Den tatsächlichen Abschluss abwarten. Eine Fehlermeldung ist kein bereiter Laufzeitstand.',
+          'Einen Business-Workflow oder eine Beispielkopie öffnen.',
+          'Quelle und notwendige Angaben im Baustein konfigurieren.',
+          'Eine Schrittvorschau oder einen Prüflauf bewusst starten.',
         ],
       },
       {
@@ -347,11 +346,20 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         ],
       },
       {
+        id: 'business-schrittvorschau',
+        titel: 'Ergebnis bis zu einem Tabellenschritt laden',
+        texte: [
+          'Öffne „Daten und Parameter → Datenvorschau“. Wähle „Ergebnis bis zu diesem Schritt“ und „Verwendete Werte“. „Datenvorschau laden“ startet direkt dort, ohne vorherige Laufvorbereitung. Die Vorschau endet am ausgewählten Tabellenschritt. Unfertige Nachfolger müssen dafür nicht konfiguriert werden; der bearbeitete Workflow bleibt unverändert.',
+          'Unterstützt werden verbundene lesende Business-Tabellenschritte im Hauptablauf. Schleifen, Verzweigungen sowie aktive Grundbausteine oder Dateiaktionen im benötigten Vorlauf lassen sich hier nicht als reine Schrittvorschau laden. Der deaktivierte Start nennt den Grund.',
+          'Die Anzeige ist auf 200 Zeilen und 256 KiB begrenzt. Filter, Sortierung und Gruppierung können trotzdem die gesamte Quelle lesen. Spaltenvorschläge beziehen sich auf die gewählte Eingabetabelle und den passenden Vorschaukontext. Während des Ladens bleibt „Stoppen“ erreichbar.',
+        ],
+      },
+      {
         id: 'business-modi',
         titel: 'Datenvorschau, Prüflauf und Ausführen',
         texte: [
           '„Datenvorschau“ zeigt höchstens 200 Zeilen und 256 KiB. Filter, Sortierung und Gruppierung können dafür trotzdem die vollständige Quelle lesen. Dokumente und Dateiausgaben werden nur geplant. Die Codevorschau dagegen zeigt ausschließlich Text und liest keine Quellen.',
-          '„Prüflauf ohne Zieländerungen“ prüft unterstützte Schritte und eigene technische Zwischenfassungen. Fachliche Eingaben und Ziele werden nicht verändert. Ein erfolgreicher Prüflauf ist keine Garantie für einen späteren echten Lauf.',
+          'Für Business-Workflows ist zunächst „Prüflauf ohne Zieländerungen“ gewählt. Er prüft unterstützte Schritte und eigene technische Zwischenfassungen. Fachliche Eingaben und Ziele werden nicht verändert. Ein erfolgreicher Prüflauf ist keine Garantie für einen späteren echten Lauf.',
           'Erst „Ausführen · echte Dateiänderungen“ führt den vollständigen Workflow tatsächlich aus. Gewöhnliche Aktionsblöcke werden nicht heimlich im Business-Vorschau- oder Prüflaufmodus ausgeführt. Stoppen und Zeitlimit nehmen bereits erfolgte Änderungen nicht zurück.',
         ],
       },

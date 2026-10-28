@@ -10,12 +10,12 @@ ScriptLab öffnet zuerst die Startseite. **Neuer Workflow** öffnet die Sprachau
 
 Die vier Bereiche stehen in dieser Reihenfolge:
 
-| Bereich                       | Inhalt                                                                               |
-| ----------------------------- | ------------------------------------------------------------------------------------ |
-| Meine gespeicherten Workflows | Bekannte Projektdateien anhand von Name oder Pfad suchen und weiterbearbeiten.       |
-| Entwürfe                      | Lokal gesicherte Zwischenstände bewusst fortsetzen oder als Projektdatei speichern.  |
+| Bereich                       | Inhalt                                                                              |
+| ----------------------------- | ----------------------------------------------------------------------------------- |
+| Meine gespeicherten Workflows | Bekannte Projektdateien anhand von Name oder Pfad suchen und weiterbearbeiten.      |
+| Entwürfe                      | Lokal gesicherte Zwischenstände bewusst fortsetzen oder als Projektdatei speichern. |
 | Beispielworkflows             | Vorhandene Vorlagen als eigene bearbeitbare Kopien öffnen.                          |
-| Dokumentation und Anleitungen | Lokale Hilfethemen durchsuchen; Treffer führen zur passenden Artikelstelle.          |
+| Dokumentation und Anleitungen | Lokale Hilfethemen durchsuchen; Treffer führen zur passenden Artikelstelle.         |
 
 **Einstellungen**, **Hilfe** und **Über ScriptLab** sind in der festen Navigation erreichbar, im Editor unter **Bereiche**. Die Hilfe funktioniert offline; Beispielverweise darin öffnen ebenfalls eine Vorlage als Kopie.
 
@@ -35,17 +35,17 @@ Beide Sprachen verwenden dieselben 48 Bausteintypen. Die Wahl bestimmt den erzeu
 6. Wähle **Exportieren**, unter **Inhalt** das Scriptformat deiner Sprache und anschließend **Ausgabeort auswählen** für die `.py`- beziehungsweise `.vbs`-Datei. Ein normaler Export benötigt kein Zertifikat.
 7. Nach erfolgreichem Export erscheint: „Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“ **Speicherordner anzeigen** öffnet den Ordner; ScriptLab startet die Datei dabei nicht.
 
-Der selbstständige Start außerhalb von ScriptLab ist deine eigene Entscheidung. Python benötigt eine passende Python-Installation, VBS die optionale Windows-VBScript-Komponente und Windows Script Host. Die geltenden Richtlinien müssen den jeweiligen Start erlauben. ScriptLab installiert keine Python-Grundinstallation, aktiviert keine Windows-Features und ändert keine Sicherheitsrichtlinien. Die gesonderte Business-Einrichtung kann nach deiner Auswahl ihren festen Paketsatz in einer eigenen Umgebung einrichten.
+Innerhalb von ScriptLab ist Python 3.15.2 einschließlich Tcl/Tk und Business-Paketen bereits mitgeliefert. Eine externe Einrichtung entfällt. VBS verwendet weiterhin die verfügbare Windows-VBScript-Komponente und Windows Script Host. Die geltenden Richtlinien müssen den Start erlauben; ScriptLab aktiviert keine Windows-Features und ändert keine Sicherheitsrichtlinien. Beim eigenständigen Start eines exportierten Python-Scripts benötigt der Zielcomputer dagegen eine passende eigene Python-Installation und gegebenenfalls die Business-Pakete.
 
 ## Den aktuellen Workflow bewusst testen
 
 Öffne **Läufe → Vorbereitung**, ohne einen Workflow zu starten. Prüfe Modus, Parametersatz, Quellen und Ausgabeziele. ScriptLab verwendet automatisch den Arbeitsordner dieses Workflows. Unter **ScriptLab-Arbeitsordner** findest du dessen vollständigen Pfad und kannst ihn im Explorer öffnen. Bei Bedarf änderst du das **Zeitlimit**; der Standard ist 120 Sekunden, zulässig sind 1 bis 28800. **Workflow ausführen** startet immer den vollständigen aktuellen Ablauf, nicht nur den ausgewählten Baustein.
 
-Wurde der Laufkontext noch nicht geprüft, führt der erste Startwunsch zunächst zur Vorbereitung und führt noch nichts aus. Nach dem Prüfen startest du mit einem weiteren bewussten Klick. Dafür muss der Workflow nicht zuvor gespeichert werden. Das Speichern desselben Workflows erhält den Kontext. Bei Business-Workflows sind **Datenvorschau**, **Prüflauf ohne Zieländerungen** und **Ausführen · echte Dateiänderungen** unterschiedliche Modi; der gewählte Modus bleibt am Lauf erkennbar.
+Wurde der Laufkontext für **Testen** noch nicht geprüft, führt der erste Startwunsch zunächst zur Vorbereitung und führt noch nichts aus. Nach dem Prüfen startest du mit einem weiteren bewussten Klick. Dafür muss der Workflow nicht zuvor gespeichert werden. Das Speichern desselben Workflows erhält den Kontext. Business-Workflows beginnen mit **Prüflauf ohne Zieländerungen**; **Datenvorschau** und **Ausführen · echte Dateiänderungen** bleiben unterschiedliche Modi. Die direkte Schrittvorschau in der Datenansicht benötigt diese Vorbereitung nicht.
 
 **Eine echte Ausführung verändert Dateien auf diesem Computer.** Relative Pfade verwenden den ScriptLab-Arbeitsordner. Ausgaben innerhalb von ScriptLab müssen im ScriptLab-Nutzerverzeichnis liegen. Absolute Ausgabeziele außerhalb werden abgewiesen, nicht stillschweigend verschoben; externe Quellen können weiterhin gelesen werden. Verwende zuerst entbehrliche Testdaten. **Stoppen** beendet den Test und macht bereits erfolgte Änderungen nicht rückgängig. Die Pfadprüfung ist keine allgemeine Sandbox.
 
-**Text ausgeben** schreibt ins **Protokoll** des Laufs. Nachrichten, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen Dialoge; bei Python wird dafür `tkinter` benötigt. Beachte bei einem wartenden Test auch diese Dialoge. Ein Test ersetzt kein Speichern oder Exportieren.
+**Text ausgeben** schreibt ins **Protokoll** des Laufs. Nachrichten, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen Dialoge; bei Python ist das dafür verwendete Tcl/Tk enthalten. Beachte bei einem wartenden Test auch diese Dialoge. Ein Test ersetzt kein Speichern oder Exportieren.
 
 ## Frühere Läufe und Ergebnisse ansehen
 
@@ -57,11 +57,19 @@ Unter **Protokoll** kopiert **Protokoll kopieren** das Protokoll des gewählten 
 
 Die Historie ist insgesamt auf höchstens 200 abgeschlossene Läufe und 64 MiB Detaildaten begrenzt; ältere Einträge werden bei Bedarf entfernt. Ein Hinweis meldet nicht speicherbare Laufdaten, ohne den echten Ausführungsstatus umzudeuten. Laufhistorie und Business-Journal sind verschiedene Dinge: Das Öffnen eines früheren Laufs setzt keinen Prozess fort. Der [Testlaufleitfaden](TESTLAUF.md) bewahrt die historischen Nachweise; [WEITERENTWICKLUNG.md](WEITERENTWICKLUNG.md) beschreibt die aktuelle Ablage und ihre Grenzen.
 
-## Python einrichten und einen Export selbst starten
+## Daten bis zu einem Schritt prüfen
 
-Unter **Einstellungen → Laufzeit → Python-Installation** zeigt ScriptLab, ob ein geeigneter Interpreter tatsächlich geprüft wurde. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. **Interpreter auswählen** öffnet die Dateiauswahl für eine konkrete Python-Programmdatei; **Erneut prüfen** prüft die Installation neu. Angezeigt werden der tatsächliche absolute Pfad und die Version. Bei einem nicht eingerichteten Python-Test führt **Python einrichten** direkt zu diesen Einstellungen. **Offizielle Python-Hilfe** öffnet eine feste Informationsseite im Browser.
+Öffne **Daten und Parameter → Datenvorschau**. Unter **Ergebnis bis zu diesem Schritt** wählst du einen Tabellenschritt und unter **Verwendete Werte** den Parametersatz. **Datenvorschau laden** beginnt direkt in dieser Ansicht, ohne vorherige Laufvorbereitung. Sie liest den unterstützten Vorlauf bis einschließlich des gewählten Schritts. Unfertige Nachfolger werden dafür nicht ausgeführt; der bearbeitete Workflow bleibt unverändert.
 
-ScriptLab lädt und installiert keine Python-Grundinstallation. Die gemeinsamen Grundbausteine benötigen keine zusätzlichen Python-Pakete; Business-Bausteine verwenden den ausdrücklich eingerichteten festen Paketsatz. Ein Workflowstart installiert keine Pakete. Dialoge setzen `tkinter` voraus; diese Komponente wird bei einem Test mit Dialogbausteinen gesondert geprüft. Ohne Dialoge wird kein `tkinter` verlangt. Bearbeiten, Speichern und Python-Export funktionieren auch ohne Interpreter. Dessen Auswahl ist eine lokale Einstellung und wird nicht in Projekte oder Exportdateien geschrieben.
+Die Schrittvorschau unterstützt verbundene lesende Business-Tabellenschritte im Hauptablauf. Schleifen, Verzweigungen, aktive Grundbausteine und Dateiaktionen im benötigten Vorlauf können hier nicht als reine Datenvorschau geladen werden. Ein Hinweis am deaktivierten Start erklärt die fehlende Voraussetzung. Das gilt für den benötigten Vorlauf, nicht für beliebige noch unfertige Schritte danach.
+
+Die Tabelle zeigt höchstens 200 geladene Zeilen und 256 KiB; ihre Such- und Sortierfunktionen gelten für diesen Ausschnitt. Filter und Gruppierungen können trotzdem die gesamte Quelle lesen. Spaltenvorschläge beziehen sich auf die gewählte Eingabetabelle und den passenden Vorschaukontext. Während des Ladens bleibt **Stoppen** erreichbar; ein Wechsel der Ansicht startet keine weitere Vorschau.
+
+## App-Komponenten und eigenständigen Export prüfen
+
+Unter **Einstellungen → Laufzeit** stehen der tatsächliche Status des mitgelieferten Python 3.15.2 und der Komponenten für Tabellen und Dokumente. **Erneut prüfen** prüft diesen Bestand. Versionen, Dialogfunktionen und Programmdatei sind lesend in technischen Angaben erreichbar. Eine Interpreterauswahl und Online-/Offline-Paketinstallation werden in der normalen Oberfläche nicht mehr angeboten.
+
+Ein Workflowstart lädt und installiert keine Pakete. Ein Fehler in der mitgelieferten Laufzeit wird als Fehler gemeldet und nicht als Aufforderung zur Auswahl einer externen Installation behandelt. Die beiden Sprachkarten bleiben erhalten; nur VBS ist weiterhin von der Windows-Komponente abhängig.
 
 Zum selbstständigen Start eines exportierten Scripts öffnest du PowerShell und verwendest den vollständigen Pfad deines Interpreters sowie die normale `.py`-Datei. Ersetze die Beispielpfade durch die tatsächlich vorhandenen Pfade:
 
@@ -69,7 +77,7 @@ Zum selbstständigen Start eines exportierten Scripts öffnest du PowerShell und
 & "C:\Python315\python.exe" -I -u -X utf8 "C:\Meine Workflows\Mein Workflow.py"
 ```
 
-Die empfohlenen Optionen entsprechen dem Teststart: `-I` isoliert die Modulsuche und ignoriert Python-Umgebungsvariablen; `-u` entpuffert die Ausgabe; `-X utf8` aktiviert UTF-8. Sie bilden keine Sicherheits-Sandbox. Ein Doppelklick auf `.py` ist wegen unterschiedlicher Dateizuordnungen nicht garantiert. Für die eigenständige Ausführung wird ScriptLab nicht benötigt. Einzelheiten stehen in [PYTHON.md](PYTHON.md) und der [offiziellen CPython-Dokumentation](https://docs.python.org/3.15/using/cmdline.html).
+`-I` isoliert die Modulsuche und ignoriert Python-Umgebungsvariablen; `-u` entpuffert die Ausgabe; `-X utf8` aktiviert UTF-8. Sie bilden keine Sicherheits-Sandbox. Ein Doppelklick auf `.py` ist wegen unterschiedlicher Dateizuordnungen nicht garantiert. Für die eigenständige Ausführung wird ScriptLab nicht benötigt. Ein Business-Paket benötigt beim Empfänger zusätzlich die in seiner Anleitung genannten Pakete. Das ZIP enthält keinen Python-Interpreter. Einzelheiten stehen in [PYTHON.md](PYTHON.md) und der [offiziellen CPython-Dokumentation](https://docs.python.org/3.15/using/cmdline.html).
 
 ## Bausteine verbinden und bearbeiten
 

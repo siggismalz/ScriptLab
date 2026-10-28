@@ -2,20 +2,17 @@
 
 ScriptLab unterstützt Windows 11 x64. Python ist die empfohlene Sprache für Tabellen, Dokumente und umfangreichere Dateiabläufe. Der aktuelle Katalog enthält 47 zusätzliche Python-Business-Bausteintypen. Die 48 gemeinsamen Grundbausteine bleiben in Python und VBS erhalten; ein bestehendes VBS-Projekt wird nicht automatisch umgestellt.
 
-## Die Business-Laufzeit vorbereiten
+## Mitgelieferte Komponenten
 
-Bearbeiten, Strukturprüfung, Codevorschau, Speichern und Export benötigen keine Python-Installation. Zum Verarbeiten von Daten wird eine tatsächlich geprüfte Laufzeit benötigt:
+ScriptLab liefert reguläres CPython 3.15.2 x64 einschließlich Tcl/Tk sowie die elf festgelegten Business-Pakete vollständig offline mit. Für Daten- und Dokumentabläufe innerhalb der Anwendung ist keine zusätzliche Python-Installation oder Paket-Einrichtung erforderlich. Der feste Satz umfasst DuckDB, openpyxl, python-docx, ReportLab, pypdf und deren festgelegte Abhängigkeiten.
 
-1. **Einstellungen → Python-Installation** öffnen und eine konkrete `python.exe` auswählen oder die gefundene Installation erneut prüfen. Unterstützt ist stabiles reguläres CPython 3.12 bis 3.15 für Windows x64. ScriptLab installiert keine Python-Grundinstallation und startet keinen Launcher oder Installationsmanager.
-2. Unter **Business-Laufzeit** **Business-Komponenten prüfen** wählen. Eine bereits vorbereitete Umgebung kann über die Interpreterauswahl verwendet werden.
-3. Fehlen die Komponenten, bewusst **Eigene Umgebung online einrichten** oder **Offline-Paketordner verwenden** wählen. Die Onlineversorgung lädt ausschließlich den festgelegten, hashgepinnten Satz. Für Offlinebetrieb stellt die IT die passenden Original-Wheels bereit. Fremde Dateien im Paketordner werden nicht mitinstalliert.
-4. Auf den tatsächlichen Abschluss achten. Erst erfolgreich bestätigte Paketversionen und Imports ergeben den Zustand bereit. **Einrichtung abbrechen** beendet die Einrichtung; eine alte Umgebung bleibt erhalten.
+Unter **Einstellungen → Laufzeit** stehen nur der tatsächliche Komponentenstatus, **Erneut prüfen** und lesbare technische Angaben. Eine Interpreterwahl oder Online-/Offline-Installation gehört nicht mehr zur normalen Bedienung. Ein beschädigter oder fehlender Bestandteil wird als Fehler gemeldet. Ein Workflowstart lädt und installiert nichts.
 
-Es entstehen eine neue eigene virtuelle Umgebung und lokale technische Dateien, keine globale Python-Installation. Der feste Satz umfasst DuckDB, openpyxl, python-docx, ReportLab, pypdf und deren festgelegte Abhängigkeiten, insgesamt elf Pakete. Öffnen, Datenvorschau, Prüflauf, Ausführung und exportierte Scripts installieren niemals Pakete. Einzelheiten, Offlineversorgung und Lizenzen stehen in [BUSINESS-LAUFZEIT.md](BUSINESS-LAUFZEIT.md).
+Herkunft und Beilagen beschreibt [python-herkunft.md](../laufzeit/python-herkunft.md). Die älteren Nachweise der manuellen Einrichtung in [BUSINESS-LAUFZEIT.md](BUSINESS-LAUFZEIT.md) gehören zu ihrem damaligen Stand. Exportierte Scripts und Business-Pakete benötigen beim Empfänger weiterhin eine eigene passende Python-Umgebung.
 
 ## Mit einem Beispiel beginnen
 
-Auf der Startseite **Beispielworkflows** öffnen und eine Python-Business-Vorlage mit **Als Vorlage verwenden** übernehmen. ScriptLab erzeugt eine neue Projektkennung und einen privaten Ordner mit ausschließlich den mitgelieferten synthetischen Beispieldaten. Die Pfadparameter dieser Kopie werden absolut an diesen Ordner gebunden. Der Bezug bleibt deshalb beim Speichern, erneuten Öffnen und Wiederherstellen eines Entwurfs erhalten. Das Öffnen startet keine Verarbeitung.
+Auf der Startseite **Beispielworkflows** öffnen und eine Python-Business-Vorlage mit **Als Vorlage verwenden** übernehmen. ScriptLab erzeugt eine neue Projektkennung und kopiert die mitgelieferten synthetischen Beispieldaten in den Arbeitsordner dieses Workflows. Die Pfadparameter bleiben daran gebunden, auch beim Speichern, erneuten Öffnen und Wiederherstellen eines Entwurfs. Das Öffnen startet keine Verarbeitung. **Speichern** sichert den Workflow intern ohne Zielauswahl.
 
 | Beispiel                                                                                 | Ablauf und erwartetes Ergebnis                                                                                                                                   |
 | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,17 +22,23 @@ Auf der Startseite **Beispielworkflows** öffnen und eine Python-Business-Vorlag
 | [Dokumenteingang geordnet ablegen](../beispiele/business/D-Dokumenteingang/README.md)    | Zwei PDF-Textbelege als Kopien nach Monat ablegen; für den Raster-Scan einen Hinweis ausgeben. Alle Originale bleiben erhalten.                                  |
 | [Dateistapel verarbeiten und fortsetzen](../beispiele/business/E-Dateistapel/README.md)  | Gültige CSVs vollständig ausgeben und erst nach bestätigtem Ergebnis archivieren. Die fehlerhafte Quelle bleibt erhalten.                                        |
 
-Die Namen **Testdaten** und **Echte Daten** bezeichnen Parametersätze, keine Sicherheitsbereiche. Für produktive Dateien müssen die tatsächlich verwendeten Pfade und Konfliktregeln bewusst geändert werden. Ein absoluter Pfad bleibt auch nach einem Projektwechsel oder Export absolut. Die Anwendung schützt keine außerhalb der Testkopie gewählten Dateien vor den ausdrücklich gestarteten Workflowaktionen.
+Die Namen **Testdaten** und **Echte Daten** bezeichnen Parametersätze, keine Sicherheitsbereiche. Für produktive Dateien müssen Quellen und Konfliktregeln bewusst geprüft werden. Relative Pfade verwenden den ScriptLab-Arbeitsordner. Externe Quellen bleiben lesbar; Ausgaben innerhalb von ScriptLab müssen im ScriptLab-Nutzerverzeichnis liegen. Absolute Ziele außerhalb werden abgewiesen, nicht umgeschrieben. Ein eigenständiger Export behält dagegen seine ursprüngliche Pfadsemantik.
 
 ## Parameter und Bausteine bearbeiten
 
-**Projektmenü → Workflowparameter** definiert interne Namen, verständliche Beschriftungen, Wertarten, Pflichtangaben, Standardwerte und kurze Hilfen. Dort keine Kennwörter, Tokens oder privaten Schlüssel speichern. Die Definitionen und bewusst gemerkten Parametersätze gehören zur `.scriptlab`-Datei in Schema 3.
+**Workflow → Workflowparameter** definiert Namen, verständliche Beschriftungen, Wertarten, Pflichtangaben, Standardwerte und kurze Hilfen. Dort keine Kennwörter, Tokens oder privaten Schlüssel speichern. Die Definitionen und bewusst gemerkten Parametersätze gehören zur `.scriptlab`-Datei in Schema 3.
 
 In den Eigenschaften eines Business-Bausteins lässt sich ein Feld mit einem Workflowparameter verbinden. Tabellen und Dokumente werden als **Ergebnis eines früheren Bausteins** ausgewählt. So verwendet beispielsweise **Tabelle als XLSX speichern** genau die vorher gefilterte Tabelle. Ein Verweis auf einen späteren oder unpassenden Baustein ist ein Strukturfehler. Freies SQL, Python und Shellbefehle sind keine Eingabeformate.
 
 CSV-Werte werden zunächst als Text eingelesen; führende Nullen bleiben erhalten. Zahlen, Datum und Geldbeträge benötigen eine ausdrückliche Typfestlegung. Ein exakter Dezimalbetrag wird als Text mit Dezimalpunkt angegeben, etwa `12.50`; ein Datum als `2026-10-27`. Bei Tabellenverknüpfungen Schlüssel und erwartete Zuordnung festlegen. Fehlende oder doppelte Stammschlüssel dürfen nicht unbemerkt Daten vervielfachen.
 
-Unter **Testausgabe → Business-Lauf vorbereiten** wird zunächst der gewählte Parametersatz geladen. Änderungen im Formular gelten für den nächsten Lauf. Erst **Werte im Parametersatz merken** übernimmt sie in das Projekt; anschließend das Projekt speichern, wenn diese Werte erhalten bleiben sollen.
+Unter **Läufe → Vorbereitung** wird der gewählte Parametersatz geladen. Änderungen im Formular gelten für den nächsten Lauf. Erst **Werte im Parametersatz merken** übernimmt sie in das Projekt; anschließend den Workflow speichern, wenn diese Werte erhalten bleiben sollen. Quellen lassen sich in unterstützten Feldern nativ auswählen. Eine Parameterbindung zeigt ihren Kontext, statt einen Dateipfad vorzutäuschen.
+
+## Ergebnis bis zu einem Tabellenschritt prüfen
+
+Öffne **Daten und Parameter → Datenvorschau**, wähle **Ergebnis bis zu diesem Schritt** und die **Verwendeten Werte**. **Datenvorschau laden** startet direkt in dieser Ansicht; eine vorherige Laufvorbereitung ist nicht erforderlich. Der Vorschauplan endet am gewählten Tabellenschritt. Unfertige Nachfolger müssen dafür nicht konfiguriert sein und werden im bearbeiteten Workflow nicht verändert.
+
+Diese Schrittvorschau unterstützt verbundene lesende Business-Tabellenschritte im Hauptablauf. Schleifen, Verzweigungen sowie aktive Grundbausteine oder Dateiaktionen im benötigten Vorlauf werden nicht als reine Einzelvorschau ausgeführt. Ein Hinweis am deaktivierten Start erklärt die Grenze. Die Tabelle bleibt lesend, begrenzt auf 200 Zeilen und 256 KiB; Filter oder Gruppierungen können dennoch die ganze Quelle lesen. Spaltenvorschläge stammen aus der passenden Vorschau der gewählten Eingabetabelle.
 
 ## Drei Modi unterscheiden
 
@@ -47,7 +50,7 @@ Unter **Testausgabe → Business-Lauf vorbereiten** wird zunächst der gewählte
 
 Die schreibgeschützte **Codevorschau** ist davon getrennt: Sie zeigt ausschließlich erzeugten Quelltext und liest keine Quelldateien. Die Strukturprüfung prüft Verbindungen, Angaben und unterstützte Operationen. Normale Grundbausteine mit Aktionen werden nicht heimlich als Business-Vorschau ausgeführt; ein solcher gemischter Ablauf benötigt einen bewussten echten Test.
 
-Vor jedem Lauf **Quellen, Ziele und Umfang** aufklappen und kontrollieren:
+Für vollständige Business-Läufe ist **Prüflauf ohne Zieländerungen** vorausgewählt. Vor dem Start unter **Läufe → Vorbereitung** **Quellen und Ausgabeziele** aufklappen und kontrollieren:
 
 1. Stimmt der Parametersatz, und sind alle Pflichtfelder ausgefüllt?
 2. Zeigen Quelle, Vorlage, Ausgabe und Archiv auf die gewünschten eigenen Ordner?
@@ -56,11 +59,11 @@ Vor jedem Lauf **Quellen, Ziele und Umfang** aufklappen und kontrollieren:
 
 Die Profile bieten 15 Sekunden für eine Vorschau, eine Minute für den Prüflauf, zwei Minuten für eine Kurzprüfung, zwei Stunden für einen Geschäftsablauf und acht Stunden für einen großen Stapel. Ein eigenes Zeitlimit ist von 1 bis 28.800 Sekunden möglich. Profilnamen ändern nicht den Modus: Das Profil **Geschäftsablauf** macht aus einer Datenvorschau keine echte Ausführung.
 
-Während eines Laufs sind inhaltliche Änderungen gesperrt. Der Lauf hält den Projektstand, Parameter, Basisordner und verwendeten Interpreter fest. **Stoppen** wartet auf das Ende des zugehörigen Prozesses. Bereits bestätigte Dateiänderungen werden nicht rückgängig gemacht. Ein Test, eine virtuelle Umgebung und der Windows-Job sind keine Dateisystem-Sandbox.
+Während eines Laufs sind inhaltliche Änderungen gesperrt. Der Lauf hält Workflowstand, Parameter, Arbeitsordner und verwendete Laufzeit fest. **Stoppen** wartet auf das Ende des zugehörigen Prozesses. Bereits bestätigte Dateiänderungen werden nicht rückgängig gemacht. Die Pfadprüfung und der Windows-Job sind keine allgemeine Dateisystem-Sandbox.
 
 ## Ergebnisse, Berichte und Wiederaufnahme
 
-Die Ausgabe zeigt den aktuellen Schritt und begrenzte Vorschauwerte. Ein Abschluss mit Teilfehlern ist kein uneingeschränkter Erfolg. Der Laufbericht enthält unter anderem Workflowidentität, verwendete Parameter, Quellenfingerabdrücke, Ergebnisse, Fehler, Summen und den tatsächlichen Abschlussgrund. Berichte und Journale können Dateipfade und geschäftlichen Kontext enthalten; sie bleiben lokale Dateien und werden nicht automatisch mit einem Projekt oder Business-Paket weitergegeben.
+**Alle Läufe** zeigt die gespeicherten Läufe des geöffneten Workflows. **Anzeigen** öffnet Übersicht, Ergebnisse und Protokoll eines konkreten Laufs. Ein Abschluss mit Teilfehlern ist kein uneingeschränkter Erfolg. Der Laufbericht enthält Workflowidentität, verwendete Parameter, Quellenfingerabdrücke, Ergebnisse, Fehler, Summen und Abschlussgrund. **Protokoll kopieren** und **Protokoll exportieren** beziehen sich auf den ausgewählten Lauf. Berichte und Journale bleiben lokal und werden nicht automatisch mit einem Projekt oder Business-Paket weitergegeben.
 
 Eine Ausgabe wird zunächst in einer eigenen Zwischenfassung geschrieben und geprüft. Erst dann wird sie entsprechend der Konfliktregel veröffentlicht. Das Journal bestätigt einzelne Vorgänge. Bei **Passendes früheres Journal bewusst fortsetzen** werden Workflow, Parameter, Quellen, bestätigte Ergebnisse und Laufzeitidentität erneut geprüft. Dazu gehören eigene Python-Module, Python-/Paketversionen und Vera-Schriftbytes; eine geänderte Laufzeit oder ein älteres Journal ohne diese Identität wird nicht automatisch fortgesetzt.
 
