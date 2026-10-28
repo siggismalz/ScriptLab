@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import { Dialog } from './komponenten/Dialog';
 import { Feld, Auswahlfeld, Textfeld } from './komponenten/Feld';
 import { Knopf } from './komponenten/Knopf';
@@ -85,6 +85,7 @@ export function ParameterWertEingabe({
   beschriftung,
   hilfe,
   gesperrt = false,
+  dateiWaehlen,
 }: {
   typ: WorkflowParameter['typ'];
   wert: ParameterWert;
@@ -92,66 +93,118 @@ export function ParameterWertEingabe({
   beschriftung: string;
   hilfe?: string;
   gesperrt?: boolean;
+  dateiWaehlen?: () => Promise<string | null>;
 }) {
   const [beruehrt, setBeruehrt] = useState(false);
+  const [waehltDatei, setWaehltDatei] = useState(false);
+  const [dateiFehler, setDateiFehler] = useState('');
+  const dateiFehlerId = useId();
+  const dateiAuftrag = useRef(false);
   // Nur der sichtbare Tippentwurf bleibt lokal, etwa das Komma in „12,“.
   // Vollständige Zahleneingaben erreichen den Aufrufer sofort als Zahl.
   const [tipptext, setTipptext] = useState(String(wert ?? ''));
   const bearbeitet = useRef(false);
+  const eingabeGeaendert = useRef(false);
   const ungueltigeZahl =
     typ === 'Zahl' &&
     typeof wert === 'string' &&
     wert.trim() !== '' &&
     typeof parameterWertAusText(typ, wert) !== 'number';
-  if (typ === 'Wahrheitswert')
-    return (
+  const eingabe =
+    typ === 'Wahrheitswert' ? (
       <Auswahlfeld
         beschriftung={beschriftung}
         hilfe={hilfe}
         value={wert === true ? 'ja' : wert === false ? 'nein' : ''}
-        disabled={gesperrt}
+        disabled={gesperrt || waehltDatei}
         onChange={(e) => aendern(e.target.value === 'ja' ? true : e.target.value === 'nein' ? false : null)}
       >
         <option value="">Bitte auswählen</option>
         <option value="ja">Ja</option>
         <option value="nein">Nein</option>
       </Auswahlfeld>
+    ) : (
+      <Feld
+        beschriftung={beschriftung}
+        value={bearbeitet.current ? tipptext : String(wert ?? '')}
+        disabled={gesperrt || waehltDatei}
+        inputMode={typ === 'Zahl' || typ === 'Dezimalbetrag' ? 'decimal' : undefined}
+        fehler={beruehrt && ungueltigeZahl ? 'Gib eine gültige Zahl ein, zum Beispiel 12,5.' : undefined}
+        hilfe={
+          [
+            hilfe,
+            typ === 'Zahl'
+              ? 'Zahl mit Komma oder Punkt, zum Beispiel 12,5. Leer bleibt ohne Wert.'
+              : typ === 'Dezimalbetrag'
+                ? 'Exakter Betrag mit Punkt, zum Beispiel 12.50.'
+                : typ === 'Datum'
+                  ? 'Datum im Format JJJJ-MM-TT.'
+                  : '',
+          ]
+            .filter(Boolean)
+            .join(' ') || undefined
+        }
+        onFocus={(e) => {
+          bearbeitet.current = true;
+          eingabeGeaendert.current = false;
+          setTipptext(e.target.value);
+        }}
+        onChange={(e) => {
+          eingabeGeaendert.current = true;
+          setTipptext(e.target.value);
+          aendern(parameterWertAusText(typ, e.target.value));
+        }}
+        onBlur={(e) => {
+          bearbeitet.current = false;
+          setBeruehrt(true);
+          if (eingabeGeaendert.current) aendern(parameterWertAusText(typ, e.target.value));
+          eingabeGeaendert.current = false;
+        }}
+      />
     );
+  if (!dateiWaehlen) return eingabe;
   return (
-    <Feld
-      beschriftung={beschriftung}
-      value={bearbeitet.current ? tipptext : String(wert ?? '')}
-      disabled={gesperrt}
-      inputMode={typ === 'Zahl' || typ === 'Dezimalbetrag' ? 'decimal' : undefined}
-      fehler={beruehrt && ungueltigeZahl ? 'Gib eine gültige Zahl ein, zum Beispiel 12,5.' : undefined}
-      hilfe={
-        [
-          hilfe,
-          typ === 'Zahl'
-            ? 'Zahl mit Komma oder Punkt, zum Beispiel 12,5. Leer bleibt ohne Wert.'
-            : typ === 'Dezimalbetrag'
-              ? 'Exakter Betrag mit Punkt, zum Beispiel 12.50.'
-              : typ === 'Datum'
-                ? 'Datum im Format JJJJ-MM-TT.'
-                : '',
-        ]
-          .filter(Boolean)
-          .join(' ') || undefined
-      }
-      onFocus={(e) => {
-        bearbeitet.current = true;
-        setTipptext(e.target.value);
-      }}
-      onChange={(e) => {
-        setTipptext(e.target.value);
-        aendern(parameterWertAusText(typ, e.target.value));
-      }}
-      onBlur={(e) => {
-        bearbeitet.current = false;
-        setBeruehrt(true);
-        aendern(parameterWertAusText(typ, e.target.value));
-      }}
-    />
+    <div className="business-dateieingabe">
+      {eingabe}
+      <Knopf
+        variante="leise"
+        symbol="oeffnen"
+        disabled={gesperrt}
+        grund="Stoppe den Lauf vor Änderungen."
+        verarbeitung={waehltDatei}
+        aria-describedby={dateiFehler ? dateiFehlerId : undefined}
+        onClick={async () => {
+          if (dateiAuftrag.current) return;
+          dateiAuftrag.current = true;
+          setWaehltDatei(true);
+          setDateiFehler('');
+          try {
+            const pfad = await dateiWaehlen();
+            if (pfad !== null) {
+              setTipptext(pfad);
+              bearbeitet.current = false;
+              aendern(pfad);
+            }
+          } catch (fehler) {
+            setDateiFehler(
+              fehler instanceof Error && fehler.message.trim()
+                ? fehler.message
+                : 'Die Datei konnte nicht ausgewählt werden.',
+            );
+          } finally {
+            dateiAuftrag.current = false;
+            setWaehltDatei(false);
+          }
+        }}
+      >
+        Datei auswählen
+      </Knopf>
+      {dateiFehler && (
+        <p id={dateiFehlerId} className="sl-feld-fehler" role="alert">
+          {dateiFehler}
+        </p>
+      )}
+    </div>
   );
 }
 

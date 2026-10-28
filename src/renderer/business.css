@@ -165,3 +165,16 @@
 .blocklyText.sl-blockzusammenfassung {
   font-weight: var(--gewicht-normal);
 }
+
+.business-dateieingabe {
+  display: grid;
+  gap: var(--abstand-4);
+  min-width: 0;
+}
+.business-dateieingabe > .sl-knopf,
+.business-dateieingabe > .sl-knopf-mit-grund {
+  justify-self: start;
+}
+.business-dateieingabe > .sl-feld-fehler {
+  margin: 0;
+}

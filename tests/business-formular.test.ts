@@ -133,6 +133,37 @@ describe('Verständliche, typisierte Business-Formulare', () => {
     expect(html).toContain('<option value="ja" selected="">Ja</option>');
     expect(html).toContain('Standardwert');
   });
+  it('bietet Parameter-Dateiauswahl nur mit Callback an und startet sie nicht durch die Anzeige', () => {
+    let auswahlAufrufe = 0;
+    const eingabe = {
+      typ: 'Datei' as const,
+      wert: 'testdaten/quelle.csv',
+      beschriftung: 'Quelldatei',
+      aendern: nichts,
+    };
+    const ohneAuswahl = render(createElement(ParameterWertEingabe, eingabe));
+    expect(ohneAuswahl).not.toContain('Datei auswählen');
+    const mitAuswahl = render(
+      createElement(ParameterWertEingabe, {
+        ...eingabe,
+        dateiWaehlen: async () => {
+          auswahlAufrufe++;
+          return null;
+        },
+      }),
+    );
+    expect(mitAuswahl).toContain('Datei auswählen');
+    expect(mitAuswahl).toContain('value="testdaten/quelle.csv"');
+    expect(auswahlAufrufe).toBe(0);
+    const gesperrt = render(
+      createElement(ParameterWertEingabe, {
+        ...eingabe,
+        gesperrt: true,
+        dateiWaehlen: async () => null,
+      }),
+    );
+    expect(gesperrt).toMatch(/<button[^>]*disabled/);
+  });
   it('zeigt die tatsächlich gesetzten 15/60/eigenen Sekunden ohne falsches Zweistundenprofil', () => {
     const projekt = neuesProjekt('python');
     projekt.business.parameter = [
