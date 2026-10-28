@@ -19,6 +19,86 @@ const verbinden = (vorher: Blockly.Block, nachher: Blockly.Block) =>
   vorher.nextConnection!.connect(nachher.previousConnection!);
 
 describe('Quellen und verständliche Blockeingaben', () => {
+  it('zeigt am Filter Spalte und tatsächlichen Vergleich statt nur den Vorgänger', () => {
+    const konfiguration = {
+      bedingung: {
+        art: 'vergleich',
+        links: { art: 'spalte', name: 'Betrag' },
+        operator: 'GT',
+        rechts: { art: 'wert', typ: 'ZAHL', wert: 0 },
+      },
+    };
+    expect(blockZusammenfassung('sl_biz_filtern', daten(konfiguration))).toBe('Betrag > 0');
+    expect(
+      blockZusammenfassung(
+        'sl_biz_filtern',
+        daten({
+          bedingung: {
+            art: 'vergleich',
+            links: { art: 'spalte', name: 'Monat' },
+            operator: 'EQ',
+            rechts: { art: 'wert', typ: 'TEXT', wert: { parameter: 'Berichtsmonat' } },
+          },
+        }),
+      ),
+    ).toBe('Monat = Parameter: Berichtsmonat');
+    expect(
+      blockZusammenfassung(
+        'sl_biz_filtern',
+        daten({
+          bedingung: {
+            art: 'vergleich',
+            spalte: 'Freigabe',
+            operator: 'EQ',
+            wert: { art: 'wert', typ: 'WAHRHEIT', wert: false },
+          },
+        }),
+      ),
+    ).toBe('Freigabe = Nein');
+    expect(
+      blockZusammenfassung(
+        'sl_biz_filtern',
+        daten({
+          bedingung: {
+            art: 'vergleich',
+            spalte: 'Kundennummer',
+            operator: 'IST_LEER',
+          },
+        }),
+      ),
+    ).toBe('Kundennummer ist leer');
+  });
+
+  it('zeigt tatsächliche Gruppierspalten knapp und lässt unbekannte Filter als Fallback stehen', () => {
+    const konfiguration = {
+      schluessel: ['Region', 'Monat'],
+      aggregate: [{ funktion: 'SUMME', spalte: 'Betrag', name: 'Summe' }],
+    };
+    const serialisiert = daten(konfiguration, { tabelle: { referenz: 'quelle' } });
+    expect(blockZusammenfassung('sl_biz_gruppieren', serialisiert, () => 'Zeilen filtern')).toBe(
+      'Nach Region, Monat',
+    );
+    expect(
+      blockZusammenfassung(
+        'sl_biz_filtern',
+        daten({ bedingung: { art: 'und', kinder: [] } }, { tabelle: { referenz: 'quelle' } }),
+        () => 'Gewählte Quelle',
+      ),
+    ).toBe('Aus: Gewählte Quelle');
+    const lang = blockZusammenfassung(
+      'sl_biz_gruppieren',
+      daten({
+        schluessel: [
+          'Eine sehr lange Gruppierspalte mit einem deutschen Namen und weiterer Beschreibung',
+          'Monat',
+        ],
+        aggregate: [],
+      }),
+    );
+    expect(Array.from(lang).length).toBeLessThanOrEqual(56);
+    expect(lang).not.toContain('\n');
+  });
+
   it('erlaubt native Auswahl nur bei lesenden Quellen, Vorlagen und tatsächlichen Bildabschnitten', () => {
     expect(istQuellenfeld('sl_biz_lesen_csv', ['pfad'], {})).toBe(true);
     expect(istQuellenfeld('sl_biz_schreiben_csv', ['pfad'], {})).toBe(false);
