@@ -104,7 +104,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'erster-ablauf',
         titel: 'Deinen ersten Ablauf erstellen',
         texte: [
-          'Mit „Neuer Workflow“, „Neu“ oder Strg+N wählst du zuerst Python oder VBScript (VBS). Beim ersten Mal ist keine Sprache vorausgewählt. Erst „Workflow erstellen“ öffnet den Editor mit einem Startbaustein. Abbrechen lässt den bisherigen Workflow unverändert. Die zuletzt erfolgreich gewählte Sprache wird bei der nächsten Erstellung vorgeschlagen.',
+          'Mit „Neuer Workflow“ auf der Startseite, „Workflow → Neuer Workflow“ im Editor oder Strg+N wählst du zuerst Python oder VBScript (VBS). Beim ersten Mal ist keine Sprache vorausgewählt. Erst „Workflow erstellen“ öffnet den Editor mit einem Startbaustein. Abbrechen lässt den bisherigen Workflow unverändert. Die zuletzt erfolgreich gewählte Sprache wird bei der nächsten Erstellung vorgeschlagen.',
           'Die Sprache bleibt für dieses Projekt fest. Python wird für Geschäftsprozesse empfohlen. Die 48 Grundbausteintypen gibt es in beiden Sprachen; Python bietet zusätzlich 47 Business-Bausteintypen für Tabellen, Excel, Word, PDF und Geschäftsdateien. Für eine andere Sprache erstellst du einen neuen Workflow. Bestehende Projekte werden nicht umgestellt.',
         ],
         schritte: [
@@ -112,7 +112,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
           'Klicke neben „Nachricht anzeigen“ auf Plus und wähle „Nach Workflow starten“.',
           'Ändere den Text direkt im Baustein oder öffne die Eigenschaften mit F4.',
           'Speichere mit „Speichern“ eine bearbeitbare .scriptlab-Datei.',
-          'Öffne bei Bedarf die Codevorschau und wähle „Python-Script exportieren“ oder „VBS-Script exportieren“ entsprechend der festgelegten Sprache.',
+          'Öffne bei Bedarf „Ansicht → Codevorschau öffnen“. Unter „Exportieren“ wählst du bei „Inhalt“ das Scriptformat deiner Sprache und anschließend „Ausgabeort auswählen“.',
         ],
         beispiel: 'begruessung',
       },
@@ -129,11 +129,11 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'test-vorbereiten',
         titel: 'Einen Test vorbereiten und seine Ausgabe verstehen',
         texte: [
-          '„Testausgabe“ öffnet das Panel, ohne einen Workflow zu starten. Wähle mit „Ordner auswählen“ einen Basisordner und prüfe das Zeitlimit: gewöhnlich 120 Sekunden, erlaubt 1 bis 28800. Business-Profile bieten eigene Vorgaben bis acht Stunden. Relative Pfade werden auf den sichtbaren Basisordner bezogen. Absolute Pfade können außerhalb wirken. Nutze zuerst entbehrliche Dateien.',
-          '„Testen“ und „Workflow testen“ starten den vollständigen aktuellen Hauptablauf, nicht nur den ausgewählten Baustein. Während eines Tests sind inhaltliche Änderungen gesperrt. Testen speichert weder dein Projekt noch eine Exportdatei.',
-          '„Text ausgeben“ schreibt in die Testausgabe. „Nachricht anzeigen“, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen Dialoge; bei Python ist dafür tkinter erforderlich. Stoppen und das Zeitlimit beenden den Test; bereits erfolgte Änderungen bleiben bestehen.',
-          'Sprache, tatsächlich verwendete Python-Version, Lauf-ID, Standkennung, Startzeit, Laufzeit, Pfadbasis und Exitcode gehören zum angezeigten Lauf. Ein Ergebnis mit Exitcode 0 bestätigt ein Ende ohne gemeldeten Fehler, nicht die Ungefährlichkeit oder das gewünschte Dateiergebnis. Nach einer Workflowänderung weist das Panel auf den früheren Stand hin.',
-          '„Ausgabe kopieren“ und „Ausgabe leeren“ betreffen nur den angezeigten Text, auch während eines Tests. Beim Hochscrollen folgt die Anzeige neuen Zeilen nicht automatisch; „Zum Ausgabeende“ führt zurück. „Laufdetails und Technik“ zeigt den schreibgeschützten Testquelltext und vorhandene Fehlerzuordnungen. „Baustein anzeigen“ führt zum zugeordneten Baustein.',
+          'Öffne „Läufe → Vorbereitung“. Der Ansichtswechsel startet keinen Workflow. Wähle mit „Ordner auswählen“ einen Basisordner und klappe bei Bedarf „Zeitlimit“ auf: gewöhnlich 120 Sekunden, erlaubt 1 bis 28800. Business-Profile bieten eigene Vorgaben bis acht Stunden. Relative Pfade werden auf den sichtbaren Basisordner bezogen. Absolute Pfade können außerhalb wirken. Nutze zuerst entbehrliche Dateien.',
+          '„Testen“ im Editor und „Workflow ausführen“ beziehen sich auf den vollständigen aktuellen Hauptablauf, nicht nur den ausgewählten Baustein. Ist der Laufkontext noch nicht geprüft, erscheint zuerst die Vorbereitung. Während eines Laufs sind inhaltliche Änderungen gesperrt. Ein Lauf speichert weder dein Projekt noch eine Exportdatei.',
+          '„Text ausgeben“ schreibt unter „Läufe → Protokoll“. „Nachricht anzeigen“, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen Dialoge; bei Python ist dafür tkinter erforderlich. Stoppen und das Zeitlimit beenden den Lauf; bereits erfolgte Änderungen bleiben bestehen.',
+          '„Übersicht“ zeigt den Laufstatus, „Ergebnisse“ die zugehörigen Ausgaben und Prüfhinweise. Unter „Laufstand und technische Angaben“ stehen Sprache, tatsächlich verwendete Python-Version, Lauf-ID, Standkennung, Startzeit, Laufzeit, Pfadbasis und Exitcode. Ein Ergebnis mit Exitcode 0 bestätigt ein Ende ohne gemeldeten Fehler, nicht die Ungefährlichkeit oder das gewünschte Dateiergebnis. Nach einer Workflowänderung erscheint ein Hinweis auf den früheren Stand.',
+          'Unter „Protokoll“ betreffen „Ausgabe kopieren“ und „Ausgabe leeren“ nur den angezeigten Text, auch während eines Laufs. Beim Hochscrollen folgt die Anzeige neuen Zeilen nicht automatisch; „Zum Ausgabeende“ führt zurück. „Technische Details“ zeigt den schreibgeschützten Laufquelltext und vorhandene Fehlerzuordnungen. „Baustein anzeigen“ führt zum zugeordneten Baustein.',
         ],
       },
     ],
@@ -147,7 +147,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'hinzufuegen',
         titel: 'Mit Ziehen oder einzelnen Klicks hinzufügen',
         texte: [
-          'Links teilen sich Kategorien und Suchergebnisse dieselbe Palette. Die Suche findet Bausteine in allen Kategorien; „Suche leeren“ führt zur zuvor geöffneten Kategorie zurück.',
+          'Die Palette ordnet Bausteine nach Aufgaben: „Ablauf steuern“, „Daten verarbeiten“, „Dateien und Ordner“, „Dokumente erstellen“ sowie „Werte und Eingaben“. Es erscheinen nur Einstiege mit Bausteinen für die gewählte Sprache. Die Suche durchsucht direkt alle verfügbaren Kategorien; „Suche leeren“ führt zur vorherigen Palettenansicht zurück.',
           'Ziehe am Bausteinnamen auf die Arbeitsfläche. Eine Einfügemarkierung zeigt einen passenden Anschluss. Escape bricht das Ziehen ab und stellt den vorherigen Zustand wieder her.',
           'Ohne gehaltene Maustaste: Klicke auf Plus und danach auf eine angebotene Einfügestelle. Du kannst auch einen Zielbaustein auf der Arbeitsfläche anklicken. Hat er mehrere passende Anschlüsse, wählst du anschließend links den gewünschten aus.',
         ],
@@ -167,8 +167,8 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         titel: 'Arbeitsfläche und Schriftgröße einstellen',
         texte: [
           'Mausrad, Bildlaufleisten, Ziehen an einer freien Stelle und die Ansichtspfeile verschieben die Arbeitsfläche. Strg+Mausrad zoomt nur über der Arbeitsfläche. In der Palette scrollt das Rad deren Inhalt.',
-          'Die Zoomknöpfe verkleinern, vergrößern, setzen auf 100 Prozent zurück oder zeigen mit „Alles anzeigen“ den gesamten Ablauf. Die UI-Textgröße in den Einstellungen verändert die Bedientexte unabhängig vom Canvas-Zoom.',
-          'Eigenschaften und Codevorschau sind optional. Bei schmalen Fenstern überlagern die Eigenschaften den rechten Rand; bei großen Fenstern lassen sie sich anheften. Palette und Codevorschau sind an ihren Trennlinien verstellbar.',
+          'Die Zoomknöpfe verkleinern, vergrößern, setzen auf 100 Prozent zurück oder zeigen mit „Alles anzeigen“ den gesamten Ablauf. „Bereiche → Einstellungen → Darstellung → Textgröße der Oberfläche“ verändert die Bedientexte unabhängig vom Canvas-Zoom.',
+          'Eigenschaften und „Ansicht → Codevorschau öffnen“ sind optional. Bei schmalen Fenstern überlagern die Eigenschaften den rechten Rand; bei genügend Platz lassen sie sich anheften. Palette und Codevorschau sind an ihren Trennlinien verstellbar.',
         ],
       },
     ],
@@ -210,7 +210,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         texte: [
           'Eine .scriptlab-Datei enthält den bearbeitbaren Workflow mit fester Sprache, Verbindungen, Variablen-IDs, Werten, Kommentaren und Ansicht. Unvollständige Abläufe dürfen als Projekt gespeichert werden. .py und .vbs sind Exportdateien und lassen sich nicht als Bausteinprojekt zurückimportieren.',
           'Aktuelle Projekte verwenden Schema 3 mit Workflowparametern und nicht geheimen Test-/Echtwerten. Schema 1 wird als VBS übernommen, Schema 2 behält seine Sprache und erhält leere Business-Angaben. Öffnen verändert keine Quelldatei. Erst Speichern schreibt das aktuelle Format. Unbekannte neuere Formate werden abgewiesen.',
-          '„Speichern“ sichert das aktuelle Projekt; „Speichern unter“ im Projektmenü wählt einen anderen Speicherort. Namen und Beschreibung änderst du unter „Projektangaben“. Ein Export speichert die Projektdatei nicht automatisch.',
+          '„Speichern“ sichert das aktuelle Projekt; „Workflow → Speichern unter“ wählt einen anderen Speicherort. Namen und Beschreibung änderst du unter „Workflow → Projektangaben“. Ein Script- oder Paketexport speichert die Projektdatei nicht automatisch.',
           'Bei ungespeicherten Änderungen fragt ScriptLab vor einem möglichen Verlust nach: „Speichern“, „Als Entwurf behalten“, „Änderungen verwerfen“ oder „Abbrechen“. „Als Entwurf behalten“ erlaubt den Wechsel erst nach erfolgreicher lokaler Sicherung; die Projektdatei bleibt unverändert. „Änderungen verwerfen“ verwirft den ungespeicherten Stand bewusst. „Abbrechen“ oder ein abgebrochener Speicherdialog verhindert den abhängigen Projektwechsel.',
         ],
       },
@@ -219,7 +219,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         titel: 'Bekannte Projekte wiederfinden',
         texte: [
           '„Meine gespeicherten Workflows“ zeigt bekannte Projektdateien mit ihrem tatsächlichen Pfad und ihrer Sprache. Suche nach Name oder Pfad, filtere nach Sprache und sortiere nach Name oder dem letzten Öffnen. Die Liste ist ein Verzeichnis bekannter Speicherorte, keine Suche auf deinen Laufwerken. Auch Beispiele und Entwürfe besitzen einen Sprachfilter.',
-          'Fehlt eine Datei oder ist ein Laufwerk nicht erreichbar, erscheint der tatsächliche Prüfzustand. Mit „Neu zuordnen“ wählst du die verschobene Projektdatei aus. „Aus Liste entfernen“ entfernt nur den Verweis; die Projektdatei bleibt erhalten.',
+          'Fehlt eine Datei oder ist ein Laufwerk nicht erreichbar, erscheint der tatsächliche Prüfzustand. Öffne die Zeilendetails am Pfeil neben dem Namen. Mit „Neu zuordnen“ wählst du dort die verschobene Projektdatei aus. „Aus Liste entfernen“ entfernt nur den Verweis; die Projektdatei bleibt erhalten.',
           'Gleichnamige Projekte können unterschiedliche Dateien sein. Prüfe deshalb bei Bedarf den vollständigen Dateipfad; das Pfadfeld lässt sich auswählen und kopieren.',
         ],
       },
@@ -245,7 +245,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'pruefen-exportieren',
         titel: 'Prüfen und als Script speichern',
         texte: [
-          '„Python-Script exportieren“ oder „VBS-Script exportieren“ prüft zuerst die Bausteine. Fehlende Pflichtwerte, falsche Verbindungen und lose aktive Anweisungen verhindern den Export. Die Hinweisübersicht nennt den betroffenen Baustein; ein Klick führt dorthin.',
+          'Unter „Exportieren“ wählst du das Script oder Business-Paket als Inhalt. Vor dem Schreiben werden die Bausteine geprüft. Fehlende Pflichtwerte, falsche Verbindungen und lose aktive Anweisungen verhindern den Export. Die Hinweisübersicht nennt den betroffenen Baustein; ein Klick führt dorthin.',
           'Gewöhnliche Python-Projekte erzeugen einzelne .py-Dateien, VBS-Projekte .vbs-Dateien. Python-Business-Projekte erzeugen ein ZIP mit Script, eigenen Modulen, Requirements, Anleitung und Parameterbeispiel. Alle Varianten funktionieren ohne ScriptLab oder Node.js. Die 48 Grundbausteintypen benötigen keine zusätzlichen Python-Pakete; Business-Bausteine den bewusst vorbereiteten festen Paketsatz. Dialoge benötigen tkinter.',
           'Die optionale Codevorschau zeigt ausschließlich Text. Sie führt den Ablauf nicht aus. Nach dem Export erscheint: „Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“ „Speicherordner anzeigen“ öffnet nur den Ordner und startet die Datei nicht.',
           'Python-Exporte werden als UTF-8 ohne BOM, VBS-Exporte als UTF-16LE mit BOM geschrieben. Beide verwenden Windows-Zeilenenden (CRLF). Identische Workflows und Exportoptionen erzeugen denselben unsignierten Quelltext.',
@@ -265,7 +265,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'python-verfuegbarkeit',
         titel: 'Python-Installation prüfen',
         texte: [
-          'Bearbeiten und Python-Export funktionieren auch ohne Python-Installation. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. In den Einstellungen zeigt ScriptLab den tatsächlichen Prüfstatus, die Version und den geprüften Interpreterpfad. „Interpreter auswählen“ wählt eine konkrete Programmdatei; „Erneut prüfen“ prüft die Installation neu. „Python einrichten“ im Testbereich führt zu diesen Einstellungen.',
+          'Bearbeiten und Python-Export funktionieren auch ohne Python-Installation. Unterstützt wird stabiles CPython 3.12 bis 3.15 für Windows x64. „Bereiche → Einstellungen“ zeigt den tatsächlichen Prüfstatus, die Version und den geprüften Interpreterpfad. „Interpreter auswählen“ wählt eine konkrete Programmdatei; „Erneut prüfen“ prüft die Installation neu. Unter „Läufe → Vorbereitung → Laufzeitumgebung“ führt „Python einrichten“ zu diesen Einstellungen.',
           'Ein Python-Test verwendet den geprüften Interpreter. Dialogbausteine benötigen tkinter; die Prüfung erfolgt nur bei Bedarf. Abläufe ohne Dialoge benötigen es nicht. ScriptLab installiert keine Python-Grundinstallation und keine Pakete automatisch. Nur die ausdrückliche Business-Einrichtung installiert ihren festen Paketsatz. Eine freie Shell wird nicht angeboten. Der Interpreterpfad bleibt eine lokale Einstellung.',
           'Zum selbstständigen Start einer exportierten .py-Datei verwendest du in PowerShell den tatsächlichen vollständigen Interpreterpfad und den Scriptpfad, zum Beispiel: & "C:\\Python315\\python.exe" -I -u -X utf8 "C:\\Meine Workflows\\Mein Workflow.py". Ersetze beide Beispielpfade durch deine vorhandenen Pfade. Die Optionen isolieren die Modulsuche, entpuffern die Ausgabe und aktivieren UTF-8; sie bilden keine Sicherheits-Sandbox. Ein Doppelklick hängt von Windows-Dateizuordnungen ab und wird nicht vorausgesetzt.',
           '„Offizielle Python-Hilfe“ in den Einstellungen öffnet die fest hinterlegte offizielle Informationsseite. Die lokale Hilfe und die Bearbeitung benötigen keine Internetverbindung.',
@@ -330,8 +330,8 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'business-parameter',
         titel: 'Testdaten und echte Daten als Werte festlegen',
         texte: [
-          '„Projektmenü → Workflowparameter“ definiert Name, Beschriftung, Wertart, Pflichtangabe und Standardwert. In den Bausteineigenschaften kann ein Feld einen solchen Parameter verwenden. Kennwörter, Tokens und private Schlüssel gehören nicht in diese Werte.',
-          'Vor dem Lauf zeigt „Business-Lauf vorbereiten“ den gewählten Parametersatz. Änderungen gelten zunächst für den nächsten Lauf. „Werte im Parametersatz merken“ übernimmt sie ins Projekt; erst Speichern sichert die Projektdatei.',
+          '„Workflow → Workflowparameter“ definiert Name, Beschriftung, Wertart, Pflichtangabe und Standardwert. In den Bausteineigenschaften kann ein Feld einen solchen Parameter verwenden. Kennwörter, Tokens und private Schlüssel gehören nicht in diese Werte.',
+          '„Läufe → Vorbereitung“ zeigt den gewählten Parametersatz. Unter „Parameterwerte anpassen“ gelten Änderungen zunächst für den nächsten Lauf. „Werte im Parametersatz merken“ übernimmt sie ins Projekt; erst Speichern sichert die Projektdatei.',
           'Die Namen „Testdaten“ und „Echte Daten“ bieten keine Abschirmung. Prüfe die tatsächlich angezeigten Quellen und Ziele. Bei Business-Beispielkopien zeigen die Pfadwerte auf private synthetische Testdaten. Für produktive Dateien musst du diese Werte bewusst ändern.',
         ],
       },
@@ -348,8 +348,8 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'business-umfang',
         titel: 'Quellen, Ziele und Zeitlimit vor dem Start prüfen',
         texte: [
-          'Klappe vor dem Start „Quellen, Ziele und Umfang“ auf. Prüfe Quelle, Vorlage, Ziel, Archiv und die Regel für vorhandene Dateien. Dynamisch berechnete Dateinamen stehen erst im betreffenden Schritt vollständig fest. Absolute Pfade können außerhalb des Basisordners wirken.',
-          'Laufprofile bieten 15 Sekunden für die Vorschau, eine Minute für den Prüflauf, zwei Minuten für die Kurzprüfung, zwei Stunden für Geschäftsabläufe und acht Stunden für große Stapel. Ein Profil ändert nicht den gewählten Modus. Speicher- und Tempbudgets betreffen die Datenengine, nicht den gesamten Rechner.',
+          'Klappe unter „Läufe → Vorbereitung“ vor dem Start „Quellen und Ausgabeziele“ auf. Prüfe Quelle, Vorlage, Ziel, Archiv und die Regel für vorhandene Dateien. Dynamisch berechnete Dateinamen stehen erst im betreffenden Schritt vollständig fest. Absolute Pfade können außerhalb des Basisordners wirken.',
+          'Unter „Weitere Einstellungen“ liegen Laufprofil sowie Speicher- und Tempbudgets. Laufprofile bieten 15 Sekunden für die Vorschau, eine Minute für den Prüflauf, zwei Minuten für die Kurzprüfung, zwei Stunden für Geschäftsabläufe und acht Stunden für große Stapel. Ein Profil ändert nicht den gewählten Modus. Die Budgets betreffen die Datenengine, nicht den gesamten Rechner. „Technische Schrittangaben“ zeigt bei Bedarf die vollständige Konfiguration.',
         ],
         beispiel: 'business-monat',
       },
@@ -416,7 +416,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'business-paket',
         titel: 'Ein eigenständiges ZIP bewusst zusammenstellen',
         texte: [
-          '„Business-Paket exportieren“ zeigt die Dateien vor dem Schreiben. Das ZIP enthält workflow.py, eigene Business-Module, feste Requirements, Parameterbeispiel, Anleitung, Vera-Schrift und Lizenzhinweise. Es funktioniert ohne ScriptLab oder Node.js, benötigt aber eine vorbereitete Python-Umgebung.',
+          'Wähle „Exportieren → Inhalt → Business-Paket (.zip)“ und „Ausgabeort auswählen“. Die Dateien werden vor dem Schreiben angezeigt. Das ZIP enthält workflow.py, eigene Business-Module, feste Requirements, Parameterbeispiel, Anleitung, Vera-Schrift und Lizenzhinweise. Es funktioniert ohne ScriptLab oder Node.js, benötigt aber eine vorbereitete Python-Umgebung.',
           '„Ressourcen auswählen“ fügt nur ausdrücklich gewählte DOCX-/XLSX-Vorlagen, PNG-/JPEG-Bilder oder TTF-Schriften bei. Geschäftsdaten, Eingangsordner, Berichte und Journale werden nicht automatisch kopiert. Rechte und vertrauliche Inhalte vor Weitergabe prüfen. Höchstens 16 MiB je Ressource und 64 MiB je Paket.',
           'Beim Empfänger das ganze Paket entpacken, die Parameterdatei prüfen und die Umgebung bewusst mit dem festen Paketsatz vorbereiten. Online- und Offlinewege stehen in der Anleitung. Der Scriptstart installiert nichts. Absolute Pfade bleiben absolut und müssen für eine Weitergabe bewusst angepasst werden.',
         ],

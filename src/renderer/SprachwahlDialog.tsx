@@ -20,17 +20,15 @@ const sprachen: readonly {
 }[] = [
   {
     id: 'python',
-    name: 'Python – empfohlen für Geschäftsprozesse',
-    beschreibung:
-      'Daten verarbeiten, Excel-Auswertungen erstellen, Dokumente erzeugen und umfangreiche Abläufe automatisieren.',
+    name: 'Python',
+    beschreibung: 'Für Geschäftsprozesse mit Daten, Excel und Dokumenten.',
     vorteil: 'Gemeinsame Grundbausteine und zusätzliche Daten- und Dokumentbausteine.',
-    hinweis:
-      'Zum Ausführen wird eine passende Python-Installation benötigt. Je nach Workflow können weitere Pakete erforderlich sein.',
+    hinweis: 'Zum Ausführen werden Python und je nach Workflow weitere Komponenten benötigt.',
   },
   {
     id: 'vbs',
-    name: 'VBS – für kleine Windows-Automatisierungen',
-    beschreibung: 'Einfache Datei- und Systemaufgaben sowie vorhandene VBScript-Abläufe weiterverwenden.',
+    name: 'VBS',
+    beschreibung: 'Für kleine Windows-Aufgaben und bestehende VBScript-Abläufe.',
     vorteil: 'Nutzt den Windows Script Host und vorhandene Windows-Schnittstellen.',
     hinweis: 'VBScript muss auf dem Rechner verfügbar sein. Microsoft lässt die Unterstützung auslaufen.',
   },
@@ -46,10 +44,10 @@ export function SprachwahlDialog({ offen, vorauswahl, abbrechen, erstellen }: Sp
   return (
     <Dialog
       offen={offen}
-      titel="Welche Sprache möchtest du verwenden?"
+      titel="Neuer Workflow"
       onSchliessen={abbrechen}
       className="sprachwahl-dialog"
-      beschreibung="Du baust deinen Workflow in beiden Fällen mit Bausteinen. Die Sprache bestimmt, welches Script ScriptLab erzeugt."
+      beschreibung="Wähle eine Sprache. Du arbeitest anschließend mit Bausteinen."
       fuss={
         <>
           <Knopf onClick={abbrechen}>Abbrechen</Knopf>
@@ -78,20 +76,26 @@ export function SprachwahlDialog({ offen, vorauswahl, abbrechen, erstellen }: Sp
                 checked={wahl === sprache.id}
                 onChange={() => setWahl(sprache.id)}
                 aria-label={sprache.id === 'python' ? 'Python' : 'VBScript (VBS)'}
-                aria-describedby={`${id}-${sprache.id}-beschreibung ${id}-${sprache.id}-vorteil ${id}-${sprache.id}-hinweis`}
+                aria-describedby={`${id}-${sprache.id}-beschreibung ${id}-${sprache.id}-hinweis`}
               />
               <span className="sprachwahl-name">{sprache.name}</span>
             </span>
             <span id={`${id}-${sprache.id}-beschreibung`}>{sprache.beschreibung}</span>
-            <span id={`${id}-${sprache.id}-vorteil`} className="sprachwahl-vorteil">
-              {sprache.vorteil}
-            </span>
             <span id={`${id}-${sprache.id}-hinweis`} className="sprachwahl-hinweis">
               {sprache.hinweis}
             </span>
           </label>
         ))}
       </fieldset>
+      <details className="sprachwahl-details">
+        <summary>Sprachen und Voraussetzungen im Detail</summary>
+        {sprachen.map((sprache) => (
+          <section key={sprache.id}>
+            <h3>{sprache.name}</h3>
+            <p>{sprache.vorteil}</p>
+          </section>
+        ))}
+      </details>
       {wahl === null && (
         <p id={`${id}-startgrund`} className="sprachwahl-startgrund">
           Wähle zuerst Python oder VBScript (VBS).

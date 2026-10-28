@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, type ComponentProps } from 'react';
+import {
+  createContext,
+  useContext,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ComponentProps,
+  type ReactNode,
+} from 'react';
 import * as Blockly from 'blockly/core';
 import { businessDatenLesen, businessNachTyp, type KonfigFeld } from '../kern/business-katalog';
 import type { JsonWert, WorkflowParameter } from '../kern/business-modell';
@@ -110,6 +118,120 @@ function SpaltenFeld(props: ComponentProps<typeof Feld>) {
   return <Feld {...props} list={spalten.length ? 'business-spalten' : undefined} />;
 }
 
+/** Eine gewählte Herkunft ersetzt die direkte Eingabe; alternative Quellen öffnen sich erst bei Bedarf. */
+function Wertbindung({
+  titel,
+  wert,
+  aendern,
+  gesperrt,
+  parameter,
+  variablen,
+  leererWert = '',
+  eingabe,
+}: {
+  titel: string;
+  wert: JsonWert;
+  aendern: (wert: JsonWert) => void;
+  gesperrt: boolean;
+  parameter: WorkflowParameter[];
+  variablen: { id: string; name: string }[];
+  leererWert?: JsonWert;
+  eingabe: ReactNode;
+}) {
+  const bereich = useRef<HTMLDivElement>(null);
+  const w = objekt(wert);
+  const parameterRef = typeof w.parameter === 'string' ? w.parameter : null;
+  const variableRef = typeof w.variable === 'string' ? w.variable : null;
+  const gebunden = parameterRef !== null || variableRef !== null;
+  const quelle =
+    variableRef !== null
+      ? `variable:${variableRef}`
+      : parameterRef !== null
+        ? `parameter:${parameterRef}`
+        : 'wert';
+  const hatAuswahl = gebunden || parameter.length > 0 || variablen.length > 0;
+  const auswahlAngaben = {
+    value: quelle,
+    disabled: gesperrt,
+    title:
+      variableRef !== null
+        ? `Variable · ${variablen.find((v) => v.id === variableRef)?.name ?? 'Nicht mehr vorhanden'}`
+        : parameterRef !== null
+          ? `Workflowparameter · ${parameter.find((p) => p.name === parameterRef)?.beschriftung ?? parameterRef}`
+          : 'Wert eingeben',
+    onChange: (event: ChangeEvent<HTMLSelectElement>) => {
+      const neu = event.target.value;
+      aendern(
+        neu.startsWith('parameter:')
+          ? { parameter: neu.slice('parameter:'.length) }
+          : neu.startsWith('variable:')
+            ? { variable: neu.slice('variable:'.length) }
+            : leererWert,
+      );
+      // Nach dem Wechsel steht entweder die direkte Eingabe oder die neue Quellenauswahl an derselben Stelle.
+      requestAnimationFrame(() =>
+        bereich.current?.querySelector<HTMLElement>('input, select, textarea')?.focus(),
+      );
+    },
+  };
+  const optionen = (
+    <>
+      <optgroup label="Wert">
+        <option value="wert">Wert eingeben</option>
+      </optgroup>
+      {(parameter.length > 0 || parameterRef !== null) && (
+        <optgroup label="Workflowparameter">
+          {parameterRef !== null && !parameter.some((p) => p.name === parameterRef) && (
+            <option value={`parameter:${parameterRef}`}>
+              Workflowparameter · {parameterRef || '(leer)'} (nicht definiert)
+            </option>
+          )}
+          {parameter.map((p) => (
+            <option key={p.name} value={`parameter:${p.name}`}>
+              Workflowparameter · {p.beschriftung}
+            </option>
+          ))}
+        </optgroup>
+      )}
+      {(variablen.length > 0 || variableRef !== null) && (
+        <optgroup label="Variable">
+          {variableRef !== null && !variablen.some((v) => v.id === variableRef) && (
+            <option value={`variable:${variableRef}`}>Variable · Nicht mehr vorhanden</option>
+          )}
+          {variablen.map((v) => (
+            <option key={v.id} value={`variable:${v.id}`}>
+              Variable · {v.name}
+            </option>
+          ))}
+        </optgroup>
+      )}
+    </>
+  );
+  return (
+    <div ref={bereich}>
+      {gebunden ? (
+        <Auswahlfeld beschriftung={titel} {...auswahlAngaben}>
+          {optionen}
+        </Auswahlfeld>
+      ) : (
+        <>
+          {eingabe}
+          {hatAuswahl && (
+            <details>
+              <summary>Wertquelle ändern</summary>
+              <div style={{ paddingBlockStart: 'var(--abstand-8)' }}>
+                <select className="sl-feld-eingabe" aria-label={`${titel}: Wertquelle`} {...auswahlAngaben}>
+                  {optionen}
+                </select>
+              </div>
+            </details>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function LiteralEingabe({
   wert,
   aendern,
@@ -127,8 +249,6 @@ function LiteralEingabe({
   const parameter = parameterVorgabe ?? kontext.parameter;
   const w = objekt(wert),
     typ = typeof w.typ === 'string' ? w.typ : String(objekt(w.typ ?? null).art ?? 'TEXT');
-  const ref = objekt(w.wert ?? null).parameter;
-  const variablenRef = objekt(w.wert ?? null).variable;
   const primitive = w.wert === null || ['string', 'number', 'boolean'].includes(typeof w.wert);
   const wertart: WorkflowParameter['typ'] =
     (
@@ -141,72 +261,31 @@ function LiteralEingabe({
       } as Record<string, WorkflowParameter['typ']>
     )[typ] ?? 'Text';
   return (
-    <>
-      {typeof variablenRef === 'string' ? (
-        <p>
-          {titel}: Variable „
-          {kontext.variablen.find((v) => v.id === variablenRef)?.name ?? 'Nicht mehr vorhanden'}“
-        </p>
-      ) : typeof ref === 'string' ? (
-        <p>
-          {titel}: Workflowparameter „{parameter.find((p) => p.name === ref)?.beschriftung ?? ref}“
-        </p>
-      ) : primitive ? (
-        <ParameterWertEingabe
-          beschriftung={titel}
-          typ={wertart}
-          wert={w.wert as WorkflowParameter['standard']}
-          gesperrt={gesperrt}
-          aendern={(neu) => aendern({ ...w, wert: neu })}
-        />
-      ) : (
-        <p role="status">
-          Dieser gespeicherte Wert kann hier nicht direkt bearbeitet werden. Seine Einstellungen bleiben
-          erhalten.
-        </p>
-      )}
-      {(parameter.length > 0 || typeof ref === 'string') && (
-        <Auswahlfeld
-          beschriftung={`${titel}: Workflowparameter`}
-          value={typeof ref === 'string' ? ref : ''}
-          disabled={gesperrt}
-          onChange={(e) =>
-            aendern({
-              ...w,
-              wert: e.target.value ? { parameter: e.target.value } : typ === 'WAHRHEIT' ? null : '',
-            })
-          }
-        >
-          <option value="">Kein Workflowparameter</option>
-          {typeof ref === 'string' && !parameter.some((p) => p.name === ref) && (
-            <option value={ref}>{ref} (nicht definiert)</option>
-          )}
-          {parameter.map((p) => (
-            <option key={p.name} value={p.name}>
-              {p.beschriftung}
-            </option>
-          ))}
-        </Auswahlfeld>
-      )}
-      {(kontext.variablen.length > 0 || typeof variablenRef === 'string') && (
-        <Auswahlfeld
-          beschriftung={`${titel}: Variable`}
-          value={typeof variablenRef === 'string' ? variablenRef : ''}
-          disabled={gesperrt}
-          onChange={(e) => aendern({ ...w, wert: e.target.value ? { variable: e.target.value } : '' })}
-        >
-          <option value="">Keine Variable</option>
-          {typeof variablenRef === 'string' && !kontext.variablen.some((v) => v.id === variablenRef) && (
-            <option value={variablenRef}>Nicht mehr vorhandene Variable</option>
-          )}
-          {kontext.variablen.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.name}
-            </option>
-          ))}
-        </Auswahlfeld>
-      )}
-    </>
+    <Wertbindung
+      titel={titel}
+      wert={w.wert ?? null}
+      aendern={(neu) => aendern({ ...w, wert: neu })}
+      gesperrt={gesperrt}
+      parameter={parameter}
+      variablen={kontext.variablen}
+      leererWert={typ === 'WAHRHEIT' ? null : ''}
+      eingabe={
+        primitive ? (
+          <ParameterWertEingabe
+            beschriftung={titel}
+            typ={wertart}
+            wert={w.wert as WorkflowParameter['standard']}
+            gesperrt={gesperrt}
+            aendern={(neu) => aendern({ ...w, wert: neu })}
+          />
+        ) : (
+          <p role="status">
+            Dieser gespeicherte Wert kann hier nicht direkt bearbeitet werden. Seine Einstellungen bleiben
+            erhalten.
+          </p>
+        )
+      }
+    />
   );
 }
 
@@ -786,61 +865,28 @@ export function KonfigEingabe({
       </Auswahlfeld>
     );
   return (
-    <div>
-      <Feld
-        beschriftung={feld.titel}
-        list={
-          formular.spalten.length && ['spalte', 'links', 'rechts'].includes(feld.name)
-            ? 'business-spalten'
-            : undefined
-        }
-        value={
-          typeof w.variable === 'string'
-            ? `Variable: ${formular.variablen.find((v) => v.id === w.variable)?.name ?? 'Nicht mehr vorhanden'}`
-            : typeof w.parameter === 'string'
-              ? `Workflowparameter: ${parameter.find((p) => p.name === w.parameter)?.beschriftung ?? w.parameter}`
-              : typeof wert === 'object'
-                ? ''
-                : String(wert ?? '')
-        }
-        disabled={gesperrt || !!w.parameter || !!w.variable}
-        type={feld.art === 'zahl' ? 'number' : 'text'}
-        onChange={(e) => aendern(feld.art === 'zahl' ? Number(e.target.value) : e.target.value)}
-      />
-      {parameter.length > 0 && (
-        <Auswahlfeld
-          beschriftung={`${feld.titel}: Workflowparameter`}
-          value={String(w.parameter ?? '')}
+    <Wertbindung
+      titel={feld.titel}
+      wert={wert}
+      aendern={aendern}
+      gesperrt={gesperrt}
+      parameter={parameter}
+      variablen={feld.art === 'text' || typeof w.variable === 'string' ? formular.variablen : []}
+      eingabe={
+        <Feld
+          beschriftung={feld.titel}
+          list={
+            formular.spalten.length && ['spalte', 'links', 'rechts'].includes(feld.name)
+              ? 'business-spalten'
+              : undefined
+          }
+          value={typeof wert === 'object' ? '' : String(wert ?? '')}
           disabled={gesperrt}
-          onChange={(e) => aendern(e.target.value ? { parameter: e.target.value } : '')}
-        >
-          <option value="">Kein Workflowparameter</option>
-          {parameter.map((p) => (
-            <option key={p.name} value={p.name}>
-              {p.beschriftung}
-            </option>
-          ))}
-        </Auswahlfeld>
-      )}
-      {feld.art === 'text' && (formular.variablen.length > 0 || typeof w.variable === 'string') && (
-        <Auswahlfeld
-          beschriftung={`${feld.titel}: Variable`}
-          value={typeof w.variable === 'string' ? w.variable : ''}
-          disabled={gesperrt}
-          onChange={(e) => aendern(e.target.value ? { variable: e.target.value } : '')}
-        >
-          <option value="">Keine Variable</option>
-          {typeof w.variable === 'string' && !formular.variablen.some((v) => v.id === w.variable) && (
-            <option value={w.variable}>Nicht mehr vorhandene Variable</option>
-          )}
-          {formular.variablen.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.name}
-            </option>
-          ))}
-        </Auswahlfeld>
-      )}
-    </div>
+          type={feld.art === 'zahl' ? 'number' : 'text'}
+          onChange={(e) => aendern(feld.art === 'zahl' ? Number(e.target.value) : e.target.value)}
+        />
+      }
+    />
   );
 }
 export function BusinessEigenschaften({
@@ -874,6 +920,17 @@ export function BusinessEigenschaften({
     aktualisieren((n) => n + 1);
     geaendert();
   };
+  const csvEinstellungen = ['sl_biz_lesen_csv', 'sl_biz_schreiben_csv'].includes(def.typ);
+  const feldAnzeigen = (f: KonfigFeld) => (
+    <KonfigEingabe
+      key={f.name}
+      feld={f}
+      wert={daten.konfiguration[f.name] ?? f.standard}
+      aendern={(wert) => setzen({ ...daten, konfiguration: { ...daten.konfiguration, [f.name]: wert } })}
+      parameter={parameter}
+      gesperrt={gesperrt}
+    />
+  );
   return (
     <FormularKontext.Provider
       value={{
@@ -896,56 +953,97 @@ export function BusinessEigenschaften({
               <option key={s} value={s} />
             ))}
         </datalist>
-        {spalten.length > 0 && (
-          <p>
-            Spaltenvorschläge stammen aus der letzten Datenvorschau. Du kannst weitere Spaltennamen direkt
-            eingeben.
-          </p>
-        )}
-        <p>
-          {def.steuerung ? 'Steuert die verschachtelten Schritte.' : `Ergebnis: ${def.ausgabe}.`}{' '}
-          {def.schreibt
-            ? 'Diese Aktion kann bei echter Ausführung Dateien verändern.'
-            : 'Dieser Schritt liest oder verarbeitet Daten.'}
-        </p>
-        {Object.entries(def.eingaben).map(([name, typ]) => (
-          <Auswahlfeld
-            key={name}
-            beschriftung={`${name}: Ergebnis vom Typ ${typ}`}
-            value={String(objekt(daten.eingaben[name] ?? null).referenz ?? '')}
-            disabled={gesperrt}
-            onChange={(e) =>
-              setzen({ ...daten, eingaben: { ...daten.eingaben, [name]: { referenz: e.target.value } } })
-            }
-          >
-            <option value="">Vorherigen Baustein auswählen</option>
-            {ws
-              .getAllBlocks(false)
-              .filter((b) => {
-                const quelle = businessNachTyp.get(b.type);
-                return (
-                  b.id !== block.id && quelle?.ausgabe === typ && !('steuerung' in quelle && quelle.steuerung)
-                );
-              })
-              .map((b) => (
+        {def.schreibt && <p>Verändert Dateien bei echter Ausführung.</p>}
+        {Object.entries(def.eingaben).map(([name, typ]) => {
+          const titel =
+            (
+              {
+                links: 'Erste Tabelle',
+                rechts: 'Zweite Tabelle',
+                dateien: 'Dateien',
+                ausgaben: 'Ausgaben',
+              } as Record<string, string>
+            )[name] ?? (typ === 'Dateiliste' ? 'Dateien' : typ);
+          const referenz = String(objekt(daten.eingaben[name] ?? null).referenz ?? '');
+          const quellen = ws.getAllBlocks(false).filter((b) => {
+            const quelle = businessNachTyp.get(b.type);
+            return (
+              b.id !== block.id && quelle?.ausgabe === typ && !('steuerung' in quelle && quelle.steuerung)
+            );
+          });
+          return (
+            <Auswahlfeld
+              key={name}
+              beschriftung={titel}
+              value={referenz}
+              disabled={gesperrt}
+              onChange={(e) =>
+                setzen({ ...daten, eingaben: { ...daten.eingaben, [name]: { referenz: e.target.value } } })
+              }
+            >
+              <option value="">{titel} auswählen</option>
+              {referenz && !quellen.some((b) => b.id === referenz) && (
+                <option value={referenz}>Baustein nicht mehr verfügbar</option>
+              )}
+              {quellen.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {String(b.getFieldValue('NAME') ?? businessNachTyp.get(b.type)!.name)} · {b.id.slice(0, 6)}
+                  {String(b.getFieldValue('NAME') ?? businessNachTyp.get(b.type)!.name)}
                 </option>
               ))}
-          </Auswahlfeld>
-        ))}
-        {def.felder.map((f) => (
-          <KonfigEingabe
-            key={f.name}
-            feld={f}
-            wert={daten.konfiguration[f.name] ?? f.standard}
-            aendern={(wert) =>
-              setzen({ ...daten, konfiguration: { ...daten.konfiguration, [f.name]: wert } })
-            }
-            parameter={parameter}
-            gesperrt={gesperrt}
-          />
-        ))}
+            </Auswahlfeld>
+          );
+        })}
+        {def.felder
+          .filter((f) => !csvEinstellungen || !['format', 'optionen'].includes(f.name))
+          .map(feldAnzeigen)}
+        {csvEinstellungen && (
+          <details>
+            <summary>
+              {def.typ === 'sl_biz_lesen_csv' ? 'Importeinstellungen' : 'Ausgabeeinstellungen'}
+            </summary>
+            <div
+              className="business-formular"
+              style={{ paddingInlineStart: 'var(--abstand-16)', paddingBlockStart: 'var(--abstand-8)' }}
+            >
+              {def.felder
+                .filter((f) => ['format', 'optionen'].includes(f.name))
+                .map((f) =>
+                  f.name === 'optionen'
+                    ? f.felder!.map((unterfeld) => {
+                        const optionen = objekt(daten.konfiguration[f.name] ?? f.standard);
+                        return (
+                          <KonfigEingabe
+                            key={`${f.name}-${unterfeld.name}`}
+                            feld={unterfeld}
+                            wert={optionen[unterfeld.name] ?? unterfeld.standard}
+                            aendern={(wert) =>
+                              setzen({
+                                ...daten,
+                                konfiguration: {
+                                  ...daten.konfiguration,
+                                  [f.name]: { ...optionen, [unterfeld.name]: wert },
+                                },
+                              })
+                            }
+                            parameter={parameter}
+                            gesperrt={gesperrt}
+                          />
+                        );
+                      })
+                    : feldAnzeigen(f),
+                )}
+            </div>
+          </details>
+        )}
+        {spalten.length > 0 && (
+          <details>
+            <summary>Zu den Spaltenvorschlägen</summary>
+            <p>
+              Die Vorschläge stammen aus der letzten Datenvorschau. Weitere Spaltennamen kannst du direkt
+              eingeben.
+            </p>
+          </details>
+        )}
       </section>
     </FormularKontext.Provider>
   );

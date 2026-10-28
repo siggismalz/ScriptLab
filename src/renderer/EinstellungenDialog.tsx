@@ -49,6 +49,15 @@ export function EinstellungenDialog({
   pythonStatus: PythonStatus | null;
   pythonAktion: (aktion: 'pruefen' | 'waehlen' | 'hilfe') => void;
 }) {
+  const [bereich, setBereich] = useState('darstellung');
+  const bereiche = [
+    { id: 'darstellung', text: 'Darstellung' },
+    { id: 'laufzeit', text: 'Laufzeit' },
+    { id: 'updates', text: 'Updates' },
+    ...(projektOptionenAnzeigen && projekt.skriptsprache === 'vbs'
+      ? [{ id: 'signatur', text: 'VBS-Signatur' }]
+      : []),
+  ];
   const [breitenEntwurf, setBreitenEntwurf] = useState(String(einstellungen.palettenBreite));
   const [zeitstempelEntwurf, setZeitstempelEntwurf] = useState(projekt.exportOptionen.zeitstempelUrl);
   const [breitenFehler, setBreitenFehler] = useState('');
@@ -100,6 +109,7 @@ export function EinstellungenDialog({
             const b = breiteUebernehmen(),
               z = zeitstempelUebernehmen();
             if (b && z) schliessen();
+            else setBereich(!b ? 'darstellung' : 'signatur');
           }}
         >
           Fertig
@@ -112,251 +122,309 @@ export function EinstellungenDialog({
         </p>
       )}
       {fehlerMeldung && <Statusanzeige art="fehler">{fehlerMeldung}</Statusanzeige>}
-      <section className="einstellungs-abschnitt">
-        <h3>Darstellung</h3>
-        <Auswahlfeld
-          beschriftung="Farbschema"
-          hilfe="System folgt der Windows-Darstellung. Die Auswahl bleibt auf diesem Gerät gespeichert."
-          value={einstellungen.darstellung ?? 'dunkel'}
-          onChange={(e) =>
-            setzen({ ...einstellungen, darstellung: e.target.value as 'dunkel' | 'hell' | 'system' })
-          }
-        >
-          <option value="dunkel">Dunkel</option>
-          <option value="hell">Hell</option>
-          <option value="system">System</option>
-        </Auswahlfeld>
-        <Auswahlfeld
-          beschriftung="Textgröße der Oberfläche"
-          hilfe="Vergrößert Texte in Menüs, Formularen und Dialogen. Windows-Skalierung und Canvas-Zoom bleiben getrennt einstellbar."
-          value={einstellungen.textSkalierung}
-          onChange={(e) => setzen({ ...einstellungen, textSkalierung: Number(e.target.value) })}
-        >
-          {[1, 1.25, 1.5, 2].map((v) => (
-            <option key={v} value={v}>
-              {Math.round(v * 100)} %
-            </option>
-          ))}
-        </Auswahlfeld>
-        <Feld
-          beschriftung="Breite der Bausteinpalette"
-          hilfe="240 bis 400 logische Pixel. Die Trennlinie lässt sich auch mit Pfeiltasten verschieben."
-          type="number"
-          min={240}
-          max={400}
-          value={breitenEntwurf}
-          onChange={(e) => setBreitenEntwurf(e.target.value)}
-          onBlur={breiteUebernehmen}
-          fehler={breitenFehler}
-        />
-        <p>Ansichtseinstellungen werden beim Auswählen oder Verlassen eines Felds gespeichert.</p>
-      </section>
-      <BusinessLaufzeit gewechselt={businessGewechselt} />
-      <section className="einstellungs-abschnitt" aria-labelledby="python-installation-titel">
-        <h3 id="python-installation-titel">Python-Installation</h3>
-        <p>
-          Python wird zum Bearbeiten und Exportieren nicht benötigt. Für einen Python-Test muss eine passende
-          Installation tatsächlich geprüft werden.
-        </p>
-        <div id="python-installation-status">
-          <Statusanzeige
-            art={
-              pythonStatus?.zustand === 'bereit' && pythonStatus.installation
-                ? 'erfolg'
-                : pythonStatus?.zustand === 'prueft'
-                  ? 'verarbeitung'
-                  : pythonStatus?.zustand === 'fehler'
-                    ? 'fehler'
-                    : 'neutral'
-            }
+      <nav className="einstellungen-bereiche" role="tablist" aria-label="Einstellungsbereiche">
+        {bereiche.map((tab, index) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            id={`einstellung-${tab.id}`}
+            aria-controls={`einstellung-panel-${tab.id}`}
+            aria-selected={bereich === tab.id}
+            tabIndex={bereich === tab.id ? 0 : -1}
+            onClick={() => setBereich(tab.id)}
+            onKeyDown={(event) => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+              event.preventDefault();
+              const ziel =
+                event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? bereiche.length - 1
+                    : (index + (event.key === 'ArrowRight' ? 1 : -1) + bereiche.length) % bereiche.length;
+              setBereich(bereiche[ziel].id);
+              document.getElementById(`einstellung-${bereiche[ziel].id}`)?.focus();
+            }}
           >
-            {pythonStatus?.meldung ?? 'Der Python-Status wurde noch nicht geladen.'}
-          </Statusanzeige>
-        </div>
-        {pythonStatus?.installation && (
-          <>
-            <p>
-              {pythonStatus.installation.implementierung} {pythonStatus.installation.version} ·{' '}
-              {pythonStatus.installation.architektur}
-            </p>
-            <p>
-              {pythonStatus.installation.tkinter === true
-                ? 'Dialogfunktionen (tkinter) geprüft.'
-                : pythonStatus.installation.tkinter === false
-                  ? 'Dialogfunktionen (tkinter) sind nicht verfügbar.'
-                  : 'Dialogfunktionen werden bei Bedarf gesondert geprüft.'}
-            </p>
-          </>
-        )}
-        {(pythonStatus?.installation?.pfad || pythonStatus?.auswahl) && (
-          <Textfeld
-            beschriftung="Python-Interpreter"
-            readOnly
-            rows={2}
-            value={pythonStatus.installation?.pfad ?? pythonStatus.auswahl ?? ''}
-          />
-        )}
-        <div className="knopfgruppe umbrechen">
-          <Knopf
-            onClick={() => pythonAktion('waehlen')}
-            disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft'}
-            grundId={verarbeitung ? 'einstellungen-vorgang' : 'python-installation-status'}
-          >
-            Interpreter auswählen
-          </Knopf>
-          <Knopf
-            onClick={() => pythonAktion('pruefen')}
-            disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft'}
-            grundId={verarbeitung ? 'einstellungen-vorgang' : 'python-installation-status'}
-          >
-            Erneut prüfen
-          </Knopf>
-          <Knopf variante="leise" onClick={() => pythonAktion('hilfe')}>
-            Offizielle Python-Hilfe
-          </Knopf>
-        </div>
-        <p>
-          Die Auswahl erfolgt über eine Programmdatei. ScriptLab installiert keine Python-Pakete automatisch
-          und bietet hier keine freie Befehlszeile an.
-        </p>
-      </section>
-      <section className="einstellungs-abschnitt">
-        <h3>Anwendungsupdates</h3>
-        <p>
-          Installierte Version: {version}
-          {update?.verfuegbareVersion ? ` · Verfügbar: ${update.verfuegbareVersion}` : ''}
-        </p>
-        {(['automatischeUpdates', 'vorabversionen'] as const).map((key) => (
-          <label key={key} className="schalter">
-            <input
-              type="checkbox"
-              checked={einstellungen[key]}
-              onChange={(e) => setzen({ ...einstellungen, [key]: e.target.checked })}
-            />
-            <span>
-              {key === 'automatischeUpdates'
-                ? 'Automatisch nach Updates suchen'
-                : 'Vorabversionen bewusst zulassen'}
-            </span>
-          </label>
+            {tab.text}
+          </button>
         ))}
-        {update && (
-          <Statusanzeige
-            art={
-              update.phase === 'fehler'
-                ? 'fehler'
-                : update.phase === 'prueft' || update.phase === 'laedt'
-                  ? 'verarbeitung'
-                  : 'neutral'
+      </nav>
+      <div
+        role="tabpanel"
+        id="einstellung-panel-darstellung"
+        aria-labelledby="einstellung-darstellung"
+        hidden={bereich !== 'darstellung'}
+      >
+        <section className="einstellungs-abschnitt">
+          <h3>Darstellung</h3>
+          <Auswahlfeld
+            beschriftung="Farbschema"
+            hilfe="„System“ folgt der Windows-Darstellung."
+            value={einstellungen.darstellung ?? 'dunkel'}
+            onChange={(e) =>
+              setzen({ ...einstellungen, darstellung: e.target.value as 'dunkel' | 'hell' | 'system' })
             }
           >
-            {update.meldung}
-          </Statusanzeige>
-        )}
-        {update?.phase === 'laedt' && (
-          <>
-            <progress value={update.fortschritt} max={100} aria-label="Update-Download" />
-            <p>{Math.round(update.fortschritt)} % heruntergeladen</p>
-          </>
-        )}
-        <div className="knopfgruppe umbrechen">
-          <Knopf
-            verarbeitung={update?.phase === 'prueft'}
-            disabled={Boolean(verarbeitung)}
-            grundId="einstellungen-vorgang"
-            onClick={() => updateAktion('pruefen')}
+            <option value="dunkel">Dunkel</option>
+            <option value="hell">Hell</option>
+            <option value="system">System</option>
+          </Auswahlfeld>
+          <Auswahlfeld
+            beschriftung="Textgröße der Oberfläche"
+            hilfe="Unabhängig von Windows-Skalierung und Canvas-Zoom."
+            value={einstellungen.textSkalierung}
+            onChange={(e) => setzen({ ...einstellungen, textSkalierung: Number(e.target.value) })}
           >
-            Nach Updates suchen
-          </Knopf>
-          {update?.phase === 'verfuegbar' && (
-            <Knopf onClick={() => updateAktion('laden')}>Update herunterladen</Knopf>
-          )}
-          {update?.phase === 'bereit-zur-installation' && (
-            <Knopf onClick={() => updateAktion('installieren')}>Installieren und neu starten</Knopf>
-          )}
-        </div>
-        {update?.aenderungen && (
-          <section>
-            <h4>Änderungen</h4>
-            <pre className="aenderungen">{update.aenderungen}</pre>
-          </section>
-        )}
-      </section>
-      {projektOptionenAnzeigen && projekt.skriptsprache === 'vbs' && (
-        <section className="einstellungs-abschnitt">
-          <h3>Signatur für dieses Projekt</h3>
-          <label className="schalter">
-            <input
-              type="checkbox"
-              checked={projekt.exportOptionen.signieren}
-              onChange={(e) =>
-                exportOptionenSetzen({ ...projekt.exportOptionen, signieren: e.target.checked })
+            {[1, 1.25, 1.5, 2].map((v) => (
+              <option key={v} value={v}>
+                {Math.round(v * 100)} %
+              </option>
+            ))}
+          </Auswahlfeld>
+          <Feld
+            beschriftung="Breite der Bausteinpalette"
+            hilfe="240–400 logische Pixel."
+            type="number"
+            min={240}
+            max={400}
+            value={breitenEntwurf}
+            onChange={(e) => setBreitenEntwurf(e.target.value)}
+            onBlur={breiteUebernehmen}
+            fehler={breitenFehler}
+          />
+        </section>
+      </div>
+      <div
+        role="tabpanel"
+        id="einstellung-panel-laufzeit"
+        aria-labelledby="einstellung-laufzeit"
+        hidden={bereich !== 'laufzeit'}
+      >
+        <BusinessLaufzeit gewechselt={businessGewechselt} />
+        <section className="einstellungs-abschnitt" aria-labelledby="python-installation-titel">
+          <h3 id="python-installation-titel">Python-Installation</h3>
+          <p>
+            Python wird zum Bearbeiten und Exportieren nicht benötigt. Für einen Python-Test muss eine
+            passende Installation tatsächlich geprüft werden.
+          </p>
+          <div id="python-installation-status">
+            <Statusanzeige
+              art={
+                pythonStatus?.zustand === 'bereit' && pythonStatus.installation
+                  ? 'erfolg'
+                  : pythonStatus?.zustand === 'prueft'
+                    ? 'verarbeitung'
+                    : pythonStatus?.zustand === 'fehler'
+                      ? 'fehler'
+                      : 'neutral'
               }
-            />
-            <span>Exportierte Datei signieren</span>
-          </label>
-          <p>Der normale Export funktioniert ohne Zertifikat.</p>
-          {projekt.exportOptionen.signieren && (
+            >
+              {pythonStatus?.meldung ?? 'Der Python-Status wurde noch nicht geladen.'}
+            </Statusanzeige>
+          </div>
+          {pythonStatus?.installation && (
             <>
               <p>
-                Für die optionale Signatur benötigst du ein gültiges Code-Signing-Zertifikat mit privatem
-                Schlüssel im Windows-Zertifikatspeicher.
+                {pythonStatus.installation.implementierung} {pythonStatus.installation.version} ·{' '}
+                {pythonStatus.installation.architektur}
               </p>
-              <Knopf
-                onClick={zertifikateLaden}
-                disabled={Boolean(verarbeitung)}
-                verarbeitung={verarbeitung?.startsWith('Zertifikate') ?? false}
-                grundId="einstellungen-vorgang"
-              >
-                Zertifikate laden
-              </Knopf>
-              {zertifikatMeldung && (
-                <Statusanzeige art={zertifikate.length ? 'neutral' : 'hinweis'}>
-                  {zertifikatMeldung}
-                </Statusanzeige>
-              )}
-              <Auswahlfeld
-                beschriftung="Zertifikat"
-                value={projekt.exportOptionen.zertifikatFingerabdruck}
-                onChange={(e) =>
-                  exportOptionenSetzen({ ...projekt.exportOptionen, zertifikatFingerabdruck: e.target.value })
-                }
-              >
-                <option value="">Bitte auswählen</option>
-                {projekt.exportOptionen.zertifikatFingerabdruck &&
-                  !zertifikate.some(
-                    (z) => z.fingerabdruck === projekt.exportOptionen.zertifikatFingerabdruck,
-                  ) && (
-                    <option value={projekt.exportOptionen.zertifikatFingerabdruck}>
-                      Gespeicherte Auswahl: {projekt.exportOptionen.zertifikatFingerabdruck}
-                    </option>
-                  )}
-                {zertifikate.map((z) => (
-                  <option key={z.fingerabdruck} value={z.fingerabdruck}>
-                    {z.betreff} · {z.fingerabdruck}
-                  </option>
-                ))}
-              </Auswahlfeld>
-              <details>
-                <summary>Zeitstempel einrichten</summary>
-                <Feld
-                  beschriftung="Zeitstempeldienst (optional)"
-                  placeholder="http://…"
-                  value={zeitstempelEntwurf}
-                  onChange={(e) => setZeitstempelEntwurf(e.target.value)}
-                  onBlur={zeitstempelUebernehmen}
-                  fehler={zeitstempelFehler}
-                  hilfe="Dieser Windows-Signaturweg unterstützt für Authenticode-Zeitstempel nur HTTP."
-                />
-              </details>
               <p>
-                Eine Signatur hilft, Herausgeber und Änderungen zu prüfen. Sie garantiert keine
-                Ungefährlichkeit und verhindert keine Windows-Warnungen.
+                {pythonStatus.installation.tkinter === true
+                  ? 'Dialogfunktionen (tkinter) geprüft.'
+                  : pythonStatus.installation.tkinter === false
+                    ? 'Dialogfunktionen (tkinter) sind nicht verfügbar.'
+                    : 'Dialogfunktionen werden bei Bedarf gesondert geprüft.'}
               </p>
             </>
           )}
+          {(pythonStatus?.installation?.pfad || pythonStatus?.auswahl) && (
+            <Textfeld
+              beschriftung="Python-Interpreter"
+              readOnly
+              rows={2}
+              value={pythonStatus.installation?.pfad ?? pythonStatus.auswahl ?? ''}
+            />
+          )}
+          <div className="knopfgruppe umbrechen">
+            <Knopf
+              onClick={() => pythonAktion('waehlen')}
+              disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft'}
+              grundId={verarbeitung ? 'einstellungen-vorgang' : 'python-installation-status'}
+            >
+              Interpreter auswählen
+            </Knopf>
+            <Knopf
+              onClick={() => pythonAktion('pruefen')}
+              disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft'}
+              grundId={verarbeitung ? 'einstellungen-vorgang' : 'python-installation-status'}
+            >
+              Erneut prüfen
+            </Knopf>
+            <Knopf variante="leise" onClick={() => pythonAktion('hilfe')}>
+              Offizielle Python-Hilfe
+            </Knopf>
+          </div>
+          <p>
+            Die Auswahl erfolgt über eine Programmdatei. ScriptLab installiert keine Python-Pakete automatisch
+            und bietet hier keine freie Befehlszeile an.
+          </p>
         </section>
-      )}
+      </div>
+      <div
+        role="tabpanel"
+        id="einstellung-panel-updates"
+        aria-labelledby="einstellung-updates"
+        hidden={bereich !== 'updates'}
+      >
+        <section className="einstellungs-abschnitt">
+          <h3>Anwendungsupdates</h3>
+          <p>
+            Installierte Version: {version}
+            {update?.verfuegbareVersion ? ` · Verfügbar: ${update.verfuegbareVersion}` : ''}
+          </p>
+          {(['automatischeUpdates', 'vorabversionen'] as const).map((key) => (
+            <label key={key} className="schalter">
+              <input
+                type="checkbox"
+                checked={einstellungen[key]}
+                onChange={(e) => setzen({ ...einstellungen, [key]: e.target.checked })}
+              />
+              <span>
+                {key === 'automatischeUpdates'
+                  ? 'Automatisch nach Updates suchen'
+                  : 'Vorabversionen bewusst zulassen'}
+              </span>
+            </label>
+          ))}
+          {update && (
+            <Statusanzeige
+              art={
+                update.phase === 'fehler'
+                  ? 'fehler'
+                  : update.phase === 'prueft' || update.phase === 'laedt'
+                    ? 'verarbeitung'
+                    : 'neutral'
+              }
+            >
+              {update.meldung}
+            </Statusanzeige>
+          )}
+          {update?.phase === 'laedt' && (
+            <>
+              <progress value={update.fortschritt} max={100} aria-label="Update-Download" />
+              <p>{Math.round(update.fortschritt)} % heruntergeladen</p>
+            </>
+          )}
+          <div className="knopfgruppe umbrechen">
+            <Knopf
+              verarbeitung={update?.phase === 'prueft'}
+              disabled={Boolean(verarbeitung)}
+              grundId="einstellungen-vorgang"
+              onClick={() => updateAktion('pruefen')}
+            >
+              Nach Updates suchen
+            </Knopf>
+            {update?.phase === 'verfuegbar' && (
+              <Knopf onClick={() => updateAktion('laden')}>Update herunterladen</Knopf>
+            )}
+            {update?.phase === 'bereit-zur-installation' && (
+              <Knopf onClick={() => updateAktion('installieren')}>Installieren und neu starten</Knopf>
+            )}
+          </div>
+          {update?.aenderungen && (
+            <section>
+              <h4>Änderungen</h4>
+              <pre className="aenderungen">{update.aenderungen}</pre>
+            </section>
+          )}
+        </section>
+      </div>
+      <div
+        role="tabpanel"
+        id="einstellung-panel-signatur"
+        aria-labelledby="einstellung-signatur"
+        hidden={bereich !== 'signatur'}
+      >
+        {projektOptionenAnzeigen && projekt.skriptsprache === 'vbs' && (
+          <section className="einstellungs-abschnitt">
+            <h3>Signatur für dieses Projekt</h3>
+            <label className="schalter">
+              <input
+                type="checkbox"
+                checked={projekt.exportOptionen.signieren}
+                onChange={(e) =>
+                  exportOptionenSetzen({ ...projekt.exportOptionen, signieren: e.target.checked })
+                }
+              />
+              <span>Exportierte Datei signieren</span>
+            </label>
+            <p>Der normale Export funktioniert ohne Zertifikat.</p>
+            {projekt.exportOptionen.signieren && (
+              <>
+                <p>
+                  Für die optionale Signatur benötigst du ein gültiges Code-Signing-Zertifikat mit privatem
+                  Schlüssel im Windows-Zertifikatspeicher.
+                </p>
+                <Knopf
+                  onClick={zertifikateLaden}
+                  disabled={Boolean(verarbeitung)}
+                  verarbeitung={verarbeitung?.startsWith('Zertifikate') ?? false}
+                  grundId="einstellungen-vorgang"
+                >
+                  Zertifikate laden
+                </Knopf>
+                {zertifikatMeldung && (
+                  <Statusanzeige art={zertifikate.length ? 'neutral' : 'hinweis'}>
+                    {zertifikatMeldung}
+                  </Statusanzeige>
+                )}
+                <Auswahlfeld
+                  beschriftung="Zertifikat"
+                  value={projekt.exportOptionen.zertifikatFingerabdruck}
+                  onChange={(e) =>
+                    exportOptionenSetzen({
+                      ...projekt.exportOptionen,
+                      zertifikatFingerabdruck: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Bitte auswählen</option>
+                  {projekt.exportOptionen.zertifikatFingerabdruck &&
+                    !zertifikate.some(
+                      (z) => z.fingerabdruck === projekt.exportOptionen.zertifikatFingerabdruck,
+                    ) && (
+                      <option value={projekt.exportOptionen.zertifikatFingerabdruck}>
+                        Gespeicherte Auswahl: {projekt.exportOptionen.zertifikatFingerabdruck}
+                      </option>
+                    )}
+                  {zertifikate.map((z) => (
+                    <option key={z.fingerabdruck} value={z.fingerabdruck}>
+                      {z.betreff} · {z.fingerabdruck}
+                    </option>
+                  ))}
+                </Auswahlfeld>
+                <details>
+                  <summary>Zeitstempel einrichten</summary>
+                  <Feld
+                    beschriftung="Zeitstempeldienst (optional)"
+                    placeholder="http://…"
+                    value={zeitstempelEntwurf}
+                    onChange={(e) => setZeitstempelEntwurf(e.target.value)}
+                    onBlur={zeitstempelUebernehmen}
+                    fehler={zeitstempelFehler}
+                    hilfe="Dieser Windows-Signaturweg unterstützt für Authenticode-Zeitstempel nur HTTP."
+                  />
+                </details>
+                <p>
+                  Eine Signatur hilft, Herausgeber und Änderungen zu prüfen. Sie garantiert keine
+                  Ungefährlichkeit und verhindert keine Windows-Warnungen.
+                </p>
+              </>
+            )}
+          </section>
+        )}
+      </div>
     </Dialog>
   );
 }

@@ -4,6 +4,7 @@ import { bausteinDefinitionen } from '../kern/katalog';
 import { eigenschaftenLesen, eigenschaftSetzen, neueVariableAnlegen } from '../editor/eigenschaften';
 import { bausteinBeispiele } from '../editor/beispieleHilfe';
 import { Knopf } from './komponenten/Knopf';
+import { Menue } from './komponenten/Menue';
 import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
 import { BusinessEigenschaften } from './BusinessEigenschaften';
 import { businessNachTyp } from '../kern/business-katalog';
@@ -72,6 +73,38 @@ export function Eigenschaften({
       <header className="panel-kopf">
         <h2>Eigenschaften</h2>
         <div className="knopfgruppe">
+          {block && (
+            <Menue
+              beschriftung="Bausteinaktionen"
+              nurSymbol
+              symbol="mehr"
+              eintraege={[
+                {
+                  text: 'Verschieben',
+                  symbol: 'verschieben',
+                  gesperrt: schreibgeschuetzt,
+                  grund: 'Stoppe den Lauf vor Änderungen.',
+                  aktion: verschieben,
+                },
+                { text: 'Kopieren', symbol: 'kopieren', aktion: () => blockAktion('kopieren') },
+                {
+                  text: 'Duplizieren',
+                  symbol: 'duplizieren',
+                  gesperrt: schreibgeschuetzt,
+                  grund: 'Stoppe den Lauf vor Änderungen.',
+                  aktion: () => blockAktion('duplizieren'),
+                },
+                {
+                  text: 'Baustein löschen',
+                  symbol: 'loeschen',
+                  gesperrt: schreibgeschuetzt,
+                  grund: 'Stoppe den Lauf vor Änderungen.',
+                  aktion: () => blockAktion('loeschen'),
+                },
+              ]}
+            />
+          )}
+
           {kannAnheften && (
             <Knopf
               variante="leise"
@@ -98,7 +131,6 @@ export function Eigenschaften({
         {definition && block ? (
           <>
             <h3>{definition.name}</h3>
-            <p>{definition.hilfe}</p>
             {businessNachTyp.has(block.type) && ws && (
               <BusinessEigenschaften
                 ws={ws}
@@ -109,10 +141,6 @@ export function Eigenschaften({
                 geaendert={() => beruehrt(block.id)}
               />
             )}
-            <section className="blockbeispiel">
-              <h3>Beispiel</h3>
-              <p>{bausteinBeispiele[block.type]}</p>
-            </section>
             {felder.map((f) => {
               const gemeinsam = {
                 disabled: schreibgeschuetzt,
@@ -130,84 +158,71 @@ export function Eigenschaften({
                   e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
                 ) => setzen(f.quellBlockId, f.feldName, f.id, e.target.value),
               };
-              return f.art === 'variable' ? (
-                <div key={f.id} className="variablen-eigenschaft">
-                  <Auswahlfeld {...gemeinsam}>
-                    {!f.wert && (
-                      <option value="" disabled>
-                        Variable auswählen
-                      </option>
-                    )}
+              const eingabe =
+                f.art === 'variable' ? (
+                  <div key={f.id} className="variablen-eigenschaft">
+                    <Auswahlfeld {...gemeinsam}>
+                      {!f.wert && (
+                        <option value="" disabled>
+                          Variable auswählen
+                        </option>
+                      )}
+                      {f.optionen?.map((o) => (
+                        <option key={o.wert} value={o.wert}>
+                          {o.text}
+                        </option>
+                      ))}
+                    </Auswahlfeld>
+                    <Knopf
+                      disabled={schreibgeschuetzt}
+                      grund="Stoppe den Test vor Änderungen."
+                      onClick={() => {
+                        if (!ws) return;
+                        neueVariableAnlegen(ws, f.quellBlockId, f.feldName, () => beruehrt(f.quellBlockId));
+                      }}
+                    >
+                      Neue Variable anlegen
+                    </Knopf>
+                  </div>
+                ) : f.art === 'auswahl' ? (
+                  <Auswahlfeld key={f.id} {...gemeinsam}>
                     {f.optionen?.map((o) => (
                       <option key={o.wert} value={o.wert}>
                         {o.text}
                       </option>
                     ))}
                   </Auswahlfeld>
-                  <Knopf
-                    disabled={schreibgeschuetzt}
-                    grund="Stoppe den Test vor Änderungen."
-                    onClick={() => {
-                      if (!ws) return;
-                      neueVariableAnlegen(ws, f.quellBlockId, f.feldName, () => beruehrt(f.quellBlockId));
-                    }}
-                  >
-                    Neue Variable anlegen
-                  </Knopf>
-                </div>
-              ) : f.art === 'auswahl' ? (
-                <Auswahlfeld key={f.id} {...gemeinsam}>
-                  {f.optionen?.map((o) => (
-                    <option key={o.wert} value={o.wert}>
-                      {o.text}
-                    </option>
-                  ))}
-                </Auswahlfeld>
-              ) : f.mehrzeilig ? (
-                <Textfeld key={f.id} {...gemeinsam} rows={3} spellCheck={false} />
+                ) : f.mehrzeilig ? (
+                  <Textfeld key={f.id} {...gemeinsam} rows={3} spellCheck={false} />
+                ) : (
+                  <Feld
+                    key={f.id}
+                    {...gemeinsam}
+                    type="text"
+                    inputMode={f.art === 'zahl' ? 'decimal' : 'text'}
+                    min={f.min}
+                    max={f.max}
+                    spellCheck={false}
+                  />
+                );
+              return block.type.startsWith('sl_biz_') && f.feldName === 'NAME' ? (
+                <details key={f.id} className="baustein-benennung block-hilfe">
+                  <summary>Bausteindetails</summary>
+                  {eingabe}
+                  <p>{definition.hilfe}</p>
+                  {bausteinBeispiele[block.type] && <p>{bausteinBeispiele[block.type]}</p>}
+                </details>
               ) : (
-                <Feld
-                  key={f.id}
-                  {...gemeinsam}
-                  type="text"
-                  inputMode={f.art === 'zahl' ? 'decimal' : 'text'}
-                  min={f.min}
-                  max={f.max}
-                  spellCheck={false}
-                />
+                eingabe
               );
             })}
-            <section className="eigenschaften-aktionen">
-              <h3>Baustein bearbeiten</h3>
-              <Knopf
-                symbol="verschieben"
-                disabled={schreibgeschuetzt}
-                grund="Stoppe den Test vor Änderungen."
-                onClick={verschieben}
-              >
-                Verschieben
-              </Knopf>
-              <Knopf symbol="kopieren" onClick={() => blockAktion('kopieren')}>
-                Kopieren
-              </Knopf>
-              <Knopf
-                symbol="duplizieren"
-                disabled={schreibgeschuetzt}
-                grund="Stoppe den Test vor Änderungen."
-                onClick={() => blockAktion('duplizieren')}
-              >
-                Duplizieren
-              </Knopf>
-              <Knopf
-                variante="gefahr"
-                symbol="loeschen"
-                disabled={schreibgeschuetzt}
-                grund="Stoppe den Test vor Änderungen."
-                onClick={() => blockAktion('loeschen')}
-              >
-                Baustein löschen
-              </Knopf>
-            </section>
+            {!businessNachTyp.has(block.type) && (
+              <details className="block-hilfe">
+                <summary>Hinweise und Beispiel</summary>
+                <p>{definition.hilfe}</p>
+                {bausteinBeispiele[block.type] && <p>{bausteinBeispiele[block.type]}</p>}
+              </details>
+            )}
           </>
         ) : (
           <p>Wähle einen Baustein im Arbeitsbereich. Seine Eingaben und Hilfen erscheinen hier.</p>

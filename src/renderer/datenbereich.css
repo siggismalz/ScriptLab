@@ -1,0 +1,458 @@
+.datenbereich {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--farbe-grundflaeche);
+  color: var(--farbe-text);
+  scroll-padding: var(--abstand-16);
+  container-type: inline-size;
+}
+.datenbereich[hidden] {
+  display: none;
+}
+.daten-ansichtauswahl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  padding-inline: var(--abstand-4);
+  border-bottom: 1px solid var(--farbe-trennung);
+  flex: 0 0 auto;
+}
+.daten-ansichtauswahl button {
+  background: transparent;
+  color: var(--farbe-text);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  min-height: var(--hoehe-bedienfeld);
+  padding: var(--abstand-8) var(--abstand-12);
+  text-align: left;
+  cursor: pointer;
+}
+.daten-ansichtauswahl button:hover {
+  background: var(--farbe-erhoeht);
+}
+.daten-ansichtauswahl button[aria-selected='true'] {
+  border-bottom-color: var(--farbe-akzent);
+  color: var(--farbe-akzent);
+  font-weight: 600;
+}
+.daten-ansichtauswahl button:focus-visible {
+  outline-offset: -4px;
+}
+.daten-ansichten {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--abstand-16);
+  scroll-padding: var(--abstand-16);
+}
+.daten-ansichten > [hidden] {
+  display: none;
+}
+.daten-seitenkopf {
+  order: 1;
+  padding: var(--abstand-8) var(--abstand-16) 0;
+}
+.daten-ansichtauswahl {
+  order: 0;
+}
+.daten-ansichten {
+  order: 2;
+}
+.daten-seitenkopf h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.daten-seitenkopf p {
+  color: var(--farbe-text-sekundaer);
+  margin: 0;
+}
+.datenbereich h2 {
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  line-height: 1.5;
+  margin: 0 0 var(--abstand-4);
+  font-weight: 600;
+}
+.datenbereich h3 {
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  line-height: 1.5;
+  margin: 0;
+  font-weight: 600;
+}
+.datenbereich p {
+  margin: 0 0 var(--abstand-8);
+}
+.datenbereich p:last-child {
+  margin-bottom: 0;
+}
+.datenbereich :is(p, h1, h2, h3, strong, label, button, code) {
+  overflow-wrap: anywhere;
+}
+.daten-seitenkopf,
+.daten-abschnittskopf,
+.daten-tabellensteuerung {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--abstand-8) var(--abstand-16);
+}
+.daten-seitenkopf > div,
+.daten-abschnittskopf > div {
+  min-width: 0;
+}
+.daten-hilfetext {
+  color: var(--farbe-text-sekundaer);
+}
+.daten-konfiguration {
+  display: grid;
+  grid-template-columns: minmax(224px, 256px) minmax(0, 840px);
+  gap: var(--abstand-24);
+  align-items: start;
+}
+.daten-schritte,
+.daten-eigenschaften {
+  min-width: 0;
+}
+.daten-schritte {
+  position: sticky;
+  top: 0;
+}
+.daten-schrittliste {
+  list-style: none;
+  margin: var(--abstand-8) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+  max-height: min(52vh, 32em);
+  overflow: auto;
+  scroll-padding: var(--abstand-8);
+}
+.daten-schritt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--abstand-12);
+  width: 100%;
+  min-height: var(--hoehe-bedienfeld);
+  padding: var(--abstand-8);
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  color: var(--farbe-text);
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.daten-schritt:hover {
+  background: var(--farbe-erhoeht);
+}
+.daten-schritt[aria-pressed='true'] {
+  background: var(--farbe-auswahl-flaeche, var(--farbe-erhoeht));
+  border-left-color: var(--farbe-akzent);
+  font-weight: var(--gewicht-semibold);
+}
+.daten-schritt > span:last-child {
+  display: grid;
+  gap: var(--abstand-4);
+  min-width: 0;
+}
+.daten-schrittnummer {
+  flex: 0 0 24px;
+  font-variant-numeric: tabular-nums;
+  color: var(--farbe-text-sekundaer);
+}
+.daten-schritttyp {
+  color: var(--farbe-text-sekundaer);
+}
+.daten-blockhilfe {
+  margin-top: var(--abstand-16);
+  border-top: 1px solid var(--farbe-trennung);
+  padding-top: var(--abstand-8);
+  color: var(--farbe-text-sekundaer);
+}
+.daten-blockhilfe > p,
+.daten-feldhilfe > p {
+  margin-top: var(--abstand-8);
+}
+.daten-blockhilfe dl {
+  margin: var(--abstand-12) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--abstand-16);
+}
+.daten-blockhilfe dd {
+  margin: var(--abstand-4) 0 0;
+  color: var(--farbe-text);
+}
+.daten-parameterfeld {
+  min-width: 0;
+}
+.daten-feldhilfe {
+  color: var(--farbe-text-sekundaer);
+}
+.daten-feldhilfe summary {
+  width: fit-content;
+  padding-block: var(--abstand-4);
+}
+.daten-schrittfehler {
+  display: flex;
+  align-items: center;
+  gap: var(--abstand-4);
+  color: var(--farbe-fehler);
+}
+.daten-konfigurationsfehler {
+  padding: var(--abstand-8) var(--abstand-12);
+  border-left: 3px solid var(--farbe-fehler);
+  margin-bottom: var(--abstand-16);
+}
+.daten-konfigurationsfehler li {
+  margin: var(--abstand-8) 0;
+}
+.daten-eigenschaften {
+  border-left: 1px solid var(--farbe-trennung);
+  padding-left: var(--abstand-24);
+}
+.daten-parameter,
+.daten-vorschau {
+  min-width: 0;
+}
+.daten-parameterfelder {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: var(--abstand-16);
+  margin-top: var(--abstand-12);
+  max-width: 800px;
+}
+.daten-vorschaufehler {
+  display: grid;
+  gap: var(--abstand-8);
+  margin: var(--abstand-16) 0;
+}
+.daten-tabellensteuerung {
+  align-items: center;
+  margin: var(--abstand-12) 0;
+}
+.daten-tabellensteuerung p {
+  margin: 0;
+}
+.daten-tabellensteuerung .knopfgruppe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--abstand-8);
+  align-items: center;
+}
+.daten-tabellenausschnitt {
+  min-width: 0;
+  max-width: 100%;
+  max-height: min(56vh, 560px);
+  overflow: auto;
+  border: 1px solid var(--farbe-kontur);
+  border-radius: 0;
+  margin-top: var(--abstand-12);
+  scroll-padding-top: 72px;
+}
+.daten-tabellenausschnitt table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.daten-tabellenausschnitt caption {
+  padding: var(--abstand-8) var(--abstand-12);
+  text-align: left;
+  color: var(--farbe-text-sekundaer);
+}
+.daten-tabellenausschnitt th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--farbe-erhoeht);
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid var(--farbe-kontur);
+  vertical-align: top;
+}
+.daten-tabellenausschnitt th button {
+  width: 100%;
+  min-height: var(--hoehe-bedienfeld);
+  padding: var(--abstand-4) var(--abstand-12);
+  display: grid;
+  gap: var(--abstand-4);
+  text-align: left;
+  border: 0;
+  color: var(--farbe-text);
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.daten-tabellenausschnitt th .daten-hilfetext {
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+  line-height: 1.5;
+  font-weight: 400;
+}
+.daten-tabellenausschnitt td {
+  padding: var(--abstand-8) var(--abstand-12);
+  min-height: 36px;
+  border-bottom: 1px solid var(--farbe-trennung);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.daten-tabellenausschnitt td + td,
+.daten-tabellenausschnitt th + th {
+  border-left: 1px solid var(--farbe-trennung);
+}
+.daten-tabellenausschnitt td:first-child {
+  padding: var(--abstand-8);
+}
+.daten-tabellenausschnitt input[type='radio'] {
+  accent-color: var(--farbe-akzent);
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  cursor: pointer;
+}
+.daten-tabellenausschnitt tr.ist-ausgewaehlt td {
+  background: var(--farbe-auswahl-flaeche, var(--farbe-erhoeht));
+  border-block-color: var(--farbe-akzent);
+}
+.daten-tabellenausschnitt tr.ist-ausgewaehlt td:first-child {
+  box-shadow: inset 3px 0 var(--farbe-akzent);
+}
+.daten-tabellenausschnitt .ist-zahl {
+  text-align: right;
+}
+.daten-spaltenbreiten {
+  margin-top: var(--abstand-16);
+}
+.daten-spaltenbreiten summary {
+  cursor: pointer;
+  min-height: 36px;
+  padding-block: var(--abstand-8);
+}
+.daten-spaltenbreiten > div {
+  margin-top: var(--abstand-12);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--abstand-12);
+}
+.daten-herkunft {
+  margin-block: var(--abstand-12);
+}
+.daten-herkunft dl {
+  margin: var(--abstand-8) 0;
+  display: grid;
+  gap: var(--abstand-12);
+}
+.daten-herkunft dl > div {
+  min-width: 0;
+}
+.daten-herkunft dt {
+  color: var(--farbe-text-sekundaer);
+}
+.daten-herkunft dd {
+  margin: var(--abstand-4) 0 0;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+/* Container-ems folgen der vergrößerten Bedienoberfläche, auch ohne Fensterwechsel. */
+@container (max-width: 70em) {
+  .daten-seitenkopf p {
+    display: none;
+  }
+  .daten-konfiguration {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .daten-schritte {
+    position: static;
+  }
+  .daten-schrittliste {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18em), 1fr));
+  }
+  .daten-eigenschaften {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--farbe-trennung);
+    padding-top: var(--abstand-24);
+  }
+}
+@media (max-width: 960px) {
+  .datenbereich {
+    padding: 0;
+  }
+  .daten-konfiguration {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .daten-schritte {
+    position: static;
+  }
+  .daten-schrittliste {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  }
+  .daten-eigenschaften {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--farbe-trennung);
+    padding-top: var(--abstand-24);
+  }
+}
+@media (forced-colors: active) {
+  .daten-schritt[aria-pressed='true'] {
+    border: 2px solid Highlight;
+  }
+  .daten-tabellenausschnitt tr.ist-ausgewaehlt td {
+    border-color: Highlight;
+  }
+}
+
+/* Daten und Formulare bilden die Arbeitsfläche; Einleitungen erhalten keine eigene Bühne. */
+.daten-eigenschaften .business-formular fieldset {
+  border: 0;
+  border-top: 1px solid var(--farbe-trennung);
+  border-radius: 0;
+  padding: var(--abstand-12) 0;
+}
+.daten-eigenschaften .business-formular legend {
+  padding-left: 0;
+  padding-right: var(--abstand-8);
+}
+.daten-eigenschaften .business-formular {
+  gap: var(--abstand-12);
+}
+.daten-vorschau > .sl-feld {
+  max-width: 480px;
+}
+.daten-vorschau > .daten-hilfetext {
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+  line-height: 1.5;
+}
+.daten-tabellensteuerung .sl-knopf-mit-grund {
+  max-width: 16rem;
+}
+.daten-tabellensteuerung .sl-knopf-grund {
+  margin-top: var(--abstand-4);
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+}
+.daten-herkunft {
+  margin-block: var(--abstand-8);
+}
+.daten-parameter .daten-abschnittskopf {
+  justify-content: flex-start;
+}
+.daten-parameter .daten-abschnittskopf > div:first-child {
+  flex-basis: 100%;
+}

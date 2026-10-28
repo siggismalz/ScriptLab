@@ -1,0 +1,770 @@
+/* Produktweite Struktur. Farben stammen ausschließlich aus den Gestaltungsrollen. */
+:root {
+  background: var(--farbe-fenster);
+}
+.anwendung {
+  background: var(--farbe-fenster);
+}
+.sl-marke {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+.sl-marke-signet {
+  display: inline-block;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  color: var(--farbe-akzent);
+}
+.sl-marke-signet svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sl-marke--kompakt {
+  font-size: 16px;
+  line-height: 24px;
+}
+.sl-marke--kompakt .sl-marke-signet {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+}
+.startbereich {
+  display: grid;
+  grid-template-columns: 208px minmax(0, 1fr);
+  background: var(--farbe-fenster);
+}
+.start-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 24px 12px 16px;
+  min-height: 0;
+  overflow: auto;
+  background: var(--farbe-navigation);
+  border-right: 1px solid var(--farbe-trennung);
+}
+.start-navigation .start-marke {
+  padding: 8px 12px;
+  align-self: flex-start;
+}
+.start-navigation nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.start-navigation .start-navigation-unten {
+  margin-top: auto;
+  padding-top: 24px;
+}
+.start-navlink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.start-navlink:hover {
+  background: var(--farbe-erhoeht);
+}
+.start-navlink[aria-current='page'] {
+  border-left-color: var(--farbe-akzent);
+  background: var(--farbe-auswahl-flaeche);
+  font-weight: 600;
+}
+.start-inhalt {
+  padding: 32px;
+  gap: 24px;
+  max-width: 1200px;
+}
+.start-seitenkopf h1 {
+  font-size: calc(24px * var(--text-skala, 1));
+  line-height: 1.3334;
+}
+.start-seitenkopf > p {
+  max-width: 72ch;
+}
+.start-karte {
+  min-height: 140px;
+  border-color: var(--farbe-trennung);
+  background: var(--farbe-grundflaeche);
+  padding: 24px;
+  gap: 16px;
+}
+.start-karte:hover {
+  border-color: var(--farbe-akzent);
+}
+.start-karte > .sl-symbol:first-child {
+  color: var(--farbe-akzent);
+}
+.start-karte-metadaten {
+  margin-top: auto;
+}
+.start-workflowzeile {
+  padding: 16px;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-bottom-color: var(--farbe-trennung);
+  border-radius: 6px;
+}
+.start-workflowzeile.ist-ausgewaehlt {
+  background: var(--farbe-auswahl-flaeche);
+  border-color: var(--farbe-akzent);
+}
+.start-workflowzeile .start-eintrag-kopf {
+  justify-content: flex-start;
+}
+.start-workflowzeile .start-eintrag-kopf h3 {
+  flex: 1 1 32ch;
+  font-size: inherit;
+}
+.start-workflowzeile .start-eintrag-aktionen {
+  margin-top: 4px;
+}
+.start-workflowzeile .start-dateidetails {
+  min-width: 0;
+}
+.start-dateidetails summary {
+  color: var(--farbe-text-sekundaer);
+  padding-block: 4px;
+  min-height: 32px;
+  width: fit-content;
+}
+.start-dateidetails[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.start-unterbereiche {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 1px solid var(--farbe-trennung);
+  margin-bottom: 16px;
+}
+.start-unterbereiche button,
+.workflow-bereiche button {
+  position: relative;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  padding: 8px 16px;
+  min-height: 44px;
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.start-unterbereiche button[aria-current='page'],
+.workflow-bereiche button[aria-selected='true'] {
+  border-bottom-color: var(--farbe-akzent);
+  color: var(--farbe-akzent);
+  font-weight: 600;
+}
+.start-unterbereiche button:hover,
+.workflow-bereiche button:hover {
+  background: var(--farbe-erhoeht);
+}
+.start-unterbereiche button:focus-visible,
+.workflow-bereiche button:focus-visible {
+  outline-offset: -4px;
+}
+.start-dokumentvorlagen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.workflow-kopf {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  min-height: 48px;
+  border-bottom: 1px solid var(--farbe-trennung);
+  background: var(--farbe-navigation);
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.workflow-bereichsauswahl {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.workflow-kopf {
+  position: relative;
+  z-index: 60;
+}
+.workflow-bereichsauswahl .sl-menue-liste {
+  left: 0;
+  right: auto;
+}
+.workflow-identitaet {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.workflow-identitaet h1 {
+  min-width: 0;
+  font-size: calc(16px * var(--text-skala, 1));
+  line-height: 1.5;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.workflow-identitaet p {
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(12px * var(--text-skala, 1));
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.werkzeugleiste {
+  background: var(--farbe-grundflaeche);
+  padding-inline: 16px;
+  gap: 8px;
+}
+.werkzeugleiste .ansichtknopfgruppe .sl-knopf > span {
+  display: inline;
+}
+.workflow-bereiche {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-inline: 16px;
+  border-bottom: 1px solid var(--farbe-trennung);
+  background: var(--farbe-grundflaeche);
+}
+.workflow-panel {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.workflow-panel[hidden],
+[hidden] {
+  display: none !important;
+}
+.workflow-panel--ablauf .arbeitszeile {
+  flex: 1;
+}
+.workflow-panel--laeufe {
+  background: var(--farbe-fenster);
+}
+.palette {
+  background: var(--farbe-grundflaeche);
+}
+.panel-kopf h2,
+.panel-kopf h3,
+.start-abschnitt-kopf h2 {
+  font-size: calc(16px * var(--text-skala, 1));
+  line-height: 1.5;
+}
+.eigenschaften-panel {
+  background: var(--farbe-erhoeht);
+}
+.eigenschaften-panel.ist-ueberlagert {
+  width: max(var(--breite-eigenschaften), calc(260px * var(--text-skala, 1)));
+}
+.statusleiste {
+  background: var(--farbe-navigation);
+}
+.export-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.export-inhalt h3 {
+  font-size: calc(16px * var(--text-skala, 1));
+}
+.export-inhalt p {
+  color: var(--farbe-text-sekundaer);
+}
+.lauf-quellenuebersicht {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lauf-quellenuebersicht ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lauf-quellenuebersicht li {
+  padding-block: 12px;
+  border-bottom: 1px solid var(--farbe-trennung);
+}
+.lauf-quellenuebersicht dl {
+  margin: 8px 0 0;
+}
+.lauf-quellenuebersicht dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 12px;
+  margin-top: 4px;
+}
+.lauf-quellenuebersicht dt {
+  color: var(--farbe-text-sekundaer);
+}
+.lauf-quellenuebersicht dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.sl-dialog-kopf h2 {
+  line-height: 1.4;
+}
+.sl-feld-eingabe {
+  background: var(--farbe-grundflaeche);
+}
+.sl-knopf[aria-pressed='true'] {
+  background: var(--farbe-auswahl-flaeche);
+  border-color: var(--farbe-akzent);
+}
+.sprachwahl-karte.ist-gewaehlt {
+  box-shadow: inset 0 0 0 1px var(--farbe-akzent);
+  background: var(--farbe-auswahl-flaeche);
+}
+.blockly-editor .blocklyPath:not(.blocklyPathSelected):not(.blocklyActiveFocus):not(.blocklyPassiveFocus) {
+  stroke: var(--farbe-kontur);
+  stroke-width: 1px;
+}
+.blockly-editor .scriptlabFehler > .blocklyPath {
+  stroke: var(--farbe-block-fehler);
+  stroke-width: 2px;
+}
+.blocklySelected > .blocklyPath.blocklyPathSelected,
+.scriptlabAuswahl > .blocklyPath {
+  stroke: none !important;
+}
+.sl-blockauswahl {
+  fill: none;
+  pointer-events: none;
+  stroke-linejoin: round;
+}
+.sl-blockauswahl--aussen {
+  stroke: var(--farbe-text);
+  stroke-width: 3px;
+}
+.sl-blockauswahl--innen {
+  stroke: var(--farbe-block-auswahl);
+  stroke-width: 1.5px;
+  stroke-dasharray: 5 3;
+}
+.blocklyKeyboardNavigation .blocklyActiveFocus.blocklyPath {
+  stroke: var(--farbe-block-fokus) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: none !important;
+}
+.blocklyKeyboardNavigation .blocklyPassiveFocus.blocklyPath {
+  stroke: var(--farbe-block-fokus) !important;
+  stroke-width: 2px !important;
+  stroke-dasharray: 5 3 !important;
+}
+.anwendung table {
+  font-variant-numeric: tabular-nums;
+}
+.anwendung th,
+.anwendung td {
+  min-height: 36px;
+  padding: 8px 12px;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich {
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+.anwendung[style*='--text-skala: 2'] .start-karten {
+  grid-template-columns: minmax(0, 1fr);
+}
+.anwendung[style*='--text-skala: 2'] .workflow-kopf {
+  padding: 8px 16px;
+  gap: 16px;
+}
+.anwendung[style*='--text-skala: 2'] .workflow-bereichsauswahl {
+  flex-direction: column;
+  gap: 4px;
+}
+.anwendung[style*='--text-skala: 2'] .werkzeugleiste {
+  max-height: 200px;
+  overflow: auto;
+}
+.anwendung[style*='--text-skala: 2'] .sprachwahl-karten {
+  grid-template-columns: minmax(0, 1fr);
+}
+.anwendung[style*='--text-skala: 2'] .testbereich-konfiguration {
+  grid-template-columns: minmax(0, 1fr);
+}
+.anwendung[style*='--text-skala: 2'] .daten-seitenkopf {
+  display: none;
+}
+@media (max-height: 760px) {
+  .anwendung[style*='--text-skala: 2'] .workflow-identitaet p {
+    display: none;
+  }
+  .anwendung[style*='--text-skala: 2'] .workflow-bereichsauswahl .sl-marke {
+    display: none;
+  }
+  .anwendung[style*='--text-skala: 2'] .workflow-kopf {
+    min-height: 0;
+    padding-block: 8px;
+  }
+
+  .anwendung[style*='--text-skala: 2'] .testbereich-kopf {
+    padding: 8px 16px;
+  }
+  .anwendung[style*='--text-skala: 2'] .testbereich-titel {
+    display: none;
+  }
+  .anwendung[style*='--text-skala: 2'] .testbereich-kurzstatus {
+    padding: 4px 16px;
+  }
+  .anwendung[style*='--text-skala: 2'] .lauf-tabs {
+    padding-top: 0;
+  }
+}
+@media (max-width: 1100px) {
+  .startbereich {
+    grid-template-columns: 184px minmax(0, 1fr);
+  }
+  .start-inhalt {
+    padding: 24px;
+  }
+  .start-karte {
+    padding: 16px;
+  }
+  .workflow-kopf {
+    padding: 12px 16px;
+    gap: 16px;
+  }
+  .workflow-bereichsauswahl .sl-marke > span:last-child {
+    display: none;
+  }
+  .werkzeugleiste {
+    max-height: 144px;
+    overflow: auto;
+  }
+}
+@media (max-width: 760px) {
+  .startbereich,
+  .anwendung[style*='--text-skala: 2'] .startbereich {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .start-navigation {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+    max-height: 160px;
+  }
+  .start-navigation nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .start-navigation .start-navigation-unten {
+    margin: 0;
+    padding: 0;
+  }
+  .start-navigation .start-marke {
+    padding: 4px 8px;
+  }
+  .start-navlink {
+    min-height: 36px;
+    padding: 4px 8px;
+    gap: 8px;
+  }
+  .start-navigation .sl-marke {
+    font-size: 16px;
+  }
+  .start-inhalt {
+    padding: 16px;
+  }
+  .start-karten {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .workflow-kopf {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .workflow-identitaet {
+    flex-basis: 50%;
+  }
+  .workflow-identitaet h1 {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: calc(20px * var(--text-skala, 1));
+  }
+  .workflow-kopf > .skriptsprache-kennzeichen {
+    display: none;
+  }
+}
+@media (forced-colors: active) {
+  .sl-marke-signet {
+    color: CanvasText;
+    forced-color-adjust: none;
+  }
+  .start-navlink[aria-current='page'],
+  .start-unterbereiche button[aria-current='page'],
+  .workflow-bereiche button[aria-selected='true'] {
+    color: Highlight;
+    border-color: Highlight;
+  }
+  .start-workflowzeile.ist-ausgewaehlt {
+    border-color: Highlight;
+  }
+  .sl-blockauswahl--aussen {
+    stroke: Highlight;
+    forced-color-adjust: none;
+  }
+  .sl-blockauswahl--innen {
+    stroke: Canvas;
+    forced-color-adjust: none;
+  }
+}
+
+/* Die Werkbank reserviert ihre Fläche für den Ablauf, nicht für mehrere Seitentitel. */
+.workflow-kopf .skriptsprache-kennzeichen {
+  border: 0;
+  border-left: 1px solid var(--farbe-trennung);
+  border-radius: 0;
+  padding: 0 0 0 12px;
+  background: transparent;
+}
+.workflow-bereichsauswahl {
+  border-right: 1px solid var(--farbe-trennung);
+  padding-right: 16px;
+  gap: 8px;
+}
+.workflow-bereiche {
+  padding-inline: 8px;
+  gap: 0;
+}
+.workflow-bereiche button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border-bottom-width: 2px;
+}
+.werkzeugleiste {
+  min-height: 48px;
+  padding: 4px 12px;
+  gap: 8px;
+}
+.werkzeugleiste .sl-knopf {
+  min-height: 36px;
+}
+.werkzeugleiste .sl-knopf--primaer {
+  padding-inline: 16px;
+}
+.panel-kopf {
+  padding: 8px 12px;
+  min-height: 44px;
+}
+.panel-kopf h2 {
+  font-size: calc(14px * var(--text-skala, 1));
+}
+.palette-suche {
+  padding: 12px;
+}
+.palette-bedienhinweis {
+  font-size: calc(12px * var(--text-skala, 1));
+  line-height: 1.5;
+}
+.canvas-werkzeuge {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 8px;
+  background: var(--farbe-grundflaeche);
+  border-top: 1px solid var(--farbe-trennung);
+  overflow-x: auto;
+}
+.canvas-werkzeuge .ansichtsteuerung,
+.canvas-werkzeuge .zoom {
+  position: static;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  flex: 0 0 auto;
+}
+.canvas-werkzeuge .zoom {
+  margin-left: auto;
+}
+.canvas-bereich .blockly-editor {
+  bottom: 44px;
+}
+.sl-blockkontext .blocklyText {
+  font-size: 12px !important;
+  font-weight: 400;
+}
+.block-hilfe {
+  color: var(--farbe-text-sekundaer);
+  border-top: 1px solid var(--farbe-trennung);
+  padding-top: 8px;
+}
+.block-hilfe summary {
+  color: var(--farbe-text);
+}
+.block-hilfe p {
+  margin: 8px 0;
+}
+.eigenschaften-panel .panel-inhalt {
+  padding: 16px;
+  gap: 12px;
+}
+.eigenschaften-panel .panel-inhalt > h3 {
+  font-size: calc(16px * var(--text-skala, 1));
+}
+.eigenschaften-aktionen {
+  padding-top: 12px;
+}
+@media (max-width: 1000px) {
+  .workflow-identitaet {
+    flex-direction: column;
+    gap: 0;
+  }
+  .workflow-identitaet p {
+    white-space: normal;
+  }
+}
+
+.einstellungen-bereiche {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--farbe-trennung);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.einstellungen-bereiche button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 8px 12px;
+  min-height: 36px;
+  cursor: pointer;
+}
+.einstellungen-bereiche [aria-selected='true'] {
+  border-bottom-color: var(--farbe-akzent);
+  color: var(--farbe-akzent);
+  font-weight: 600;
+}
+.einstellungen-bereiche button:focus-visible {
+  outline-offset: -3px;
+}
+.palette-hilfe summary {
+  font-size: calc(12px * var(--text-skala, 1));
+  color: var(--farbe-text-sekundaer);
+  min-height: 28px;
+  padding-block: 4px;
+}
+.palette-hilfe p {
+  font-size: calc(14px * var(--text-skala, 1));
+}
+.palette .paletten-block .metadaten {
+  display: none;
+}
+.paletten-block {
+  min-height: 36px;
+}
+.anwendung:not([style*='--text-skala: 2']) .statusleiste .projektstatus {
+  display: none;
+}
+
+/* Programmgesteuertes Ansagen einer Überschrift erzeugt keinen scheinbaren Eingaberahmen. */
+h1[tabindex='-1']:focus-visible,
+h2[tabindex='-1']:focus-visible,
+h3[tabindex='-1']:focus-visible {
+  outline: none;
+}
+.baustein-benennung {
+  border-top: 1px solid var(--farbe-trennung);
+  padding-top: 8px;
+}
+.baustein-benennung .sl-feld {
+  margin-top: 8px;
+}
+
+.sl-menue-beschriftung {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.sl-menue-beschriftung .sl-symbol {
+  color: var(--farbe-text-sekundaer);
+}
+
+.sprachwahl-karten {
+  gap: 16px;
+}
+.sprachwahl-karte {
+  padding: 16px;
+  gap: 12px;
+}
+.sprachwahl-name {
+  font-size: calc(20px * var(--text-skala, 1));
+}
+.sprachwahl-details {
+  margin-top: 16px;
+  color: var(--farbe-text-sekundaer);
+}
+.sprachwahl-details section {
+  margin-top: 12px;
+}
+
+.editor-ansicht {
+  --breite-overlay: min(
+    max(var(--breite-eigenschaften), calc(260px * var(--text-skala, 1))),
+    calc(100vw - 48px)
+  );
+}
+.arbeitszeile:has(> .eigenschaften-panel.ist-ueberlagert) .canvas-werkzeuge {
+  right: var(--breite-overlay);
+}
+.canvas-werkzeuge {
+  container-type: inline-size;
+  overflow: visible;
+  z-index: 10;
+}
+.canvas-werkzeuge .sl-menue-liste {
+  top: auto;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: auto;
+}
+@container (max-width:400px) {
+  .canvas-werkzeuge .zoom .sl-knopf:last-child > span {
+    display: none;
+  }
+}
+@media (max-width: 1100px) {
+  .arbeitszeile:has(> .eigenschaften-panel.ist-ueberlagert) {
+    grid-template-columns: 0 0 minmax(0, 1fr);
+  }
+  .arbeitszeile:has(> .eigenschaften-panel.ist-ueberlagert) > .test-palette,
+  .arbeitszeile:has(> .eigenschaften-panel.ist-ueberlagert) > .paletten-trenner {
+    display: none;
+  }
+  .arbeitszeile:has(> .eigenschaften-panel.ist-ueberlagert) > .editor-mitte {
+    grid-column: 3;
+  }
+}

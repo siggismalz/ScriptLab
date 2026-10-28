@@ -1,10 +1,10 @@
 import type * as Blockly from 'blockly/core';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { bausteinDefinitionen } from '../kern/katalog';
 import { paletteZiehenStarten, type Einfuegestelle } from '../editor/bedienung';
 import { Knopf } from './komponenten/Knopf';
 import { Feld } from './komponenten/Feld';
-import { Symbol } from './komponenten/Icon';
+import { Symbol, type SymbolName } from './komponenten/Icon';
 import type { Skriptsprache } from '../kern/sprachen';
 
 export interface PlatzierungsAuftrag {
@@ -12,6 +12,42 @@ export interface PlatzierungsAuftrag {
   typOderId: string;
   name: string;
 }
+
+/** Fachliche Einstiege ordnen nur die vorhandenen Kategorien, keine neuen Bausteine. */
+const palettengruppen: { id: string; titel: string; symbol: SymbolName; kategorien: string[] }[] = [
+  {
+    id: 'ablauf',
+    titel: 'Ablauf steuern',
+    symbol: 'bausteine',
+    kategorien: ['Ablauf', 'Bedingungen', 'Schleifen', 'Variablen und Listen', 'Geschäftsablauf'],
+  },
+  {
+    id: 'daten',
+    titel: 'Daten verarbeiten',
+    symbol: 'eigenschaften',
+    kategorien: [
+      'Daten laden',
+      'Daten aufbereiten',
+      'Daten verbinden',
+      'Daten zusammenfassen',
+      'Datenqualität',
+      'Daten ausgeben',
+    ],
+  },
+  {
+    id: 'dateien',
+    titel: 'Dateien und Ordner',
+    symbol: 'oeffnen',
+    kategorien: ['Dateien und Ordner', 'Geschäftsdateien'],
+  },
+  { id: 'dokumente', titel: 'Dokumente erstellen', symbol: 'neu', kategorien: ['Word', 'Excel', 'PDF'] },
+  {
+    id: 'werte',
+    titel: 'Werte und Eingaben',
+    symbol: 'einfuegen',
+    kategorien: ['Ein- und Ausgaben', 'Texte', 'Zahlen', 'Datum und Zeit'],
+  },
+];
 
 export function Palette({
   sprache = 'vbs',
@@ -39,15 +75,37 @@ export function Palette({
   meldung: (text: string) => void;
 }) {
   const [suche, setSuche] = useState('');
-  const [kategorie, setKategorie] = useState('Ein- und Ausgaben');
+  const [gruppenId, setGruppenId] = useState<string | null>(null);
+  const [kategorie, setKategorie] = useState('');
   const [ausgewaehlt, setAusgewaehlt] = useState<string | null>(null);
+  const inhalt = useRef<HTMLDivElement>(null);
+  const gruppentitel = useRef<HTMLHeadingElement>(null);
+  const gruppenknoepfe = useRef(new Map<string, HTMLButtonElement>());
   const verfuegbar = bausteinDefinitionen.filter((b) => sprache === 'python' || !b.typ.startsWith('sl_biz_'));
-  const gruppen = [...new Set(verfuegbar.map((b) => b.kategorie))];
-  const reihenfolge = ['Ein- und Ausgaben', ...gruppen.filter((g) => g !== 'Ein- und Ausgaben')];
+  const kategorien = [...new Set(verfuegbar.map((b) => b.kategorie))];
+  const gruppen = palettengruppen
+    .map((g) => ({ ...g, kategorien: g.kategorien.filter((k) => kategorien.includes(k)) }))
+    .filter((g) => g.kategorien.length > 0);
+  const gruppe = gruppen.find((g) => g.id === gruppenId) ?? null;
   const filter = suche.trim().toLocaleLowerCase('de');
   const treffer = verfuegbar.filter((b) =>
     `${b.name} ${b.kategorie} ${b.hilfe}`.toLocaleLowerCase('de').includes(filter),
   );
+  function gruppeOeffnen(id: string) {
+    const ziel = gruppen.find((g) => g.id === id);
+    if (!ziel) return;
+    setGruppenId(id);
+    setKategorie(ziel.kategorien.length === 1 ? ziel.kategorien[0] : '');
+    if (inhalt.current) inhalt.current.scrollTop = 0;
+    requestAnimationFrame(() => gruppentitel.current?.focus({ preventScroll: true }));
+  }
+  function alleBausteine() {
+    const vorher = gruppenId;
+    setGruppenId(null);
+    setKategorie('');
+    if (inhalt.current) inhalt.current.scrollTop = 0;
+    requestAnimationFrame(() => vorher && gruppenknoepfe.current.get(vorher)?.focus({ preventScroll: true }));
+  }
   const darstellung = (typ: string) => {
     const b = bausteinDefinitionen.find((b) => b.typ === typ)!;
     const form =
@@ -114,7 +172,7 @@ export function Palette({
   };
   return (
     <aside
-      className={`palette ${eingeklappt ? 'palette--zu' : ''}`}
+      className={`palette palette-werkbank ${eingeklappt ? 'palette--zu' : ''}`}
       data-testid="palette"
       aria-label="Bausteinpalette"
     >
@@ -134,12 +192,18 @@ export function Palette({
             <Feld
               beschriftung="Bausteine suchen"
               type="search"
-              placeholder="Zum Beispiel Nachricht"
+              placeholder="Alle Bausteine durchsuchen"
               value={suche}
               onChange={(e) => setSuche(e.target.value)}
             />
             {!suche && (
-              <p className="palette-bedienhinweis">Mit Plus einfügen oder am Bausteinnamen ziehen.</p>
+              <details className="palette-hilfe">
+                <summary>Hilfe zum Einfügen</summary>
+                <p>
+                  Wähle eine Aufgabe oder suche direkt. Mit Plus wählst du die Einfügestelle. Du kannst
+                  Bausteine auch ziehen.
+                </p>
+              </details>
             )}
             {suche && (
               <Knopf variante="leise" onClick={() => setSuche('')}>
@@ -164,7 +228,7 @@ export function Palette({
               <Knopf onClick={abbrechen}>Abbrechen</Knopf>
             </section>
           ) : (
-            <div className="palette-inhalt" data-testid="palette-bausteine">
+            <div ref={inhalt} className="palette-inhalt" data-testid="palette-bausteine">
               {filter ? (
                 <>
                   <p className="suchergebnis" role="status">
@@ -181,28 +245,71 @@ export function Palette({
                         b.typ.startsWith('sl_biz_') &&
                         `${b.name} ${b.kategorie} ${b.hilfe}`.toLocaleLowerCase('de').includes(filter),
                     ) && (
-                      <p>
-                        Passende Daten- und Dokumentbausteine sind in Python-Projekten verfügbar. Du kannst
-                        über „Neu“ einen Python-Workflow erstellen.
-                      </p>
+                      <details className="palette-pythonhinweis">
+                        <summary>Weitere Bausteine in Python</summary>
+                        <p>
+                          Für Daten und Dokumente kannst du unter „Workflow → Neuer Workflow“ einen
+                          Python-Workflow erstellen.
+                        </p>
+                      </details>
                     )}
                 </>
-              ) : (
-                reihenfolge.map((g) => (
-                  <section className="kategorie" key={g}>
+              ) : !gruppe ? (
+                <nav className="paletten-aufgaben" aria-label="Bausteine nach Aufgabe">
+                  {gruppen.map((g) => (
                     <button
-                      className="kategorie-kopf"
-                      aria-expanded={kategorie === g}
-                      onClick={() => setKategorie(kategorie === g ? '' : g)}
+                      key={g.id}
+                      type="button"
+                      className="paletten-aufgabe"
+                      ref={(knopf) => {
+                        if (knopf) gruppenknoepfe.current.set(g.id, knopf);
+                        else gruppenknoepfe.current.delete(g.id);
+                      }}
+                      onClick={() => gruppeOeffnen(g.id)}
                     >
-                      <Symbol name={kategorie === g ? 'unten' : 'rechts'} />
-                      <span>{g}</span>
+                      <Symbol name={g.symbol} groesse={20} />
+                      <span>{g.titel}</span>
+                      <Symbol name="rechts" groesse={16} />
                     </button>
-                    {kategorie === g && (
-                      <div>{verfuegbar.filter((b) => b.kategorie === g).map((b) => darstellung(b.typ))}</div>
-                    )}
-                  </section>
-                ))
+                  ))}
+                </nav>
+              ) : (
+                <>
+                  <div className="paletten-pfad">
+                    <Knopf variante="leise" symbol="links" onClick={alleBausteine}>
+                      Alle Bausteine
+                    </Knopf>
+                    <h3 ref={gruppentitel} tabIndex={-1}>
+                      {gruppe.titel}
+                    </h3>
+                  </div>
+                  {gruppe.kategorien.length === 1 ? (
+                    <div className="paletten-direktliste">
+                      {verfuegbar
+                        .filter((b) => b.kategorie === gruppe.kategorien[0])
+                        .map((b) => darstellung(b.typ))}
+                    </div>
+                  ) : (
+                    gruppe.kategorien.map((g) => (
+                      <section className="kategorie" key={g}>
+                        <button
+                          type="button"
+                          className="kategorie-kopf"
+                          aria-expanded={kategorie === g}
+                          onClick={() => setKategorie(kategorie === g ? '' : g)}
+                        >
+                          <Symbol name={kategorie === g ? 'unten' : 'rechts'} />
+                          <span>{g}</span>
+                        </button>
+                        {kategorie === g && (
+                          <div>
+                            {verfuegbar.filter((b) => b.kategorie === g).map((b) => darstellung(b.typ))}
+                          </div>
+                        )}
+                      </section>
+                    ))
+                  )}
+                </>
               )}
             </div>
           )}

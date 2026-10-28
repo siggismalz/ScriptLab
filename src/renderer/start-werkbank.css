@@ -1,0 +1,542 @@
+/* Sachliche Arbeitsoberfläche für Start, lokale Ablage und Nachschlageansichten. */
+.anwendung .startbereich {
+  grid-template-columns: 184px minmax(0, 1fr);
+}
+.startbereich .start-navigation {
+  padding: 16px 8px;
+  gap: 24px;
+}
+.startbereich .start-navigation .start-marke {
+  padding: 4px 12px 16px;
+}
+.startbereich .start-navigation .sl-marke {
+  font-size: 18px;
+  gap: 8px;
+}
+.startbereich .start-navigation .sl-marke-signet {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+}
+.startbereich .start-navlink {
+  min-height: 36px;
+  padding: 6px 12px;
+  gap: 8px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+}
+.startbereich .start-navlink .sl-symbol {
+  width: 16px;
+  height: 16px;
+}
+.startbereich .start-navlink[aria-current='page'] {
+  border-left-color: var(--farbe-akzent);
+  background: var(--farbe-auswahl-flaeche);
+}
+.startbereich .start-scrollbereich {
+  background: var(--farbe-fenster);
+}
+.startbereich .start-inhalt {
+  max-width: 1440px;
+  padding: 24px;
+  gap: 16px;
+}
+.startbereich .start-seitenkopf {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--farbe-trennung);
+}
+.startbereich .start-titelfeld {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+.startbereich .start-titelfeld > .sl-knopf {
+  min-height: 28px;
+  padding: 0;
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-seitenkopf h1 {
+  font-size: calc(24px * var(--text-skala, 1));
+  line-height: 1.3334;
+}
+.startbereich .start-hauptaktionen {
+  gap: 8px;
+}
+.startbereich .start-weiterarbeiten {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  border-left: 2px solid var(--farbe-akzent);
+  background: var(--farbe-grundflaeche);
+}
+.startbereich .start-aktiver-workflow {
+  margin: 0;
+  flex: 1 1 32ch;
+  font-size: inherit;
+}
+.startbereich .start-aktiver-workflow strong {
+  display: block;
+  font-weight: 600;
+}
+.startbereich .start-aktiver-status {
+  display: block;
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-entwurfshinweis {
+  gap: 8px;
+  margin-block: -8px;
+  align-items: center;
+  font-size: calc(12px * var(--text-skala, 1));
+}
+.startbereich .start-entwurfshinweis .sl-status {
+  align-items: center;
+  gap: 8px;
+}
+.startbereich .start-entwurfshinweis .sl-symbol {
+  width: 16px;
+  height: 16px;
+}
+.startbereich .start-entwurfshinweis .sl-knopf {
+  min-height: 32px;
+  padding: 4px 8px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-abschnitt-kopf {
+  min-height: 36px;
+  margin: 0 0 8px;
+}
+.startbereich .start-abschnitt-kopf h2,
+.startbereich .start-einstiege > h2 {
+  font-size: calc(16px * var(--text-skala, 1));
+  line-height: 1.5;
+  font-weight: 600;
+}
+.startbereich .start-abschnitt-kopf .sl-knopf {
+  min-height: 32px;
+  padding: 4px 0 4px 8px;
+  font-size: calc(12px * var(--text-skala, 1));
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-listenkopf,
+.startbereich .start-workflowzeile {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 72px 160px 176px 104px;
+  column-gap: 16px;
+  align-items: center;
+}
+.startbereich .start-listenkopf {
+  min-height: 32px;
+  padding: 4px 12px;
+  border-block: 1px solid var(--farbe-trennung);
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(12px * var(--text-skala, 1));
+  border-left: 2px solid transparent;
+}
+.startbereich .start-listenkopf > span:first-child {
+  padding-left: 24px;
+}
+.startbereich .start-workflowzeile {
+  row-gap: 4px;
+  padding: 8px 12px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--farbe-trennung);
+  border-radius: 0;
+  min-height: 52px;
+}
+.startbereich .start-workflowzeile:first-child {
+  border-top: 0;
+}
+.startbereich .start-workflowzeile:hover {
+  background: var(--farbe-grundflaeche);
+}
+.startbereich .start-workflowzeile.ist-ausgewaehlt {
+  border-left-color: var(--farbe-akzent);
+  background: var(--farbe-auswahl-flaeche);
+}
+.startbereich .start-workflowname {
+  position: relative;
+  min-width: 0;
+  align-self: center;
+  padding-left: 24px;
+}
+.startbereich .start-workflowname h3 {
+  margin: 0;
+  font-size: inherit;
+  line-height: 1.5;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.startbereich .start-workflowzeile.ist-ausgewaehlt .start-workflowname h3 {
+  font-weight: 600;
+}
+.startbereich .start-workflowname > p {
+  margin-top: 2px;
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(12px * var(--text-skala, 1));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.startbereich .start-zeilenauswahl {
+  color: var(--farbe-akzent);
+  font-size: calc(12px * var(--text-skala, 1));
+  display: inline-block;
+}
+.startbereich .start-workflowsprache,
+.startbereich .start-workflowdatum,
+.startbereich .start-workflowzeile > .start-dateistatus {
+  font-size: inherit;
+  line-height: 1.5;
+  color: var(--farbe-text-sekundaer);
+  font-variant-numeric: tabular-nums;
+}
+.startbereich .start-workflowdatum {
+  white-space: nowrap;
+}
+.startbereich .start-workflowzeile > .start-dateistatus {
+  gap: 6px;
+}
+.startbereich .start-workflowzeile > .start-dateistatus--fehler {
+  color: var(--farbe-fehler);
+}
+.startbereich .start-workflowzeile > .start-dateistatus--hinweis {
+  color: var(--farbe-hinweis);
+}
+.startbereich .start-zeilen-hauptaktion {
+  justify-self: end;
+}
+.startbereich .start-zeilen-hauptaktion .sl-knopf {
+  min-width: 96px;
+  min-height: 32px;
+}
+.startbereich .start-workflowzeile .start-dateidetails {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  font-size: inherit;
+}
+.startbereich .start-workflowzeile .start-dateidetails[open] {
+  position: static;
+  grid-column: 1 / -1;
+  padding: 8px 0 4px;
+}
+.startbereich .start-workflowzeile .start-dateidetails summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  width: 24px;
+  padding: 0;
+  list-style: none;
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-workflowzeile .start-dateidetails[open] summary {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+}
+.startbereich .start-workflowzeile .start-dateidetails[open] summary .sl-symbol {
+  transform: rotate(90deg);
+}
+.startbereich .start-dateidetails-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 12px 12px 24px;
+  border-top: 1px solid var(--farbe-trennung);
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-zeilen-nebenaktionen {
+  justify-content: flex-start;
+  gap: 8px;
+}
+.startbereich .start-zeilen-nebenaktionen .sl-knopf {
+  min-height: 36px;
+  padding: 8px 12px;
+  color: var(--farbe-text);
+  font-size: inherit;
+  border-color: transparent;
+  background: transparent;
+}
+.startbereich .start-workflowzeile--kompakt {
+  min-height: 52px;
+  padding-block: 8px;
+}
+.startbereich .start-workflowzeile--kompakt .start-zeilen-nebenaktionen:empty {
+  display: none;
+}
+.startbereich .start-einstiege {
+  padding-top: 4px;
+}
+.startbereich .start-einstiege > h2 {
+  margin-bottom: 12px;
+}
+.startbereich .start-karten {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.startbereich .start-karte {
+  min-height: 72px;
+  padding: 12px 16px;
+  border: 1px solid var(--farbe-trennung);
+  border-radius: 4px;
+  background: var(--farbe-grundflaeche);
+  gap: 12px;
+  align-items: flex-start;
+}
+.startbereich .start-karte > .sl-symbol:first-child {
+  margin-top: 2px;
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-karte--nachschlagen {
+  background: transparent;
+}
+.startbereich .start-karte-inhalt {
+  gap: 2px;
+}
+.startbereich .start-karte-titel {
+  font-size: inherit;
+  line-height: 1.5;
+}
+.startbereich .start-karte-beschreibung,
+.startbereich .start-karte-metadaten {
+  font-size: calc(12px * var(--text-skala, 1));
+  line-height: 1.5;
+}
+.startbereich .start-karte-metadaten {
+  margin-top: 0;
+}
+.startbereich .start-karte > .sl-symbol:last-child {
+  width: 16px;
+  height: 16px;
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-karte:hover {
+  border-color: var(--farbe-kontur);
+  background: var(--farbe-erhoeht);
+}
+.startbereich .start-unterbereiche {
+  margin-bottom: 0;
+  gap: 16px;
+}
+.startbereich .start-unterbereiche button {
+  padding: 8px 0;
+  min-height: 36px;
+}
+.startbereich .start-einleitung {
+  margin-bottom: 12px;
+}
+.startbereich .start-listenfilter {
+  gap: 12px;
+}
+.startbereich .start-ergebniszahl {
+  margin-block: 12px 8px;
+  font-size: calc(12px * var(--text-skala, 1));
+}
+.startbereich .start-beispiel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px auto;
+  align-items: center;
+  padding: 16px 0;
+  gap: 8px 16px;
+}
+.startbereich .start-beispiel h2 {
+  font-size: calc(16px * var(--text-skala, 1));
+  margin-bottom: 4px;
+}
+.startbereich .start-vorlageninhalt {
+  min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
+}
+.startbereich .start-vorlageninhalt p {
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-beispiel .skriptsprache-kennzeichen {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  border: 0;
+  padding: 0;
+}
+.startbereich .start-vorlagenaktion {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+.startbereich .start-vorlagendetails {
+  grid-column: 1 / -1;
+  min-width: 0;
+  color: var(--farbe-text-sekundaer);
+}
+.startbereich .start-vorlagendetails summary,
+.startbereich .start-vorlagenhilfe summary {
+  width: fit-content;
+  min-height: 32px;
+  padding-block: 4px;
+}
+.startbereich .start-vorlagendetails > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 0 4px 16px;
+  max-width: 88ch;
+}
+.startbereich .start-vorlagenwerkzeuge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px 24px;
+  margin-block: 16px;
+}
+.startbereich .start-vorlagenwerkzeuge > .sl-feld {
+  flex: 0 1 280px;
+  min-width: min(100%, 240px);
+}
+.startbereich .start-vorlagenhilfe {
+  margin-top: 24px;
+  color: var(--farbe-text-sekundaer);
+  flex: 1 1 32ch;
+  min-width: 0;
+}
+.startbereich .start-vorlagenhilfe p {
+  max-width: 72ch;
+  padding-block: 8px;
+}
+.startbereich .start-themen,
+.startbereich .start-hilfe-treffer {
+  margin-top: 16px;
+  border-top: 1px solid var(--farbe-trennung);
+}
+.startbereich .start-themen > button,
+.startbereich .start-hilfe-treffer > button {
+  border: 0;
+  border-bottom: 1px solid var(--farbe-trennung);
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 0;
+}
+.startbereich .start-themen > button + button,
+.startbereich .start-hilfe-treffer > button + button {
+  margin-top: 0;
+}
+@media (max-width: 1100px) {
+  .startbereich .start-inhalt {
+    padding: 16px;
+  }
+  .startbereich .start-listenkopf,
+  .startbereich .start-workflowzeile {
+    grid-template-columns: minmax(160px, 1fr) 56px 136px 104px;
+    gap: 8px 12px;
+  }
+  .startbereich .start-listenkopf > span:nth-child(4) {
+    display: none;
+  }
+  .startbereich .start-workflowdatum {
+    grid-column: 1;
+    font-size: calc(12px * var(--text-skala, 1));
+  }
+  .startbereich .start-zeilen-hauptaktion {
+    grid-column: 4;
+    grid-row: 1 / 3;
+  }
+  .startbereich .start-workflowzeile .start-dateidetails {
+    grid-column: 1 / 3;
+  }
+  .startbereich .start-zeilen-nebenaktionen {
+    grid-column: 1 / -1;
+  }
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-listenkopf {
+  display: none;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-workflowzeile {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-workflowname {
+  grid-column: 1 / -1;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-workflowname h3,
+.anwendung[style*='--text-skala: 2'] .startbereich .start-workflowname > p {
+  white-space: normal;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-workflowsprache,
+.anwendung[style*='--text-skala: 2'] .startbereich .start-workflowdatum,
+.anwendung[style*='--text-skala: 2'] .startbereich .start-dateistatus {
+  grid-column: 1;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-zeilen-hauptaktion {
+  grid-column: 2;
+  grid-row: 2 / 5;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-workflowzeile .start-dateidetails,
+.anwendung[style*='--text-skala: 2'] .startbereich .start-zeilen-nebenaktionen {
+  grid-column: 1 / -1;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-beispiel {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-vorlageninhalt {
+  grid-column: 1 / -1;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-beispiel .skriptsprache-kennzeichen {
+  grid-column: 1;
+  grid-row: 2;
+}
+.anwendung[style*='--text-skala: 2'] .startbereich .start-vorlagenaktion {
+  grid-column: 2;
+  grid-row: 2;
+}
+@media (max-width: 760px) {
+  .anwendung .startbereich {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .startbereich .start-navigation {
+    padding: 8px;
+    gap: 8px;
+  }
+  .startbereich .start-navigation .start-marke {
+    padding: 4px 8px;
+  }
+  .startbereich .start-listenkopf {
+    display: none;
+  }
+  .startbereich .start-workflowzeile {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .startbereich .start-workflowname {
+    grid-column: 1 / -1;
+  }
+  .startbereich .start-workflowsprache,
+  .startbereich .start-workflowdatum,
+  .startbereich .start-dateistatus {
+    grid-column: 1;
+  }
+  .startbereich .start-zeilen-hauptaktion {
+    grid-column: 2;
+    grid-row: 2 / 5;
+  }
+  .startbereich .start-workflowzeile .start-dateidetails {
+    grid-column: 1 / -1;
+  }
+  .startbereich .start-karten {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

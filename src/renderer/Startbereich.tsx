@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { EntwurfEintrag, ProjektBibliothek, ProjektEintrag, Verfuegbarkeit } from '../gemeinsam/bruecke';
 import { beispiele, hilfeArtikel, hilfeDurchsuchen, type BeispielKennung } from './hilfe';
 import { Knopf } from './komponenten/Knopf';
@@ -7,6 +7,7 @@ import { Symbol, type SymbolName } from './komponenten/Icon';
 import { Statusanzeige } from './komponenten/Statusanzeige';
 import './startbereich.css';
 import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
+import { Marke } from './komponenten/Marke';
 
 type Seite = 'start' | 'projekte' | 'entwuerfe' | 'beispiele' | 'hilfe';
 type Sortierung = 'zuletzt' | 'name';
@@ -29,7 +30,7 @@ export interface StartbereichEigenschaften {
   meldung?: string | null;
   aktiveInfo: AktiverWorkflowInfo | null;
   verfuegbarkeiten: Readonly<Record<string, Verfuegbarkeit | undefined>>;
-  ziel?: 'start' | 'hilfe';
+  ziel?: 'start' | 'hilfe' | 'projekte' | 'beispiele';
   zielAnfrage?: number;
   neuerWorkflow: () => void;
   workflowOeffnen: () => void;
@@ -59,22 +60,22 @@ const karten: readonly { seite: Exclude<Seite, 'start'>; symbol: SymbolName; bes
   {
     seite: 'projekte',
     symbol: 'oeffnen',
-    beschreibung: 'Gespeicherte Projekte ansehen und weiterbearbeiten.',
+    beschreibung: 'Projektdateien finden und öffnen.',
   },
   {
     seite: 'entwuerfe',
     symbol: 'entwurf',
-    beschreibung: 'Noch nicht als Datei gespeicherte Abläufe und gesicherte Änderungen fortsetzen.',
+    beschreibung: 'Lokal gesicherte Arbeitsstände fortsetzen.',
   },
   {
     seite: 'beispiele',
     symbol: 'bausteine',
-    beschreibung: 'An fertigen Beispielen lernen und eigene Abläufe daraus erstellen.',
+    beschreibung: 'Einen fertigen Ablauf als eigene Kopie verwenden.',
   },
   {
     seite: 'hilfe',
     symbol: 'buch',
-    beschreibung: 'Funktionen kennenlernen und Schritt für Schritt nachlesen.',
+    beschreibung: 'Bedienung und Funktionen nachschlagen.',
   },
 ];
 
@@ -160,6 +161,9 @@ function markieren(text: string, suche: string): ReactNode {
 /** Die Bibliothek bleibt Eigentum des Hauptprozesses. Diese Komponente hält nur Ansicht und Suche. */
 export function Startbereich(props: StartbereichEigenschaften) {
   const [seite, setSeite] = useState<Seite>(props.ziel ?? 'start');
+  const [ausgewaehltesProjekt, setAusgewaehltesProjekt] = useState<string | null>(null);
+  const [vorlagenbereich, setVorlagenbereich] = useState<'beispiele' | 'dokumente'>('beispiele');
+  const [listenseite, setListenseite] = useState(0);
   const [projektSuche, setProjektSuche] = useState('');
   const [projektSortierung, setProjektSortierung] = useState<Sortierung>('zuletzt');
   const [projektSprache, setProjektSprache] = useState<Sprachfilter>('alle');
@@ -179,7 +183,8 @@ export function Startbereich(props: StartbereichEigenschaften) {
   const zielAnfrageVorher = useRef(props.zielAnfrage);
 
   function seiteWechseln(neu: Seite, artikel: string | null = null, abschnitt: string | null = null) {
-    positionen.current[ansicht] = inhalt.current?.scrollTop ?? 0;
+    if (inhalt.current && inhalt.current.clientHeight > 0)
+      positionen.current[ansicht] = inhalt.current.scrollTop;
     setSeite(neu);
     setArtikelId(artikel);
     setSprungziel(abschnitt);
@@ -190,7 +195,10 @@ export function Startbereich(props: StartbereichEigenschaften) {
     if (props.ziel !== zielVorher.current || props.zielAnfrage !== zielAnfrageVorher.current) {
       zielVorher.current = props.ziel;
       zielAnfrageVorher.current = props.zielAnfrage;
-      seiteWechseln(props.ziel ?? 'start');
+      // Ein externer Rückweg darf den gespeicherten Ausschnitt nicht mit hidden-scrollTop=0 ersetzen.
+      setSeite(props.ziel ?? 'start');
+      setArtikelId(null);
+      setSprungziel(null);
     }
   }, [props.ziel, props.zielAnfrage]);
 
@@ -203,7 +211,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
         ziel.scrollIntoView({ block: 'start' });
         ziel.focus({ preventScroll: true });
       }
-    } else if (letzteAnsicht.current !== ansicht) {
+    } else if (letzteAnsicht.current !== ansicht || props.zielAnfrage !== undefined) {
       const vorherigePosition = positionen.current[ansicht] ?? 0;
       panel.scrollTop = vorherigePosition;
       // Bei wiederhergestelltem Ausschnitt bleibt der Fokus im sichtbaren Scrollbereich.
@@ -211,7 +219,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
       else seitentitelRef.current?.focus({ preventScroll: true });
     }
     letzteAnsicht.current = ansicht;
-  }, [ansicht, sprungziel]);
+  }, [ansicht, sprungziel, props.zielAnfrage]);
 
   const gesperrt = Boolean(props.verarbeitung);
   const artikel = hilfeArtikel.find((a) => a.id === artikelId);
@@ -223,6 +231,9 @@ export function Startbereich(props: StartbereichEigenschaften) {
     ? entwuerfeFiltern(props.daten.entwuerfe, entwurfSuche, entwurfSortierung, entwurfSprache)
     : [];
   const letzteProjekte = props.daten ? zuletztGeoeffnete(props.daten.projekte) : [];
+  useEffect(() => setListenseite(0), [projektSuche, projektSortierung, projektSprache]);
+  const maximaleListenseite = Math.max(0, Math.ceil(projekte.length / 50) - 1);
+  const aktuelleListenseite = Math.min(listenseite, maximaleListenseite);
 
   function datenStatus(leerText: string): ReactNode {
     if (props.laden) return <p role="status">Bibliothek wird geladen …</p>;
@@ -259,36 +270,36 @@ export function Startbereich(props: StartbereichEigenschaften) {
     const statusId = `projekt-zustand-${projekt.id}`;
     return (
       <article
-        className="start-listeneintrag"
+        className={`start-listeneintrag start-workflowzeile ${kompakt ? 'start-workflowzeile--kompakt' : ''} ${ausgewaehltesProjekt === projekt.id ? 'ist-ausgewaehlt' : ''}`}
+        onFocus={() => setAusgewaehltesProjekt(projekt.id)}
+        onClick={() => setAusgewaehltesProjekt(projekt.id)}
         key={projekt.id}
         aria-label={`${projekt.name} – ${projekt.pfad}`}
         data-projekt-id={projekt.id}
       >
-        <div className="start-eintrag-kopf">
-          <h3>{projekt.name}</h3>
-          <span className="skriptsprache-kennzeichen">{sprachdaten[projekt.skriptsprache].bezeichnung}</span>
-          <span
-            className={`start-dateistatus ${fehlt ? 'start-dateistatus--fehler' : zustand === 'geaendert' ? 'start-dateistatus--hinweis' : ''}`}
-          >
-            <Symbol name={fehlt ? 'hinweis' : zustand === 'verfuegbar' ? 'erfolg' : 'info'} groesse={16} />
-            {zustandsname}
-          </span>
+        <div className="start-workflowname">
+          <h3 title={projekt.name}>{projekt.name}</h3>
+          {ausgewaehltesProjekt === projekt.id && <span className="sl-nur-vorlesen">Ausgewählt</span>}
         </div>
-        {projekt.beschreibung && !kompakt && <p>{projekt.beschreibung}</p>}
-        <Textfeld
-          beschriftung="Dateipfad"
-          value={projekt.pfad}
-          readOnly
-          rows={2}
-          spellCheck={false}
-          className="start-pfad"
-          aria-label={`Dateipfad: ${projekt.name}`}
-        />
-        <p className="start-metadaten">Zuletzt geöffnet: {zeitDarstellen(projekt.zuletztGeoeffnet)}</p>
-        <p id={statusId} className={fehlt ? 'start-fehlertext' : 'start-hilfetext'}>
-          {pruefung?.meldung || zustandsname}
-        </p>
-        <div className="start-eintrag-aktionen">
+        <span
+          className="start-workflowsprache"
+          aria-label={`Sprache: ${sprachdaten[projekt.skriptsprache].bezeichnung}`}
+        >
+          {sprachdaten[projekt.skriptsprache].kurzbezeichnung}
+        </span>
+        <span
+          className={`start-dateistatus ${fehlt ? 'start-dateistatus--fehler' : zustand === 'geaendert' ? 'start-dateistatus--hinweis' : ''}`}
+        >
+          <Symbol name={fehlt ? 'hinweis' : zustand === 'verfuegbar' ? 'erfolg' : 'info'} groesse={16} />
+          {zustandsname}
+        </span>
+        <span
+          className="start-workflowdatum"
+          aria-label={`Zuletzt geöffnet: ${zeitDarstellen(projekt.zuletztGeoeffnet)}`}
+        >
+          {zeitDarstellen(projekt.zuletztGeoeffnet)}
+        </span>
+        <div className="start-zeilen-hauptaktion">
           <Knopf
             symbol="oeffnen"
             disabled={gesperrt || fehlt}
@@ -297,67 +308,139 @@ export function Startbereich(props: StartbereichEigenschaften) {
           >
             Öffnen
           </Knopf>
-          {!kompakt && (
-            <>
-              <Knopf
-                symbol="oeffnen"
-                disabled={gesperrt || fehlt}
-                grundId={gesperrt ? 'start-verarbeitung' : fehlt ? statusId : undefined}
-                onClick={() => props.projektOrdnerAnzeigen(projekt.id)}
-              >
-                Ordner anzeigen
-              </Knopf>
-              <Knopf
-                variante="leise"
-                disabled={gesperrt}
-                grundId="start-verarbeitung"
-                onClick={() => props.projektNeuZuordnen(projekt.id)}
-              >
-                Neu zuordnen
-              </Knopf>
-              <Knopf
-                variante="leise"
-                disabled={gesperrt}
-                grundId="start-verarbeitung"
-                onClick={() => props.projektEntfernen(projekt.id)}
-              >
-                Aus Liste entfernen
-              </Knopf>
-            </>
-          )}
-          {kompakt && fehlt && (
-            <Knopf
-              disabled={gesperrt}
-              grundId="start-verarbeitung"
-              onClick={() => props.projektNeuZuordnen(projekt.id)}
-            >
-              Neu zuordnen
-            </Knopf>
-          )}
         </div>
+        <details className="start-dateidetails">
+          <summary title={`Details zu ${projekt.name}`}>
+            <Symbol name="rechts" groesse={16} />
+            <span className="sl-nur-vorlesen">Speicherort und Dateistatus</span>
+          </summary>
+          <div className="start-dateidetails-inhalt">
+            {projekt.beschreibung && <p>{projekt.beschreibung}</p>}
+            <Textfeld
+              beschriftung="Dateipfad"
+              value={projekt.pfad}
+              readOnly
+              rows={2}
+              spellCheck={false}
+              className="start-pfad"
+              aria-label={`Dateipfad: ${projekt.name}`}
+            />
+            <p className="start-metadaten">Geändert: {zeitDarstellen(projekt.geaendertAm)}</p>
+            <p id={statusId} className={fehlt ? 'start-fehlertext' : 'start-hilfetext'}>
+              {pruefung?.meldung || zustandsname}
+            </p>
+            <div className="start-eintrag-aktionen start-zeilen-nebenaktionen">
+              {!kompakt && (
+                <>
+                  <Knopf
+                    variante="leise"
+                    disabled={gesperrt || fehlt}
+                    grundId={gesperrt ? 'start-verarbeitung' : fehlt ? statusId : undefined}
+                    onClick={() => props.projektOrdnerAnzeigen(projekt.id)}
+                  >
+                    Ordner anzeigen
+                  </Knopf>
+                  <Knopf
+                    variante="leise"
+                    disabled={gesperrt}
+                    grundId="start-verarbeitung"
+                    onClick={() => props.projektNeuZuordnen(projekt.id)}
+                  >
+                    Neu zuordnen
+                  </Knopf>
+                  <Knopf
+                    variante="leise"
+                    disabled={gesperrt}
+                    grundId="start-verarbeitung"
+                    onClick={() => props.projektEntfernen(projekt.id)}
+                  >
+                    Aus Liste entfernen
+                  </Knopf>
+                </>
+              )}
+              {kompakt && fehlt && (
+                <Knopf
+                  disabled={gesperrt}
+                  grundId="start-verarbeitung"
+                  onClick={() => props.projektNeuZuordnen(projekt.id)}
+                >
+                  Neu zuordnen
+                </Knopf>
+              )}
+            </div>
+            {!kompakt && (
+              <p className="start-hilfetext">
+                „Aus Liste entfernen“ löscht nur den Verweis, nicht die Datei.
+              </p>
+            )}
+          </div>
+        </details>
       </article>
+    );
+  }
+
+  function workflowSpaltenkopf() {
+    return (
+      <div className="start-listenkopf" aria-hidden="true">
+        <span>Workflow</span>
+        <span>Sprache</span>
+        <span>Speicherstatus</span>
+        <span>Zuletzt geöffnet</span>
+        <span />
+      </div>
     );
   }
 
   return (
     <section className="startbereich" data-testid="startbereich" aria-label="ScriptLab-Startbereich">
-      <header className="start-kopf">
+      <aside className="start-navigation" aria-label="Globale Navigation">
         <button className="start-marke" onClick={() => seiteWechseln('start')} aria-label="Startseite">
-          <Symbol name="bausteine" />
-          <span>ScriptLab</span>
+          <Marke />
         </button>
-        <nav aria-label="Anwendungsfunktionen">
-          <Knopf variante="leise" symbol="einstellungen" onClick={props.einstellungenOeffnen}>
-            Einstellungen
-          </Knopf>
-          <Knopf variante="leise" symbol="buch" onClick={() => seiteWechseln('hilfe')}>
-            Hilfe
-          </Knopf>
-          <Knopf variante="leise" symbol="info" onClick={props.ueberOeffnen}>
-            Über ScriptLab
-          </Knopf>
+        <nav aria-label="Arbeitsnavigation">
+          {(
+            [
+              { id: 'start', text: 'Start', symbol: 'bausteine' },
+              { id: 'projekte', text: 'Workflows', symbol: 'oeffnen' },
+              { id: 'beispiele', text: 'Vorlagen', symbol: 'buch' },
+            ] as const
+          ).map((eintrag) => (
+            <button
+              type="button"
+              key={eintrag.id}
+              className="start-navlink"
+              aria-current={
+                seite === eintrag.id || (eintrag.id === 'projekte' && seite === 'entwuerfe')
+                  ? 'page'
+                  : undefined
+              }
+              onClick={() => seiteWechseln(eintrag.id)}
+            >
+              <Symbol name={eintrag.symbol} />
+              <span>{eintrag.text}</span>
+            </button>
+          ))}
         </nav>
-      </header>
+        <nav className="start-navigation-unten" aria-label="Unterstützung">
+          <button
+            type="button"
+            className="start-navlink"
+            aria-current={seite === 'hilfe' ? 'page' : undefined}
+            onClick={() => seiteWechseln('hilfe')}
+          >
+            <Symbol name="buch" />
+            <span>Hilfe</span>
+          </button>
+          <button type="button" className="start-navlink" onClick={props.einstellungenOeffnen}>
+            <Symbol name="einstellungen" />
+            <span>Einstellungen</span>
+          </button>
+          <button type="button" className="start-navlink" onClick={props.ueberOeffnen}>
+            <Symbol name="info" />
+            <span>Über ScriptLab</span>
+          </button>
+        </nav>
+      </aside>
       <main
         ref={inhalt}
         className="start-scrollbereich"
@@ -365,25 +448,52 @@ export function Startbereich(props: StartbereichEigenschaften) {
         tabIndex={-1}
         aria-label={seitentitel[seite]}
         onScroll={(event) => {
-          positionen.current[ansicht] = event.currentTarget.scrollTop;
+          if (
+            !props.verarbeitung &&
+            event.currentTarget.clientHeight > 0 &&
+            !event.currentTarget.closest('[hidden]')
+          )
+            positionen.current[ansicht] = event.currentTarget.scrollTop;
         }}
       >
         <div className="start-inhalt">
           <div className="start-seitenkopf">
-            {seite !== 'start' && (
-              <Knopf
-                variante="leise"
-                symbol="links"
-                onClick={() => seiteWechseln(artikel ? 'hilfe' : 'start')}
-              >
-                {artikel ? 'Zur Themenübersicht' : 'Zur Startseite'}
-              </Knopf>
-            )}
-            <h1 ref={seitentitelRef} tabIndex={-1}>
-              {artikel && seite === 'hilfe' ? artikel.titel : seitentitel[seite]}
-            </h1>
+            <div className="start-titelfeld">
+              {artikel && seite === 'hilfe' && (
+                <Knopf variante="leise" symbol="links" onClick={() => seiteWechseln('hilfe')}>
+                  Zur Themenübersicht
+                </Knopf>
+              )}
+              <h1 ref={seitentitelRef} tabIndex={-1}>
+                {artikel && seite === 'hilfe'
+                  ? artikel.titel
+                  : seite === 'beispiele'
+                    ? 'Vorlagen'
+                    : seite === 'projekte'
+                      ? 'Workflows'
+                      : seitentitel[seite]}
+              </h1>
+            </div>
             {seite === 'start' && (
-              <p>Erstelle einen neuen Ablauf oder arbeite an einem vorhandenen weiter.</p>
+              <div className="start-hauptaktionen">
+                <Knopf
+                  variante="primaer"
+                  symbol="neu"
+                  disabled={gesperrt}
+                  grundId="start-verarbeitung"
+                  onClick={props.neuerWorkflow}
+                >
+                  Neuer Workflow
+                </Knopf>
+                <Knopf
+                  symbol="oeffnen"
+                  disabled={gesperrt}
+                  grundId="start-verarbeitung"
+                  onClick={props.workflowOeffnen}
+                >
+                  Workflow öffnen
+                </Knopf>
+              </div>
             )}
           </div>
           {props.verarbeitung && (
@@ -411,25 +521,18 @@ export function Startbereich(props: StartbereichEigenschaften) {
 
           {seite === 'start' && (
             <>
-              <div className="start-hauptaktionen">
-                <Knopf
-                  variante="primaer"
-                  symbol="neu"
-                  disabled={gesperrt}
-                  grundId="start-verarbeitung"
-                  onClick={props.neuerWorkflow}
-                >
-                  Neuer Workflow
-                </Knopf>
-                <Knopf
-                  symbol="oeffnen"
-                  disabled={gesperrt}
-                  grundId="start-verarbeitung"
-                  onClick={props.workflowOeffnen}
-                >
-                  Workflow öffnen
-                </Knopf>
-                {props.aktiveInfo && (
+              {props.aktiveInfo && (
+                <div className="start-weiterarbeiten">
+                  <p className="start-aktiver-workflow">
+                    <strong title={props.aktiveInfo.name}>{props.aktiveInfo.name}</strong>
+                    <span className="start-aktiver-status">
+                      {props.aktiveInfo.geaendert
+                        ? 'Ungespeicherte Änderungen'
+                        : props.aktiveInfo.dateiname
+                          ? 'Projekt gespeichert'
+                          : 'Noch nicht als Projektdatei gespeichert'}
+                    </span>
+                  </p>
                   <Knopf
                     symbol="rechts"
                     disabled={gesperrt}
@@ -438,65 +541,8 @@ export function Startbereich(props: StartbereichEigenschaften) {
                   >
                     Weiterbearbeiten
                   </Knopf>
-                )}
-              </div>
-              {props.aktiveInfo && (
-                <p className="start-aktiver-workflow">
-                  Aktueller Workflow: <strong>{props.aktiveInfo.name}</strong> ·{' '}
-                  {sprachdaten[props.aktiveInfo.skriptsprache].bezeichnung} ·{' '}
-                  {props.aktiveInfo.geaendert
-                    ? 'Ungespeicherte Änderungen'
-                    : props.aktiveInfo.dateiname
-                      ? 'Projekt gespeichert'
-                      : 'Noch nicht als Projektdatei gespeichert'}
-                </p>
-              )}
-              {Boolean(props.daten?.entwuerfe.length) && (
-                <div className="start-rueckmeldung start-entwurfshinweis" data-testid="entwuerfe-hinweis">
-                  <Statusanzeige art="hinweis">
-                    Es sind lokal gesicherte Entwürfe vorhanden. Öffne Entwürfe, um sie bewusst fortzusetzen.
-                  </Statusanzeige>
-                  <Knopf onClick={() => seiteWechseln('entwuerfe')}>Entwürfe anzeigen</Knopf>
                 </div>
               )}
-              <div className="start-karten" data-testid="start-karten">
-                {karten.map((karte) => (
-                  <button
-                    key={karte.seite}
-                    className="start-karte"
-                    aria-label={seitentitel[karte.seite]}
-                    onClick={() => seiteWechseln(karte.seite)}
-                  >
-                    <Symbol name={karte.symbol} groesse={24} />
-                    <span className="start-karte-inhalt">
-                      <span className="start-karte-titel">{seitentitel[karte.seite]}</span>
-                      <span className="start-karte-beschreibung">{karte.beschreibung}</span>
-                      <span className="start-karte-metadaten">
-                        {karte.seite === 'projekte'
-                          ? props.daten?.hinweis
-                            ? 'Bestand nicht vollständig geladen'
-                            : props.daten
-                              ? `${props.daten.projekte.length} ${props.daten.projekte.length === 1 ? 'Projekt' : 'Projekte'} bekannt`
-                              : props.laden
-                                ? 'Wird geladen …'
-                                : 'Bibliothek nicht geladen'
-                          : karte.seite === 'entwuerfe'
-                            ? props.daten?.hinweis
-                              ? 'Bestand nicht vollständig geladen'
-                              : props.daten
-                                ? `${props.daten.entwuerfe.length} ${props.daten.entwuerfe.length === 1 ? 'Entwurf' : 'Entwürfe'} gesichert`
-                                : props.laden
-                                  ? 'Wird geladen …'
-                                  : 'Bibliothek nicht geladen'
-                            : karte.seite === 'beispiele'
-                              ? `${beispiele.length} lokale Beispiele`
-                              : `${hilfeArtikel.length} lokale Anleitungen`}
-                      </span>
-                    </span>
-                    <Symbol name="rechts" />
-                  </button>
-                ))}
-              </div>
               <section
                 className="start-zuletzt"
                 data-testid="zuletzt-geoeffnet"
@@ -509,32 +555,92 @@ export function Startbereich(props: StartbereichEigenschaften) {
                   </Knopf>
                 </div>
                 {letzteProjekte.length ? (
-                  <div className="start-liste">{letzteProjekte.map((p) => projektZeile(p, true))}</div>
+                  <>
+                    {workflowSpaltenkopf()}
+                    <div className="start-liste">{letzteProjekte.map((p) => projektZeile(p, true))}</div>
+                  </>
                 ) : (
-                  datenStatus(
-                    'Noch kein Projekt ausdrücklich geöffnet. Nutze „Workflow öffnen“ oder beginne einen neuen Workflow.',
-                  )
+                  datenStatus('Noch keine Workflows geöffnet.')
                 )}
+              </section>
+              <section className="start-einstiege" aria-label="Weitere Einstiege">
+                <div className="start-karten" data-testid="start-karten">
+                  {karten.map((karte) => (
+                    <button
+                      key={karte.seite}
+                      className={`start-karte ${karte.seite === 'beispiele' || karte.seite === 'hilfe' ? 'start-karte--nachschlagen' : ''}`}
+                      aria-label={seitentitel[karte.seite]}
+                      title={karte.beschreibung}
+                      data-testid={
+                        karte.seite === 'entwuerfe' && Boolean(props.daten?.entwuerfe.length)
+                          ? 'entwuerfe-hinweis'
+                          : undefined
+                      }
+                      onClick={() => seiteWechseln(karte.seite)}
+                    >
+                      <Symbol name={karte.symbol} groesse={20} />
+                      <span className="start-karte-inhalt">
+                        <span className="start-karte-titel">{seitentitel[karte.seite]}</span>
+                        <span className="start-karte-metadaten">
+                          {karte.seite === 'projekte'
+                            ? props.daten?.hinweis
+                              ? 'Bestand nicht vollständig geladen'
+                              : props.daten
+                                ? `${props.daten.projekte.length} ${props.daten.projekte.length === 1 ? 'Workflow' : 'Workflows'} bekannt`
+                                : props.laden
+                                  ? 'Wird geladen …'
+                                  : 'Bibliothek nicht geladen'
+                            : karte.seite === 'entwuerfe'
+                              ? props.daten?.hinweis
+                                ? 'Bestand nicht vollständig geladen'
+                                : props.daten
+                                  ? `${props.daten.entwuerfe.length} ${props.daten.entwuerfe.length === 1 ? 'Entwurf' : 'Entwürfe'} gesichert`
+                                  : props.laden
+                                    ? 'Wird geladen …'
+                                    : 'Bibliothek nicht geladen'
+                              : karte.seite === 'beispiele'
+                                ? `${beispiele.length} lokale Beispiele`
+                                : `${hilfeArtikel.length} lokale Anleitungen`}
+                        </span>
+                      </span>
+                      <Symbol name="rechts" />
+                    </button>
+                  ))}
+                </div>
               </section>
             </>
           )}
 
+          {(seite === 'projekte' || seite === 'entwuerfe') && (
+            <nav className="start-unterbereiche" aria-label="Workflowbestände">
+              <button
+                type="button"
+                aria-current={seite === 'projekte' ? 'page' : undefined}
+                onClick={() => seiteWechseln('projekte')}
+              >
+                Gespeicherte Workflows
+              </button>
+              <button
+                type="button"
+                aria-current={seite === 'entwuerfe' ? 'page' : undefined}
+                onClick={() => seiteWechseln('entwuerfe')}
+              >
+                Entwürfe
+              </button>
+            </nav>
+          )}
           {seite === 'projekte' && (
             <section data-testid="bekannte-projekte" aria-label="Bekannte Projektdateien">
-              <p className="start-einleitung">
-                Bekannte Speicherorte deiner Projektdateien. „Aus Liste entfernen“ löscht nur den Verweis,
-                nicht die Datei.
-              </p>
               <div className="start-listenfilter">
                 <Feld
-                  beschriftung="Projekte suchen"
+                  beschriftung="Gespeicherte Workflows durchsuchen"
                   type="search"
                   value={projektSuche}
                   onChange={(e) => setProjektSuche(e.target.value)}
                   placeholder="Name oder Dateipfad"
                 />
                 <Auswahlfeld
-                  beschriftung="Projekte nach Sprache filtern"
+                  beschriftung="Workflows nach Sprache filtern"
                   value={projektSprache}
                   onChange={(e) => setProjektSprache(e.target.value as Sprachfilter)}
                 >
@@ -543,7 +649,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
                   <option value="vbs">VBScript (VBS)</option>
                 </Auswahlfeld>
                 <Auswahlfeld
-                  beschriftung="Projekte sortieren"
+                  beschriftung="Workflows sortieren"
                   value={projektSortierung}
                   onChange={(e) => setProjektSortierung(e.target.value as Sortierung)}
                 >
@@ -565,16 +671,51 @@ export function Startbereich(props: StartbereichEigenschaften) {
                   : props.daten?.hinweis
                     ? 'Anzeige möglicherweise unvollständig'
                     : props.daten
-                      ? `${projekte.length} ${projekte.length === 1 ? 'Projekt' : 'Projekte'}${projektSuche.trim() || projektSprache !== 'alle' ? ' gefunden' : ''}`
+                      ? `${projekte.length} ${projekte.length === 1 ? 'Workflow' : 'Workflows'}${projektSuche.trim() || projektSprache !== 'alle' ? ' gefunden' : ''}`
                       : 'Bibliothek noch nicht geladen'}
               </p>
               {projekte.length ? (
-                <div className="start-liste">{projekte.map((p) => projektZeile(p))}</div>
+                <>
+                  {workflowSpaltenkopf()}
+                  <div className="start-liste">
+                    {projekte
+                      .slice(aktuelleListenseite * 50, aktuelleListenseite * 50 + 50)
+                      .map((p) => projektZeile(p))}
+                  </div>
+                  {projekte.length > 50 && (
+                    <nav className="knopfgruppe umbrechen" aria-label="Seiten der Workflowliste">
+                      <Knopf
+                        disabled={aktuelleListenseite === 0}
+                        grund="Du bist auf der ersten Seite."
+                        onClick={() => {
+                          setListenseite((s) => s - 1);
+                          inhalt.current?.scrollTo({ top: 0 });
+                        }}
+                      >
+                        Vorherige Seite
+                      </Knopf>
+                      <p role="status">
+                        Seite {aktuelleListenseite + 1} von {maximaleListenseite + 1} · bis zu 50 Workflows
+                        pro Seite
+                      </p>
+                      <Knopf
+                        disabled={aktuelleListenseite === maximaleListenseite}
+                        grund="Du bist auf der letzten Seite."
+                        onClick={() => {
+                          setListenseite((s) => s + 1);
+                          inhalt.current?.scrollTo({ top: 0 });
+                        }}
+                      >
+                        Nächste Seite
+                      </Knopf>
+                    </nav>
+                  )}
+                </>
               ) : (
                 <div className="start-leerzustand">
                   {datenStatus(
                     projektSuche.trim() || projektSprache !== 'alle'
-                      ? 'Keine passenden Projekte gefunden. Ändere die Suche oder den Sprachfilter.'
+                      ? 'Keine passenden Workflows gefunden. Ändere die Suche oder den Sprachfilter.'
                       : 'Noch keine Projektdateien bekannt. Öffne eine .scriptlab-Datei oder speichere einen eigenen Workflow.',
                   )}
                   {projektSuche && <Knopf onClick={() => setProjektSuche('')}>Suche leeren</Knopf>}
@@ -723,54 +864,121 @@ export function Startbereich(props: StartbereichEigenschaften) {
 
           {seite === 'beispiele' && (
             <section data-testid="beispiele" aria-label="Lokale Beispielworkflows">
-              <Auswahlfeld
-                beschriftung="Beispiele nach Sprache filtern"
-                value={beispielSprache}
-                onChange={(e) => setBeispielSprache(e.target.value as Sprachfilter)}
-              >
-                <option value="alle">Alle Sprachen</option>
-                <option value="python">Python</option>
-                <option value="vbs">VBScript (VBS)</option>
-              </Auswahlfeld>
-              <p className="start-einleitung">
-                Öffne ein Beispiel als eigene bearbeitbare Kopie. Das Original bleibt erhalten. Öffnen und
-                Exportieren lösen keine beschriebenen Dateiaktionen aus.
-              </p>
-              <div className="start-liste">
-                {beispiele
-                  .filter(
-                    (beispiel) => beispielSprache === 'alle' || beispiel.skriptsprache === beispielSprache,
-                  )
-                  .map((beispiel) => (
-                    <article
-                      className="start-listeneintrag start-beispiel"
-                      key={beispiel.id}
-                      aria-label={`${beispiel.name} – ${sprachdaten[beispiel.skriptsprache].bezeichnung}`}
-                    >
-                      <h2>{beispiel.name}</h2>
-                      <span className="skriptsprache-kennzeichen">
-                        {sprachdaten[beispiel.skriptsprache].bezeichnung}
-                      </span>
-                      <p>{beispiel.beschreibung}</p>
-                      <ul>
-                        {beispiel.lernziele.map((ziel) => (
-                          <li key={ziel}>{ziel}</li>
-                        ))}
-                      </ul>
-                      <p className="start-hilfetext">{beispiel.vorbereitung}</p>
-                      <p className="start-metadaten">Vorlage: {beispiel.dateiname}</p>
-                      <div>
+              <nav className="start-unterbereiche" aria-label="Vorlagenbereiche">
+                <button
+                  type="button"
+                  aria-current={vorlagenbereich === 'beispiele' ? 'page' : undefined}
+                  onClick={() => setVorlagenbereich('beispiele')}
+                >
+                  Beispielworkflows
+                </button>
+                <button
+                  type="button"
+                  aria-current={vorlagenbereich === 'dokumente' ? 'page' : undefined}
+                  onClick={() => setVorlagenbereich('dokumente')}
+                >
+                  Dokumentvorlagen
+                </button>
+              </nav>
+              {vorlagenbereich === 'dokumente' && (
+                <section className="start-dokumentvorlagen">
+                  <h2>Dokumentvorlagen im Workflow</h2>
+                  <p>
+                    Dokumentvorlagen gehören zu ihrem jeweiligen Business-Workflow. Die Beispiele enthalten
+                    bearbeitbare Word-Vorlagen und passende Testdaten. Beim Verwenden entsteht eine
+                    unabhängige Kopie einschließlich der mitgelieferten Ressourcen.
+                  </p>
+                  <div className="start-liste">
+                    {(
+                      [
+                        {
+                          id: 'business-bestellvorschlag',
+                          name: 'Bestellung.docx',
+                          beschreibung: 'Bestellungen aus Lagerdaten erstellen',
+                        },
+                      ] as const
+                    ).map((vorlage) => (
+                      <article key={vorlage.id} className="start-listeneintrag">
+                        <h3>{vorlage.name}</h3>
+                        <p>{vorlage.beschreibung}</p>
+                        <p className="start-hilfetext">
+                          Die Vorlage behält ihre eigenen Farben und Absenderangaben.
+                        </p>
                         <Knopf
                           symbol="neu"
-                          onClick={() => props.beispielOeffnen(beispiel.id)}
                           disabled={gesperrt}
                           grundId="start-verarbeitung"
+                          onClick={() => props.beispielOeffnen(vorlage.id)}
                         >
-                          Als Vorlage öffnen
+                          Workflow mit Vorlage verwenden
                         </Knopf>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+              <div hidden={vorlagenbereich !== 'beispiele'}>
+                <div className="start-vorlagenwerkzeuge">
+                  <Auswahlfeld
+                    beschriftung="Beispiele nach Sprache filtern"
+                    value={beispielSprache}
+                    onChange={(e) => setBeispielSprache(e.target.value as Sprachfilter)}
+                  >
+                    <option value="alle">Alle Sprachen</option>
+                    <option value="python">Python</option>
+                    <option value="vbs">VBScript (VBS)</option>
+                  </Auswahlfeld>
+                  <details className="start-vorlagenhilfe">
+                    <summary>Vorlagen verwenden</summary>
+                    <p>
+                      Öffne ein Beispiel als eigene bearbeitbare Kopie. Das Original bleibt erhalten. Öffnen
+                      und Exportieren lösen keine beschriebenen Dateiaktionen aus.
+                    </p>
+                  </details>
+                </div>
+                <div className="start-liste">
+                  {beispiele
+                    .filter(
+                      (beispiel) => beispielSprache === 'alle' || beispiel.skriptsprache === beispielSprache,
+                    )
+                    .map((beispiel) => (
+                      <article
+                        className="start-listeneintrag start-beispiel"
+                        key={beispiel.id}
+                        aria-label={`${beispiel.name} – ${sprachdaten[beispiel.skriptsprache].bezeichnung}`}
+                      >
+                        <div className="start-vorlageninhalt">
+                          <h2>{beispiel.name}</h2>
+                          <p>{beispiel.beschreibung}</p>
+                        </div>
+                        <span className="skriptsprache-kennzeichen">
+                          {sprachdaten[beispiel.skriptsprache].bezeichnung}
+                        </span>
+                        <details className="start-vorlagendetails">
+                          <summary>Inhalt und Voraussetzungen</summary>
+                          <div>
+                            <ul>
+                              {beispiel.lernziele.map((ziel) => (
+                                <li key={ziel}>{ziel}</li>
+                              ))}
+                            </ul>
+                            <p className="start-hilfetext">{beispiel.vorbereitung}</p>
+                            <p className="start-metadaten">Vorlage: {beispiel.dateiname}</p>
+                          </div>
+                        </details>
+                        <div className="start-vorlagenaktion">
+                          <Knopf
+                            symbol="neu"
+                            onClick={() => props.beispielOeffnen(beispiel.id)}
+                            disabled={gesperrt}
+                            grundId="start-verarbeitung"
+                          >
+                            Als Vorlage öffnen
+                          </Knopf>
+                        </div>
+                      </article>
+                    ))}
+                </div>
               </div>
             </section>
           )}

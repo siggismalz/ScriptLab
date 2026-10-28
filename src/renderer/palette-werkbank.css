@@ -1,0 +1,90 @@
+/* Die Palette zeigt zuerst Aufgaben. Bausteinfarben erscheinen erst bei tatsächlichen Bausteinen. */
+.palette-werkbank .paletten-aufgaben {
+  display: grid;
+  gap: var(--abstand-4);
+  padding-block: var(--abstand-4);
+}
+.palette-werkbank .paletten-aufgabe {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: var(--abstand-12);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--abstand-8);
+  border: 1px solid transparent;
+  border-radius: var(--radius-normal);
+  background: transparent;
+  color: var(--farbe-text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.palette-werkbank .paletten-aufgabe .sl-symbol {
+  color: var(--farbe-text-sekundaer);
+}
+.palette-werkbank .paletten-aufgabe > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.palette-werkbank .paletten-aufgabe:hover {
+  background: var(--farbe-erhoeht);
+}
+.palette-werkbank .paletten-aufgabe:active {
+  background: var(--farbe-auswahl-flaeche);
+}
+.palette-werkbank .paletten-aufgabe:focus-visible {
+  outline: var(--fokus-kontur) solid var(--farbe-akzent);
+  outline-offset: -2px;
+}
+.palette-werkbank .paletten-pfad {
+  display: grid;
+  gap: var(--abstand-8);
+  padding-block: var(--abstand-4) var(--abstand-12);
+}
+.palette-werkbank .paletten-pfad > .sl-knopf {
+  justify-self: start;
+  justify-content: flex-start;
+  padding-inline: var(--abstand-8);
+}
+.palette-werkbank .paletten-pfad h3 {
+  margin: 0;
+  padding-inline: var(--abstand-8);
+  font-size: inherit;
+  line-height: 1.5;
+  font-weight: var(--gewicht-semibold);
+  overflow-wrap: anywhere;
+}
+.palette-werkbank .paletten-direktliste {
+  min-width: 0;
+}
+.palette-werkbank .palette-pythonhinweis {
+  margin-block-start: var(--abstand-12);
+  padding-inline: var(--abstand-8);
+  color: var(--farbe-text-sekundaer);
+}
+.palette-werkbank .palette-pythonhinweis summary {
+  color: var(--farbe-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .palette-werkbank .paletten-aufgabe {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .palette-werkbank .paletten-aufgabe {
+    color: ButtonText;
+    background: Canvas;
+  }
+  .palette-werkbank .paletten-aufgabe .sl-symbol {
+    color: ButtonText;
+  }
+  .palette-werkbank .paletten-aufgabe:hover,
+  .palette-werkbank .paletten-aufgabe:active {
+    color: HighlightText;
+    background: Highlight;
+  }
+  .palette-werkbank .paletten-aufgabe:focus-visible {
+    outline-color: Highlight;
+  }
+}

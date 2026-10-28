@@ -46,13 +46,11 @@ const beschriftungen: Record<string, string> = {
 
 function feldHilfe(feld: Feld, pfad: string[]): string {
   if (pfad.some((teil) => /pfad|datei/i.test(teil)))
-    return 'Vollständiger Wert. Beispiel: ScriptLab-Testdaten\\Datei.txt. Relative Pfade beziehen sich beim Export auf den Scriptordner und beim Test auf den gewählten Basisordner.';
-  if (feld.name === 'VAR')
-    return 'Wähle dieselbe Variable beim Setzen und Lesen. Der Name kann geändert werden; die Verbindung bleibt über ihre Kennung erhalten.';
-  if (feld.art === 'zahl') return 'Gib eine ganze Zahl im angegebenen Bereich ein.';
-  if (feld.name === 'TEXT')
-    return 'Der Text bleibt unverändert als Daten erhalten. Anführungszeichen und Zeilenumbrüche sind möglich.';
-  return 'Diese Einstellung verändert denselben Baustein, den du auf der Arbeitsfläche siehst.';
+    return 'Relative Pfade verwenden beim Lauf den Basisordner, beim exportierten Script dessen Ordner.';
+  if (feld.name === 'VAR') return 'Wähle dieselbe Variable beim Setzen und Lesen.';
+  if (feld.art === 'zahl') return '';
+  if (feld.name === 'TEXT') return '';
+  return '';
 }
 
 /** Liest immer den tatsächlichen Blockly-Zustand, auch bei angeschlossenen Literalwerten. */
@@ -72,7 +70,12 @@ export function eigenschaftenLesen(workspace: Blockly.Workspace, blockId: string
       const beschriftung =
         einfach && pfad.length
           ? pfad.join(' / ')
-          : [...pfad, beschriftungen[feld.name] ?? feld.name].join(' / ');
+          : [
+              ...pfad,
+              block.type.startsWith('sl_biz_') && feld.name === 'NAME'
+                ? 'Bausteinname'
+                : (beschriftungen[feld.name] ?? feld.name),
+            ].join(' / ');
       ergebnis.push({
         id: `${block.id}:${feld.name}`,
         quellBlockId: block.id,

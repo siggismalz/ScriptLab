@@ -7,6 +7,7 @@ export interface BusinessErgebnisEigenschaften {
   business: NonNullable<TestZustand['business']>;
   optionen: TestOptionen;
   aktiv: boolean;
+  kontextZeigen?: boolean;
 }
 
 type Daten = Record<string, unknown>;
@@ -24,7 +25,12 @@ function text(wert: unknown): string | null {
 }
 
 /** Nur bestätigte Ereignisse darstellen; der Renderer leitet keine Dateizähler ab. */
-export function BusinessErgebnis({ business, optionen, aktiv }: BusinessErgebnisEigenschaften) {
+export function BusinessErgebnis({
+  business,
+  optionen,
+  aktiv,
+  kontextZeigen = true,
+}: BusinessErgebnisEigenschaften) {
   const titelId = useId();
   const schritt = [...business.ereignisse]
     .reverse()
@@ -80,27 +86,38 @@ export function BusinessErgebnis({ business, optionen, aktiv }: BusinessErgebnis
 
   return (
     <section className="business-ergebnis" aria-labelledby={titelId}>
-      <h3 id={titelId}>Business-Ablauf</h3>
-      <dl className="business-ergebnis-angaben">
-        <div>
-          <dt>Modus</dt>
-          <dd>{modus ? (modi[modus] ?? 'Nicht bekannt') : 'Noch nicht gemeldet'}</dd>
-        </div>
-        <div>
-          <dt>Parametersatz</dt>
-          <dd>
-            {optionen.business?.parametersatz === 'test'
-              ? 'Testdaten'
-              : optionen.business?.parametersatz === 'echt'
-                ? 'Echte Daten'
-                : 'Nicht bekannt'}
-          </dd>
-        </div>
-        <div>
-          <dt>{aktiv ? 'Aktueller Schritt' : 'Letzter Schritt'}</dt>
-          <dd>{schrittname ?? (business.schritt ? 'Business-Baustein' : 'Noch kein Schritt gemeldet')}</dd>
-        </div>
-      </dl>
+      {!kontextZeigen && (
+        <h3 id={titelId} className="sl-nur-vorlesen">
+          Laufergebnisse
+        </h3>
+      )}
+      {kontextZeigen && (
+        <>
+          <h3 id={titelId}>Business-Ablauf</h3>
+          <dl className="business-ergebnis-angaben">
+            <div>
+              <dt>Modus</dt>
+              <dd>{modus ? (modi[modus] ?? 'Nicht bekannt') : 'Noch nicht gemeldet'}</dd>
+            </div>
+            <div>
+              <dt>Parametersatz</dt>
+              <dd>
+                {optionen.business?.parametersatz === 'test'
+                  ? 'Testdaten'
+                  : optionen.business?.parametersatz === 'echt'
+                    ? 'Echte Daten'
+                    : 'Nicht bekannt'}
+              </dd>
+            </div>
+            <div>
+              <dt>{aktiv ? 'Aktueller Schritt' : 'Letzter Schritt'}</dt>
+              <dd>
+                {schrittname ?? (business.schritt ? 'Business-Baustein' : 'Noch kein Schritt gemeldet')}
+              </dd>
+            </div>
+          </dl>
+        </>
+      )}
       {fortschritt && (
         <div className="business-ergebnis-fortschritt">
           <p>

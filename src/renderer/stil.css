@@ -350,17 +350,17 @@ summary {
   outline-offset: -4px;
 }
 .blocklyText {
-  fill: var(--farbe-text) !important;
+  fill: var(--farbe-block-text) !important;
 }
 .blocklyEditableText > rect,
 .blocklyFieldRect {
-  fill: var(--farbe-arbeitsflaeche) !important;
+  fill: var(--farbe-block-feld) !important;
   fill-opacity: 1 !important;
-  stroke: var(--farbe-text-sekundaer) !important;
+  stroke: var(--farbe-block-kontur) !important;
   stroke-width: 1px;
 }
 .blocklyEditableText:hover > rect {
-  stroke: var(--farbe-canvas-fokus) !important;
+  stroke: var(--farbe-block-fokus) !important;
   stroke-width: 2px;
 }
 .blocklyKeyboardNavigation .blocklyActiveFocus.blocklyField > .blocklyFieldRect,
@@ -368,7 +368,7 @@ summary {
 .blocklyKeyboardNavigation .blocklyActiveFocus.blocklyIconGroup > .blocklyIconShape:first-child,
 .blocklyKeyboardNavigation .blocklyPassiveFocus.blocklyIconGroup > .blocklyIconShape:first-child {
   /* Die normale Feldkontur darf den Navigationsfokus nicht ueberdecken. */
-  stroke: var(--farbe-canvas-fokus) !important;
+  stroke: var(--farbe-block-fokus) !important;
   stroke-width: var(--fokus-kontur) !important;
 }
 .blocklyKeyboardNavigation .blocklyPassiveFocus.blocklyField > .blocklyFieldRect,
@@ -378,23 +378,23 @@ summary {
 .blocklySelected > .blocklyPath.blocklyPathSelected {
   fill: none !important;
   filter: none !important;
-  stroke: var(--farbe-auswahl) !important;
+  stroke: var(--farbe-block-auswahl) !important;
   stroke-width: 2px !important;
   stroke-dasharray: 6 3;
 }
 .scriptlabAuswahl > .blocklyPath {
-  stroke: var(--farbe-auswahl);
+  stroke: var(--farbe-block-auswahl);
   stroke-width: 2px;
   stroke-dasharray: 6 3;
 }
 .scriptlabFehler > .blocklyPath {
-  stroke: var(--farbe-fehler);
+  stroke: var(--farbe-block-fehler);
   stroke-width: 2px;
 }
 .blocklyHtmlInput {
-  color: var(--farbe-text) !important;
-  background: var(--farbe-arbeitsflaeche) !important;
-  border: 2px solid var(--farbe-canvas-fokus) !important;
+  color: var(--farbe-block-text) !important;
+  background: var(--farbe-block-feld) !important;
+  border: 2px solid var(--farbe-block-fokus) !important;
   border-radius: var(--radius-normal) !important;
 }
 .blocklyWidgetDiv .goog-menu,

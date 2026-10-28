@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Knopf } from './Knopf';
-import type { SymbolName } from './Icon';
+import { Symbol, type SymbolName } from './Icon';
 
 export interface MenueEintrag {
   id?: string;
@@ -87,7 +87,7 @@ export function Menue({
       <div ref={ausloeser}>
         <Knopf
           variante="leise"
-          symbol={symbol}
+          symbol={nurSymbol ? symbol : undefined}
           aria-label={beschriftung}
           title={beschriftung}
           aria-haspopup="menu"
@@ -105,7 +105,12 @@ export function Menue({
             }
           }}
         >
-          {nurSymbol ? undefined : beschriftung}
+          {nurSymbol ? undefined : (
+            <span className="sl-menue-beschriftung">
+              {beschriftung}
+              <Symbol name={symbol} groesse={16} />
+            </span>
+          )}
         </Knopf>
       </div>
       {offen && (
