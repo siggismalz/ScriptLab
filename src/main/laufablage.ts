@@ -64,6 +64,7 @@ const zustandSchema = z
             speicherMB: z.number().int().min(64).max(8192),
             tempGB: z.number().int().min(1).max(100),
             fortsetzen: z.boolean(),
+            vorschauBlockId: text(160).min(1).optional(),
           })
           .strict()
           .optional(),

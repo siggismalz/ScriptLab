@@ -12,6 +12,7 @@ import type { PythonInstallation } from '../gemeinsam/python';
 import { pythonDateipfadPruefen } from './python';
 import { businessSchritte, businessModusPruefen } from '../kern/business';
 import { parameterWertePruefen } from '../kern/business-modell';
+import { datenvorschauProjekt } from '../kern/datenvorschau';
 
 export const testOptionenSchema = z
   .object({
@@ -32,6 +33,7 @@ export const testOptionenSchema = z
         speicherMB: z.number().int().min(64).max(8192),
         tempGB: z.number().int().min(1).max(100),
         fortsetzen: z.boolean(),
+        vorschauBlockId: z.string().min(1).max(160).optional(),
       })
       .strict()
       .optional(),
@@ -114,8 +116,20 @@ export class TestlaufDienst {
   }
   starten(daten: unknown, optionen: TestOptionen): TestZustand {
     if (this.aktiv()) throw new Error('Es läuft bereits ein Test. Stoppe ihn vor einem neuen Start.');
-    const projekt = projektPruefen(structuredClone(daten));
+    const original = projektPruefen(structuredClone(daten));
     const kontext = testOptionenSchema.parse(optionen);
+    if (kontext.business?.vorschauBlockId && kontext.business.modus !== 'vorschau')
+      throw new Error('Ein Vorschauziel ist ausschließlich für eine Datenvorschau vorgesehen.');
+    const projekt = kontext.business?.vorschauBlockId
+      ? datenvorschauProjekt(original, kontext.business.vorschauBlockId)
+      : original;
+    if (kontext.business?.vorschauBlockId) {
+      const namen = new Set(projekt.business.parameter.map((p) => p.name));
+      kontext.business.parameter = Object.fromEntries(
+        Object.entries(kontext.business.parameter).filter(([name]) => namen.has(name)),
+      );
+      kontext.business.fortsetzen = false;
+    }
     const business = businessSchritte(projekt);
     if (business.length) {
       if (!kontext.business) throw new Error('Wähle Modus und Parameter für den Business-Lauf aus.');
@@ -141,7 +155,7 @@ export class TestlaufDienst {
       projektName: projekt.name,
       skriptsprache: projekt.skriptsprache,
       pythonVersion: null,
-      standHash: testStandHash(projekt),
+      standHash: testStandHash(original),
       vorbereitetAm: new Date().toISOString(),
       optionen: kontext,
       quelltext: erzeugt.code,
@@ -243,10 +257,12 @@ export class TestlaufDienst {
       if (lauf.grund) return;
       if (lauf.sprache === 'python') {
         if (!this.pythonErmitteln)
-          throw new Error('Wähle in den Einstellungen eine geeignete Python-Installation aus.');
+          throw new Error(
+            'Die mitgelieferte Python-Laufzeit ist nicht verfügbar. Installiere ScriptLab erneut.',
+          );
         this.zustand.meldung = lauf.dialogeNoetig
           ? 'Python und die benötigten Tk-Dialoge werden geprüft.'
-          : 'Die gewählte Python-Installation wird geprüft.';
+          : 'Die mitgelieferte Python-Laufzeit wird vorbereitet.';
         const python = await this.pythonErmitteln(lauf.dialogeNoetig, lauf.abbruch.signal);
         if (lauf.grund) return;
         // Dieser Lauf behält genau die geprüfte Datei, auch wenn später Einstellungen geändert werden.

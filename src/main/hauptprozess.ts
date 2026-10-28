@@ -36,12 +36,13 @@ import { TestlaufDienst, testOptionenSchema, testStandHash } from '../windows/te
 import type { TestOptionen } from '../gemeinsam/testlauf';
 import type { Antwort, Dokument, Einstellungen } from '../gemeinsam/bruecke';
 import type { PythonInstallation, PythonStatus } from '../gemeinsam/python';
-import { pythonKandidatenSuchen, pythonPruefen, pythonDateipfadPruefen } from '../windows/python';
-import { businessStatusPruefen, businessEinrichten } from '../windows/business-laufzeit';
+
 import type { BusinessStatus, BusinessFortschritt } from '../gemeinsam/business-laufzeit';
 import { businessSchritte } from '../kern/business';
 import { businessPaketDateien, zipErzeugen } from './business-export';
 import { businessBeispiele } from '../kern/business-beispiele';
+import { quellenauswahlLesen } from '../kern/quellenauswahl';
+import { appLaufzeitPruefen } from '../windows/app-laufzeit';
 import { Laufablage, laufDateipfad, laufProtokollText } from './laufablage';
 import type { TestZustand } from '../gemeinsam/testlauf';
 
@@ -53,7 +54,7 @@ if (!app.isPackaged && process.env.SCRIPTLAB_TESTDATEN)
   app.setPath('userData', resolve(process.env.SCRIPTLAB_TESTDATEN));
 const einstellungenSchema = z
   .object({
-    darstellung: z.enum(['dunkel', 'hell', 'system']).default('dunkel'),
+    darstellung: z.enum(['dunkel', 'hell', 'system']).default('hell'),
     letzteSkriptsprache: z.enum(['python', 'vbs']).nullable().default(null),
     pythonInterpreter: z.string().min(1).max(32768).nullable().default(null),
     automatischeUpdates: z.boolean(),
@@ -74,11 +75,6 @@ let businessAuftrag: AbortController | null = null;
 let businessFertig: Promise<void> | null = null;
 const businessPaketwurzel = () =>
   app.isPackaged ? join(process.resourcesPath, 'laufzeit') : join(app.getAppPath(), 'laufzeit');
-const businessOptionen = () => ({
-  helper: testWerkzeugPfad(),
-  technischeOrdner: join(app.getPath('userData'), 'business-pruefungen'),
-  paketwurzel: businessPaketwurzel(),
-});
 let projekt = neuesProjekt();
 let projektPfad: string | null = null;
 let gespeichert = JSON.stringify(projekt);
@@ -103,7 +99,8 @@ let pythonZustand: PythonStatus = {
   zustand: 'ungeprueft',
   auswahl: null,
   installation: null,
-  meldung: 'Python wurde noch nicht geprüft. Zum Bearbeiten und Exportieren ist keine Laufzeit erforderlich.',
+  meldung:
+    'Python ist in ScriptLab enthalten. Die App prüft ihre Komponenten automatisch vor der ersten Ausführung.',
 };
 let wartetAufDarstellung = true;
 let standAnfrage: { kennung: string; uebernehmen: (daten: unknown) => void } | null = null;
@@ -188,69 +185,56 @@ function darstellungUebernehmen(): void {
   fenster?.setBackgroundColor(farbenNachThema[nativeTheme.shouldUseDarkColors ? 'dunkel' : 'hell'].fenster);
 }
 
-async function pythonErmitteln(tkinter = false, signal?: AbortSignal): Promise<PythonInstallation> {
-  if (pythonPruefAuftrag) throw new Error('Python wird bereits geprüft. Warte kurz auf das Ergebnis.');
-  const auswahl = einstellungen.pythonInterpreter;
+function appPythonOrdner(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'python')
+    : join(app.getAppPath(), 'artifacts/python-buendel/python');
+}
+async function pythonErmitteln(_tkinter = false, signal?: AbortSignal): Promise<PythonInstallation> {
+  if (pythonPruefAuftrag) return pythonPruefAuftrag;
+  if (
+    pythonZustand.zustand === 'bereit' &&
+    pythonZustand.installation &&
+    businessStatus?.zustand === 'bereit'
+  )
+    return pythonZustand.installation;
   pythonZustand = {
     zustand: 'prueft',
-    auswahl,
+    auswahl: null,
     installation: null,
-    meldung: 'Die lokale Python-Installation wird geprüft.',
+    meldung: 'Die enthaltenen App-Komponenten werden geprüft.',
   };
-  const pruefen = async () => {
-    const kandidaten = auswahl ? [{ pfad: auswahl }] : await pythonKandidatenSuchen();
-    if (!kandidaten.length) {
+  pythonPruefAuftrag = (async () => {
+    try {
+      const ergebnis = await appLaufzeitPruefen({
+        wurzel: appPythonOrdner(),
+        helper: testWerkzeugPfad(),
+        technischeOrdner: join(app.getPath('userData'), 'python-pruefungen'),
+        signal,
+      });
+      businessStatus = ergebnis.business;
       pythonZustand = {
-        zustand: 'fehlt',
-        auswahl,
+        zustand: 'bereit',
+        auswahl: null,
+        installation: ergebnis.installation,
+        meldung: 'Die mitgelieferten Komponenten für Python, Tabellen und Dokumente sind bereit.',
+      };
+      return ergebnis.installation;
+    } catch (error) {
+      pythonZustand = {
+        zustand: 'fehler',
+        auswahl: null,
         installation: null,
         meldung:
-          'Es wurde keine Python-Installation gefunden. Wähle in den Einstellungen eine vorhandene python.exe aus. Bearbeiten und Exportieren bleiben möglich.',
+          'Die mitgelieferten App-Komponenten sind nicht verfügbar. Installiere ScriptLab erneut. Bearbeiten und Exportieren bleiben möglich.',
       };
-      throw new Error(pythonZustand.meldung);
+      businessStatus = null;
+      throw new Error(pythonZustand.meldung, { cause: error });
+    } finally {
+      pythonPruefAuftrag = null;
     }
-    let letzterFehler = '';
-    for (const kandidat of kandidaten.slice(0, 20)) {
-      if (signal?.aborted) throw new Error('Die Python-Prüfung wurde abgebrochen.');
-      try {
-        const installation = await pythonPruefen(kandidat.pfad, {
-          helper: testWerkzeugPfad(),
-          technischeOrdner: join(app.getPath('userData'), 'python-pruefungen'),
-          tkinter,
-          signal,
-        });
-        pythonZustand = {
-          zustand: 'bereit',
-          auswahl,
-          installation,
-          meldung: `CPython ${installation.version} (64 Bit) wurde erfolgreich geprüft.${tkinter ? ' Tcl/Tk ist verfügbar.' : ' Dialogunterstützung wird bei Bedarf geprüft.'}`,
-        };
-        return installation;
-      } catch (fehler) {
-        if (signal?.aborted) throw new Error('Die Python-Prüfung wurde abgebrochen.');
-        letzterFehler = fehler instanceof Error && !('code' in fehler) ? fehler.message : dateiFehler(fehler);
-      }
-    }
-    pythonZustand = {
-      zustand: 'fehler',
-      auswahl,
-      installation: null,
-      meldung: `Keine geeignete Python-Laufzeit verfügbar. ${letzterFehler} Bearbeiten und Exportieren bleiben möglich.`,
-    };
-    throw new Error(pythonZustand.meldung);
-  };
-  pythonPruefAuftrag = pruefen();
-  try {
-    return await pythonPruefAuftrag;
-  } finally {
-    pythonPruefAuftrag = null;
-    if (pythonZustand.zustand === 'prueft')
-      pythonZustand = {
-        ...pythonZustand,
-        zustand: 'ungeprueft',
-        meldung: 'Die Python-Prüfung wurde nicht abgeschlossen. Prüfe die Installation erneut.',
-      };
-  }
+  })();
+  return pythonPruefAuftrag;
 }
 
 export function absenderPruefen(event: IpcMainInvokeEvent | IpcMainEvent): void {
@@ -509,6 +493,64 @@ async function laufZustandLesen(id: string): Promise<TestZustand> {
 }
 
 function ipcEinrichten(): void {
+  registrieren('quelle-waehlen', (daten) =>
+    mitDialog(async () => {
+      if (testDienst.aktiv()) throw new Error('Warte auf das Ende des laufenden Prozesses.');
+      const w = z
+        .object({
+          blockId: z.string().min(1).max(160),
+          feldPfad: z.array(z.string().min(1).max(160)).min(1).max(8),
+        })
+        .strict()
+        .parse(daten);
+      await aktuellenStandAnfordern();
+      const quelle = quellenauswahlLesen(projekt, w.blockId, w.feldPfad);
+      const r = await dialog.showOpenDialog(fenster, {
+        title: quelle.titel,
+        properties: [quelle.ordner ? 'openDirectory' : 'openFile'],
+        ...(!quelle.ordner
+          ? {
+              filters: [
+                { name: 'Passende Quelldateien', extensions: quelle.endungen },
+                { name: 'Alle Dateien', extensions: ['*'] },
+              ],
+            }
+          : {}),
+      });
+      return r.canceled ? null : (r.filePaths[0] ?? null);
+    }),
+  );
+  registrieren('datenvorschau-starten', async (daten) => {
+    if (dialogAktiv || testDienst.aktiv())
+      throw new Error('Schließe den aktuellen Vorgang ab, bevor du eine Datenvorschau lädst.');
+    const w = z
+      .object({
+        projekt: z.unknown(),
+        blockId: z.string().min(1).max(160),
+        optionen: z.record(z.string(), z.unknown()),
+      })
+      .strict()
+      .parse(daten);
+    const stand = structuredClone(uebernehmen(w.projekt));
+    const bisher = w.optionen.business && typeof w.optionen.business === 'object' ? w.optionen.business : {};
+    const optionen = testOptionenSchema.parse({
+      ...w.optionen,
+      basisVerzeichnis: arbeitsordnerFuer(),
+      zeitlimitSekunden: 30,
+      business: {
+        parametersatz: 'test',
+        parameter: {},
+        speicherMB: 512,
+        tempGB: 4,
+        ...bisher,
+        modus: 'vorschau',
+        vorschauBlockId: w.blockId,
+        fortsetzen: false,
+      },
+    });
+    await mkdir(optionen.basisVerzeichnis!, { recursive: true });
+    return testDienst.starten(stand, optionen);
+  });
   registrieren('lauf-liste', async () => {
     const kennung = projekt.projektKennung!;
     const liste = await laufablage.liste(kennung);
@@ -570,7 +612,6 @@ function ipcEinrichten(): void {
       );
     if (dialogAktiv) throw new Error('Schließe zuerst den geöffneten Dialog.');
     if (testDienst.aktiv()) throw new Error('Es läuft bereits ein Test.');
-    if (pythonPruefAuftrag) throw new Error('Python wird gerade geprüft. Warte kurz auf das Ergebnis.');
     const auswahl = z
       .object({ projekt: z.unknown(), optionen: z.record(z.string(), z.unknown()) })
       .strict()
@@ -999,12 +1040,21 @@ function ipcEinrichten(): void {
   registrieren('einstellungen', async (daten) => {
     const neu = einstellungenSchema.parse(daten);
     if (neu.pythonInterpreter !== einstellungen.pythonInterpreter)
-      throw new Error('Wähle die Python-Installation über „python.exe auswählen“.');
+      throw new Error('Die Python-Laufzeit wird von ScriptLab bereitgestellt.');
     await lokaleEinstellungenSpeichern(neu);
     aktualisierungen.vorabversionenSetzen(neu.vorabversionen);
     return einstellungen;
   });
-  registrieren('python-status', () => pythonZustand);
+  registrieren('python-status', async () => {
+    if (pythonZustand.zustand === 'ungeprueft') {
+      try {
+        await pythonErmitteln();
+      } catch {
+        /* Der Status enthält den App-Komponentenfehler. */
+      }
+    }
+    return pythonZustand;
+  });
   registrieren('business-lesen', () => ({
     status: businessStatus,
     fortschritt: businessFortschritt,
@@ -1012,89 +1062,30 @@ function ipcEinrichten(): void {
   }));
   registrieren('business-aktion', async (daten) => {
     const art = z.enum(['pruefen', 'einrichten', 'offline', 'abbrechen']).parse(daten);
-    if (art === 'abbrechen') {
-      businessAuftrag?.abort();
-      return businessStatus;
-    }
-    if (testDienst.aktiv()) throw new Error('Stoppe den laufenden Workflow vor einer Änderung der Laufzeit.');
-    if (businessAuftrag) throw new Error('Die Business-Laufzeit wird bereits geprüft oder eingerichtet.');
-    const auftrag = new AbortController();
-    businessAuftrag = auftrag;
-    let auftragBeendet: () => void = () => {};
-    businessFertig = new Promise<void>((fertig) => {
-      auftragBeendet = fertig;
-    });
-    try {
-      let wheelhouse: string | undefined;
-      if (art === 'offline') {
-        const auswahl = await dialog.showOpenDialog(fenster, {
-          title: 'Vorbereiteten Offline-Paketordner auswählen',
-          properties: ['openDirectory'],
-        });
-        if (auswahl.canceled) return businessStatus;
-        wheelhouse = auswahl.filePaths[0];
-      }
-      const basis = await pythonErmitteln(false, auftrag.signal);
-      if (art === 'pruefen')
-        businessStatus = await businessStatusPruefen(basis, {
-          ...businessOptionen(),
-          signal: auftrag.signal,
-        });
-      else {
-        businessStatus = await businessEinrichten(basis, {
-          ...businessOptionen(),
-          signal: auftrag.signal,
-          laufzeitenOrdner: join(app.getPath('userData'), 'laufzeiten'),
-          quelle: art === 'offline' ? 'wheelhouse' : 'pypi',
-          ...(wheelhouse ? { wheelhouseOrdner: wheelhouse } : {}),
-          fortschritt: (s) => {
-            businessFortschritt = s;
-          },
-        });
-        if (businessStatus.zustand === 'bereit') {
-          await lokaleEinstellungenSpeichern({
-            ...einstellungen,
-            pythonInterpreter: businessStatus.installation.pfad,
-          });
-          await pythonErmitteln(false, auftrag.signal);
-        }
-      }
-      return businessStatus;
-    } finally {
-      businessAuftrag = null;
-      auftragBeendet();
-      businessFertig = null;
-    }
+    if (art === 'abbrechen') return businessStatus;
+    if (art !== 'pruefen')
+      throw new Error(
+        'Alle Python- und Business-Komponenten werden mit ScriptLab geliefert. Eine gesonderte Einrichtung ist nicht erforderlich.',
+      );
+    await pythonErmitteln();
+    return businessStatus;
   });
   registrieren('python-pruefen', async () => {
     if (testDienst.aktiv()) throw new Error('Stoppe den laufenden Test vor einer neuen Laufzeitprüfung.');
     try {
+      pythonZustand = { ...pythonZustand, zustand: 'ungeprueft', installation: null };
+      businessStatus = null;
       await pythonErmitteln();
     } catch {
       /* Der geprüfte Status enthält die verständliche Meldung. */
     }
     return pythonZustand;
   });
-  registrieren('python-waehlen', () =>
-    mitDialog(async () => {
-      if (testDienst.aktiv() || pythonPruefAuftrag)
-        throw new Error('Warte bis zum Ende des Tests oder der Python-Prüfung.');
-      const auswahl = await dialog.showOpenDialog(fenster, {
-        title: 'Vorhandene python.exe auswählen',
-        properties: ['openFile'],
-        filters: [{ name: 'Python-Interpreter', extensions: ['exe'] }],
-      });
-      if (auswahl.canceled || auswahl.filePaths.length !== 1) return null;
-      const pfad = pythonDateipfadPruefen(auswahl.filePaths[0]);
-      await lokaleEinstellungenSpeichern({ ...einstellungen, pythonInterpreter: pfad });
-      try {
-        await pythonErmitteln();
-      } catch {
-        /* Ein ungeeigneter Pfad bleibt sichtbar, kein stiller Wechsel. */
-      }
-      return pythonZustand;
-    }),
-  );
+  registrieren('python-waehlen', () => {
+    throw new Error(
+      'ScriptLab verwendet seine mitgelieferte Python-Laufzeit. Eine Interpreterauswahl ist nicht erforderlich.',
+    );
+  });
   registrieren('python-hilfe', async () => {
     await shell.openExternal('https://docs.python.org/3.15/using/windows.html');
   });
@@ -1246,7 +1237,7 @@ else {
       } catch {
         /* Fehlende oder beschädigte Einstellungen verwenden sichere Vorgaben. */
       }
-      pythonZustand.auswahl = einstellungen.pythonInterpreter;
+      pythonZustand.auswahl = null;
       darstellungUebernehmen();
       signaturDienst = new SignaturDienst(
         app.isPackaged
@@ -1261,9 +1252,11 @@ else {
           paketwurzel: businessPaketwurzel(),
           journaleOrdner: join(app.getPath('userData'), 'business-journale'),
           pruefen: async (installation, signal) => {
-            businessStatus = await businessStatusPruefen(installation, { ...businessOptionen(), signal });
-            if (businessStatus.zustand !== 'bereit')
-              throw new Error(businessStatus.meldung + ' Öffne Einstellungen → Business-Laufzeit.');
+            if (businessStatus?.zustand !== 'bereit') await pythonErmitteln(false, signal);
+            if (businessStatus?.zustand !== 'bereit')
+              throw new Error(
+                'Die mitgelieferten Komponenten für Tabellen und Dokumente sind nicht verfügbar. Installiere ScriptLab erneut.',
+              );
           },
         },
         (zustand) => laufablage.sichern(zustand),

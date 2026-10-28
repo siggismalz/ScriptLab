@@ -19,7 +19,7 @@ export type BeispielKennung =
   | 'dateiliste-python';
 
 export interface Einstellungen {
-  /** Fehlende Werte älterer lokaler Einstellungen werden im Hauptprozess als dunkel ergänzt. */
+  /** Beim ersten Start hell; eine gespeicherte Auswahl bleibt erhalten. */
   darstellung?: 'dunkel' | 'hell' | 'system';
   letzteSkriptsprache: Skriptsprache | null;
   pythonInterpreter: string | null;
@@ -124,6 +124,12 @@ export interface ScriptLabBruecke {
   laufProtokollKopieren(laufId: string): Promise<Antwort<void>>;
   laufProtokollSpeichern(laufId: string): Promise<Antwort<boolean>>;
   testStarten(projekt: Projekt, optionen: TestOptionen): Promise<Antwort<TestZustand>>;
+  datenvorschauStarten(
+    projekt: Projekt,
+    blockId: string,
+    optionen: TestOptionen,
+  ): Promise<Antwort<TestZustand>>;
+  quelleWaehlen(blockId: string, feldPfad: string[]): Promise<Antwort<string | null>>;
   testStoppen(laufId: string): Promise<Antwort<TestZustand>>;
   testAusgabeLeeren(): Promise<Antwort<TestZustand>>;
   testAusgabeKopieren(): Promise<Antwort<void>>;

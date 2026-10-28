@@ -53,6 +53,9 @@ const bruecke: ScriptLabBruecke = {
   laufProtokollKopieren: (laufId) => ipcRenderer.invoke('scriptlab:lauf-protokoll-kopieren', laufId),
   laufProtokollSpeichern: (laufId) => ipcRenderer.invoke('scriptlab:lauf-protokoll-speichern', laufId),
   testStarten: (projekt, optionen) => ipcRenderer.invoke('scriptlab:test-starten', { projekt, optionen }),
+  datenvorschauStarten: (projekt, blockId, optionen) =>
+    ipcRenderer.invoke('scriptlab:datenvorschau-starten', { projekt, blockId, optionen }),
+  quelleWaehlen: (blockId, feldPfad) => ipcRenderer.invoke('scriptlab:quelle-waehlen', { blockId, feldPfad }),
   testStoppen: (laufId) => ipcRenderer.invoke('scriptlab:test-stoppen', laufId),
   testAusgabeLeeren: () => ipcRenderer.invoke('scriptlab:test-leeren'),
   testAusgabeKopieren: () => ipcRenderer.invoke('scriptlab:test-kopieren'),

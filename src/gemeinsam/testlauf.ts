@@ -42,6 +42,7 @@ export interface TestOptionen {
     speicherMB: number;
     tempGB: number;
     fortsetzen: boolean;
+    vorschauBlockId?: string;
   };
   basisVerzeichnis: string | null;
   zeitlimitSekunden: number;

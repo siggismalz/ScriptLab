@@ -275,10 +275,17 @@ internal static class LaufzeitHost
             start.Start.Fensteranzeige = 0;
             start.Start.Eingabe = eingabeNull; start.Start.Ausgabe = ausgabe; start.Start.Fehler = fehlerausgabe; start.Attribute = liste;
             StringBuilder argumente = new StringBuilder(python
-                ? Argument(host) + " -I -u -X utf8 " + Argument(script) + " --scriptlab-basis " + Argument(basis) + " --scriptlab-token " + Argument(args[7])
+                ? Argument(host) + " -I -B -u -X utf8 " + Argument(script) + " --scriptlab-basis " + Argument(basis) + " --scriptlab-token " + Argument(args[7])
                 : Argument(host) + " //Nologo //U //I //E:VBScript " + Argument(script) + " " + Argument("/ScriptLabBasis:" + basis) + " " + Argument("/ScriptLabTestToken:" + args[7]));
             if (argumente.Length > 32000) throw new ArgumentException("Die Windows-Aufrufargumente sind zu lang.");
             if (KontrollePruefen(kontrolle, befehl)) return unchecked((int)StopExitcode);
+            // Die mitgelieferten Dialogbibliotheken dürfen keine fremde Tcl/Tk-Installation übernehmen.
+            if (python)
+            {
+                Environment.SetEnvironmentVariable("TCL_LIBRARY", null);
+                Environment.SetEnvironmentVariable("TK_LIBRARY", null);
+                Environment.SetEnvironmentVariable("TCLLIBPATH", null);
+            }
             Pruefen(CreateProcessW(host, argumente, IntPtr.Zero, IntPtr.Zero, true, CreateSuspended | CreateNoWindow | ExtendedStartup, IntPtr.Zero, basis, ref start, out prozess), "Windows-Scripthost anlegen");
             CloseHandle(ausgabe); ausgabe = IntPtr.Zero;
             CloseHandle(fehlerausgabe); fehlerausgabe = IntPtr.Zero;
