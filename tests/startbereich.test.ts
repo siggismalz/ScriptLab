@@ -108,7 +108,7 @@ describe('Bibliotheksansicht ohne zweite Datenwahrheit', () => {
     };
     const html = renderToStaticMarkup(createElement(Startbereich, props));
     expect(html).toContain('Wird geladen');
-    expect(html).not.toContain('0 Projekte');
+    expect(html).not.toContain('0 Workflows');
     expect(html).not.toContain('0 Entwürfe');
     expect(html).not.toContain('Weiterbearbeiten');
     expect(aktion).not.toHaveBeenCalled();
@@ -120,7 +120,7 @@ describe('Bibliotheksansicht ohne zweite Datenwahrheit', () => {
         aktiveInfo: { name: 'Testentwurf', dateiname: null, geaendert: true, skriptsprache: 'vbs' },
       }),
     );
-    expect(geladen).toContain('0 Projekte bekannt');
+    expect(geladen).toContain('0 Workflows bekannt');
     expect(geladen).toContain('Weiterbearbeiten');
   });
 
@@ -152,7 +152,7 @@ describe('Bibliotheksansicht ohne zweite Datenwahrheit', () => {
     expect(html).toContain(props.daten!.hinweis);
     expect(html.match(/Bestand nicht vollständig geladen/g)).toHaveLength(2);
     expect(html).toContain('Ein leerer Bereich bedeutet hier nicht');
-    expect(html).not.toMatch(/0 Projekte|0 Entwürfe|Noch kein Projekt ausdrücklich geöffnet/);
+    expect(html).not.toMatch(/0 Workflows|0 Entwürfe|Noch kein Projekt ausdrücklich geöffnet/);
     expect(aktion).not.toHaveBeenCalled();
   });
 });

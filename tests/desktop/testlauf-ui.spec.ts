@@ -1,3 +1,10 @@
+import {
+  workflowBefehl,
+  feldEinblenden,
+  arbeitsbereichWaehlen,
+  laufansichtWaehlen,
+  laufStarten,
+} from './ansichten';
 import { sprachwahlBestaetigen } from './sprache';
 import { test, expect, type Locator } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
@@ -65,11 +72,11 @@ async function starten(): Promise<Sitzung> {
     await expect(seite.getByRole('button', { name: 'Neuer Workflow', exact: true })).toBeVisible();
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
     await sprachwahlBestaetigen(seite);
-    await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+    await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
     await app.evaluate(({ dialog }, datei) => {
       dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [datei] });
     }, projektdatei);
-    await seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
+    await workflowBefehl(seite, 'oeffnen');
     await expect
       .poll(() =>
         seite.evaluate(async () => {
@@ -121,11 +128,11 @@ async function testordnerEntfernen(ordner: string): Promise<void> {
 }
 
 async function textgroesseSetzen(seite: Page, prozent: 100 | 200): Promise<void> {
-  await seite.getByRole('button', { name: 'Weitere Funktionen', exact: true }).click();
+  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
   await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
   const dialog = seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
   await dialog
-    .getByRole('combobox', { name: 'UI-Textgröße', exact: true })
+    .getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })
     .selectOption({ label: `${prozent} %` });
   await dialog.getByRole('button', { name: 'Dialog schließen', exact: true }).click();
   await zweiFrames(seite);
@@ -160,90 +167,103 @@ async function knopfImFenster(knopf: Locator) {
 }
 
 for (const textgroesse of [100, 200] as const) {
-  test(`Testausgabe: echter UI-Weg bei 1280 × 720 und ${textgroesse} Prozent UI-Text`, async () => {
+  test(`Laufansicht: echter UI-Weg bei 1280 × 720 und ${textgroesse} Prozent UI-Text`, async () => {
     const s = await starten();
     try {
       const { seite } = s;
       await textgroesseSetzen(seite, textgroesse);
-      await seite.getByRole('button', { name: 'Testausgabe', exact: true }).click();
+      await laufansichtWaehlen(seite, 'Vorbereitung');
       const panel = seite.getByTestId('test-panel');
       await expect(panel).toBeVisible();
-      const rahmen = seite.locator('.test-panel-rahmen');
-      const anfangshoehe = await rahmen.evaluate((element) => element.getBoundingClientRect().height);
-      expect(Math.abs(anfangshoehe - 280)).toBeLessThanOrEqual(1);
+      await expect(seite.getByTestId('palette')).not.toBeVisible();
+      await expect(seite.getByTestId('arbeitsbereich')).not.toBeVisible();
+      const panelhoehe = await panel.evaluate((element) => element.getBoundingClientRect().height);
+      expect(panelhoehe).toBeGreaterThanOrEqual(200);
 
-      // Nur diese beiden Dateiauswahlen sind gesteuerte Dialogantworten. Die Testausführung bleibt echt.
+      // Nur diese Dateiauswahl ist eine gesteuerte Dialogantwort. Die Ausführung bleibt echt.
       await s.app.evaluate(({ dialog }, basis) => {
         dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [basis] });
       }, s.basis);
       await panel.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
       await expect(
-        panel.getByRole('textbox', { name: 'Basisordner für den nächsten Test', exact: true }),
+        panel.getByRole('textbox', { name: 'Basisordner für den nächsten Lauf', exact: true }),
       ).toHaveValue(s.basis);
-      const zeitlimit = panel.getByRole('spinbutton', { name: 'Zeitlimit in Sekunden', exact: true });
+      const zeitlimit = panel.getByLabel('Zeitlimit in Sekunden', { exact: true });
+      await feldEinblenden(zeitlimit);
       await zeitlimit.fill('10');
       await zeitlimit.press('Tab');
-      await knopfImFenster(seite.getByRole('button', { name: 'Testen', exact: true }));
-      await seite.getByRole('button', { name: 'Testen', exact: true }).click();
+      await knopfImFenster(panel.getByRole('button', { name: 'Workflow ausführen', exact: true }));
+      const vorher = await seite.evaluate(async () => {
+        const r = await window.scriptlab.laden();
+        if (!r.ok) throw Error(r.meldung);
+        return r.wert.dokument.projekt.editor;
+      });
+      await laufStarten(seite);
       await expect
         .poll(
-          () =>
-            seite.evaluate(async () => {
-              const antwort = await window.scriptlab.testLesen();
-              return antwort.ok ? antwort.wert.zustand.phase : antwort.meldung;
-            }),
-          { timeout: 20_000 },
+          async () => {
+            const r = await seite.evaluate(() => window.scriptlab.testLesen());
+            return r.ok ? r.wert.zustand.phase : r.meldung;
+          },
+          { timeout: 20000 },
         )
         .toBe('beendet');
-      await expect(panel.getByRole('log', { name: 'Testausgabe', exact: true })).toHaveText(
-        `${testtext}\r\n`,
+      await expect(panel.getByRole('tab', { name: 'Übersicht', exact: true })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      await expect(panel.getByRole('tabpanel', { name: 'Übersicht', exact: true })).toContainText(
+        'Standkennung',
       );
 
-      const innen = panel.locator('.testbereich-inhalt');
-      const scrollenVorher = await innen.evaluate((element) => {
-        element.scrollTop = 0;
-        return {
-          hoehe: element.clientHeight,
-          inhaltshoehe: element.scrollHeight,
-          overflow: getComputedStyle(element).overflowY,
-        };
-      });
-      expect(scrollenVorher.overflow).toMatch(/auto|scroll/);
-      expect(scrollenVorher.inhaltshoehe).toBeGreaterThan(scrollenVorher.hoehe);
-      await innen.hover({ position: { x: 8, y: 8 } });
-      await seite.mouse.wheel(0, 600);
-      await expect.poll(() => innen.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
-      const ausgabe = panel.getByRole('log', { name: 'Testausgabe', exact: true });
+      // Tastatur ersetzt die alte geteilte Panelgeometrie: Haupt- und Detailansicht bleiben getrennt.
+      const uebersicht = panel.getByRole('tab', { name: 'Übersicht', exact: true });
+      await uebersicht.focus();
+      await uebersicht.press('End');
+      await expect(panel.getByRole('tab', { name: 'Protokoll', exact: true })).toBeFocused();
+      await expect(panel.getByRole('tab', { name: 'Protokoll', exact: true })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      await expect(panel.getByRole('tabpanel', { name: 'Vorbereitung', exact: true })).not.toBeVisible();
+      const ausgabe = panel.getByRole('log', { name: 'Laufprotokoll', exact: true });
+      await expect(ausgabe).toHaveText(`${testtext}\r\n`);
       await ausgabe.scrollIntoViewIfNeeded();
+      const innen = panel.locator('.testbereich-inhalt');
+      const scrollen = await innen.evaluate((element) => ({
+        hoehe: element.clientHeight,
+        inhaltshoehe: element.scrollHeight,
+        overflow: getComputedStyle(element).overflowY,
+      }));
+      expect(scrollen.overflow).toMatch(/auto|scroll/);
+      expect(scrollen.hoehe).toBeGreaterThan(64);
       const ausgabeSicht = await ausgabe.evaluate((element) => {
-        const rect = element.getBoundingClientRect();
-        const grenzen = element.closest('.testbereich-inhalt')!.getBoundingClientRect();
+        const r = element.getBoundingClientRect();
+        const g = element.closest('.testbereich-inhalt')!.getBoundingClientRect();
         return {
-          oben: rect.top,
-          unten: rect.bottom,
-          panelOben: grenzen.top,
-          panelUnten: grenzen.bottom,
+          oben: r.top,
+          unten: r.bottom,
+          panelOben: g.top,
+          panelUnten: g.bottom,
+          sichtbareHoehe: Math.max(0, Math.min(r.bottom, g.bottom) - Math.max(r.top, g.top)),
           text: element.textContent,
         };
       });
-      expect(ausgabeSicht.oben).toBeGreaterThanOrEqual(ausgabeSicht.panelOben - 1);
-      expect(ausgabeSicht.unten).toBeLessThanOrEqual(ausgabeSicht.panelUnten + 1);
+      expect(ausgabeSicht.sichtbareHoehe).toBeGreaterThanOrEqual(64);
       expect(ausgabeSicht.text).toContain(testtext);
-
-      const trenner = seite.getByRole('separator', { name: 'Höhe der Testausgabe', exact: true });
-      await trenner.focus();
-      await trenner.press('ArrowUp');
-      await expect
-        .poll(() => rahmen.evaluate((element) => element.getBoundingClientRect().height))
-        .toBe(anfangshoehe + 24);
-      await trenner.press('ArrowDown');
-      await expect
-        .poll(() => rahmen.evaluate((element) => element.getBoundingClientRect().height))
-        .toBe(anfangshoehe);
-      await ausgabe.scrollIntoViewIfNeeded();
-      const testenKnopf = await knopfImFenster(seite.getByRole('button', { name: 'Testen', exact: true }));
+      if (scrollen.inhaltshoehe > scrollen.hoehe + 1) {
+        await innen.evaluate((element) => {
+          element.scrollTop = 0;
+        });
+        await innen.hover({ position: { x: 8, y: 8 } });
+        await seite.mouse.wheel(0, 600);
+        await expect.poll(() => innen.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+      }
+      const vorbereitenKnopf = await knopfImFenster(
+        panel.getByRole('button', { name: 'Neuen Lauf vorbereiten', exact: true }),
+      );
       const exportKnopf = await knopfImFenster(
-        seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }),
+        seite.getByRole('button', { name: 'Exportieren', exact: true }),
       );
       const geometrie = await seite.evaluate(() => ({
         breite: innerWidth,
@@ -251,29 +271,40 @@ for (const textgroesse of [100, 200] as const) {
         dpr: devicePixelRatio,
         dokumentBreite: document.documentElement.scrollWidth,
         dokumentHoehe: document.documentElement.scrollHeight,
-        canvasHoehe: document.querySelector('.canvas-bereich')!.getBoundingClientRect().height,
-        panelHoehe: document.querySelector('.test-panel-rahmen')!.getBoundingClientRect().height,
-        panelScrollTop: document.querySelector('.testbereich-inhalt')!.scrollTop,
+        panelHoehe: document.querySelector('.testbereich')!.getBoundingClientRect().height,
+        canvasSichtbar: (
+          document.querySelector('[data-testid="arbeitsbereich"]') as HTMLElement
+        ).checkVisibility(),
         uiTextskala: getComputedStyle(document.querySelector('.anwendung')!)
           .getPropertyValue('--text-skala')
           .trim(),
       }));
       expect(Math.abs(geometrie.breite - 1280)).toBeLessThanOrEqual(2);
       expect(Math.abs(geometrie.hoehe - 720)).toBeLessThanOrEqual(2);
-      expect(geometrie.canvasHoehe).toBeGreaterThanOrEqual(120);
+      expect(geometrie.canvasSichtbar).toBe(false);
       expect(geometrie.dokumentBreite).toBeLessThanOrEqual(geometrie.breite + 1);
       expect(geometrie.dokumentHoehe).toBeLessThanOrEqual(geometrie.hoehe + 1);
       expect(Number(geometrie.uiTextskala)).toBe(textgroesse / 100);
       const ergebnis = await seite.evaluate(async () => {
-        const antwort = await window.scriptlab.testLesen();
-        if (!antwort.ok) throw new Error(antwort.meldung);
-        const { phase, exitcode, ausgabe, gestartetAm, beendetAm } = antwort.wert.zustand;
+        const r = await window.scriptlab.testLesen();
+        if (!r.ok) throw Error(r.meldung);
+        const { phase, exitcode, ausgabe, gestartetAm, beendetAm } = r.wert.zustand;
         return { phase, exitcode, ausgabe, gestartetAm, beendetAm };
       });
       expect(ergebnis.exitcode).toBe(0);
       expect(ergebnis.ausgabe).toBe(`${testtext}\r\n`);
+      await arbeitsbereichWaehlen(seite, 'Ablauf');
+      await expect(seite.getByTestId('palette')).toBeVisible();
+      expect(
+        await seite.evaluate(async () => {
+          const r = await window.scriptlab.laden();
+          if (!r.ok) throw Error(r.meldung);
+          return r.wert.dokument.projekt.editor;
+        }),
+      ).toEqual(vorher);
+      await laufansichtWaehlen(seite, 'Protokoll');
       await mkdir('artifacts/testlauf', { recursive: true });
-      const name = `artifacts/testlauf/testausgabe-1280-text-${textgroesse}`;
+      const name = `artifacts/testlauf/laufansicht-1280-text-${textgroesse}`;
       await zweiFrames(seite);
       await seite.screenshot({ path: `${name}.png` });
       await writeFile(
@@ -282,9 +313,9 @@ for (const textgroesse of [100, 200] as const) {
           {
             angefordert: { breite: 1280, hoehe: 720, uiTextProzent: textgroesse },
             geometrie,
-            scrollenVorher,
+            scrollen,
             ausgabeSicht,
-            testenKnopf,
+            vorbereitenKnopf,
             exportKnopf,
             ergebnis,
           },

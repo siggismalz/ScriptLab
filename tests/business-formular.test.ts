@@ -160,8 +160,8 @@ describe('Verständliche, typisierte Business-Formulare', () => {
         }),
       );
       expect(html).toContain(`<option value="${profil}" selected="">`);
-      expect(html).toContain('DuckDB-Speicherlimit in MB');
-      expect(html).not.toContain('DuckDB-Speicherlimit in MiB');
+      expect(html).toContain('Speicherlimit für Datenverarbeitung in MB');
+      expect(html).not.toContain('Speicherlimit für Datenverarbeitung in MiB');
       expect(html).toContain('<option value="nein" selected="">Nein</option>');
       expect(html).toContain('Zahl mit Komma oder Punkt');
       expect(html).toContain('value="12.5"');
@@ -197,7 +197,9 @@ describe('Verständliche, typisierte Business-Formulare', () => {
       [{ ...parameter('Text', '2026-10'), name: 'Monat', beschriftung: 'Berichtsmonat' }],
     );
     expect(html).toContain('value="Datum"');
-    expect(html).toContain('Workflowparameter „Berichtsmonat“');
+    expect(html).toContain(
+      '<option value="parameter:Monat" selected="">Workflowparameter · Berichtsmonat</option>',
+    );
     expect(html).not.toContain('[object Object]');
     expect(vergleichFuerFormular(bedingung)).toEqual({
       art: 'vergleich',
@@ -253,10 +255,54 @@ describe('Verständliche, typisierte Business-Formulare', () => {
       [parameter()],
       [{ id: 'var-datei', name: 'Aktuelle Datei' }],
     );
-    expect(html).toContain('Variable: Aktuelle Datei');
-    expect(html).toContain('<option value="var-datei" selected="">Aktuelle Datei</option>');
-    expect(html).toContain('Dateipfad: Workflowparameter');
+    expect(html).toContain(
+      '<option value="variable:var-datei" selected="">Variable · Aktuelle Datei</option>',
+    );
+    expect(html).toContain('<optgroup label="Workflowparameter">');
+    expect(html).toContain('<option value="parameter:Wert">Workflowparameter · Ein Testwert</option>');
+    expect(html).not.toContain('disabled=""');
     expect(html).not.toContain('[object Object]');
+  });
+  it('zeigt eine gewählte Bindung ohne Spiegeltextbox und öffnet Alternativen bei festen Werten erst bei Bedarf', () => {
+    const feld: KonfigFeld = { name: 'pfad', titel: 'Dateipfad', art: 'text', standard: '' };
+    const gebunden = { parameter: 'Wert' };
+    const vorher = structuredClone(gebunden);
+    const html = render(
+      createElement(KonfigEingabe, { feld, wert: gebunden, aendern: nichts, parameter: [parameter()] }),
+    );
+    expect(html.match(/<select/g)).toHaveLength(1);
+    expect(html).toContain(
+      '<option value="parameter:Wert" selected="">Workflowparameter · Ein Testwert</option>',
+    );
+    expect(html).not.toContain('<input');
+    expect(html).not.toContain('<details');
+    expect(gebunden).toEqual(vorher);
+    const fest = render(
+      createElement(KonfigEingabe, { feld, wert: 'quelle.csv', aendern: nichts, parameter: [parameter()] }),
+    );
+    expect(fest).toContain('value="quelle.csv"');
+    expect(fest).toContain('<details><summary>Wertquelle ändern</summary>');
+    expect(fest).not.toContain('<details open');
+  });
+  it('erhält eine nicht mehr definierte Parameterbindung sichtbar, ohne sie beim Rendern zu ersetzen', () => {
+    const feld: KonfigFeld = { name: 'pfad', titel: 'Dateipfad', art: 'text', standard: '' };
+    const wert = { parameter: 'FruehererPfad' };
+    let geaendert = false;
+    const html = render(
+      createElement(KonfigEingabe, {
+        feld,
+        wert,
+        aendern: () => {
+          geaendert = true;
+        },
+        parameter: [],
+      }),
+    );
+    expect(html).toContain(
+      '<option value="parameter:FruehererPfad" selected="">Workflowparameter · FruehererPfad (nicht definiert)</option>',
+    );
+    expect(geaendert).toBe(false);
+    expect(wert).toEqual({ parameter: 'FruehererPfad' });
   });
   it('bietet Steuerungsblöcke nicht als vermeintliche Ergebnisquelle an', () => {
     const quelle = (typ: string, id: string) =>

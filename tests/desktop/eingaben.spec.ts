@@ -346,13 +346,14 @@ test('begrenzt Undo im selben JS-Turn nach einem Einfügeklick auf den neuen Bau
 test.describe('vorhandenes Profil aus der bisherigen Anwendung', () => {
   test.use({ profilEinstellungen: { automatischeUpdates: false, vorabversionen: true } });
 
-  test('ergänzt vier fehlende UI-Einstellungen und erhält vorhandene Updatevorgaben', async () => {
+  test('ergänzt fehlende Darstellungseinstellungen und erhält vorhandene Updatevorgaben', async () => {
     const gelesen = await seite.evaluate(() => window.scriptlab.laden());
     expect(gelesen.ok).toBe(true);
     if (!gelesen.ok) throw new Error(gelesen.meldung);
     expect(gelesen.wert.einstellungen).toEqual({
       automatischeUpdates: false,
       vorabversionen: true,
+      darstellung: 'dunkel',
       palettenBreite: 272,
       paletteEingeklappt: false,
       eigenschaftenAngeheftet: false,
@@ -364,7 +365,9 @@ test.describe('vorhandenes Profil aus der bisherigen Anwendung', () => {
     const dialog = await einstellungenOeffnen();
     await expect(dialog.getByRole('checkbox', { name: 'Automatisch nach Updates suchen' })).not.toBeChecked();
     await expect(dialog.getByRole('checkbox', { name: 'Vorabversionen bewusst zulassen' })).toBeChecked();
-    await expect(dialog.getByRole('combobox', { name: 'UI-Textgröße', exact: true })).toHaveValue('1');
+    await expect(dialog.getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })).toHaveValue(
+      '1',
+    );
     await expect(
       dialog.getByRole('spinbutton', { name: 'Breite der Bausteinpalette', exact: true }),
     ).toHaveValue('272');
@@ -373,6 +376,7 @@ test.describe('vorhandenes Profil aus der bisherigen Anwendung', () => {
 
 test('weist ungültige UI-Einstellungen über IPC ab und erhält den gespeicherten Stand', async () => {
   const bestaetigt: Einstellungen = {
+    darstellung: 'dunkel',
     letzteSkriptsprache: 'vbs',
     pythonInterpreter: null,
     automatischeUpdates: false,
@@ -416,19 +420,16 @@ test('weist ungültige UI-Einstellungen über IPC ab und erhält den gespeichert
 
 const beispiele = [
   {
-    menue: 'Beispiel: Begrüßung',
     datei: '01-Begruessung.scriptlab',
     name: 'Eine Begrüßung',
     blockanzahl: 3,
   },
   {
-    menue: 'Beispiel: Datei-Backup',
     datei: '02-Datei-Backup.scriptlab',
     name: 'Testdatei sichern',
     blockanzahl: 13,
   },
   {
-    menue: 'Beispiel: Dateinamenliste',
     datei: '03-Dateinamenliste.scriptlab',
     name: 'Dateinamen in eine Textdatei schreiben',
     blockanzahl: 17,
@@ -471,8 +472,14 @@ for (const beispiel of beispiele) {
       expect(await readFile(eingang, 'utf8')).toBe('Unveränderter Eingang.');
     }
     await zieleUnveraendert();
-    await seite.getByRole('button', { name: 'Projektmenü', exact: true }).click();
-    await seite.getByRole('menuitem', { name: beispiel.menue, exact: true }).click();
+    await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
+    await seite.getByRole('menuitem', { name: 'Vorlagen', exact: true }).click();
+    await seite
+      .getByTestId('beispiele')
+      .getByRole('article')
+      .filter({ hasText: beispiel.datei })
+      .getByRole('button', { name: 'Als Vorlage öffnen', exact: true })
+      .click();
     await expect.poll(async () => (await projektLesen()).name).toBe(`${beispiel.name} (Kopie)`);
     const geladen = await projektLesen();
     expect(geladen.projektKennung).toMatch(/^[a-f0-9-]{36}$/i);
@@ -492,7 +499,10 @@ for (const beispiel of beispiele) {
     await app.evaluate(({ dialog }, ziel) => {
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: ziel });
     }, exportDatei);
-    await seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
+    await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
+    const exportdialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
+    await exportdialog.getByRole('combobox', { name: 'Inhalt', exact: true }).selectOption('script');
+    await exportdialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
     await expect(seite.getByRole('status', { name: 'Export abgeschlossen', exact: true })).toBeVisible();
     const bytes = await readFile(exportDatei);
     expect([...bytes.subarray(0, 2)]).toEqual([0xff, 0xfe]);

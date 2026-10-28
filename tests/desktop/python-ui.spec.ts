@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { basename, join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { sprachwahlBestaetigen } from './sprache';
+import { laufansichtWaehlen, laufStarten } from './ansichten';
 
 interface Sitzung {
   app: ElectronApplication;
@@ -156,7 +157,7 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     await sprachwahlBestaetigen(seite, 'python');
     await editorBereit(seite);
     await expect(seite.getByTestId('editor-sprache')).toHaveText('Python');
-    await expect(seite.getByRole('button', { name: 'Python-Script exportieren', exact: true })).toBeVisible();
+    await expect(seite.getByRole('button', { name: 'Exportieren', exact: true })).toBeVisible();
     expect((await dokument(seite)).dokument.projekt.skriptsprache).toBe('python');
     expect((await dokument(seite)).einstellungen.letzteSkriptsprache).toBe('python');
 
@@ -193,7 +194,11 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     await s.app.evaluate(({ dialog }, datei) => {
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: datei });
     }, exportdatei);
-    await seite.getByRole('button', { name: 'Python-Script exportieren', exact: true }).click();
+    await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
+    const exportdialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
+    await expect(exportdialog.getByRole('combobox', { name: 'Inhalt', exact: true })).toHaveValue('script');
+    await expect(exportdialog.locator('option:checked')).toContainText('Python-Script (.py)');
+    await exportdialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
     await expect(seite.getByRole('heading', { name: 'Script gespeichert', exact: true })).toBeVisible();
     expect(await readFile(exportdatei, 'utf8')).toBe(await vorschau.textContent());
 
@@ -245,7 +250,7 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     await sprachwahlBestaetigen(seite, 'vbs');
     await editorBereit(seite);
     await expect(seite.getByTestId('editor-sprache')).toHaveText('VBScript (VBS)');
-    await expect(seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true })).toBeVisible();
+    await expect(seite.getByRole('button', { name: 'Exportieren', exact: true })).toBeVisible();
     const vbsKonfiguration = await einstellungen(seite);
     await expect(
       vbsKonfiguration.getByRole('heading', { name: 'Signatur für dieses Projekt', exact: true }),
@@ -274,18 +279,18 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     if (runtime.zustand === 'bereit') {
       const basis = join(s.ordner, 'Basis');
       await mkdir(basis);
-      await seite.getByRole('button', { name: 'Testausgabe', exact: true }).click();
+      await laufansichtWaehlen(seite, 'Vorbereitung');
       const panel = seite.getByTestId('test-panel');
       await s.app.evaluate(({ dialog }, pfad) => {
         dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
       }, basis);
       await panel.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
       await expect(
-        panel.getByRole('textbox', { name: 'Basisordner für den nächsten Test', exact: true }),
+        panel.getByRole('textbox', { name: 'Basisordner für den nächsten Lauf', exact: true }),
       ).toHaveValue(basis);
       await panel.getByRole('spinbutton', { name: 'Zeitlimit in Sekunden', exact: true }).fill('10');
       await panel.getByRole('spinbutton', { name: 'Zeitlimit in Sekunden', exact: true }).press('Tab');
-      await seite.getByRole('button', { name: 'Testen', exact: true }).click();
+      await laufStarten(seite);
       try {
         await expect
           .poll(
@@ -312,7 +317,8 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
         });
         throw fehler;
       }
-      await expect(panel.getByRole('log', { name: 'Testausgabe', exact: true })).toContainText(
+      await laufansichtWaehlen(seite, 'Protokoll');
+      await expect(panel.getByRole('log', { name: 'Laufprotokoll', exact: true })).toContainText(
         'Klare Python-Testausgabe ä',
       );
       const r = await seite.evaluate(() => window.scriptlab.testLesen());
@@ -337,7 +343,7 @@ test('Sprachwahl: gleichgewichtige Radiokarten, Tastatur und große UI-Schrift o
     await seite.getByRole('button', { name: 'Einstellungen', exact: true }).click();
     const einstellungen = seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
     await einstellungen
-      .getByRole('combobox', { name: 'UI-Textgröße', exact: true })
+      .getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })
       .selectOption({ label: '200 %' });
     await einstellungen.getByRole('button', { name: 'Dialog schließen', exact: true }).click();
     for (const breite of [1280, 850]) {
@@ -362,12 +368,20 @@ test('Sprachwahl: gleichgewichtige Radiokarten, Tastatur und große UI-Schrift o
         karten.map((karte) => ({
           breite: karte.getBoundingClientRect().width,
           oben: karte.getBoundingClientRect().top,
+          links: karte.getBoundingClientRect().left,
+          hoehe: karte.getBoundingClientRect().height,
           text: karte.textContent,
         })),
       );
       expect(Math.abs(rahmen[0].breite - rahmen[1].breite)).toBeLessThanOrEqual(1);
-      if (breite < 900) expect(rahmen[1].oben).toBeGreaterThan(rahmen[0].oben);
-      else expect(Math.abs(rahmen[0].oben - rahmen[1].oben)).toBeLessThanOrEqual(1);
+      // Bei großer Oberflächenschrift darf der Dialog die Karten auch im breiten Fenster stapeln.
+      // Gleiche Breite und eine überlappungsfreie Anordnung erhalten die gleichwertige Auswahl.
+      if (Math.abs(rahmen[0].oben - rahmen[1].oben) <= 1)
+        expect(rahmen[1].links).toBeGreaterThanOrEqual(rahmen[0].links + rahmen[0].breite);
+      else {
+        expect(Math.abs(rahmen[0].links - rahmen[1].links)).toBeLessThanOrEqual(1);
+        expect(rahmen[1].oben).toBeGreaterThanOrEqual(rahmen[0].oben + rahmen[0].hoehe);
+      }
       const geometrie = await seite.evaluate(() => ({
         breite: innerWidth,
         hoehe: innerHeight,

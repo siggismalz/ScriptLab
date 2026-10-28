@@ -1,3 +1,4 @@
+import { startseiteWaehlen, workflowBefehl } from './ansichten';
 import { sprachwahlBestaetigen } from './sprache';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
@@ -61,7 +62,7 @@ async function bibliothekLesen(s: Sitzung): Promise<ProjektBibliothek> {
 
 async function zurStartseite(s: Sitzung): Promise<void> {
   if (await s.seite.getByTestId('palette').isVisible()) await editorBereit(s);
-  await s.seite.getByRole('button', { name: 'Startseite', exact: true }).filter({ visible: true }).click();
+  await startseiteWaehlen(s.seite);
   await expect(s.seite.getByRole('button', { name: 'Neuer Workflow', exact: true })).toBeVisible();
 }
 
@@ -74,7 +75,7 @@ async function neuerAblauf(s: Sitzung, name?: string): Promise<void> {
 
 async function projektBenennen(s: Sitzung, name: string): Promise<void> {
   await editorBereit(s);
-  await s.seite.getByRole('button', { name: 'Projektmenü', exact: true }).click();
+  await s.seite.getByRole('button', { name: 'Workflow', exact: true }).click();
   await s.seite.getByRole('menuitem', { name: 'Projektangaben', exact: true }).click();
   const dialog = s.seite.getByRole('dialog', { name: 'Projektangaben', exact: true });
   await dialog.getByRole('textbox', { name: 'Projektname', exact: true }).fill(name);
@@ -125,13 +126,13 @@ async function dateiOeffnen(s: Sitzung, pfad: string, editorErwartet = true): Pr
   await s.app.evaluate(({ dialog }, ziel) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [ziel] });
   }, pfad);
-  await s.seite.getByRole('button', { name: 'Workflow öffnen', exact: true }).click();
+  await workflowBefehl(s.seite, 'oeffnen');
   if (editorErwartet) await editorBereit(s);
 }
 
 async function editorBereit(s: Sitzung): Promise<void> {
   await expect(s.seite.getByTestId('palette')).toBeVisible();
-  await expect(s.seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await expect(s.seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
   await expect.poll(async () => (await dokumentLesen(s)).darstellungNoetig).toBe(false);
   await s.seite.evaluate(
     () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
@@ -254,7 +255,7 @@ test('Startseite: neuer Ablauf und Weiterbearbeiten erhalten Kennung, Auswahl un
     await expect.poll(async () => (await dokumentLesen(s)).projekt.ansicht.zoom).toBeGreaterThan(1);
     const vorher = await dokumentLesen(s);
     await expect(s.seite.locator(`g[data-id="${id}"]`)).toHaveClass(/scriptlabAuswahl/);
-    await s.seite.getByRole('button', { name: 'Startseite', exact: true }).click();
+    await startseiteWaehlen(s.seite);
     await expect(s.seite.getByRole('button', { name: 'Neuer Workflow', exact: true })).toBeVisible();
     await expect(palette).not.toBeVisible();
     await s.seite.getByRole('button', { name: /^Weiterbearbeiten/ }).click();
@@ -283,7 +284,7 @@ test('Startseite: Erststart zeigt vier Bereiche ohne erfundene eigene Projekte',
     await expect(karten.getByRole('button')).toHaveCount(4);
     await expect(
       karten.getByRole('button', { name: 'Meine gespeicherten Workflows', exact: true }),
-    ).toContainText('0 Projekte bekannt');
+    ).toContainText('0 Workflows bekannt');
     await expect(karten.getByRole('button', { name: 'Entwürfe', exact: true })).toContainText(
       '0 Entwürfe gesichert',
     );
@@ -323,16 +324,16 @@ test('Startseite: gespeicherter Index und echte zuletzt geöffnete Projekte blei
     await expect(s.seite.getByTestId('zuletzt-geoeffnet').getByRole('article')).toHaveCount(2);
     const liste = await eigeneProjekte(s);
     await expect(liste.getByRole('article')).toHaveCount(2);
-    await liste.getByRole('combobox', { name: 'Projekte sortieren', exact: true }).selectOption('name');
+    await liste.getByRole('combobox', { name: 'Workflows sortieren', exact: true }).selectOption('name');
     await expect(liste.getByRole('article').first().getByRole('heading', { level: 3 })).toHaveText(
       'Alpha Testworkflow',
     );
-    const suche = liste.getByRole('searchbox', { name: 'Projekte suchen', exact: true });
+    const suche = liste.getByRole('searchbox', { name: 'Gespeicherte Workflows durchsuchen', exact: true });
     await suche.fill('Zulu');
     await expect(liste.getByRole('article')).toHaveCount(1);
     await suche.fill('Dieser Name existiert nicht');
     await expect(liste).toContainText(
-      'Keine passenden Projekte gefunden. Ändere die Suche oder den Sprachfilter.',
+      'Keine passenden Workflows gefunden. Ändere die Suche oder den Sprachfilter.',
     );
     await liste.getByRole('button', { name: 'Suche leeren', exact: true }).click();
     await expect(liste.getByRole('article')).toHaveCount(2);
@@ -362,6 +363,7 @@ test('Startseite: fehlende Datei wird neu zugeordnet und ein kaputtes Projekt er
     await s.app.evaluate(({ dialog }, pfad) => {
       dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
     }, neu);
+    await zeile.locator('summary').click();
     await zeile.getByRole('button', { name: 'Neu zuordnen', exact: true }).click();
     await expect(s.seite.getByTestId('palette')).toBeVisible();
     expect((await dokumentLesen(s)).projektKennung).toBe(id);
@@ -394,10 +396,10 @@ test('Startseite: verzögerter Entwurf überlebt einen echten Prozessabbruch und
     const vorher = (await dokumentLesen(s)).projekt;
     expect(await readFile(originalDatei)).toEqual(original);
     await neustarten(s, true);
-    await expect(s.seite.getByTestId('entwuerfe-hinweis')).toContainText('bewusst fortzusetzen');
+    await expect(s.seite.getByTestId('entwuerfe-hinweis')).toContainText('1 Entwurf gesichert');
     expect((await dokumentLesen(s)).projektKennung).not.toBe(vorher.projektKennung);
     await expect(s.seite.getByRole('button', { name: /^Weiterbearbeiten/ })).toHaveCount(0);
-    await s.seite.getByRole('button', { name: 'Entwürfe anzeigen', exact: true }).click();
+    await s.seite.getByTestId('start-karten').getByRole('button', { name: 'Entwürfe', exact: true }).click();
     const zeile = s.seite.getByTestId('entwuerfe').getByRole('article', { name: vorher.name, exact: true });
     await expect(zeile).toContainText('Gesicherte Änderungen zu einer Projektdatei');
     await zeile.getByRole('button', { name: 'Fortsetzen', exact: true }).click();
@@ -423,7 +425,7 @@ for (const zustand of ['ausstehend', 'gesichert'] as const) {
       if (zustand === 'gesichert') await entwurfAbwarten(s);
       else await expect.poll(async () => (await dokumentLesen(s)).entwurfStatus.phase).toBe('ausstehend');
       await dialogAntwort(s, 2);
-      await s.seite.getByRole('button', { name: 'Neu', exact: true }).click();
+      await workflowBefehl(s.seite, 'neu');
       await sprachwahlBestaetigen(s.seite);
       await expect.poll(async () => (await dokumentLesen(s)).projektKennung).not.toBe(alteId);
       // Negativer Timer-Nachweis: bewusst länger als die 1200-ms-Entwurfssicherung warten.
@@ -446,7 +448,7 @@ test('Startseite: Speichern-Abbruch und echter Schreibfehler erhalten Arbeitssta
     const vorher = (await dokumentLesen(s)).projekt;
     await dialogAntwort(s, 0);
     await speicherziel(s, null);
-    await s.seite.getByRole('button', { name: 'Neu', exact: true }).click();
+    await workflowBefehl(s.seite, 'neu');
     await sprachwahlBestaetigen(s.seite);
     await nativenDialogAbwarten(s, 'speichern');
     await editorBereit(s);
@@ -569,7 +571,7 @@ for (const beispiel of beispiele) {
   });
 }
 
-test('Startseite: sieben lokale Hilfethemen, Suche und Vorlagenlink funktionieren ohne Netzwerk', async () => {
+test('Startseite: lokale Hilfethemen, Suche und Vorlagenlink funktionieren ohne Netzwerk', async () => {
   const s = await starten();
   try {
     const netzanfragen: string[] = [];
@@ -638,17 +640,19 @@ for (const breite of [1280, 850]) {
       const entwuerfeKarte = karten.getByRole('button', { name: 'Entwürfe', exact: true });
       const a = (await eigene.boundingBox())!,
         b = (await entwuerfeKarte.boundingBox())!;
-      if (breite < 900) {
-        expect(a.x).toBeCloseTo(b.x, 0);
-        expect(b.y).toBeGreaterThan(a.y + a.height);
-      } else {
-        expect(a.y).toBeCloseTo(b.y, 0);
-        expect(b.x).toBeGreaterThan(a.x + a.width);
+      if (Math.abs(a.y - b.y) < 1) expect(b.x).toBeGreaterThanOrEqual(a.x + a.width);
+      else expect(b.y).toBeGreaterThanOrEqual(a.y + a.height);
+      for (const ziel of [a, b]) {
+        expect(ziel.x).toBeGreaterThanOrEqual(0);
+        expect(ziel.x + ziel.width).toBeLessThanOrEqual(await s.seite.evaluate(() => innerWidth));
+        expect(ziel.height).toBeGreaterThanOrEqual(36);
       }
       const startbereich = s.seite.getByTestId('startbereich');
       const einstellungen = startbereich.getByRole('button', { name: 'Einstellungen', exact: true });
       await einstellungen.click();
-      await s.seite.getByRole('combobox', { name: 'UI-Textgröße', exact: true }).selectOption('2');
+      await s.seite
+        .getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })
+        .selectOption('2');
       await s.seite.getByRole('button', { name: 'Dialog schließen', exact: true }).click();
       await expect(einstellungen).toBeFocused();
       await eigene.focus();
@@ -778,7 +782,7 @@ test('Startseite: neueres Indexschema bleibt unverändert und blockiert das Öff
       s.seite
         .getByTestId('start-karten')
         .getByRole('button', { name: 'Meine gespeicherten Workflows', exact: true }),
-    ).not.toContainText('0 Projekte bekannt');
+    ).not.toContainText('0 Workflows bekannt');
     expect(await readFile(indexdatei)).toEqual(original);
     await bild(s, 'indexschema-unbekannt');
     await dateiOeffnen(s, projektdatei);

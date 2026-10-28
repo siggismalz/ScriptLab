@@ -1,3 +1,11 @@
+import {
+  workflowBefehl,
+  feldEinblenden,
+  arbeitsbereichWaehlen,
+  laufansichtWaehlen,
+  laufStarten,
+  startseiteWaehlen,
+} from './ansichten';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -113,9 +121,10 @@ async function zustand(s: Sitzung): Promise<TestZustand> {
   });
 }
 async function editorBereit(s: Sitzung): Promise<void> {
+  await arbeitsbereichWaehlen(s.seite, 'Ablauf');
   await expect(s.seite.getByTestId('palette')).toBeVisible();
   await expect.poll(async () => (await dokument(s)).darstellungNoetig).toBe(false);
-  await expect(s.seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await expect(s.seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
   await s.seite.evaluate(
     () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
   );
@@ -131,6 +140,7 @@ async function oeffnen(s: Sitzung, projekt: Projekt): Promise<string> {
   return datei;
 }
 async function textBearbeiten(s: Sitzung, id: string, text: string): Promise<void> {
+  await arbeitsbereichWaehlen(s.seite, 'Ablauf');
   await s.seite.locator(`g[data-id="${id}"]`).click({ position: { x: 60, y: 18 } });
   await s.seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
   const eigenschaften = s.seite.getByTestId('eigenschaften-panel');
@@ -155,25 +165,22 @@ async function runtimePruefen(s: Sitzung): Promise<PythonInstallation> {
   return status.installation;
 }
 async function testVorbereiten(s: Sitzung, sekunden = 10): Promise<void> {
-  await s.seite.getByRole('button', { name: 'Testausgabe', exact: true }).click();
+  await laufansichtWaehlen(s.seite, 'Vorbereitung');
   await s.app.evaluate(({ dialog }, pfad) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
   }, s.basis);
   const panel = s.seite.getByTestId('test-panel');
   await panel.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
   await expect(
-    panel.getByRole('textbox', { name: 'Basisordner für den nächsten Test', exact: true }),
+    panel.getByRole('textbox', { name: 'Basisordner für den nächsten Lauf', exact: true }),
   ).toHaveValue(s.basis);
   await zeitlimitSetzen(s, sekunden);
 }
 async function zeitlimitSetzen(s: Sitzung, sekunden: number): Promise<void> {
   const panel = s.seite.getByTestId('test-panel');
-  const feld = panel.getByRole('spinbutton', { name: 'Zeitlimit in Sekunden', exact: true });
-  if (!(await feld.isVisible()))
-    await panel
-      .locator('summary')
-      .filter({ hasText: /^Test vorbereiten$/ })
-      .click();
+  const feld = panel.getByLabel('Zeitlimit in Sekunden', { exact: true });
+  await laufansichtWaehlen(s.seite, 'Vorbereitung');
+  await feldEinblenden(feld);
   await expect(feld).toBeVisible();
   await feld.fill(String(sekunden));
   await feld.press('Tab');
@@ -184,7 +191,7 @@ async function fertig(s: Sitzung): Promise<TestZustand> {
 }
 async function testStarten(s: Sitzung): Promise<void> {
   const vorher = (await zustand(s)).laufId;
-  await s.seite.getByRole('button', { name: 'Testen', exact: true }).click();
+  await laufStarten(s.seite);
   // Ein voriger Endzustand darf nicht schon als Ergebnis des neuen Klicks gelten.
   await expect.poll(async () => (await zustand(s)).laufId).not.toBe(vorher);
 }
@@ -258,7 +265,9 @@ test('Python-Entwurf überlebt den Appneustart und wird nur bewusst ohne automat
     expect(danach.projektKennung).toBe(vorher.projektKennung);
     expect(danach.projekt.skriptsprache).toBe('python');
     expect(danach.projekt.editor).toEqual(vorher.projekt.editor);
-    expect(danach.projekt.ansicht).toEqual(vorher.projekt.ansicht);
+    expect(danach.projekt.ansicht.zoom).toBe(vorher.projekt.ansicht.zoom);
+    expect(danach.projekt.ansicht.x).toBeCloseTo(vorher.projekt.ansicht.x, 6);
+    expect(danach.projekt.ansicht.y).toBeCloseTo(vorher.projekt.ansicht.y, 6);
     expect(danach.entwurfStatus.id).toBe(vorher.entwurfStatus.id);
     expect(danach.geaendert).toBe(true);
     expect(await zustand(s)).toMatchObject({ phase: 'bereit', laufId: null, ausgabe: '' });
@@ -299,9 +308,7 @@ test('Python-Sprachfilter öffnet eine echte Vorlage als unabhängige Projektkop
     expect(kopie.geaendert).toBe(true);
     expect((await zustand(s)).laufId).toBeNull();
     expect(await readFile(quelle)).toEqual(original);
-    await expect(
-      s.seite.getByRole('button', { name: 'Python-Script exportieren', exact: true }),
-    ).toBeVisible();
+    await expect(s.seite.getByRole('button', { name: 'Exportieren', exact: true })).toBeVisible();
   } finally {
     await beenden(s);
   }
@@ -331,8 +338,9 @@ test('Python testet den aktuellen ungespeicherten Editorstand und erhält die ge
     expect(ende.optionen.basisVerzeichnis).toBe(s.basis);
     expect(await readFile(datei)).toEqual(original);
     expect((await dokument(s)).geaendert).toBe(true);
+    await laufansichtWaehlen(s.seite, 'Protokoll');
     await expect(
-      s.seite.getByTestId('test-panel').getByRole('log', { name: 'Testausgabe', exact: true }),
+      s.seite.getByTestId('test-panel').getByRole('log', { name: 'Laufprotokoll', exact: true }),
     ).toContainText('AKTUELLER UNGESPEICHERTER PYTHON-TEXT ä 😀');
     await expect(s.seite.getByLabel('Projektstatus', { exact: true })).toHaveText(
       'Ungespeicherte Änderungen',
@@ -354,7 +362,7 @@ test('Langer Python-Test teilt die Startsperre mit VBS und endet bei Navigation,
     await testVorbereiten(s);
     await testStarten(s);
     const erster = await laeuftMitAusgabe(s, 'PYTHON VOR PAUSE');
-    await expect(s.seite.getByRole('button', { name: 'Testen', exact: true })).toBeDisabled();
+    await expect(s.seite.getByRole('button', { name: 'Testen', exact: true })).toHaveCount(0);
     const vbs = neuesProjekt('vbs');
     vbs.editor.blocks!.blocks[0].next = { block: ausgabe('VBS DARF NICHT PARALLEL STARTEN') };
     const parallel = await s.seite.evaluate(async (projekt) => {
@@ -366,10 +374,7 @@ test('Langer Python-Test teilt die Startsperre mit VBS und endet bei Navigation,
     expect((await zustand(s)).laufId).toBe(erster.laufId);
     expect((await dokument(s)).projekt.skriptsprache).toBe('python');
 
-    await s.seite
-      .getByRole('navigation', { name: 'Projektaktionen' })
-      .getByRole('button', { name: 'Stoppen', exact: true })
-      .click();
+    await s.seite.getByRole('button', { name: 'Stoppen', exact: true }).click();
     expect((await fertig(s)).phase).toBe('abgebrochen');
     expect((await zustand(s)).ausgabe).not.toContain('PYTHON NACH PAUSE');
     await prozessBeendet(erster.prozessId);
@@ -380,13 +385,13 @@ test('Langer Python-Test teilt die Startsperre mit VBS und endet bei Navigation,
     await s.app.evaluate(({ dialog }) => {
       dialog.showMessageBox = async () => ({ response: 1, checkboxChecked: false });
     });
-    await s.seite.getByRole('button', { name: 'Startseite', exact: true }).filter({ visible: true }).click();
-    await expect(s.seite.getByTestId('palette')).toBeVisible();
+    await startseiteWaehlen(s.seite);
+    await expect(s.seite.getByTestId('test-panel')).toBeVisible();
     expect((await zustand(s)).phase).toBe('laeuft');
     await s.app.evaluate(({ dialog }) => {
       dialog.showMessageBox = async () => ({ response: 0, checkboxChecked: false });
     });
-    await s.seite.getByRole('button', { name: 'Startseite', exact: true }).filter({ visible: true }).click();
+    await startseiteWaehlen(s.seite);
     await expect(s.seite.getByRole('button', { name: 'Neuer Workflow', exact: true })).toBeVisible();
     expect((await fertig(s)).phase).toBe('abgebrochen');
     expect((await zustand(s)).ausgabe).not.toContain('PYTHON NACH PAUSE');

@@ -1,3 +1,10 @@
+import {
+  workflowBefehl,
+  feldEinblenden,
+  arbeitsbereichWaehlen,
+  laufansichtWaehlen,
+  laufStarten,
+} from './ansichten';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { createReadStream } from 'node:fs';
@@ -217,7 +224,7 @@ async function vorbereiten(langePause: boolean): Promise<Sitzung> {
     }, projektdatei);
     await seite.getByRole('button', { name: 'Workflow öffnen', exact: true }).click();
     await expect(seite.getByTestId('palette')).toBeVisible();
-    await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+    await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
     await expect.poll(async () => (await dokument(s)).darstellungNoetig).toBe(false);
     await frames(seite);
     // Ein echter ungespeicherter Editorwert ist erforderlich: die gespeicherte
@@ -236,13 +243,15 @@ async function vorbereiten(langePause: boolean): Promise<Sitzung> {
             .pfad,
       )
       .toBe('million.csv');
-    await seite.getByRole('button', { name: 'Testausgabe', exact: true }).click();
+    await laufansichtWaehlen(seite, 'Vorbereitung');
     const panel = seite.getByTestId('test-panel');
     await expect(panel).toBeVisible();
     await panel.getByLabel('Modus', { exact: true }).selectOption('ausfuehren');
-    await panel.getByLabel('Laufprofil', { exact: true }).selectOption('kurz');
+    const laufprofil = panel.getByLabel('Laufprofil', { exact: true });
+    await feldEinblenden(laufprofil);
+    await laufprofil.selectOption('kurz');
     await expect(
-      panel.getByRole('textbox', { name: 'Basisordner für den nächsten Test', exact: true }),
+      panel.getByRole('textbox', { name: 'Basisordner für den nächsten Lauf', exact: true }),
     ).toHaveValue(basis);
     await expect(panel.getByLabel('Laufprofil', { exact: true })).toHaveValue('kurz');
     return s;
@@ -305,12 +314,7 @@ async function starten(s: Sitzung): Promise<{ zeit: number; waechter: ReturnType
       .catch(() => {});
   }, 55_000);
   try {
-    const knopf = s.seite
-      .getByTestId('test-panel')
-      .getByRole('button', { name: 'Workflow testen', exact: true });
-    await knopf.click();
-    const z = await stand(s);
-    if (z.phase === 'bereit' && !z.laufId) await knopf.click();
+    await laufStarten(s.seite);
     await expect
       .poll(
         async () => {
@@ -382,6 +386,7 @@ test('Business-Last: Millionenzeilenlauf verwendet den aktuellen Editorstand und
       .toBe(true);
     const vorher = await stand(s);
     expect(vorher.phase).toBe('laeuft');
+    await arbeitsbereichWaehlen(s.seite, 'Ablauf');
     const zoomVorher = (await dokument(s)).projekt.ansicht.zoom;
     const antwortStart = performance.now();
     await s.seite.getByRole('button', { name: 'Vergrößern', exact: true }).click({ timeout: 2000 });
@@ -455,7 +460,8 @@ test('Business-Last: stoppt nach Millionenverarbeitung den Warteblock und erhäl
     expect(ende.ausgabe).not.toContain(nachWarten);
     expect(await dateiHash(join(s.basis, 'ergebnis.csv'))).toBe(ausgabeSha256);
     expect(s.app.process().exitCode).toBeNull();
-    await expect(s.seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+    await expect(s.seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
+    await arbeitsbereichWaehlen(s.seite, 'Ablauf');
     await s.seite.locator('g[data-id="last-lesen"]').click({ position: { x: 60, y: 18 } });
     await s.seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
     const feld = s.seite.getByTestId('eigenschaften-panel').getByLabel('Dateipfad', { exact: true });

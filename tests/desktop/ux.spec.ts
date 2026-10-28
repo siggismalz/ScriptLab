@@ -118,6 +118,13 @@ async function speicherziel(s: Sitzung, ziel: string | null): Promise<void> {
   }, ziel);
 }
 
+async function scriptExportieren(seite: Page): Promise<void> {
+  await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
+  const dialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
+  await dialog.getByRole('combobox', { name: 'Inhalt', exact: true }).selectOption('script');
+  await dialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
+}
+
 async function projektLesen(seite: Page): Promise<Projekt> {
   return seite.evaluate(async () => {
     const r = await window.scriptlab.laden();
@@ -179,7 +186,7 @@ for (const faktor of [1, 1.25, 1.5, 2]) {
       const { seite } = s;
       await expect(seite.getByTestId('code-panel')).not.toBeVisible();
       await expect(seite.getByTestId('eigenschaften-panel')).not.toBeVisible();
-      await expect(seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true })).toBeVisible();
+      await expect(seite.getByRole('button', { name: 'Exportieren', exact: true })).toBeVisible();
       const p = await projektLesen(seite);
       expect(alleBausteine(p).map((b) => b.type)).toEqual(['sl_start']);
       const palette = (await seite.getByTestId('palette').boundingBox())!;
@@ -296,8 +303,8 @@ test('UX: großes Fenster behält die Breite angehefteter Eigenschaften beim Aus
     const anheften = panel.getByRole('button', { name: /Eigenschaften anheften/ });
     if (await anheften.isVisible()) await anheften.click();
     const breite = (await panel.boundingBox())!.width;
-    expect(breite).toBeGreaterThanOrEqual(300);
-    expect(breite).toBeLessThanOrEqual(312);
+    expect(breite).toBeGreaterThanOrEqual(312);
+    expect(breite).toBeLessThanOrEqual(336);
     await s.seite.locator('g[data-id="ui-langer-kommentar"]').click({ position: { x: 56, y: 22 } });
     expect((await panel.boundingBox())!.width).toBeCloseTo(breite, 0);
     await screenshot(s.seite, 'eigenschaften-angeheftet-1600');
@@ -326,7 +333,7 @@ test('UX: ungültiger Entwurf bleibt speicherbar und Export führt zu konkreten 
     );
     const vbs = join(s.ordner, 'Darf nicht entstehen.vbs');
     await speicherziel(s, vbs);
-    await s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
+    await scriptExportieren(s.seite);
     await expect(s.seite.getByTestId('hinweise-panel')).toBeVisible();
     await expect(s.seite.getByTestId('hinweise-panel')).toContainText(/verbinde|Eingang|Ziel/i);
     await expect(stat(vbs)).rejects.toThrow();
@@ -367,14 +374,12 @@ test('UX: UI-Textgröße ist vom Canvas-Zoom getrennt und behält Export und Pan
     for (const groesse of ['100 %', '125 %', '150 %', '200 %']) {
       await einstellungenOeffnen(s.seite);
       await s.seite
-        .getByRole('combobox', { name: 'UI-Textgröße', exact: true })
+        .getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })
         .selectOption({ label: groesse });
       await s.seite.getByRole('button', { name: 'Dialog schließen', exact: true }).click();
-      await expect(
-        s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }),
-      ).toBeVisible();
+      await expect(s.seite.getByRole('button', { name: 'Exportieren', exact: true })).toBeVisible();
       const hauptaktion = await s.seite
-        .getByRole('button', { name: 'VBS-Script exportieren', exact: true })
+        .getByRole('button', { name: 'Exportieren', exact: true })
         .evaluate((element) => {
           const rect = element.getBoundingClientRect();
           return {
@@ -508,7 +513,7 @@ test('UX: vollständiger Aufgabenweg mit einzelnen Klicks, Umordnen, Rückgängi
       .toBe(true);
     const exportdatei = join(s.ordner, 'Eigene Klickprüfung.vbs');
     await speicherziel(s, exportdatei);
-    await s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
+    await scriptExportieren(s.seite);
     await expect(s.seite.getByRole('heading', { name: 'Script gespeichert', exact: true })).toBeVisible();
     await expect
       .poll(() =>
@@ -532,7 +537,7 @@ test('UX: fehlende gewünschte Signaturkonfiguration verhindert eine falsche Erf
     await oeffnen(s, '05-Signatur-ohne-Zertifikat.scriptlab');
     const exportdatei = join(s.ordner, 'Nicht signiert freigegeben.vbs');
     await speicherziel(s, exportdatei);
-    await s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
+    await scriptExportieren(s.seite);
     await expect(s.seite.getByTestId('statusleiste')).toContainText(/Zertifikat|Signatur/);
     await expect(s.seite.getByTestId('statusleiste')).not.toContainText('Signatur gültig');
     await expect(stat(exportdatei)).rejects.toThrow();
@@ -557,7 +562,7 @@ test('UX: Signatur-Erfolgsdarstellung aus ausdrücklich gesteuerter Testantwort'
         },
       }));
     });
-    await s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true }).click();
+    await scriptExportieren(s.seite);
     await expect(s.seite.getByRole('status', { name: 'Export abgeschlossen', exact: true })).toContainText(
       'Signatur gültig',
     );
@@ -772,18 +777,16 @@ test('UX: prozessweise simulierte Kontrastfarben und reduzierte Bewegung behalte
     expect(await s.seite.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
     await s.seite.getByRole('button', { name: 'Weitere Funktionen', exact: true }).focus();
     await s.seite.keyboard.press('Shift+Tab');
-    await expect(s.seite.getByRole('button', { name: 'VBS-Script exportieren', exact: true })).toBeFocused();
-    const stil = await s.seite
-      .getByRole('button', { name: 'VBS-Script exportieren', exact: true })
-      .evaluate((el) => ({
-        transition: getComputedStyle(el).transitionDuration,
-        outline: getComputedStyle(el).outlineStyle,
-        hintergrund: getComputedStyle(el).backgroundColor,
-        text: getComputedStyle(el).color,
-        kindText: getComputedStyle(el.querySelector('span')!).color,
-        kindHintergrund: getComputedStyle(el.querySelector('span')!).backgroundColor,
-        kindAnpassung: getComputedStyle(el.querySelector('span')!).forcedColorAdjust,
-      }));
+    await expect(s.seite.getByRole('button', { name: 'Exportieren', exact: true })).toBeFocused();
+    const stil = await s.seite.getByRole('button', { name: 'Exportieren', exact: true }).evaluate((el) => ({
+      transition: getComputedStyle(el).transitionDuration,
+      outline: getComputedStyle(el).outlineStyle,
+      hintergrund: getComputedStyle(el).backgroundColor,
+      text: getComputedStyle(el).color,
+      kindText: getComputedStyle(el.querySelector('span')!).color,
+      kindHintergrund: getComputedStyle(el.querySelector('span')!).backgroundColor,
+      kindAnpassung: getComputedStyle(el.querySelector('span')!).forcedColorAdjust,
+    }));
     expect(stil.transition.split(',').every((wert) => Number.parseFloat(wert) === 0)).toBe(true);
     expect(stil.outline).not.toBe('none');
     expect(stil.hintergrund).not.toBe(stil.text);

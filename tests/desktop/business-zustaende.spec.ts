@@ -1,3 +1,4 @@
+import { arbeitsbereichWaehlen, startseiteWaehlen } from './ansichten';
 import { test, expect, type Locator } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, mkdir, readFile, writeFile, readdir, rm, stat } from 'node:fs/promises';
@@ -125,6 +126,7 @@ async function bibliothek(s: Sitzung): Promise<ProjektBibliothek> {
 }
 
 async function editorBereit(s: Sitzung): Promise<void> {
+  await arbeitsbereichWaehlen(s.seite, 'Ablauf');
   await expect(s.seite.getByTestId('palette')).toBeVisible();
   await expect(s.seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
   await expect.poll(async () => (await dokument(s)).darstellungNoetig).toBe(false);
@@ -201,7 +203,7 @@ async function dateivorgangFertig(s: Sitzung, art: 'speichern' | 'oeffnen'): Pro
 
 async function home(s: Sitzung): Promise<void> {
   await editorBereit(s);
-  await s.seite.getByRole('button', { name: 'Startseite', exact: true }).filter({ visible: true }).click();
+  await startseiteWaehlen(s.seite);
   await expect(s.seite.getByRole('button', { name: 'Neuer Workflow', exact: true })).toBeVisible();
 }
 
@@ -451,7 +453,7 @@ async function darstellungPruefen(s: Sitzung): Promise<Record<string, unknown>> 
 }
 
 async function wichtigeAktionen(s: Sitzung): Promise<void> {
-  for (const name of ['Neu', 'Öffnen', 'Speichern', 'Business-Paket exportieren']) {
+  for (const name of ['Neu', 'Öffnen', 'Speichern', 'Exportieren']) {
     const knopf = s.seite
       .getByRole('navigation', { name: 'Projektaktionen' })
       .getByRole('button', { name, exact: true });
@@ -531,7 +533,7 @@ for (const [breite, hoehe] of [
       await groesse(s, breite, hoehe);
       await s.seite.getByRole('button', { name: 'Einstellungen', exact: true }).click();
       const einstellungen = s.seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
-      await einstellungen.getByLabel('UI-Textgröße', { exact: true }).selectOption('2');
+      await einstellungen.getByLabel('Textgröße der Oberfläche', { exact: true }).selectOption('2');
       await einstellungen.getByRole('button', { name: 'Dialog schließen', exact: true }).click();
       const wahl = await sprachwahl(s);
       await darstellungPruefen(s);

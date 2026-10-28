@@ -1,3 +1,4 @@
+import { arbeitsbereichWaehlen, laufansichtWaehlen, laufStarten, startseiteWaehlen } from './ansichten';
 import { sprachwahlBestaetigen } from './sprache';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
@@ -186,7 +187,7 @@ test('erhält nach Konfliktkopie und anschließendem Entwurf-Speichern-Abbruch d
       throw new Error('Unerwarteter zusätzlicher Speicherdialog.');
     };
   }, dateiC);
-  await seite.getByRole('button', { name: 'Startseite', exact: true }).filter({ visible: true }).click();
+  await startseiteWaehlen(seite);
   await seite.getByRole('button', { name: 'Entwürfe', exact: true }).click();
   const karte = seite
     .getByTestId('entwuerfe')
@@ -310,7 +311,7 @@ for (const weg of ['Dateidialog', 'Projektbibliothek'] as const) {
       }, datei);
       await seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
     } else {
-      await seite.getByRole('button', { name: 'Startseite', exact: true }).filter({ visible: true }).click();
+      await startseiteWaehlen(seite);
       await seite.getByRole('button', { name: 'Meine gespeicherten Workflows', exact: true }).click();
       const zeile = seite
         .getByTestId('bekannte-projekte')
