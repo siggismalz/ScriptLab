@@ -1,4 +1,5 @@
 import type { BausteinDefinition } from './katalog';
+import { kategoriefarben } from '../gestaltung/tokens';
 import { jsonDatenPruefen, type BusinessSchritt, type FachlicherTyp, type JsonWert } from './business-modell';
 
 export interface KonfigFeld {
@@ -773,7 +774,7 @@ export const businessBlocklyDefinitionen: BausteinDefinition[] = alle.map((d) =>
   typ: d.typ,
   name: d.name,
   kategorie: d.gruppe,
-  farbe: '#286E6B',
+  farbe: kategoriefarben[d.gruppe as keyof typeof kategoriefarben],
   form: 'anweisung',
   nachricht:
     d.steuerung === 'stapel'

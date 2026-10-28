@@ -7,6 +7,17 @@ export const blockStilNachKategorie = {
   Schleifen: 'schleifen',
   'Dateien und Ordner': 'dateien',
   'Variablen und Listen': 'variablen',
+  Geschäftsablauf: 'geschaeftsablauf',
+  'Daten laden': 'daten_laden',
+  'Daten aufbereiten': 'daten_aufbereiten',
+  'Daten verbinden': 'daten_verbinden',
+  'Daten zusammenfassen': 'daten_zusammenfassen',
+  Datenqualität: 'datenqualitaet',
+  'Daten ausgeben': 'daten_ausgeben',
+  Geschäftsdateien: 'geschaeftsdateien',
+  Word: 'word',
+  Excel: 'excel',
+  PDF: 'pdf',
   Texte: 'texte',
   Zahlen: 'zahlen',
   'Ein- und Ausgaben': 'eingaben_ausgaben',
@@ -70,5 +81,5 @@ export function scriptlabThemaFuer(schema: Farbschema): Blockly.Theme {
   return themen[schema];
 }
 
-/** Rückwärtskompatibler Alias für den dunklen Erststart. */
-export const scriptlabThema = themen.dunkel;
+/** Heller Erstkontakt, bis die gespeicherte Wahl auf den Workspace angewendet wird. */
+export const scriptlabThema = themen.hell;
