@@ -41,7 +41,7 @@ export function ExportDialog({
               else exportieren();
             }}
           >
-            {format === 'projekt' ? 'Als neue Projektdatei speichern' : 'Ausgabeort auswählen'}
+            Ausgabeort auswählen
           </Knopf>
         </>
       }
@@ -73,7 +73,10 @@ export function ExportDialog({
         <details>
           <summary>Voraussetzungen und Hinweise</summary>
           {format === 'projekt' ? (
-            <p>„Als neue Projektdatei speichern“ wechselt zum neu gespeicherten Workflow.</p>
+            <p>
+              Die exportierte Kopie lässt sich in ScriptLab öffnen. Dein gespeicherter Workflow bleibt
+              erhalten.
+            </p>
           ) : format === 'paket' ? (
             <>
               <p>

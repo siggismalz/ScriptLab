@@ -1,6 +1,7 @@
-import { useId } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { TestOptionen, TestZustand } from '../gemeinsam/testlauf';
 import { businessDefinitionen } from '../kern/business-katalog';
+import { Knopf } from './komponenten/Knopf';
 import './business.css';
 
 export interface BusinessErgebnisEigenschaften {
@@ -8,6 +9,9 @@ export interface BusinessErgebnisEigenschaften {
   optionen: TestOptionen;
   aktiv: boolean;
   kontextZeigen?: boolean;
+  dateiAnzeigen?: (art: 'ausgabe' | 'bericht', index?: number) => Promise<void>;
+  blockAnzeigen?: (id: string) => void;
+  blockZuordnungMoeglich?: boolean;
 }
 
 type Daten = Record<string, unknown>;
@@ -30,8 +34,16 @@ export function BusinessErgebnis({
   optionen,
   aktiv,
   kontextZeigen = true,
+  dateiAnzeigen,
+  blockAnzeigen,
+  blockZuordnungMoeglich = true,
 }: BusinessErgebnisEigenschaften) {
   const titelId = useId();
+  const blockGrundId = useId();
+  const dateiStatusId = useId();
+  const dateiAuftrag = useRef(false);
+  const [dateiAktion, setDateiAktion] = useState<string | null>(null);
+  const [dateiFehler, setDateiFehler] = useState<{ name: string; meldung: string } | null>(null);
   const schritt = [...business.ereignisse]
     .reverse()
     .find((e) => text(e.operation) && (!business.schritt || e.block_id === business.schritt));
@@ -49,15 +61,16 @@ export function BusinessErgebnis({
     ['uebersprungen', 'Übersprungen'],
     ['geplant', 'Geplant'],
   ].filter(([feld]) => anzahl(summen?.[feld]));
-  const meldungen: { art: 'Hinweis' | 'Fehler'; text: string }[] = [];
+  const meldungen: { art: 'Hinweis' | 'Fehler'; text: string; blockId: string | null }[] = [];
   function meldungAnfuegen(art: 'Hinweis' | 'Fehler', wert: unknown) {
     const inhalt = text(wert) ?? text(objekt(wert)?.meldung);
-    if (inhalt && !meldungen.some((m) => m.art === art && m.text === inhalt))
-      meldungen.push({ art, text: inhalt });
+    const blockId = text(objekt(wert)?.block_id);
+    if (inhalt && !meldungen.some((m) => m.art === art && m.text === inhalt && m.blockId === blockId))
+      meldungen.push({ art, text: inhalt, blockId });
   }
   for (const e of business.ereignisse) {
     if (e.art === 'hinweis' || e.art === 'fehler')
-      meldungAnfuegen(e.art === 'fehler' ? 'Fehler' : 'Hinweis', e.meldung);
+      meldungAnfuegen(e.art === 'fehler' ? 'Fehler' : 'Hinweis', e);
   }
   for (const [feld, art] of [
     ['hinweise', 'Hinweis'],
@@ -68,7 +81,9 @@ export function BusinessErgebnis({
     meldungAnfuegen(bericht?.status === 'erfolgreich' ? 'Hinweis' : 'Fehler', bericht?.meldung);
   const letzteMeldungen = meldungen.slice(-5);
   const ausgaben = Array.isArray(bericht?.ausgaben)
-    ? bericht.ausgaben.map(objekt).filter((a): a is Daten => Boolean(a && text(a.pfad)))
+    ? bericht.ausgaben
+        .map((wert, index) => ({ daten: objekt(wert), index }))
+        .filter((a): a is { daten: Daten; index: number } => Boolean(a.daten && text(a.daten.pfad)))
     : [];
   const ausgabestatus: Record<string, string> = {
     publiziert: 'Gespeichert',
@@ -83,6 +98,30 @@ export function BusinessErgebnis({
   };
   const modus = text(bericht?.modus) ?? optionen.business?.modus;
   const berichtPfad = text(bericht?.bericht_pfad);
+  const hatBlockaktionen = Boolean(
+    blockAnzeigen && letzteMeldungen.some((m) => m.art === 'Fehler' && m.blockId),
+  );
+
+  async function dateiImExplorerAnzeigen(art: 'ausgabe' | 'bericht', name: string, index?: number) {
+    if (!dateiAnzeigen || dateiAuftrag.current) return;
+    dateiAuftrag.current = true;
+    setDateiAktion(art === 'bericht' ? 'bericht' : `ausgabe-${index}`);
+    setDateiFehler(null);
+    try {
+      await dateiAnzeigen(art, index);
+    } catch (fehler) {
+      setDateiFehler({
+        name,
+        meldung:
+          fehler instanceof Error && fehler.message.trim()
+            ? fehler.message
+            : 'Die Datei konnte nicht im Explorer angezeigt werden.',
+      });
+    } finally {
+      dateiAuftrag.current = false;
+      setDateiAktion(null);
+    }
+  }
 
   return (
     <section className="business-ergebnis" aria-labelledby={titelId}>
@@ -150,31 +189,50 @@ export function BusinessErgebnis({
               </dl>
             </>
           )}
-          {anzahl(summen?.fehlerhaft) && <p>Fehlermeldungen: {summen.fehlerhaft}</p>}
+          {anzahl(summen?.fehlerhaft) && summen.fehlerhaft > 0 && <p>Fehlermeldungen: {summen.fehlerhaft}</p>}
         </div>
       )}
       {letzteMeldungen.length > 0 && (
         <div>
           <h4>Letzte Hinweise und Fehler</h4>
           {meldungen.length > 5 && <p>Die letzten fünf Meldungen werden angezeigt.</p>}
-          <ul>
+          <ul className="business-ergebnis-meldungen">
             {letzteMeldungen.map((m, i) => (
               <li key={i}>
-                <strong>{m.art}:</strong> {m.text}
+                <p>
+                  <strong>{m.art}:</strong> {m.text}
+                </p>
+                {m.art === 'Fehler' && m.blockId && blockAnzeigen && (
+                  <Knopf
+                    variante="leise"
+                    symbol="bausteine"
+                    disabled={!blockZuordnungMoeglich}
+                    grundId={blockGrundId}
+                    onClick={() => blockAnzeigen(m.blockId!)}
+                  >
+                    Baustein anzeigen
+                  </Knopf>
+                )}
               </li>
             ))}
           </ul>
+          {hatBlockaktionen && !blockZuordnungMoeglich && (
+            <p id={blockGrundId} className="business-ergebnis-aktionshinweis">
+              Die Meldungen gehören zu einem anderen Workflowstand. Die Bausteinzuordnung ist für den
+              aktuellen Stand nicht verfügbar.
+            </p>
+          )}
         </div>
       )}
       {ausgaben.length > 0 && (
         <div>
           <h4>Dateien und Ausgabeziele</h4>
           <ul className="business-ergebnis-ausgaben">
-            {ausgaben.slice(0, 5).map((a, i) => {
+            {ausgaben.slice(0, 5).map(({ daten: a, index }) => {
               const pfad = a.pfad as string;
               const name = pfad.split(/[\\/]/).filter(Boolean).at(-1) ?? pfad;
               return (
-                <li key={i}>
+                <li key={index} className="business-ergebnis-dateizeile">
                   <details className="business-ergebnis-datei">
                     <summary title={pfad}>
                       <span className="business-ergebnis-dateiname">{name}</span>
@@ -187,6 +245,19 @@ export function BusinessErgebnis({
                       <textarea readOnly rows={2} value={pfad} aria-label={`Vollständiger Pfad: ${name}`} />
                     </label>
                   </details>
+                  {dateiAnzeigen && ['publiziert', 'wiederverwendet'].includes(String(a.status)) && (
+                    <Knopf
+                      variante="leise"
+                      symbol="oeffnen"
+                      aria-label={`Im Explorer anzeigen: ${name}`}
+                      disabled={Boolean(dateiAktion)}
+                      verarbeitung={dateiAktion === `ausgabe-${index}`}
+                      grundId={dateiStatusId}
+                      onClick={() => void dateiImExplorerAnzeigen('ausgabe', name, index)}
+                    >
+                      Im Explorer anzeigen
+                    </Knopf>
+                  )}
                 </li>
               );
             })}
@@ -198,15 +269,30 @@ export function BusinessErgebnis({
         <details className="business-ergebnis-bericht">
           <summary>Vollständiger Laufbericht</summary>
           {berichtPfad && (
-            <label>
-              Speicherort
-              <textarea
-                readOnly
-                rows={2}
-                value={berichtPfad}
-                aria-label="Pfad des vollständigen Laufberichts"
-              />
-            </label>
+            <>
+              <label>
+                Speicherort
+                <textarea
+                  readOnly
+                  rows={2}
+                  value={berichtPfad}
+                  aria-label="Pfad des vollständigen Laufberichts"
+                />
+              </label>
+              {dateiAnzeigen && (
+                <Knopf
+                  variante="leise"
+                  symbol="oeffnen"
+                  aria-label="Laufbericht im Explorer anzeigen"
+                  disabled={Boolean(dateiAktion)}
+                  verarbeitung={dateiAktion === 'bericht'}
+                  grundId={dateiStatusId}
+                  onClick={() => void dateiImExplorerAnzeigen('bericht', 'Laufbericht')}
+                >
+                  Im Explorer anzeigen
+                </Knopf>
+              )}
+            </>
           )}
           {bericht && (
             <pre tabIndex={0} aria-label="Inhalt des vollständigen Laufberichts">
@@ -214,6 +300,14 @@ export function BusinessErgebnis({
             </pre>
           )}
         </details>
+      )}
+      <p id={dateiStatusId} className="business-ergebnis-aktionshinweis" role="status" hidden={!dateiAktion}>
+        Datei wird im Explorer angezeigt.
+      </p>
+      {dateiFehler && (
+        <p className="business-ergebnis-aktionsfehler" role="alert">
+          <strong>{dateiFehler.name}:</strong> {dateiFehler.meldung}
+        </p>
       )}
     </section>
   );

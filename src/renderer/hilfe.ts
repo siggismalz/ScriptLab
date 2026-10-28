@@ -34,7 +34,7 @@ const vbsBeispiele: readonly BeispielInfo[] = [
       'Prüft eine einzelne Testdatei, legt einen Sicherungsordner an und kopiert die Datei dorthin.',
     lernziele: ['Dateipfade festlegen', 'Eine Bedingung verwenden', 'Vorhandene Zieldateien beachten'],
     vorbereitung:
-      'Für einen bewusst gestarteten Test die Datei ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt im gewählten Basisordner selbst anlegen; für einen eigenständigen Start neben der exportierten VBS-Datei. Die Sicherung entsteht unter ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt. Eine vorhandene Sicherung wird nicht überschrieben. Öffnen und Exportieren starten das Beispiel nicht.',
+      'Für einen bewusst gestarteten Test die Datei ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt im ScriptLab-Arbeitsordner des Workflows selbst anlegen; für einen eigenständigen Start neben der exportierten VBS-Datei. Den Arbeitsordner kannst du unter „Läufe → Vorbereitung“ im Explorer öffnen. Die Sicherung entsteht unter ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt. Eine vorhandene Sicherung wird nicht überschrieben. Öffnen und Exportieren starten das Beispiel nicht.',
   },
   {
     id: 'dateiliste',
@@ -49,7 +49,7 @@ const vbsBeispiele: readonly BeispielInfo[] = [
       'Text mit Zeilenumbrüchen schreiben',
     ],
     vorbereitung:
-      'Für einen bewusst gestarteten Test den Ordner ScriptLab-Testdaten\\Dateiliste\\Eingang mit entbehrlichen Testdateien im gewählten Basisordner anlegen; für einen eigenständigen Start neben der exportierten VBS-Datei. ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt wird bei der Ausführung erstellt oder ersetzt. Unterordner werden nicht durchsucht. Öffnen und Exportieren starten das Beispiel nicht.',
+      'Für einen bewusst gestarteten Test den Ordner ScriptLab-Testdaten\\Dateiliste\\Eingang mit entbehrlichen Testdateien im ScriptLab-Arbeitsordner des Workflows anlegen; für einen eigenständigen Start neben der exportierten VBS-Datei. ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt wird bei der Ausführung erstellt oder ersetzt. Unterordner werden nicht durchsucht. Öffnen und Exportieren starten das Beispiel nicht.',
   },
 ];
 const pythonDateien: Record<string, string> = {
@@ -111,7 +111,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
           'Suche links nach „Nachricht“.',
           'Klicke neben „Nachricht anzeigen“ auf Plus und wähle „Nach Workflow starten“.',
           'Ändere den Text direkt im Baustein oder öffne die Eigenschaften mit F4.',
-          'Speichere mit „Speichern“ eine bearbeitbare .scriptlab-Datei.',
+          'Sichere mit „Speichern“ den Workflow. ScriptLab verwendet automatisch die interne Ablage; du musst keinen Zielordner auswählen.',
           'Öffne bei Bedarf „Ansicht → Codevorschau öffnen“. Unter „Exportieren“ wählst du bei „Inhalt“ das Scriptformat deiner Sprache und anschließend „Ausgabeort auswählen“.',
         ],
         beispiel: 'begruessung',
@@ -129,11 +129,21 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'test-vorbereiten',
         titel: 'Einen Test vorbereiten und seine Ausgabe verstehen',
         texte: [
-          'Öffne „Läufe → Vorbereitung“. Der Ansichtswechsel startet keinen Workflow. Wähle mit „Ordner auswählen“ einen Basisordner und klappe bei Bedarf „Zeitlimit“ auf: gewöhnlich 120 Sekunden, erlaubt 1 bis 28800. Business-Profile bieten eigene Vorgaben bis acht Stunden. Relative Pfade werden auf den sichtbaren Basisordner bezogen. Absolute Pfade können außerhalb wirken. Nutze zuerst entbehrliche Dateien.',
+          'Öffne „Läufe → Vorbereitung“ und prüfe Modus, Parameter, Quellen und Ausgabeziele. Der Ansichtswechsel startet keinen Workflow. ScriptLab verwendet automatisch den Arbeitsordner dieses Workflows. Unter „ScriptLab-Arbeitsordner“ kannst du den vollständigen Pfad lesen und den Ordner im Explorer öffnen.',
+          'Klappe bei Bedarf „Zeitlimit“ auf: gewöhnlich 120 Sekunden, erlaubt 1 bis 28800. Business-Profile bieten eigene Vorgaben bis acht Stunden. Für den ersten Lauf ist kein vorheriges Speichern nötig. Nutze zuerst entbehrliche Dateien.',
           '„Testen“ im Editor und „Workflow ausführen“ beziehen sich auf den vollständigen aktuellen Hauptablauf, nicht nur den ausgewählten Baustein. Ist der Laufkontext noch nicht geprüft, erscheint zuerst die Vorbereitung. Während eines Laufs sind inhaltliche Änderungen gesperrt. Ein Lauf speichert weder dein Projekt noch eine Exportdatei.',
           '„Text ausgeben“ schreibt unter „Läufe → Protokoll“. „Nachricht anzeigen“, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen Dialoge; bei Python ist dafür tkinter erforderlich. Stoppen und das Zeitlimit beenden den Lauf; bereits erfolgte Änderungen bleiben bestehen.',
-          '„Übersicht“ zeigt den Laufstatus, „Ergebnisse“ die zugehörigen Ausgaben und Prüfhinweise. Unter „Laufstand und technische Angaben“ stehen Sprache, tatsächlich verwendete Python-Version, Lauf-ID, Standkennung, Startzeit, Laufzeit, Pfadbasis und Exitcode. Ein Ergebnis mit Exitcode 0 bestätigt ein Ende ohne gemeldeten Fehler, nicht die Ungefährlichkeit oder das gewünschte Dateiergebnis. Nach einer Workflowänderung erscheint ein Hinweis auf den früheren Stand.',
-          'Unter „Protokoll“ betreffen „Ausgabe kopieren“ und „Ausgabe leeren“ nur den angezeigten Text, auch während eines Laufs. Beim Hochscrollen folgt die Anzeige neuen Zeilen nicht automatisch; „Zum Ausgabeende“ führt zurück. „Technische Details“ zeigt den schreibgeschützten Laufquelltext und vorhandene Fehlerzuordnungen. „Baustein anzeigen“ führt zum zugeordneten Baustein.',
+          '„Übersicht“ zeigt den Laufstatus, „Ergebnisse“ die zugehörigen Ausgaben und Prüfhinweise. Unter „Laufstand und technische Angaben“ stehen Sprache, verwendete Python-Version, Laufkennung, Workflowstand, Zeiten, Arbeitsordner und Exitcode. Exitcode 0 bestätigt ein Ende ohne gemeldeten Fehler, nicht das fachlich gewünschte Dateiergebnis. Nach einer Workflowänderung erscheint ein Hinweis auf den früheren Stand.',
+          'Beim Hochscrollen im „Protokoll“ folgt die Anzeige neuen Zeilen nicht automatisch; „Zum Ausgabeende“ führt zurück. „Ausgabe leeren“ leert die aktuelle Liveanzeige, ohne bereits gespeicherte Läufe zu ändern. „Technische Details“ zeigt den schreibgeschützten Laufquelltext und vorhandene Fehlerzuordnungen. „Baustein anzeigen“ ist nur bei passendem Workflowstand verfügbar.',
+        ],
+      },
+      {
+        id: 'gespeicherte-laeufe',
+        titel: 'Frühere Läufe ansehen',
+        texte: [
+          'Abgeschlossene Läufe bleiben lokal gespeichert. „Alle Läufe“ zeigt die Läufe des geöffneten Workflows, neueste zuerst. Suche und Modusfilter gelten für diese Liste. „Anzeigen“ öffnet die Übersicht, Ergebnisse und das Protokoll genau dieses Laufs. Die Auswahl startet keine Verarbeitung.',
+          '„Protokoll kopieren“ kopiert das Protokoll des ausgewählten Laufs. „Protokoll exportieren“ fragt nach einer Textdatei als Ausgabeziel. Bestätigte Business-Ausgaben und Berichte lassen sich im Explorer anzeigen, wenn die Dateien noch vorhanden sind. Die Historie hält keine zusätzliche Kopie jeder Ausgabedatei vor.',
+          'Die Historie bewahrt insgesamt höchstens 200 abgeschlossene Läufe und 64 MiB Detaildaten auf. Ältere Einträge können deshalb entfallen. Ein Ablagefehler wird als Hinweis angezeigt und verändert den tatsächlichen Laufstatus nicht. Beim Öffnen werden keine Prozesse automatisch wiederaufgenommen; das Business-Journal besitzt eine eigene bewusste Fortsetzungsfunktion.',
         ],
       },
     ],
@@ -202,16 +212,17 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
   {
     id: 'projekte-entwuerfe',
     titel: 'Projekte und Entwürfe',
-    beschreibung: 'Projektdateien, bekannte Speicherorte und gesicherte Zwischenstände unterscheiden.',
+    beschreibung: 'Workflows speichern, Kopien exportieren und Zwischenstände fortsetzen.',
     abschnitte: [
       {
         id: 'projektdateien',
-        titel: 'Als Projektdatei speichern',
+        titel: 'Workflow speichern oder kopieren',
         texte: [
           'Eine .scriptlab-Datei enthält den bearbeitbaren Workflow mit fester Sprache, Verbindungen, Variablen-IDs, Werten, Kommentaren und Ansicht. Unvollständige Abläufe dürfen als Projekt gespeichert werden. .py und .vbs sind Exportdateien und lassen sich nicht als Bausteinprojekt zurückimportieren.',
-          'Aktuelle Projekte verwenden Schema 3 mit Workflowparametern und nicht geheimen Test-/Echtwerten. Schema 1 wird als VBS übernommen, Schema 2 behält seine Sprache und erhält leere Business-Angaben. Öffnen verändert keine Quelldatei. Erst Speichern schreibt das aktuelle Format. Unbekannte neuere Formate werden abgewiesen.',
-          '„Speichern“ sichert das aktuelle Projekt; „Workflow → Speichern unter“ wählt einen anderen Speicherort. Namen und Beschreibung änderst du unter „Workflow → Projektangaben“. Ein Script- oder Paketexport speichert die Projektdatei nicht automatisch.',
-          'Bei ungespeicherten Änderungen fragt ScriptLab vor einem möglichen Verlust nach: „Speichern“, „Als Entwurf behalten“, „Änderungen verwerfen“ oder „Abbrechen“. „Als Entwurf behalten“ erlaubt den Wechsel erst nach erfolgreicher lokaler Sicherung; die Projektdatei bleibt unverändert. „Änderungen verwerfen“ verwirft den ungespeicherten Stand bewusst. „Abbrechen“ oder ein abgebrochener Speicherdialog verhindert den abhängigen Projektwechsel.',
+          'Aktuelle Projekte verwenden Schema 3 mit Workflowparametern und nicht geheimen Test-/Echtwerten. Schema 1 wird als VBS übernommen, Schema 2 behält seine Sprache und erhält leere Business-Angaben. Öffnen verändert keine Quelldatei. Beim Speichern wird das aktuelle Format intern gesichert. Unbekannte neuere Formate werden abgewiesen.',
+          '„Speichern“ legt den Workflow automatisch im ScriptLab-Nutzerverzeichnis ab, ohne Zielauswahl. Bei einer extern geöffneten Datei bleibt das Original unverändert. „Workflow → Kopie anlegen“ erzeugt eine unabhängige interne Kopie mit neuer Kennung. Namen und Beschreibung änderst du unter „Workflow → Projektangaben“.',
+          'Eine weiterzugebende .scriptlab-Datei erzeugst du unter „Exportieren“ mit dem Inhalt „Projektdatei“. Nur beim Export wählst du einen Ausgabeort. Eine exportierte Projektkopie, ein Script oder ein Paket verändert den Speicherzustand des aktiven Workflows nicht.',
+          'Bei ungespeicherten Änderungen fragt ScriptLab vor einem möglichen Verlust nach: „Speichern“, „Als Entwurf behalten“, „Änderungen verwerfen“ oder „Abbrechen“. „Speichern“ sichert intern; ein Schreibfehler verhindert den Wechsel. „Als Entwurf behalten“ erlaubt den Wechsel erst nach erfolgreicher lokaler Sicherung. „Änderungen verwerfen“ verwirft den ungespeicherten Stand bewusst. „Abbrechen“ erhält den aktuellen Arbeitskontext.',
         ],
       },
       {
@@ -229,7 +240,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         texte: [
           'Die Entwurfsliste enthält lokal gesicherte Zwischenstände. Sie unterscheidet Abläufe ohne Projektdatei und gesicherte Änderungen mit Bezug auf eine vorhandene Datei. Der angezeigte Zeitpunkt gehört zur Entwurfssicherung, nicht zu einem behaupteten Speichern der Projektdatei.',
           'Inhaltliche Änderungen werden nach einer kurzen Eingabepause lokal im Nutzerverzeichnis gesichert. Ein neuer leerer Startablauf und reine Zoomänderungen erzeugen keinen neuen Entwurf. Beachte im Editor den tatsächlichen Sicherungsstatus; eine fehlgeschlagene Sicherung ist kein gesicherter Stand.',
-          '„Fortsetzen“ öffnet den gesicherten Stand zum Bearbeiten. „Als Projekt speichern“ bietet einen Speicherort für eine .scriptlab-Datei an. Erst ein erfolgreicher Speichervorgang ist ein gespeichertes Projekt.',
+          '„Fortsetzen“ öffnet den gesicherten Stand zum Bearbeiten. „Als Projekt speichern“ sichert ihn ohne Zielauswahl als eigenen Workflow im ScriptLab-Nutzerverzeichnis. Erst ein erfolgreicher Schreibvorgang ist ein gespeichertes Projekt.',
           'Nach erfolgreichem Speichern wird nur der zugehörige Entwurf bereinigt. Bei Abbruch oder Schreibfehler bleibt er erhalten. Wurde die zugehörige Projektdatei außerhalb von ScriptLab verändert oder entfernt, muss der Entwurf als separate Kopie gespeichert werden; die Ausgangsdatei wird nicht automatisch überschrieben.',
           '„Entwurf löschen“ entfernt nach Bestätigung den gesicherten Zwischenstand, nicht eine zugehörige Projektdatei. Ein Entwurf ersetzt keine selbst gewählte Sicherung deiner wichtigen Projektdateien.',
         ],
@@ -245,7 +256,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'pruefen-exportieren',
         titel: 'Prüfen und als Script speichern',
         texte: [
-          'Unter „Exportieren“ wählst du das Script oder Business-Paket als Inhalt. Vor dem Schreiben werden die Bausteine geprüft. Fehlende Pflichtwerte, falsche Verbindungen und lose aktive Anweisungen verhindern den Export. Die Hinweisübersicht nennt den betroffenen Baustein; ein Klick führt dorthin.',
+          'Unter „Exportieren“ wählst du Projektdatei, Script oder Business-Paket als Inhalt und danach den Ausgabeort. Die Projektdatei erhält den bearbeitbaren Stand, auch wenn noch Angaben fehlen. Vor einem Script- oder Paketexport werden die Bausteine geprüft. Fehlende Pflichtwerte, falsche Verbindungen und lose aktive Anweisungen verhindern diesen Export. Die Hinweisübersicht führt zum betroffenen Baustein.',
           'Gewöhnliche Python-Projekte erzeugen einzelne .py-Dateien, VBS-Projekte .vbs-Dateien. Python-Business-Projekte erzeugen ein ZIP mit Script, eigenen Modulen, Requirements, Anleitung und Parameterbeispiel. Alle Varianten funktionieren ohne ScriptLab oder Node.js. Die 48 Grundbausteintypen benötigen keine zusätzlichen Python-Pakete; Business-Bausteine den bewusst vorbereiteten festen Paketsatz. Dialoge benötigen tkinter.',
           'Die optionale Codevorschau zeigt ausschließlich Text. Sie führt den Ablauf nicht aus. Nach dem Export erscheint: „Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“ „Speicherordner anzeigen“ öffnet nur den Ordner und startet die Datei nicht.',
           'Python-Exporte werden als UTF-8 ohne BOM, VBS-Exporte als UTF-16LE mit BOM geschrieben. Beide verwenden Windows-Zeilenenden (CRLF). Identische Workflows und Exportoptionen erzeugen denselben unsignierten Quelltext.',
@@ -255,7 +266,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'pfade-dateien',
         titel: 'Dateipfade und vorhandene Dateien',
         texte: [
-          'Relative Dateipfade beziehen sich beim Export auf den Ordner der jeweiligen Scriptdatei und beim Test auf den sichtbaren Basisordner. Beide Orte können unterschiedlich sein. Absolute Windows- und UNC-Pfade bleiben absolut und können außerhalb wirken. Gewöhnliche Dateiaktionen erlauben keine Platzhalter; Business-Dateistapel besitzen ausdrücklich ein Feld für ein einfaches Dateimuster.',
+          'Relative Pfade verwenden in ScriptLab den Arbeitsordner des Workflows. Externe Quellen können weiterhin gelesen werden. Ausgaben müssen im ScriptLab-Nutzerverzeichnis liegen; bestehende Ziele außerhalb werden abgewiesen und nicht umgeschrieben. Exportierte Scripts verwenden ihren eigenen Scriptordner für relative Pfade und behalten absolute Pfadwerte. Gewöhnliche Dateiaktionen erlauben keine Platzhalter; Business-Dateistapel besitzen ein eigenes Feld für ein Dateimuster.',
           'Kopieren und Verschieben behandeln ein vorhandenes Ziel standardmäßig als Fehler; bewusst gewähltes Überschreiben ersetzt die Zieldatei. Textdatei schreiben ersetzt den Inhalt. Der erweiterte Löschbaustein erzeugt standardmäßig eine Rückfrage im später gestarteten Script.',
           'Die Kodierung der vom Workflow bearbeiteten Textdateien wird gesondert gewählt. UTF-8 und UTF-16LE schreiben eine BOM; Windows-ANSI verwendet die lokale Windows-Codepage. Beim Ergänzen muss eine vorhandene Datei zur ausgewählten Kodierung passen. Fehlerhaftes UTF-8 oder UTF-16LE wird vor dem Überschreiben zurückgewiesen.',
         ],
@@ -348,7 +359,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         id: 'business-umfang',
         titel: 'Quellen, Ziele und Zeitlimit vor dem Start prüfen',
         texte: [
-          'Klappe unter „Läufe → Vorbereitung“ vor dem Start „Quellen und Ausgabeziele“ auf. Prüfe Quelle, Vorlage, Ziel, Archiv und die Regel für vorhandene Dateien. Dynamisch berechnete Dateinamen stehen erst im betreffenden Schritt vollständig fest. Absolute Pfade können außerhalb des Basisordners wirken.',
+          'Klappe unter „Läufe → Vorbereitung“ vor dem Start „Quellen und Ausgabeziele“ auf. Prüfe Quelle, Vorlage, Ziel, Archiv und die Regel für vorhandene Dateien. Dynamisch berechnete Dateinamen stehen erst im betreffenden Schritt vollständig fest. Ausgaben innerhalb von ScriptLab müssen im ScriptLab-Nutzerverzeichnis liegen; Quellen können außerhalb liegen.',
           'Unter „Weitere Einstellungen“ liegen Laufprofil sowie Speicher- und Tempbudgets. Laufprofile bieten 15 Sekunden für die Vorschau, eine Minute für den Prüflauf, zwei Minuten für die Kurzprüfung, zwei Stunden für Geschäftsabläufe und acht Stunden für große Stapel. Ein Profil ändert nicht den gewählten Modus. Die Budgets betreffen die Datenengine, nicht den gesamten Rechner. „Technische Schrittangaben“ zeigt bei Bedarf die vollständige Konfiguration.',
         ],
         beispiel: 'business-monat',
@@ -452,14 +463,14 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         texte: [
           '„Ungespeicherte Änderungen“ betrifft die Projektdatei. „Projekt gespeichert“ bestätigt deren erfolgreichen Schreibvorgang. „Script gespeichert“ betrifft den Python- oder VBS-Export; „Signatur gültig“ bestätigt erst das tatsächliche VBS-Signaturprüfergebnis.',
           '„Verbinde diesen Baustein mit deinem Ablauf“ bedeutet, dass eine aktive Anweisung lose ist. Ein dynamischer Dateipfad ist nicht allein deshalb falsch, weil er beim Entwerfen nicht aufgelöst werden kann. Die Strukturprüfung probiert keine Dateiaktionen aus. Eine bewusst gestartete Datenvorschau oder ein Prüflauf kann Quellen lesen; erst der echte Lauf verändert fachliche Ziele.',
-          'Unbekannte neuere Projektformate werden nicht überschrieben. Ist eine gespeicherte Datei von außen verändert worden, beachte die konkrete Konfliktmeldung und speichere deinen Stand nötigenfalls unter einem neuen Namen.',
+          'Unbekannte neuere Projektformate werden nicht überschrieben. Ist eine intern gespeicherte Datei von außen verändert worden, beachte die Konfliktmeldung. „Kopie speichern“ sichert deinen Stand als unabhängigen internen Workflow, ohne die betroffene Datei zu ersetzen.',
         ],
       },
       {
         id: 'tastenkombinationen',
         titel: 'Tastenkombinationen im Editor',
         texte: [
-          'Strg+N: neuer Workflow. Strg+O: Projekt öffnen. Strg+S: speichern. Strg+Umschalt+S: speichern unter. Projektkürzel gelten auch während einer Texteingabe, solange kein Dialog geöffnet ist.',
+          'Strg+N: neuer Workflow. Strg+O: Projekt öffnen. Strg+S: intern speichern. Strg+Umschalt+S: unabhängige interne Kopie anlegen. Projektkürzel gelten auch während einer Texteingabe, solange kein Dialog geöffnet ist.',
           'Außerhalb von Texteingaben: Strg+Z macht rückgängig; Strg+Y oder Strg+Umschalt+Z wiederholt. F4 öffnet Eigenschaften. Entf löscht den ausgewählten Baustein. Escape bricht Ziehen oder die Auswahl einer Einfügestelle ab.',
           'Strg+Plus und Strg+Minus verändern den Canvas-Zoom; Strg+0 setzt ihn auf 100 Prozent zurück. Für Schaltflächen und Formulare stehen Tab, Umschalt+Tab, Eingabetaste und die üblichen Auswahlfeldtasten zur Verfügung.',
         ],

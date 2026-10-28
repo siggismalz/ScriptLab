@@ -1,6 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { testAktiv, type TestOptionen, type TestPhase, type TestZustand } from '../gemeinsam/testlauf';
-import { Feld, Textfeld } from './komponenten/Feld';
+import { Feld } from './komponenten/Feld';
 import { Knopf } from './komponenten/Knopf';
 import { Statusanzeige, type StatusArt } from './komponenten/Statusanzeige';
 import './testbereich.css';
@@ -28,6 +28,11 @@ export interface TestbereichEigenschaften {
   kopieren: () => void;
   leeren: () => void;
   blockAnzeigen: (blockId: string) => void;
+  historisch?: boolean;
+  vorbereitungAnfordern?: number;
+  neuenLaufVorbereiten?: () => void;
+  protokollSpeichern?: () => void;
+  dateiAnzeigen?: (art: 'ausgabe' | 'bericht', index?: number) => Promise<void>;
 }
 
 const phasen: Record<TestPhase, string> = {
@@ -132,6 +137,16 @@ export function Testbereich(props: TestbereichEigenschaften) {
     statusId = useId(),
     ausgabeId = useId();
   const tabsId = useId();
+  const sichtbareAnsichten = props.historisch
+    ? laufansichten.filter((a) => a.id !== 'vorbereitung')
+    : laufansichten;
+
+  useEffect(() => {
+    if (props.vorbereitungAnfordern && !aktiv && !props.historisch) setAnsicht('vorbereitung');
+  }, [props.vorbereitungAnfordern]);
+  useEffect(() => {
+    if (props.historisch) setAnsicht('uebersicht');
+  }, [props.historisch, zustand.laufId]);
 
   useEffect(() => {
     if (aktiv) {
@@ -179,11 +194,9 @@ export function Testbereich(props: TestbereichEigenschaften) {
     ? 'Es ist bereits ein Lauf aktiv. Stoppe ihn oder warte auf sein Ende.'
     : gesperrt
       ? 'Bitte schließe zuerst den aktuellen Vorgang ab.'
-      : !optionen.basisVerzeichnis?.trim()
-        ? 'Wähle vor dem Start einen Basisordner aus.'
-        : zeitlimit === null
-          ? 'Gib ein ganzzahliges Zeitlimit von 1 bis 28800 Sekunden ein.'
-          : null;
+      : zeitlimit === null
+        ? 'Gib ein ganzzahliges Zeitlimit von 1 bis 28800 Sekunden ein.'
+        : null;
   const vorschau = zustand.business?.vorschau;
   const spalten = Array.isArray(vorschau?.spalten)
     ? (vorschau.spalten as { name: string; typ: string }[])
@@ -247,7 +260,12 @@ export function Testbereich(props: TestbereichEigenschaften) {
         </p>
       )}
       {zustand.fehlerBlockId && (
-        <Knopf symbol="bausteine" onClick={() => props.blockAnzeigen(zustand.fehlerBlockId!)}>
+        <Knopf
+          symbol="bausteine"
+          onClick={() => props.blockAnzeigen(zustand.fehlerBlockId!)}
+          disabled={veraltet}
+          grund="Dieser Lauf gehört zu einem anderen Workflowstand. Die Bausteinzuordnung ist dafür nicht verfügbar."
+        >
           Baustein anzeigen
         </Knopf>
       )}
@@ -258,7 +276,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
     <section className="testbereich" data-testid="test-panel" aria-labelledby={titelId}>
       <div className="lauf-kopfleiste">
         <div className="lauf-tabs" role="tablist" aria-label="Ansichten des Laufs">
-          {laufansichten.map((tab, index) => (
+          {sichtbareAnsichten.map((tab, index) => (
             <button
               type="button"
               key={tab.id}
@@ -275,11 +293,11 @@ export function Testbereich(props: TestbereichEigenschaften) {
                   event.key === 'Home'
                     ? 0
                     : event.key === 'End'
-                      ? laufansichten.length - 1
-                      : (index + (event.key === 'ArrowRight' ? 1 : -1) + laufansichten.length) %
-                        laufansichten.length;
-                ansichtWechseln(laufansichten[ziel].id);
-                document.getElementById(`${tabsId}-${laufansichten[ziel].id}`)?.focus();
+                      ? sichtbareAnsichten.length - 1
+                      : (index + (event.key === 'ArrowRight' ? 1 : -1) + sichtbareAnsichten.length) %
+                        sichtbareAnsichten.length;
+                ansichtWechseln(sichtbareAnsichten[ziel].id);
+                document.getElementById(`${tabsId}-${sichtbareAnsichten[ziel].id}`)?.focus();
               }}
             >
               {tab.text}
@@ -318,7 +336,8 @@ export function Testbereich(props: TestbereichEigenschaften) {
                   if (vorbereitung) {
                     setPruefanfrage((wert) => wert + 1);
                     props.starten();
-                  } else ansichtWechseln('vorbereitung');
+                  } else if (props.neuenLaufVorbereiten) props.neuenLaufVorbereiten();
+                  else ansichtWechseln('vorbereitung');
                 }}
                 disabled={vorbereitung ? Boolean(startGrund) : gesperrt}
                 grundId={vorbereitung ? startGrundId : optionenGrundId}
@@ -385,22 +404,18 @@ export function Testbereich(props: TestbereichEigenschaften) {
               </VorbereitungsPruefung.Provider>
             </div>
             <div className="lauf-vorbereitung-ordner">
-              <Textfeld
-                beschriftung={aktiv ? 'Basisordner dieses Laufs' : 'Basisordner für den nächsten Lauf'}
-                value={(aktiv ? laufOptionen : optionen).basisVerzeichnis ?? ''}
-                placeholder="Wähle einen Basisordner aus."
-                readOnly
-                rows={2}
-                spellCheck={false}
-              />
-              <Knopf
-                symbol="oeffnen"
-                onClick={props.ordnerWaehlen}
-                disabled={aktiv || gesperrt}
-                grundId={optionenGrundId}
-              >
-                Ordner auswählen
-              </Knopf>
+              <details className="lauf-arbeitsordner">
+                <summary>ScriptLab-Arbeitsordner</summary>
+                <p className="testbereich-hilfe">
+                  Relative Dateipfade verwenden den automatisch verwalteten Ordner dieses Workflows.
+                </p>
+                <p className="lauf-ordnerpfad">
+                  {(aktiv ? laufOptionen : optionen).basisVerzeichnis ?? 'Wird von ScriptLab festgelegt.'}
+                </p>
+                <Knopf symbol="oeffnen" variante="leise" onClick={props.ordnerWaehlen}>
+                  Im Explorer anzeigen
+                </Knopf>
+              </details>
               <details className="lauf-zeitlimit">
                 <summary>Zeitlimit: {zeitlimit === null ? 'Angabe prüfen' : `${zeitlimit} s`}</summary>
                 <Feld
@@ -434,10 +449,10 @@ export function Testbereich(props: TestbereichEigenschaften) {
               </p>
               <p id={optionenGrundId} className="testbereich-hilfe">
                 {aktiv
-                  ? 'Basisordner und Zeitlimit bleiben während dieses Laufs unverändert.'
+                  ? 'Arbeitsordner und Zeitlimit bleiben während dieses Laufs unverändert.'
                   : gesperrt
                     ? 'Bitte warte, bis der aktuelle Vorgang abgeschlossen ist.'
-                    : 'Relative Dateipfade verwenden diesen Ordner.'}
+                    : ''}
               </p>
               {props.sprache === 'python' &&
                 props.pythonStatus?.zustand !== 'bereit' &&
@@ -480,12 +495,12 @@ export function Testbereich(props: TestbereichEigenschaften) {
           {!hatLauf ? (
             <div className="lauf-leerzustand">
               <h3>Für diesen Workflow gibt es noch keine Läufe.</h3>
-              <p>Prüfe Modus, Basisordner und Zeitlimit unter „Vorbereitung“ und starte den Lauf bewusst.</p>
+              <p>Prüfe die Vorbereitung und starte den Lauf bewusst.</p>
               <Knopf onClick={() => ansichtWechseln('vorbereitung')}>Lauf vorbereiten</Knopf>
             </div>
           ) : (
             <>
-              <h3>{aktiv ? (aktuellerSchritt ?? 'Aktueller Lauf') : 'Ergebnis des letzten Laufs'}</h3>
+              <h3>{aktiv ? (aktuellerSchritt ?? 'Aktueller Lauf') : 'Ergebnis dieses Laufs'}</h3>
               <p>{zustand.meldung || phasen[zustand.phase]}</p>
               {aktiv && fortschritt && (
                 <p className="lauf-fortschritt">
@@ -577,14 +592,13 @@ export function Testbereich(props: TestbereichEigenschaften) {
                     </dd>
                   </div>
                   <div className="testbereich-dateikontext">
-                    <dt>Basisordner dieses Laufs</dt>
+                    <dt>Arbeitsordner dieses Laufs</dt>
                     <dd>
                       {laufOptionen.basisVerzeichnis ?? 'Nicht verfügbar'} · Zeitlimit{' '}
                       {laufOptionen.zeitlimitSekunden} s
                     </dd>
                   </div>
                 </dl>
-                <p className="testbereich-hilfe">Frühere Läufe werden hier nicht dauerhaft gespeichert.</p>
               </details>
             </>
           )}
@@ -611,10 +625,14 @@ export function Testbereich(props: TestbereichEigenschaften) {
           ) : (
             <>
               <BusinessErgebnis
+                key={zustand.laufId}
                 business={zustand.business}
                 optionen={laufOptionen}
                 aktiv={aktiv}
                 kontextZeigen={false}
+                dateiAnzeigen={props.dateiAnzeigen}
+                blockAnzeigen={props.blockAnzeigen}
+                blockZuordnungMoeglich={!veraltet}
               />
               {vorschau && (
                 <div className="business-vorschau" tabIndex={0} aria-label="Begrenzte Datenvorschau">
@@ -670,20 +688,33 @@ export function Testbereich(props: TestbereichEigenschaften) {
                 variante="leise"
                 symbol="kopieren"
                 onClick={props.kopieren}
-                disabled={!zustand.ausgabe}
-                grundId={ausgabeId}
+                disabled={props.protokollSpeichern ? !zustand.laufId : !zustand.ausgabe}
+                grund="Für diesen Workflow liegt noch kein Laufprotokoll vor."
               >
-                Ausgabe kopieren
+                {props.protokollSpeichern ? 'Protokoll kopieren' : 'Ausgabe kopieren'}
               </Knopf>
-              <Knopf
-                variante="leise"
-                symbol="loeschen"
-                onClick={props.leeren}
-                disabled={!zustand.ausgabe}
-                grundId={ausgabeId}
-              >
-                Ausgabe leeren
-              </Knopf>
+              {!props.historisch && (
+                <Knopf
+                  variante="leise"
+                  symbol="loeschen"
+                  onClick={props.leeren}
+                  disabled={!zustand.ausgabe}
+                  grundId={ausgabeId}
+                >
+                  Ausgabe leeren
+                </Knopf>
+              )}
+              {props.protokollSpeichern && (
+                <Knopf
+                  variante="leise"
+                  symbol="speichern"
+                  onClick={props.protokollSpeichern}
+                  disabled={!zustand.laufId}
+                  grund="Für diesen Workflow liegt noch kein Laufprotokoll vor."
+                >
+                  Protokoll exportieren
+                </Knopf>
+              )}
             </div>
           </div>
           <pre
@@ -696,7 +727,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
             tabIndex={0}
             onScroll={ausgabeScrollen}
           >
-            {zustand.ausgabe || 'Noch keine Ausgabe.'}
+            {zustand.ausgabe || (hatLauf ? 'Dieser Lauf hat keine Textausgabe gemeldet.' : 'Noch keine Ausgabe.')}
           </pre>
           {!amEnde && (
             <Knopf

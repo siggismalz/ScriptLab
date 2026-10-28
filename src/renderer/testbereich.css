@@ -658,3 +658,7 @@
 .testbereich .business-ergebnis-ausgaben > li + li {
   margin-top: 0;
 }
+.lauf-ordnerpfad {
+  overflow-wrap: anywhere;
+  color: var(--farbe-text-sekundaer);
+}

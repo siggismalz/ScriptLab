@@ -46,7 +46,7 @@ const beschriftungen: Record<string, string> = {
 
 function feldHilfe(feld: Feld, pfad: string[]): string {
   if (pfad.some((teil) => /pfad|datei/i.test(teil)))
-    return 'Relative Pfade verwenden beim Lauf den Basisordner, beim exportierten Script dessen Ordner.';
+    return 'Relative Pfade verwenden beim Lauf den ScriptLab-Arbeitsordner, beim exportierten Script dessen Ordner.';
   if (feld.name === 'VAR') return 'Wähle dieselbe Variable beim Setzen und Lesen.';
   if (feld.art === 'zahl') return '';
   if (feld.name === 'TEXT') return '';

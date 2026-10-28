@@ -503,7 +503,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                     </dd>
                   </div>
                   <div>
-                    <dt>Basisordner des Laufs</dt>
+                    <dt>Arbeitsordner des Laufs</dt>
                     <dd>{lauf.optionen.basisVerzeichnis ?? 'Nicht bekannt'}</dd>
                   </div>
                   <div>

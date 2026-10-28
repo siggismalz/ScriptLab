@@ -41,13 +41,19 @@ import { Variablendialoge } from './Variablendialoge';
 import { beispiele, type BeispielKennung } from './hilfe';
 import { Menue } from './komponenten/Menue';
 import { Startbereich } from './Startbereich';
-import { Testbereich } from './Testbereich';
+import { Laufverwaltung } from './Laufverwaltung';
 import { Datenbereich } from './Datenbereich';
 import { ExportDialog } from './ExportDialog';
 import { Arbeitsbereiche, type Arbeitsbereich } from './komponenten/Arbeitsbereiche';
 import { Marke } from './komponenten/Marke';
 import { BusinessVorbereitung } from './BusinessVorbereitung';
 import { businessSchritte } from '../kern/business';
+import { parameterVerweiseUmbenennen } from '../kern/parameterAendern';
+import {
+  BlockDatenEreignis,
+  ParameterEreignis,
+  parameterEreignisAnmelden,
+} from '../editor/parameterEreignis';
 import { testAktiv, testBereit, type TestZustand, type TestOptionen } from '../gemeinsam/testlauf';
 import type { PythonStatus } from '../gemeinsam/python';
 import paket from '../../package.json' with { type: 'json' };
@@ -75,6 +81,7 @@ export function Anwendung() {
     zeitlimitSekunden: 120,
   });
   const [arbeitsbereich, setArbeitsbereich] = useState<Arbeitsbereich>('ablauf');
+  const [laufVorbereitungAnfrage, setLaufVorbereitungAnfrage] = useState(0);
   const arbeitsbereichRef = useRef<Arbeitsbereich>('ablauf');
   arbeitsbereichRef.current = arbeitsbereich;
   const testSperre = useRef(false);
@@ -490,11 +497,15 @@ export function Anwendung() {
             // Blockly kann seine Änderungsereignisse erst nach der schnellen Dateiantwort liefern.
             // Der aktuelle Workspace und der bestätigte Dateistand bestimmen den Speicherstatus.
             const gespeichertStand = neu.projekt;
-            projektRef.current = { ...standLesen(), projektKennung: kennung };
+            projektRef.current = {
+              ...standLesen(),
+              ...(art === 'unter' ? { name: neu.projekt.name } : {}),
+              projektKennung: kennung,
+            };
             setProjekt(projektRef.current);
             gespeichertRef.current = JSON.stringify(gespeichertStand);
             setDatei(neu.dateiname);
-            setGeaendert(JSON.stringify(projektRef.current) !== gespeichertRef.current);
+            setGeaendert(testInhaltsText(projektRef.current) !== testInhaltsText(gespeichertStand));
             dokumentStatusUebernehmen(neu);
             const kontext = antwort(await window.scriptlab.testLesen());
             setTestOptionen((alt) => ({ ...alt, basisVerzeichnis: kontext.optionen.basisVerzeichnis }));
@@ -546,6 +557,15 @@ export function Anwendung() {
       }
     });
   }
+  async function projektExportieren() {
+    await aktion('Projektdatei wird exportiert …', async () => {
+      const neu = antwort(await window.scriptlab.projektExportieren(standLesen()));
+      if (neu) {
+        setExportiert(neu);
+        melden('Projektdatei exportiert.', 'erfolg');
+      }
+    });
+  }
   function testInhaltsText(p: Projekt): string {
     const { ansicht: _ansicht, ...inhalt } = p;
     return JSON.stringify(inhalt);
@@ -566,6 +586,7 @@ export function Anwendung() {
   }
   async function testStarten() {
     if (testAnfrage.current || testSperre.current || busy.current) return;
+    setLaufVorbereitungAnfrage((n) => n + 1);
     setArbeitsbereich('laeufe');
     setVorschauOffen(false);
     setExportiert(null);
@@ -579,19 +600,9 @@ export function Anwendung() {
       blockAnzeigen(pruefung.meldungen.find((m) => m.stufe === 'fehler')?.blockId);
       return;
     }
-    if (!testOptionen.basisVerzeichnis) {
-      melden(
-        'Wähle unter Läufe zuerst einen Basisordner. Relative Dateipfade beziehen sich auf diesen Ordner.',
-        'fehler',
-      );
-      return;
-    }
     if (testKontextGesehen.current !== testKontextKennung()) {
       testKontextGesehen.current = testKontextKennung();
-      melden(
-        'Prüfe unter Läufe Modus, Basisordner und Zeitlimit und starte den Lauf danach bewusst.',
-        'hinweis',
-      );
+      melden('Prüfe unter Läufe den Modus und die Parameter und starte den Lauf danach bewusst.', 'hinweis');
       return;
     }
     testAnfrage.current = true;
@@ -635,15 +646,9 @@ export function Anwendung() {
   }
   async function testOrdnerWaehlen() {
     try {
-      const pfad = antwort(await window.scriptlab.testOrdnerWaehlen());
-      if (pfad)
-        setTestOptionen((alt) => {
-          const neu = { ...alt, basisVerzeichnis: pfad };
-          testKontextGesehen.current = testKontextKennung(neu);
-          return neu;
-        });
+      antwort(await window.scriptlab.arbeitsordnerAnzeigen());
     } catch (e) {
-      melden(e instanceof Error ? e.message : 'Der Ordner konnte nicht gewählt werden.', 'fehler');
+      melden(e instanceof Error ? e.message : 'Der Arbeitsordner konnte nicht angezeigt werden.', 'fehler');
     }
   }
   useEffect(() => {
@@ -789,6 +794,9 @@ export function Anwendung() {
     });
     wsRef.current = ws;
     setWorkspace(ws);
+    const parameterAbmelden = parameterEreignisAnmelden(ws.id, (business) =>
+      aendern({ ...standLesen(), business }),
+    );
     const aenderung = (event: Blockly.Events.Abstract) => {
       if (laedt.current || !arbeitsbereichGeladen.current) return;
       if (event.type === Blockly.Events.SELECTED) {
@@ -827,6 +835,7 @@ export function Anwendung() {
     });
     return () => {
       abmelden();
+      parameterAbmelden();
       navigation();
       groesse.disconnect();
       ws.dispose();
@@ -1112,7 +1121,7 @@ export function Anwendung() {
                   aktion: () => void projektAktion('oeffnen'),
                 },
                 {
-                  text: 'Speichern unter',
+                  text: 'Kopie anlegen',
                   symbol: 'speichern',
                   gesperrt: testAktiv(test.phase),
                   grund: 'Stoppe den Lauf vor dem Speichern.',
@@ -1410,9 +1419,13 @@ export function Anwendung() {
                 {exportiert && (
                   <section className="export-rueckmeldung" role="status" aria-label="Export abgeschlossen">
                     <div>
-                      <h3>Script gespeichert</h3>
+                      <h3>Export erstellt</h3>
                       <p>
-                        Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.
+                        {exportiert.dateiname.endsWith('.scriptlab')
+                          ? 'Die Projektkopie lässt sich in ScriptLab öffnen und weiterbearbeiten.'
+                          : exportiert.dateiname.endsWith('.zip')
+                            ? 'Das Business-Paket enthält den Workflow und die benötigten Begleitdateien.'
+                            : 'Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.'}
                       </p>
                       {projekt.skriptsprache === 'vbs' && exportiert.signatur && (
                         <p
@@ -1627,8 +1640,12 @@ export function Anwendung() {
           aria-labelledby="bereich-laeufe"
           hidden={arbeitsbereich !== 'laeufe'}
         >
-          <Testbereich
+          <Laufverwaltung
             key={projekt.projektKennung}
+            projektKennung={projekt.projektKennung!}
+            workflowStand={testInhaltsText(projekt)}
+            sichtbar={ansicht === 'editor' && arbeitsbereich === 'laeufe'}
+            vorbereitungAnfrage={laufVorbereitungAnfrage}
             workflowInfo={{ name: projekt.name, geaendert }}
             businessVorbereitung={
               businessSchritte(projekt).length > 0 ? (
@@ -1672,14 +1689,7 @@ export function Anwendung() {
                 if (r.ok) testUebernehmen(r.wert);
               })
             }
-            blockAnzeigen={() => {
-              if (!testAktiv(test.phase) && testInhalt.current !== testInhaltsText(projekt))
-                melden(
-                  'Dieser Fehler gehört zu einem älteren Teststand. Die Blockzuordnung wird nicht auf einen anderen Workflow übertragen.',
-                  'hinweis',
-                );
-              else blockAnzeigen(test.fehlerBlockId ?? undefined);
-            }}
+            blockAnzeigen={(id) => blockAnzeigen(id)}
           />
         </div>
         {dauerfehler && (
@@ -1752,7 +1762,7 @@ export function Anwendung() {
         offen={dialog === 'export'}
         projekt={projekt}
         schliessen={() => setDialog(null)}
-        projektSpeichern={() => void projektAktion('unter')}
+        projektSpeichern={() => void projektExportieren()}
         exportieren={() => void exportieren()}
       />
       <SprachwahlDialog
@@ -1775,7 +1785,38 @@ export function Anwendung() {
         offen={dialog === 'parameter'}
         business={projekt.business}
         schliessen={() => setDialog(null)}
-        speichern={(business) => aendern({ ...standLesen(), business })}
+        speichern={(business, umbenennungen = {}) => {
+          const vorherigerStand = standLesen();
+          const neu = parameterVerweiseUmbenennen({ ...vorherigerStand, business }, umbenennungen);
+          const ws = wsRef.current;
+          if (ws) {
+            const daten = new Map<string, string | undefined>();
+            const lesen = (block: import('../kern/projekt').EditorBlock) => {
+              daten.set(block.id!, block.data);
+              for (const eingang of Object.values(block.inputs ?? {})) {
+                if (eingang.block) lesen(eingang.block);
+                if (eingang.shadow) lesen(eingang.shadow);
+              }
+              if (block.next?.block) lesen(block.next.block);
+            };
+            neu.editor.blocks?.blocks.forEach(lesen);
+            Blockly.Events.setGroup(true);
+            try {
+              for (const block of ws.getAllBlocks(false)) {
+                const wert = daten.get(block.id);
+                if (wert !== undefined && wert !== block.data) {
+                  const vorher = block.data;
+                  block.data = wert;
+                  Blockly.Events.fire(new BlockDatenEreignis(block, vorher, wert));
+                }
+              }
+              Blockly.Events.fire(new ParameterEreignis(ws, vorherigerStand.business, business));
+            } finally {
+              Blockly.Events.setGroup(false);
+            }
+          }
+          aendern(neu);
+        }}
       />
       <EinstellungenDialog
         businessGewechselt={() => {

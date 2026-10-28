@@ -246,7 +246,8 @@ export function BusinessVorbereitung({
         </ul>
         {!pfadschritte.length && <p>Keine fest konfigurierten Dateiquellen oder Ausgabeziele.</p>}
         <p className="testbereich-hilfe">
-          Relative Pfade verwenden den Basisordner. Berechnete Ziele stehen erst im jeweiligen Schritt fest.
+          Relative Pfade verwenden den ScriptLab-Arbeitsordner. Berechnete Ziele stehen erst im jeweiligen
+          Schritt fest.
         </p>
       </details>
       <details className="lauf-erweiterte-optionen">

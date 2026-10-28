@@ -96,3 +96,41 @@
   color: var(--farbe-text);
   font: inherit;
 }
+
+.business-ergebnis-meldungen > li {
+  padding-block: var(--abstand-4);
+}
+.business-ergebnis-meldungen > li > p {
+  margin: 0;
+}
+.business-ergebnis-meldungen > li > .sl-knopf {
+  margin-top: var(--abstand-4);
+}
+.business-ergebnis .business-ergebnis-dateizeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--abstand-4) var(--abstand-16);
+  border-bottom: 1px solid var(--farbe-trennung);
+  padding-block: var(--abstand-4);
+}
+.business-ergebnis-dateizeile > .business-ergebnis-datei {
+  flex: 1 1 320px;
+  min-width: 0;
+  border-bottom: 0;
+}
+.business-ergebnis-dateizeile > .sl-knopf {
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+.business-ergebnis .business-ergebnis-aktionshinweis,
+.business-ergebnis .business-ergebnis-aktionsfehler {
+  margin-block: var(--abstand-8) 0;
+  overflow-wrap: anywhere;
+}
+.business-ergebnis-aktionshinweis {
+  color: var(--farbe-text-sekundaer);
+}
+.business-ergebnis-aktionsfehler {
+  color: var(--farbe-fehler);
+}
