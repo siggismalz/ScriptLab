@@ -1,6 +1,6 @@
-# Lizenzhinweise zur optionalen Business-Laufzeit
+# Lizenzhinweise zur Business-Laufzeit
 
-Pruefstand: 26. Oktober 2026. Diese Hinweise betreffen ausschliesslich den festen optionalen Python-Paketsatz. ScriptLab installiert ihn nur nach ausdruecklicher Einrichtung in einer eigenen virtuellen Umgebung. Die Projektlizenz von ScriptLab wird hiermit nicht festgelegt.
+Pruefstand der Originaltexte: 26. Oktober 2026. Diese Hinweise betreffen den festen Python-Paketsatz. Die ScriptLab-App liefert ihn vollstaendig vorbereitet mit; beim Anwender werden keine Pakete nachgeladen. Exportierte Business-Scripts benoetigen weiterhin eine eigene vorbereitete Python-Umgebung. Die Projektlizenz von ScriptLab wird hiermit nicht festgelegt.
 
 Die folgende Liste umfasst alle elf direkt oder transitiv benoetigten Pakete. Die Volltexte stammen aus den anhand der Lockdatei SHA-256-geprueften originalen Windows-/Universal-Wheels fuer CPython 3.12 bis 3.15. Auch mitgelieferte Hinweise zu eingebetteten Bibliotheken und experimentellen Unterpaketen bleiben enthalten. Unterschiedliche Wheelvarianten mit gleichem Text sind je Quelle aufgefuehrt; Zeilenenden werden fuer diese Markdown-Beilage vereinheitlicht.
 
