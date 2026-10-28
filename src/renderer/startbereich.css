@@ -155,6 +155,32 @@
   font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
   color: var(--farbe-text-sekundaer);
 }
+.startbereich .start-einstiege--kompakt .start-karte {
+  min-height: 56px;
+  padding: var(--abstand-8) var(--abstand-12);
+  gap: var(--abstand-12);
+}
+.startbereich .start-einstiege--kompakt .start-karte-inhalt {
+  gap: 0;
+}
+.startbereich .start-zuletzt .start-workflowzeile--aktiv {
+  border-left-color: var(--farbe-akzent);
+}
+.startbereich .start-zuletzt .start-workflowzeile--aktiv h3 {
+  font-weight: var(--gewicht-semibold);
+}
+@media (min-width: 1101px) {
+  .startbereich .start-zuletzt .start-listenkopf,
+  .startbereich .start-zuletzt .start-workflowzeile {
+    grid-template-columns: minmax(160px, 1fr) 72px 160px 176px 152px;
+  }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .startbereich .start-zuletzt .start-listenkopf,
+  .startbereich .start-zuletzt .start-workflowzeile {
+    grid-template-columns: minmax(160px, 1fr) 56px 136px 152px;
+  }
+}
 .start-abschnitt-kopf,
 .start-eintrag-kopf {
   display: flex;

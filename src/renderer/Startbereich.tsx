@@ -14,6 +14,7 @@ type Sortierung = 'zuletzt' | 'name';
 type Sprachfilter = 'alle' | Skriptsprache;
 
 export interface AktiverWorkflowInfo {
+  projektKennung: string;
   name: string;
   dateiname: string | null;
   geaendert: boolean;
@@ -136,6 +137,27 @@ export function zuletztGeoeffnete(projekte: readonly ProjektEintrag[]): ProjektE
   ).slice(0, 5);
 }
 
+type LetzteWorkflowZeile =
+  | { art: 'aktiv'; workflow: AktiverWorkflowInfo; projekt: ProjektEintrag | null }
+  | { art: 'datei'; projekt: ProjektEintrag };
+
+/** Aktive Arbeit erscheint genau einmal; Namen und Dateipfade sind keine Projektidentität. */
+export function letzteWorkflowZeilen(
+  projekte: readonly ProjektEintrag[],
+  aktiv: AktiverWorkflowInfo | null,
+): LetzteWorkflowZeile[] {
+  if (!aktiv) return zuletztGeoeffnete(projekte).map((projekt) => ({ art: 'datei', projekt }));
+  const andere = zuletztGeoeffnete(projekte.filter((p) => p.projektKennung !== aktiv.projektKennung));
+  return [
+    {
+      art: 'aktiv',
+      workflow: aktiv,
+      projekt: projekte.find((p) => p.projektKennung === aktiv.projektKennung) ?? null,
+    },
+    ...andere.slice(0, 4).map((projekt): LetzteWorkflowZeile => ({ art: 'datei', projekt })),
+  ];
+}
+
 function zeitDarstellen(iso: string | null): string {
   if (!iso) return 'Noch nicht geöffnet';
   const datum = new Date(iso);
@@ -230,7 +252,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
   const entwuerfe = props.daten
     ? entwuerfeFiltern(props.daten.entwuerfe, entwurfSuche, entwurfSortierung, entwurfSprache)
     : [];
-  const letzteProjekte = props.daten ? zuletztGeoeffnete(props.daten.projekte) : [];
+  const letzteZeilen = letzteWorkflowZeilen(props.daten?.projekte ?? [], props.aktiveInfo);
   useEffect(() => setListenseite(0), [projektSuche, projektSortierung, projektSprache]);
   const maximaleListenseite = Math.max(0, Math.ceil(projekte.length / 50) - 1);
   const aktuelleListenseite = Math.min(listenseite, maximaleListenseite);
@@ -379,6 +401,71 @@ export function Startbereich(props: StartbereichEigenschaften) {
     );
   }
 
+  function aktiveZeile(workflow: AktiverWorkflowInfo, projekt: ProjektEintrag | null) {
+    const status = workflow.geaendert
+      ? 'Ungespeicherte Änderungen'
+      : workflow.dateiname
+        ? 'Projekt gespeichert'
+        : 'Noch nicht gespeichert';
+    return (
+      <article
+        className="start-listeneintrag start-workflowzeile start-workflowzeile--kompakt start-workflowzeile--aktiv"
+        key={`aktiv-${workflow.projektKennung}`}
+        aria-label={`${workflow.name} – aktiver Workflow`}
+        data-aktiver-workflow={workflow.projektKennung}
+      >
+        <div className="start-workflowname">
+          <h3 title={workflow.name}>{workflow.name}</h3>
+        </div>
+        <span
+          className="start-workflowsprache"
+          aria-label={`Sprache: ${sprachdaten[workflow.skriptsprache].bezeichnung}`}
+        >
+          {sprachdaten[workflow.skriptsprache].kurzbezeichnung}
+        </span>
+        <span className="start-dateistatus">
+          <Symbol name={workflow.geaendert ? 'entwurf' : 'info'} groesse={16} />
+          {status}
+        </span>
+        <span className="start-workflowdatum">
+          {projekt?.zuletztGeoeffnet ? zeitDarstellen(projekt.zuletztGeoeffnet) : 'Aktuell geöffnet'}
+        </span>
+        <div className="start-zeilen-hauptaktion">
+          <Knopf
+            symbol="rechts"
+            disabled={gesperrt}
+            grundId="start-verarbeitung"
+            onClick={props.weiterbearbeiten}
+          >
+            Weiterbearbeiten
+          </Knopf>
+        </div>
+        {workflow.dateiname && (
+          <details className="start-dateidetails">
+            <summary title={`Details zu ${workflow.name}`}>
+              <Symbol name="rechts" groesse={16} />
+              <span className="sl-nur-vorlesen">Speicherort und Dateistatus</span>
+            </summary>
+            <div className="start-dateidetails-inhalt">
+              <Textfeld
+                beschriftung="Dateipfad"
+                value={workflow.dateiname}
+                readOnly
+                rows={2}
+                spellCheck={false}
+                className="start-pfad"
+                aria-label={`Dateipfad: ${workflow.name}`}
+              />
+              {projekt && props.verfuegbarkeiten[projekt.id] && (
+                <p>{props.verfuegbarkeiten[projekt.id]!.meldung}</p>
+              )}
+            </div>
+          </details>
+        )}
+      </article>
+    );
+  }
+
   function workflowSpaltenkopf() {
     return (
       <div className="start-listenkopf" aria-hidden="true">
@@ -521,28 +608,6 @@ export function Startbereich(props: StartbereichEigenschaften) {
 
           {seite === 'start' && (
             <>
-              {props.aktiveInfo && (
-                <div className="start-weiterarbeiten">
-                  <p className="start-aktiver-workflow">
-                    <strong title={props.aktiveInfo.name}>{props.aktiveInfo.name}</strong>
-                    <span className="start-aktiver-status">
-                      {props.aktiveInfo.geaendert
-                        ? 'Ungespeicherte Änderungen'
-                        : props.aktiveInfo.dateiname
-                          ? 'Projekt gespeichert'
-                          : 'Noch nicht als Projektdatei gespeichert'}
-                    </span>
-                  </p>
-                  <Knopf
-                    symbol="rechts"
-                    disabled={gesperrt}
-                    grundId="start-verarbeitung"
-                    onClick={props.weiterbearbeiten}
-                  >
-                    Weiterbearbeiten
-                  </Knopf>
-                </div>
-              )}
               <section
                 className="start-zuletzt"
                 data-testid="zuletzt-geoeffnet"
@@ -554,16 +619,22 @@ export function Startbereich(props: StartbereichEigenschaften) {
                     Alle gespeicherten Workflows
                   </Knopf>
                 </div>
-                {letzteProjekte.length ? (
+                {letzteZeilen.length ? (
                   <>
                     {workflowSpaltenkopf()}
-                    <div className="start-liste">{letzteProjekte.map((p) => projektZeile(p, true))}</div>
+                    <div className="start-liste">
+                      {letzteZeilen.map((zeile) =>
+                        zeile.art === 'aktiv'
+                          ? aktiveZeile(zeile.workflow, zeile.projekt)
+                          : projektZeile(zeile.projekt, true),
+                      )}
+                    </div>
                   </>
                 ) : (
                   datenStatus('Noch keine Workflows geöffnet.')
                 )}
               </section>
-              <section className="start-einstiege" aria-label="Weitere Einstiege">
+              <section className="start-einstiege start-einstiege--kompakt" aria-label="Weitere Einstiege">
                 <div className="start-karten" data-testid="start-karten">
                   {karten.map((karte) => (
                     <button
@@ -586,7 +657,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
                             ? props.daten?.hinweis
                               ? 'Bestand nicht vollständig geladen'
                               : props.daten
-                                ? `${props.daten.projekte.length} ${props.daten.projekte.length === 1 ? 'Workflow' : 'Workflows'} bekannt`
+                                ? `${props.daten.projekte.length} ${props.daten.projekte.length === 1 ? 'Workflow' : 'Workflows'}`
                                 : props.laden
                                   ? 'Wird geladen …'
                                   : 'Bibliothek nicht geladen'
@@ -594,13 +665,13 @@ export function Startbereich(props: StartbereichEigenschaften) {
                               ? props.daten?.hinweis
                                 ? 'Bestand nicht vollständig geladen'
                                 : props.daten
-                                  ? `${props.daten.entwuerfe.length} ${props.daten.entwuerfe.length === 1 ? 'Entwurf' : 'Entwürfe'} gesichert`
+                                  ? `${props.daten.entwuerfe.length} ${props.daten.entwuerfe.length === 1 ? 'Entwurf' : 'Entwürfe'}`
                                   : props.laden
                                     ? 'Wird geladen …'
                                     : 'Bibliothek nicht geladen'
                               : karte.seite === 'beispiele'
-                                ? `${beispiele.length} lokale Beispiele`
-                                : `${hilfeArtikel.length} lokale Anleitungen`}
+                                ? `${beispiele.length} Beispiele`
+                                : `${hilfeArtikel.length} Anleitungen`}
                         </span>
                       </span>
                       <Symbol name="rechts" />

@@ -8,6 +8,8 @@ import {
   entwuerfeFiltern,
   projekteFiltern,
   zuletztGeoeffnete,
+  letzteWorkflowZeilen,
+  type AktiverWorkflowInfo,
   type StartbereichEigenschaften,
 } from '../src/renderer/Startbereich';
 import { beispiele, hilfeArtikel, hilfeDurchsuchen } from '../src/renderer/hilfe';
@@ -73,6 +75,41 @@ describe('Bibliotheksansicht ohne zweite Datenwahrheit', () => {
     expect(daten).toHaveLength(8);
   });
 
+  it('ordnet aktive Arbeit nur über die Projektkennung zu und zählt sie in das Fünferlimit', () => {
+    const daten = Array.from({ length: 7 }, (_, i) =>
+      projekt(String(i), 'Gleicher Name', `C:\\${i}.scriptlab`, `2026-10-2${i}T08:00:00.000Z`),
+    );
+    const aktiv: AktiverWorkflowInfo = {
+      projektKennung: daten[0].projektKennung,
+      name: 'Aktueller umbenannter Stand',
+      dateiname: daten[0].pfad,
+      geaendert: true,
+      skriptsprache: 'vbs',
+    };
+    const vorher = structuredClone({ daten, aktiv });
+    const zeilen = letzteWorkflowZeilen(daten, aktiv);
+    expect(zeilen).toHaveLength(5);
+    expect(zeilen[0]).toEqual({ art: 'aktiv', workflow: aktiv, projekt: daten[0] });
+    expect(zeilen.slice(1).map((z) => z.projekt?.id)).toEqual(['6', '5', '4', '3']);
+    expect({ daten, aktiv }).toEqual(vorher);
+  });
+
+  it('erhält einen ungespeicherten aktiven Workflow ohne erfundenen Dateieintrag', () => {
+    const aktiv: AktiverWorkflowInfo = {
+      projektKennung: 'neue-kennung',
+      name: 'Gleicher Name',
+      dateiname: null,
+      geaendert: true,
+      skriptsprache: 'python',
+    };
+    const daten = [projekt('gespeichert', aktiv.name, 'C:\\Stand.scriptlab', '2026-10-26T08:00:00.000Z')];
+    expect(letzteWorkflowZeilen(daten, aktiv)).toEqual([
+      { art: 'aktiv', workflow: aktiv, projekt: null },
+      { art: 'datei', projekt: daten[0] },
+    ]);
+    expect(letzteWorkflowZeilen([], aktiv)).toEqual([{ art: 'aktiv', workflow: aktiv, projekt: null }]);
+  });
+
   it('sortiert Entwürfe nach Sicherungszeit und findet ihren Bezugspfad', () => {
     const daten = [
       entwurf('alt', 'Zweiter Ablauf', '2026-10-25T08:00:00.000Z', 'C:\\Alte Sicherung\\stand.scriptlab'),
@@ -117,11 +154,44 @@ describe('Bibliotheksansicht ohne zweite Datenwahrheit', () => {
         ...props,
         laden: false,
         daten: { projekte: [], entwuerfe: [], hinweis: null },
-        aktiveInfo: { name: 'Testentwurf', dateiname: null, geaendert: true, skriptsprache: 'vbs' },
+        aktiveInfo: {
+          projektKennung: 'aktiver-entwurf',
+          name: 'Testentwurf',
+          dateiname: null,
+          geaendert: true,
+          skriptsprache: 'vbs',
+        },
       }),
     );
-    expect(geladen).toContain('0 Workflows bekannt');
+    expect(geladen).toContain('0 Workflows');
     expect(geladen).toContain('Weiterbearbeiten');
+    expect(geladen).toContain('data-aktiver-workflow="aktiver-entwurf"');
+    expect(geladen).toContain('Ungespeicherte Änderungen');
+    expect(geladen).not.toContain('start-weiterarbeiten');
+    expect(geladen).not.toContain('Datei verfügbar');
+    const gespeichert = projekt('aktiv', 'Testentwurf', 'C:\\Aktiv.scriptlab', '2026-10-26T08:00:00.000Z');
+    const doppeltBekannt = renderToStaticMarkup(
+      createElement(Startbereich, {
+        ...props,
+        laden: false,
+        daten: {
+          projekte: [gespeichert, { ...gespeichert, id: 'zweiter-verweis' }],
+          entwuerfe: [],
+          hinweis: null,
+        },
+        aktiveInfo: {
+          projektKennung: gespeichert.projektKennung,
+          name: 'Aktueller Stand',
+          dateiname: gespeichert.pfad,
+          geaendert: true,
+          skriptsprache: 'vbs',
+        },
+      }),
+    );
+    expect(doppeltBekannt.match(/Weiterbearbeiten/g)).toHaveLength(1);
+    expect(doppeltBekannt).not.toContain('data-projekt-id=');
+    expect(doppeltBekannt).toContain('Aktueller Stand');
+    expect(aktion).not.toHaveBeenCalled();
   });
 
   it('behauptet bei einem unlesbaren Index weder einen leeren Bestand noch falsche Nullzählungen', () => {
@@ -174,7 +244,11 @@ describe('Lokale Hilfe und vorhandene Vorlagen', () => {
 
   it('verweist auf die elf echten Beispielprojekte und gültige Vorlagenlinks', async () => {
     expect(beispiele.map((b) => b.id)).toEqual([
-      'business-monat','business-bestellungen','business-bestellvorschlag','business-belege','business-stapel',
+      'business-monat',
+      'business-bestellungen',
+      'business-bestellvorschlag',
+      'business-belege',
+      'business-stapel',
       'begruessung',
       'backup',
       'dateiliste',
