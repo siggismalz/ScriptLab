@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import type { EntwurfEintrag, ProjektBibliothek, ProjektEintrag, Verfuegbarkeit } from '../gemeinsam/bruecke';
 import { beispiele, hilfeArtikel, hilfeDurchsuchen, type BeispielKennung } from './hilfe';
 import { Knopf } from './komponenten/Knopf';
+import { Karte } from './komponenten/Karte';
 import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
 import { Symbol, type SymbolName } from './komponenten/Icon';
 import { Statusanzeige } from './komponenten/Statusanzeige';
@@ -638,7 +639,8 @@ export function Startbereich(props: StartbereichEigenschaften) {
 
           {seite === 'start' && (
             <>
-              <section
+              <Karte
+                as="section"
                 className="start-zuletzt"
                 data-testid="zuletzt-geoeffnet"
                 aria-labelledby="start-zuletzt-titel"
@@ -663,49 +665,52 @@ export function Startbereich(props: StartbereichEigenschaften) {
                 ) : (
                   datenStatus('Noch keine Workflows geöffnet.')
                 )}
-              </section>
-              <section className="start-einstiege start-einstiege--kompakt" aria-label="Weitere Einstiege">
+              </Karte>
+              <section className="start-einstiege" aria-label="Weitere Einstiege">
                 <div className="start-karten" data-testid="start-karten">
                   {karten.map((karte) => (
-                    <button
-                      key={karte.seite}
-                      className={`start-karte ${karte.seite === 'beispiele' || karte.seite === 'hilfe' ? 'start-karte--nachschlagen' : ''}`}
-                      aria-label={seitentitel[karte.seite]}
-                      title={karte.beschreibung}
-                      data-testid={
-                        karte.seite === 'entwuerfe' && Boolean(props.daten?.entwuerfe.length)
-                          ? 'entwuerfe-hinweis'
-                          : undefined
-                      }
-                      onClick={() => seiteWechseln(karte.seite)}
-                    >
-                      <Symbol name={karte.symbol} groesse={20} />
-                      <span className="start-karte-inhalt">
-                        <span className="start-karte-titel">{seitentitel[karte.seite]}</span>
-                        <span className="start-karte-metadaten">
-                          {karte.seite === 'projekte'
-                            ? props.daten?.hinweis
-                              ? 'Bestand nicht vollständig geladen'
-                              : props.daten
-                                ? `${props.daten.projekte.length} ${props.daten.projekte.length === 1 ? 'Workflow' : 'Workflows'}`
-                                : props.laden
-                                  ? 'Wird geladen …'
-                                  : 'Bibliothek nicht geladen'
-                            : karte.seite === 'entwuerfe'
+                    <Karte as="div" key={karte.seite} className="start-einstiegskarte">
+                      <button
+                        type="button"
+                        className={`start-karte ${karte.seite === 'beispiele' || karte.seite === 'hilfe' ? 'start-karte--nachschlagen' : ''}`}
+                        aria-label={seitentitel[karte.seite]}
+                        title={karte.beschreibung}
+                        data-testid={
+                          karte.seite === 'entwuerfe' && Boolean(props.daten?.entwuerfe.length)
+                            ? 'entwuerfe-hinweis'
+                            : undefined
+                        }
+                        onClick={() => seiteWechseln(karte.seite)}
+                      >
+                        <Symbol name={karte.symbol} groesse={20} />
+                        <span className="start-karte-inhalt">
+                          <span className="start-karte-titel">{seitentitel[karte.seite]}</span>
+                          <span className="start-karte-beschreibung">{karte.beschreibung}</span>
+                          <span className="start-karte-metadaten">
+                            {karte.seite === 'projekte'
                               ? props.daten?.hinweis
                                 ? 'Bestand nicht vollständig geladen'
                                 : props.daten
-                                  ? `${props.daten.entwuerfe.length} ${props.daten.entwuerfe.length === 1 ? 'Entwurf' : 'Entwürfe'}`
+                                  ? `${props.daten.projekte.length} ${props.daten.projekte.length === 1 ? 'Workflow' : 'Workflows'}`
                                   : props.laden
                                     ? 'Wird geladen …'
                                     : 'Bibliothek nicht geladen'
-                              : karte.seite === 'beispiele'
-                                ? `${beispiele.length} Beispiele`
-                                : `${hilfeArtikel.length} Anleitungen`}
+                              : karte.seite === 'entwuerfe'
+                                ? props.daten?.hinweis
+                                  ? 'Bestand nicht vollständig geladen'
+                                  : props.daten
+                                    ? `${props.daten.entwuerfe.length} ${props.daten.entwuerfe.length === 1 ? 'Entwurf' : 'Entwürfe'}`
+                                    : props.laden
+                                      ? 'Wird geladen …'
+                                      : 'Bibliothek nicht geladen'
+                                : karte.seite === 'beispiele'
+                                  ? `${beispiele.length} Beispiele`
+                                  : `${hilfeArtikel.length} Anleitungen`}
+                          </span>
                         </span>
-                      </span>
-                      <Symbol name="rechts" />
-                    </button>
+                        <Symbol name="rechts" />
+                      </button>
+                    </Karte>
                   ))}
                 </div>
               </section>

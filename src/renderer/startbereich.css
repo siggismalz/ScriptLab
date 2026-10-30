@@ -107,16 +107,25 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--abstand-16);
 }
+.start-einstiegskarte.sl-karte {
+  display: flex;
+  padding: 0;
+}
+.start-einstiegskarte:has(.start-karte:hover) {
+  border-color: var(--farbe-kontur);
+  background: var(--farbe-erhoeht);
+}
 .start-karte {
   display: flex;
   align-items: flex-start;
   gap: var(--abstand-16);
   min-width: 0;
-  min-height: 148px;
-  padding: var(--abstand-24);
-  border: 1px solid var(--farbe-kontur);
-  border-radius: var(--radius-dialog);
-  background: var(--farbe-grundflaeche);
+  min-height: 136px;
+  width: 100%;
+  padding: var(--abstand-16);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
   color: var(--farbe-text);
   text-align: left;
   cursor: pointer;
@@ -125,8 +134,7 @@
     border-color var(--dauer-uebergang);
 }
 .start-karte:hover {
-  background: var(--farbe-erhoeht);
-  border-color: var(--farbe-text-sekundaer);
+  background: transparent;
 }
 .start-karte:active {
   background: var(--farbe-arbeitsflaeche);
@@ -154,14 +162,6 @@
 .start-metadaten {
   font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
   color: var(--farbe-text-sekundaer);
-}
-.startbereich .start-einstiege--kompakt .start-karte {
-  min-height: 56px;
-  padding: var(--abstand-8) var(--abstand-12);
-  gap: var(--abstand-12);
-}
-.startbereich .start-einstiege--kompakt .start-karte-inhalt {
-  gap: 0;
 }
 .startbereich .start-zuletzt .start-workflowzeile--aktiv {
   border-left-color: var(--farbe-akzent);

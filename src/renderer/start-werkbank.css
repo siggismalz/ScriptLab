@@ -290,32 +290,32 @@
 }
 .startbereich .start-karten {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
+  gap: var(--abstand-16);
 }
 .startbereich .start-karte {
-  min-height: 72px;
-  padding: 12px 16px;
-  border: 1px solid var(--farbe-trennung);
-  border-radius: 4px;
-  background: var(--farbe-grundflaeche);
-  gap: 12px;
+  min-height: 136px;
+  padding: var(--abstand-16);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  gap: var(--abstand-16);
   align-items: flex-start;
 }
 .startbereich .start-karte > .sl-symbol:first-child {
   margin-top: 2px;
   color: var(--farbe-text-sekundaer);
 }
-.startbereich .start-karte--nachschlagen {
-  background: transparent;
-}
 .startbereich .start-karte-inhalt {
-  gap: 2px;
+  gap: var(--abstand-8);
 }
 .startbereich .start-karte-titel {
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  line-height: 1.5;
+}
+.startbereich .start-karte-beschreibung {
   font-size: inherit;
   line-height: 1.5;
 }
-.startbereich .start-karte-beschreibung,
 .startbereich .start-karte-metadaten {
   font-size: calc(12px * var(--text-skala, 1));
   line-height: 1.5;
@@ -329,8 +329,7 @@
   color: var(--farbe-text-sekundaer);
 }
 .startbereich .start-karte:hover {
-  border-color: var(--farbe-kontur);
-  background: var(--farbe-erhoeht);
+  background: transparent;
 }
 .startbereich .start-unterbereiche {
   margin-bottom: 0;

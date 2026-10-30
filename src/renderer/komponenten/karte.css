@@ -1,0 +1,24 @@
+.sl-karte {
+  min-width: 0;
+  padding: var(--abstand-16);
+  border: 1px solid var(--farbe-trennung);
+  border-radius: var(--radius-dialog);
+  background: var(--farbe-grundflaeche);
+  color: var(--farbe-text);
+  overflow-wrap: anywhere;
+}
+.sl-karte--hervorgehoben {
+  border-color: var(--farbe-akzent);
+  box-shadow: 0 0 0 1px var(--farbe-akzent);
+}
+@media (forced-colors: active) {
+  .sl-karte {
+    color: CanvasText;
+    border-color: CanvasText;
+    background: Canvas;
+  }
+  .sl-karte--hervorgehoben {
+    border-color: Highlight;
+    box-shadow: 0 0 0 1px Highlight;
+  }
+}
