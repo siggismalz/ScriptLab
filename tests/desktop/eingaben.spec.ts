@@ -34,7 +34,7 @@ test.beforeEach(async ({ profilEinstellungen }) => {
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
   await sprachwahlBestaetigen(seite);
-  await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
   await seite.evaluate(
     () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
   );

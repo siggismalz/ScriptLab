@@ -455,7 +455,12 @@ export function Anwendung() {
   }
   function eigenschaftenSchliessen() {
     setEigenschaftenOffen(false);
-    rueckfokus.current?.focus?.({ preventScroll: true });
+    const vorher = rueckfokus.current;
+    const ziel =
+      vorher?.isConnected && vorher.getClientRects().length
+        ? vorher
+        : document.querySelector<HTMLElement>('.ansichtknopfgruppe button');
+    ziel?.focus({ preventScroll: true });
   }
   async function dokumentLaden(neu: Dokument, nurDaten = false) {
     laedt.current = true;
@@ -668,14 +673,22 @@ export function Anwendung() {
     setArbeitsbereich('daten');
   }
   function vorschauBausteinAnzeigen(blockId: string) {
-    if (blockId !== vorschauZiel?.blockId) {
+    const ursprung = blockId === vorschauZiel?.blockId;
+    if (!ursprung) {
       blockAnzeigen(blockId);
-      return;
+    } else {
+      // Zurück zur Bearbeitung, ohne den bisherigen Canvas auf den Block zu zentrieren.
+      auswaehlen(blockId);
+      setArbeitsbereich('ablauf');
     }
-    // Zurück zur Bearbeitung, ohne den bisherigen Canvas auf den Block zu zentrieren.
-    auswaehlen(blockId);
-    setArbeitsbereich('ablauf');
-    requestAnimationFrame(() => vorschauAusloeser.current?.focus({ preventScroll: true }));
+    requestAnimationFrame(() => {
+      const ausloeser = ursprung ? vorschauAusloeser.current : null;
+      const ziel =
+        ausloeser?.isConnected && ausloeser.getClientRects().length
+          ? ausloeser
+          : document.querySelector<HTMLElement>('.ansichtknopfgruppe button');
+      ziel?.focus({ preventScroll: true });
+    });
   }
   async function quelleWaehlen(blockId: string, feldPfad: string[]) {
     return antwort(await window.scriptlab.quelleWaehlen(blockId, feldPfad));

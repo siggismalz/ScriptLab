@@ -88,7 +88,7 @@ export function Eigenschaften({
       aria-label="Bausteineigenschaften"
     >
       <header className="panel-kopf">
-        <h2>{definition?.name ?? 'Eigenschaften'}</h2>
+        <h2>{block?.getField('NAME')?.getText().trim() || definition?.name || 'Eigenschaften'}</h2>
         <div className="knopfgruppe">
           {block && (
             <Menue
