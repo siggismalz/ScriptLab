@@ -20,6 +20,7 @@ import {
 import { businessDefinitionen, type KonfigFeld } from '../src/kern/business-katalog';
 import { leeresBusinessProjekt, type JsonWert, type WorkflowParameter } from '../src/kern/business-modell';
 import { neuesProjekt } from '../src/kern/projekt';
+import { bedingungsGruppeSetzen } from '../src/renderer/business-regeln';
 
 const nichts = () => {};
 const parameter = (
@@ -68,6 +69,23 @@ function formular(
 }
 
 describe('Verständliche, typisierte Business-Formulare', () => {
+  it('wechselt UND und ODER direkt und erhält Kinder sowie bestehende Angaben unverändert', () => {
+    const kinder = [
+      {
+        art: 'vergleich',
+        spalte: 'Region',
+        operator: 'EQ',
+        wert: { art: 'wert', typ: 'TEXT', wert: 'Nord' },
+      },
+      { art: 'vergleich', spalte: 'Betrag', operator: 'GT', wert: { art: 'wert', typ: 'ZAHL', wert: 100 } },
+    ];
+    const vorher = { art: 'UND', kinder };
+    const oder = bedingungsGruppeSetzen(vorher, 'ODER');
+    expect(oder).toEqual({ art: 'ODER', kinder });
+    expect(bedingungsGruppeSetzen(oder, 'UND')).toEqual(vorher);
+    expect(vorher).toEqual({ art: 'UND', kinder });
+    expect(bedingungsGruppeSetzen(kinder[0], 'UND')).toEqual({ art: 'UND', kinder: [kinder[0]] });
+  });
   it('wandelt Zahleneingaben erst passend um und macht aus leeren oder ungültigen Angaben keine 0', () => {
     expect(parameterWertAusText('Zahl', '12,5')).toBe(12.5);
     expect(parameterWertAusText('Zahl', '-1.25')).toBe(-1.25);

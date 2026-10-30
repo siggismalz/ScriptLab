@@ -23,6 +23,7 @@ import { istQuellenfeld } from '../kern/quellenfeld';
 import { Knopf } from './komponenten/Knopf';
 import { Feld, Auswahlfeld } from './komponenten/Feld';
 import { ParameterWertEingabe, parameterWertAusText } from './ParameterDialog';
+import { bedingungsGruppeSetzen } from './business-regeln';
 import './business.css';
 const objekt = (w: JsonWert): Record<string, JsonWert> =>
   w && typeof w === 'object' && !Array.isArray(w) ? w : {};
@@ -570,7 +571,7 @@ function BedingungFeld({
                 }
               : e.target.value === 'NICHT'
                 ? { art: 'NICHT', kind: wert }
-                : { art: e.target.value, kinder: [wert] },
+                : bedingungsGruppeSetzen(wert, e.target.value as 'UND' | 'ODER'),
           )
         }
       >
