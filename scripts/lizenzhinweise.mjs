@@ -196,7 +196,7 @@ const zeilen = [
   '',
   'Diese Datei wird mit `node scripts/lizenzhinweise.mjs` aus der eingecheckten Lockdatei und den installierten Produktionspaketen erzeugt. Der Vorgang benoetigt nach `npm ci` keinen Netzwerkzugriff. `--check` prueft den vorhandenen Stand ohne ihn zu veraendern; `--strict` bricht bei fehlenden vollstaendigen Lizenztexten ab.',
   '',
-  'Fuer den eigenen ScriptLab-Code ist noch keine Projektlizenz festgelegt. Der Paketwert `UNLICENSED` bezeichnet diesen offenen Stand und erteilt keine allgemeine Nutzungs- oder Weitergabelizenz. Die nachfolgenden Lizenzen gehoeren ausschliesslich zu den jeweils genannten Drittanbietern.',
+  'Der eigene ScriptLab-Code steht unter der beigefügten ScriptLab-Nutzungslizenz in `LICENSE.txt`: private nichtkommerzielle Nutzung ist kostenlos, kommerzielle Nutzung erfordert eine separat erworbene kostenpflichtige Lizenz von Leon Stolz. Die nachfolgenden Lizenzen gehören ausschließlich zu den jeweils genannten Drittanbietern und werden durch die ScriptLab-Lizenz nicht eingeschränkt.',
   '',
   '## Grundlage und Umfang',
   '',

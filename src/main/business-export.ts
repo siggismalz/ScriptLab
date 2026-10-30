@@ -1,5 +1,5 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
-import { join, basename, resolve } from 'node:path';
+import { join, basename, resolve, dirname } from 'node:path';
 import type { Projekt } from '../kern/projekt';
 export interface PaketDatei {
   name: string;
@@ -97,6 +97,7 @@ export async function businessPaketDateien(
     });
   for (const name of ['requirements-business.lock', 'requirements-business.in', 'business-notices.md'])
     dateien.push({ name, inhalt: await readFile(join(paketwurzel, name)) });
+  dateien.push({ name: 'LICENSE.txt', inhalt: await readFile(join(dirname(paketwurzel), 'LICENSE.txt')) });
   const parameter = Object.fromEntries(projekt.business.parameter.map((p) => [p.name, p.standard ?? '']));
   let summe = dateien.reduce((s, d) => s + d.inhalt.length, 0);
   for (const pfad of ressourcen) {
@@ -130,5 +131,13 @@ export async function businessPaketDateien(
       'utf8',
     ),
   });
+  const anleitung = dateien.find((d) => d.name === 'ANLEITUNG.txt')!;
+  anleitung.inhalt = Buffer.concat([
+    anleitung.inhalt,
+    Buffer.from(
+      '\r\nScriptLab-Nutzungsrechte: siehe LICENSE.txt. Private nichtkommerzielle Nutzung ist kostenlos. Kommerzielle Erstellung und Bearbeitung erfordert eine separat erworbene Lizenz von Leon Stolz. Rechtmäßig erzeugte Exporte benötigen beim Empfänger keine zusätzliche ScriptLab-Lizenz. Fremdkomponenten behalten ihre eigenen Lizenzen.\r\n',
+      'utf8',
+    ),
+  ]);
   return dateien;
 }

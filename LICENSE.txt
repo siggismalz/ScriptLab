@@ -1,0 +1,62 @@
+ScriptLab-Nutzungslizenz
+Stand: 30. Oktober 2026
+Copyright (c) 2026 Leon Stolz. Alle nicht ausdrücklich eingeräumten Rechte vorbehalten.
+
+1. Geltungsbereich
+Diese Lizenz gilt für den von Leon Stolz bereitgestellten eigenen Code von ScriptLab,
+die zugehörige Dokumentation und die mitgelieferten eigenen Vorlagen. Sie ist keine
+Open-Source-Lizenz. Fremdkomponenten, Schriften und fremde Inhalte behalten ihre
+jeweiligen Lizenzen; insbesondere gelten die beigefügten Drittanbieterhinweise.
+
+2. Kostenlose private Nutzung
+Natürliche Personen dürfen ScriptLab kostenlos für eigene private, nichtkommerzielle
+Zwecke herunterladen, installieren, ausführen und hierfür kopieren. Dazu gehören
+persönliches Lernen, eigene Studienaufgaben und private Automatisierungen ohne
+geschäftlichen Auftrag. Der Quellcode darf für diese Zwecke untersucht und für den
+eigenen privaten Einsatz angepasst werden. Lizenz- und Urheberrechtshinweise müssen
+erhalten bleiben. Eine allgemeine Erlaubnis zur Weiterverbreitung der Anwendung,
+ihrer Quelltexte oder abgeleiteter Anwendungen wird damit nicht eingeräumt.
+
+3. Kostenpflichtige kommerzielle Nutzung
+Die kommerzielle Nutzung von ScriptLab erfordert eine zuvor erworbene kostenpflichtige
+kommerzielle Lizenz von Leon Stolz. Dazu zählen insbesondere der betriebliche Einsatz,
+berufliche oder selbstständige Tätigkeiten, die Verarbeitung von Geschäftsdaten und
+die Erstellung oder Bearbeitung von Automatisierungen im Auftrag Dritter. Auch
+interne geschäftliche Nutzung ohne Weiterverkauf ist kommerzielle Nutzung.
+
+Preis, Nutzerzahl, Laufzeit sowie gegebenenfalls erlaubte Weitergabe, Einbindung oder
+Bereitstellung als Dienst werden gesondert in Textform mit Leon Stolz vereinbart.
+Eine öffentliche Quellcodeablage, ein Download oder ein technisch möglicher Start
+ersetzt diese Vereinbarung nicht. Diese Lizenzdatei ist kein Kaufvertrag und kein
+Nachweis einer bezahlten kommerziellen Lizenz. Es wird kein bestimmter Preis und
+kein Zahlungsweg festgelegt. Für weitere nicht ausdrücklich erlaubte Nutzungen ist
+eine gesonderte Erlaubnis des Rechteinhabers erforderlich.
+
+4. Eigene Inhalte und eigenständige Exporte
+Ihre eigenen Daten, Workflowdefinitionen und fachlichen Ergebnisse bleiben Ihre
+Inhalte. An ihnen beansprucht diese Lizenz keine zusätzlichen Rechte oder Gebühren.
+Dokumente und andere fachliche Ausgaben dürfen unabhängig von ScriptLab verwendet
+und weitergegeben werden, soweit Rechte an ihren eigenen Inhalten dies erlauben.
+
+Bei rechtmäßigem Einsatz von ScriptLab erzeugte exportierte Workflows dürfen mit
+den für ihren Betrieb eingebundenen ScriptLab-Helfern eigenständig ausgeführt,
+angepasst und weitergegeben werden. Dafür ist keine zusätzliche ScriptLab-Lizenz
+beim Empfänger und keine laufende Verbindung zur Anwendung erforderlich. Der
+Erstellungs- oder Bearbeitungseinsatz für kommerzielle Zwecke bleibt nach Abschnitt 3
+lizenzpflichtig. Diese Exporterlaubnis gestattet keinen isolierten Vertrieb der
+allgemeinen ScriptLab-Laufzeit als eigenes Produkt oder als konkurrierenden Dienst.
+Lizenzhinweise zu enthaltenen eigenen und fremden Komponenten sind beizubehalten.
+
+5. Gesetzliche Rechte und andere Vereinbarungen
+Zwingende gesetzliche Befugnisse, insbesondere nach §§ 69d und 69e UrhG, bleiben
+unberührt. Ebenso bleiben Rechte aus gesonderten wirksamen Vereinbarungen und die
+für das Anzeigen und Forken auf der jeweiligen Hostingplattform erforderlichen
+Plattformrechte unberührt. Diese Lizenz ändert keine bereits zuvor wirksam
+eingeräumten Rechte rückwirkend. Änderungen dieser Lizenz gelten nicht automatisch
+als Änderung einer bereits geschlossenen kommerziellen Vereinbarung.
+
+6. Leistungsumfang
+Diese kostenlose Erlaubnis begründet keinen Anspruch auf Support, Wartung, Updates
+oder eine bestimmte Eignung für einen Geschäftsprozess. Für kostenpflichtige
+Leistungen gelten die gesondert vereinbarten Bedingungen. Zwingende gesetzliche
+Haftungs- und Gewährleistungsrechte werden durch diese Datei nicht ausgeschlossen.

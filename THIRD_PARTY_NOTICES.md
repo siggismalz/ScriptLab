@@ -1,14 +1,14 @@
 # Drittanbieter und Lizenzhinweise
 
-ScriptLab 0.1.0 · Entwickelt von Leon Stolz.
+ScriptLab 0.2.0 · Entwickelt von Leon Stolz.
 
 Diese Datei wird mit `node scripts/lizenzhinweise.mjs` aus der eingecheckten Lockdatei und den installierten Produktionspaketen erzeugt. Der Vorgang benoetigt nach `npm ci` keinen Netzwerkzugriff. `--check` prueft den vorhandenen Stand ohne ihn zu veraendern; `--strict` bricht bei fehlenden vollstaendigen Lizenztexten ab.
 
-Fuer den eigenen ScriptLab-Code ist noch keine Projektlizenz festgelegt. Der Paketwert `UNLICENSED` bezeichnet diesen offenen Stand und erteilt keine allgemeine Nutzungs- oder Weitergabelizenz. Die nachfolgenden Lizenzen gehoeren ausschliesslich zu den jeweils genannten Drittanbietern.
+Der eigene ScriptLab-Code steht unter der beigefügten ScriptLab-Nutzungslizenz in `LICENSE.txt`: private nichtkommerzielle Nutzung ist kostenlos, kommerzielle Nutzung erfordert eine separat erworbene kostenpflichtige Lizenz von Leon Stolz. Die nachfolgenden Lizenzen gehören ausschließlich zu den jeweils genannten Drittanbietern und werden durch die ScriptLab-Lizenz nicht eingeschränkt.
 
 ## Grundlage und Umfang
 
-- SHA-256 der auf LF normalisierten package-lock.json: `fa59fbd71d45bfcf489b3d1e4c8ef3ee4c675b3248e7d1a01ae82833533b70f6`
+- SHA-256 der auf LF normalisierten package-lock.json: `46fe6992d2d78ad563da8625e969a596f78d196d158adda8d6b881a35f4331bc`
 - 60 verschiedene Produktionspakete in 62 installierten Paketinstanzen; direkte, transitive und installierte Peer-/optionale Abhaengigkeiten sind enthalten.
 - Reine Entwicklungswerkzeuge werden hier nicht als ausgelieferte Produktionspakete aufgefuehrt. Die Electron-Laufzeit wird getrennt behandelt.
 - Nicht installierte optionale Abhaengigkeiten sind nicht enthalten: `canvas`.

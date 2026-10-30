@@ -104,7 +104,7 @@ Prüfberichte gelten für ihren tatsächlich genannten Quell- und Paketstand. Mo
 
 ## Nutzung und Lizenzen
 
-Die Projektlizenz hat Leon Stolz noch nicht festgelegt. `UNLICENSED` kennzeichnet die ausstehende Freigabe und erteilt keine Nutzungslizenz. Eine öffentliche Quellcodeablage ist keine zusätzliche Lizenzfreigabe.
+Die [ScriptLab-Nutzungslizenz](../LICENSE.txt) erlaubt private, nichtkommerzielle Nutzung kostenlos. Kommerzieller Einsatz erfordert eine separat erworbene kostenpflichtige Lizenz von Leon Stolz; Preis, Umfang und Laufzeit werden gesondert vereinbart. Das Paket verweist mit `SEE LICENSE IN LICENSE.txt` auf diesen eigenen Lizenztext. Eine öffentliche Quellcodeablage ersetzt keine kommerzielle Vereinbarung. Rechtmäßig erzeugte Exporte bleiben nach den dortigen Bedingungen unabhängig ausführbar und weitergebbar; eigene Daten und fachliche Ergebnisse bleiben eigene Inhalte.
 
 Fremdbibliotheken behalten ihre jeweiligen Lizenzen. [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) inventarisiert Produktionsabhängigkeiten und Originalhinweise; der fehlende vollständige Originaltext von `lazy-val@1.0.5` ist ausdrücklich vermerkt. `LICENSE.electron.txt` und `LICENSES.chromium.html` liegen der Windows-Distribution bei.
 

@@ -556,7 +556,7 @@ await pruefen('Vollständiges Offline-Python-Bündel', async () => {
 });
 
 await pruefen('Dokumentation und Lizenzhinweise', async () => {
-  for (const name of ['README.md', 'THIRD_PARTY_NOTICES.md'])
+  for (const name of ['README.md', 'THIRD_PARTY_NOTICES.md', 'LICENSE.txt'])
     await byteVergleichen(join(wurzel, name), join(ressourcen, name));
   // electron-builder schliesst extraResources beim Packen aus app.asar aus.
   // Die Lizenzbeilage wird deshalb am tatsaechlich ausgelieferten Ressourcenort verglichen.

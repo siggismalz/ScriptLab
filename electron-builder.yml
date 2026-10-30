@@ -9,7 +9,10 @@ files:
   - dist/**/*
   - package.json
   - THIRD_PARTY_NOTICES.md
+  - LICENSE.txt
 extraResources:
+  - from: LICENSE.txt
+    to: LICENSE.txt
   - from: artifacts/python-buendel/python
     to: python
     filter:
@@ -62,6 +65,7 @@ win:
     signingHashAlgorithms:
       - sha256
 nsis:
+  license: LICENSE.txt
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true

@@ -1,0 +1,35 @@
+.lizenzhinweis {
+  border-block-start: 1px solid var(--farbe-trennung);
+  padding-block-start: 16px;
+}
+.lizenzhinweis h2 {
+  font-size: 1.143em;
+  margin-block: 0 12px;
+}
+.lizenzhinweis dl {
+  margin: 0;
+}
+.lizenzhinweis dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding-block: 8px;
+}
+.lizenzhinweis dt {
+  color: var(--farbe-text-sekundaer);
+}
+.lizenzhinweis dd {
+  margin: 0;
+  font-weight: 600;
+}
+.lizenzhinweis summary {
+  cursor: pointer;
+  padding-block: 8px;
+}
+.lizenzhinweis pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  margin-block: 12px 0;
+}

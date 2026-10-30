@@ -29,6 +29,8 @@ describe('Business-Paket', () => {
     const dateien = await businessPaketDateien(p, e.code!, resolve('laufzeit'), []);
     expect(dateien.some((d) => d.name.endsWith('Vera.ttf'))).toBe(true);
     expect(dateien.some((d) => d.name === 'business-notices.md')).toBe(true);
+    expect(dateien.find((d) => d.name === 'LICENSE.txt')?.inhalt).toEqual(await readFile('LICENSE.txt'));
+    expect(dateien.find((d) => d.name === 'ANLEITUNG.txt')?.inhalt.toString('utf8')).toContain('keine zusätzliche ScriptLab-Lizenz');
     expect(dateien.some((d) => d.name.startsWith('eingaben/'))).toBe(false);
   });
 });

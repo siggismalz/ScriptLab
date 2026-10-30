@@ -48,6 +48,7 @@ import { Datenbereich } from './Datenbereich';
 import { ExportDialog } from './ExportDialog';
 import { Arbeitsbereiche, type Arbeitsbereich } from './komponenten/Arbeitsbereiche';
 import { Marke } from './komponenten/Marke';
+import { Lizenzhinweis } from './Lizenzhinweis';
 import { BusinessVorbereitung } from './BusinessVorbereitung';
 import { businessSchritte } from '../kern/business';
 import { datenvorschauHinweis, datenvorschauKontext } from '../kern/datenvorschau';
@@ -2111,6 +2112,7 @@ export function Anwendung() {
           deinen Richtlinien ab.
         </p>
         <p>Mit Electron, React, Vite und Blockly. Die Lizenzhinweise liegen der Installation bei.</p>
+        <Lizenzhinweis />
       </Dialog>
     </div>
   );

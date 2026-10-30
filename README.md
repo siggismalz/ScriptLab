@@ -4,6 +4,8 @@
 
 ScriptLab ist ein visueller Automatisierungsbaukasten für Windows. Du verbindest Bausteine, wählst deine Daten und legst fest, was passieren soll. So entstehen eigene Abläufe für die tägliche Arbeit – ohne selbst Code zu schreiben.
 
+**Nutzung:** Privat und nichtkommerziell kostenlos. Für kommerzielle Nutzung ist eine separat zu vereinbarende kostenpflichtige Lizenz von Leon Stolz erforderlich. Preise und Umfang werden individuell vereinbart. Maßgeblich ist [LICENSE.txt](LICENSE.txt); eigene Inhalte, eigenständige Exporte und Drittanbieterrechte sind dort getrennt geregelt.
+
 ![Ein Workflow wertet Umsätze aus und erstellt daraus Berichte. Rechts werden die Einstellungen des ausgewählten Bausteins bearbeitet.](docs/produkt/editor.png)
 
 ## Was du damit erledigen kannst
