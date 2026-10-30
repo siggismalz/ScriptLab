@@ -110,7 +110,12 @@ test('Ziehen: Palette verbindet am Start mit sichtbarer nativer Einfügemarkieru
     await expect
       .poll(async () => (await stand(s.seite)).editor.blocks?.blocks[0].next?.block.type)
       .toBe('sl_message');
-    expect((await stand(s.seite)).ansicht).toEqual(vorher.ansicht);
+    const ansicht = (await stand(s.seite)).ansicht;
+    expect(ansicht.zoom).toBe(vorher.ansicht.zoom);
+    // Blockly rechnet beim Ablegen mit Gleitkommazahlen; keine sichtbare
+    // Verschiebung zulassen, aber Rundungsrauschen um 1e-14 nicht als Pan werten.
+    expect(ansicht.x).toBeCloseTo(vorher.ansicht.x, 9);
+    expect(ansicht.y).toBeCloseTo(vorher.ansicht.y, 9);
     await s.seite.getByRole('button', { name: 'Rückgängig', exact: true }).click();
     await expect.poll(async () => (await stand(s.seite)).editor.blocks?.blocks[0].next).toBeUndefined();
     await s.seite.getByRole('button', { name: 'Wiederholen', exact: true }).click();
