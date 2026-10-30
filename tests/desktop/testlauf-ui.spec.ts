@@ -90,7 +90,7 @@ async function starten(): Promise<Sitzung> {
       )
       .toBe(true);
     await expect(seite.locator('.blocklyBlockCanvas g[data-id="ui_testausgabe"]')).toBeVisible();
-    await expect(seite.getByRole('button', { name: 'Testen', exact: true })).toBeEnabled();
+    await expect(seite.getByRole('button', { name: 'Workflow ausführen', exact: true })).toBeEnabled();
     return { app, seite, ordner, basis, projektdatei };
   } catch (fehler) {
     await app.evaluate(({ app }) => app.exit(0)).catch(() => {});

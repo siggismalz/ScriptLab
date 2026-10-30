@@ -214,12 +214,13 @@
   min-width: 0;
   flex: 1;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--abstand-16);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
 }
 .workflow-identitaet h1 {
   min-width: 0;
+  max-width: 100%;
   font-size: calc(16px * var(--text-skala, 1));
   line-height: 1.5;
   font-weight: 600;
@@ -558,9 +559,65 @@
   border-bottom-width: 2px;
 }
 .werkzeugleiste {
-  min-height: 48px;
+  min-height: 44px;
   padding: 4px 12px;
   gap: 8px;
+}
+.workflow-kopf {
+  min-height: 60px;
+  padding: 8px 12px;
+}
+.workflow-aktionen {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.workflow-aktionen .sl-knopf {
+  white-space: nowrap;
+}
+.workflow-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 0 0 auto;
+  background: var(--farbe-grundflaeche);
+  border-bottom: 1px solid var(--farbe-trennung);
+  z-index: 40;
+}
+.workflow-navigation .workflow-bereiche {
+  border: 0;
+}
+.workflow-navigation .werkzeugleiste {
+  margin-left: auto;
+  border: 0;
+  overflow: visible;
+  max-height: none;
+}
+.eigenschaften-panel .panel-kopf h2 {
+  flex: 1 1 140px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1000px) {
+  .workflow-kopf {
+    flex-wrap: wrap;
+  }
+  .workflow-identitaet {
+    flex: 1 1 160px;
+  }
+  .workflow-aktionen {
+    margin-left: auto;
+    flex-shrink: 1;
+  }
+}
+.anwendung[style*='--text-skala: 2'] .workflow-kopf {
+  flex-wrap: wrap;
+}
+.anwendung[style*='--text-skala: 2'] .workflow-navigation .werkzeugleiste {
+  max-height: none;
+  overflow: visible;
 }
 .werkzeugleiste .sl-knopf {
   min-height: 36px;

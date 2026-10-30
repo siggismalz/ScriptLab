@@ -233,7 +233,7 @@ test('beginnt mit einem leeren Start und isoliert den Renderer', async () => {
   await expect(
     seite
       .getByRole('navigation', { name: 'Projektaktionen' })
-      .getByRole('button', { name: 'Testen', exact: true }),
+      .getByRole('button', { name: 'Workflow ausführen', exact: true }),
   ).toBeVisible();
   const testStand = await seite.evaluate(() => window.scriptlab.testLesen());
   expect(testStand.ok).toBe(true);

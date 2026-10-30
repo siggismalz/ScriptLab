@@ -84,7 +84,7 @@ export function Eigenschaften({
       aria-label="Bausteineigenschaften"
     >
       <header className="panel-kopf">
-        <h2>Eigenschaften</h2>
+        <h2>{definition?.name ?? 'Eigenschaften'}</h2>
         <div className="knopfgruppe">
           {block && (
             <Menue
@@ -143,7 +143,6 @@ export function Eigenschaften({
         )}
         {definition && block ? (
           <>
-            <h3>{definition.name}</h3>
             {businessNachTyp.has(block.type) && ws && (
               <BusinessEigenschaften
                 ws={ws}

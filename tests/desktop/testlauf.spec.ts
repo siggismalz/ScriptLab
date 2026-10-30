@@ -175,7 +175,7 @@ test('führt den ungespeicherten Editorstand aus und schreibt relative Dateien a
 
 test('zeigt einen neuen Testkontext vor dem tatsächlichen Start sichtbar an', async () => {
   await oeffnen(projektMit(ausgabe('KONTEXT BEWUSST GEPRÜFT')), false);
-  await seite.getByRole('button', { name: 'Testen', exact: true }).click();
+  await seite.getByRole('button', { name: 'Workflow ausführen', exact: true }).click();
   await expect(seite.getByTestId('test-panel')).toBeVisible();
   await expect(seite.getByTestId('test-panel')).toContainText(ordner);
   expect((await zustand()).laufId).toBeNull();
@@ -214,7 +214,7 @@ test('sperrt Bearbeitung, erhält Auswahl und Zoom und stoppt auch mit zugeklapp
   await oeffnen(projektMit(a, warten(), ausgabe('DARF NICHT ERSCHEINEN')));
   await laufStarten(seite);
   await ausgabeErwarten('VOR-STOPP');
-  await expect(seite.getByRole('button', { name: 'Testen', exact: true })).toHaveCount(0);
+  await expect(seite.getByRole('button', { name: 'Workflow ausführen', exact: true })).toHaveCount(0);
   await arbeitsbereichWaehlen(seite, 'Ablauf');
   await seite.locator(`g[data-id="${a.id}"]`).click({ position: { x: 60, y: 18 } });
   await expect(seite.locator(`g[data-id="${a.id}"]`)).toHaveClass(/scriptlabAuswahl/);
@@ -326,7 +326,7 @@ test('ein ungültiger Workflow und fremde Testoptionen starten keinen Prozess', 
   const ungueltig = block('sl_write_text');
   await oeffnen(projektMit(ungueltig));
   await arbeitsbereichWaehlen(seite, 'Ablauf');
-  await seite.getByRole('button', { name: 'Testen', exact: true }).click();
+  await seite.getByRole('button', { name: 'Workflow ausführen', exact: true }).click();
   await expect(seite.getByTestId('hinweise-panel')).toBeVisible();
   expect((await zustand()).laufId).toBeNull();
   const r = await seite.evaluate(async () => {

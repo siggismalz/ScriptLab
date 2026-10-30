@@ -1238,9 +1238,7 @@ export function Anwendung() {
           >
             {sprache.bezeichnung}
           </span>
-        </header>
-        <nav className="werkzeugleiste" aria-label="Projektaktionen">
-          <div className="knopfgruppe">
+          <nav className="workflow-aktionen" aria-label="Projektaktionen">
             <Knopf
               symbol="speichern"
               variante="leise"
@@ -1250,84 +1248,6 @@ export function Anwendung() {
             >
               Speichern
             </Knopf>
-            <Menue
-              beschriftung="Workflow"
-              symbol="unten"
-              eintraege={[
-                {
-                  text: 'Neuer Workflow',
-                  symbol: 'neu',
-                  aktion: () => void projektAktion('neu'),
-                },
-                {
-                  text: 'Workflow öffnen',
-                  symbol: 'oeffnen',
-                  aktion: () => void projektAktion('oeffnen'),
-                },
-                {
-                  text: 'Kopie anlegen',
-                  symbol: 'speichern',
-                  gesperrt: testAktiv(test.phase),
-                  grund: 'Stoppe den Lauf vor dem Speichern.',
-                  aktion: () => void projektAktion('unter'),
-                },
-                { text: 'Als Entwurf sichern', symbol: 'entwurf', aktion: () => void entwurfJetztSichern() },
-                {
-                  text: 'Projektangaben',
-                  symbol: 'info',
-                  gesperrt: testAktiv(test.phase),
-                  grund: 'Stoppe den Lauf vor Änderungen.',
-                  aktion: () => setDialog('projekt'),
-                },
-                {
-                  text: 'Workflowparameter',
-                  gesperrt: testAktiv(test.phase),
-                  grund: 'Stoppe den Lauf vor Änderungen.',
-                  aktion: () => {
-                    setArbeitsbereich('daten');
-                    setDialog('parameter');
-                  },
-                },
-              ]}
-            />
-          </div>
-          {arbeitsbereich === 'ablauf' && (
-            <>
-              <span className="werkzeug-trenner" />
-              <div className="knopfgruppe">
-                <Knopf
-                  variante="leise"
-                  symbol="rueckgaengig"
-                  aria-label="Rückgängig"
-                  disabled={testAktiv(test.phase)}
-                  grundId="test-sperrhinweis"
-                  title="Rückgängig (Strg+Z)"
-                  onClick={() => wsRef.current && void verlaufAendern(wsRef.current)}
-                />
-                <Knopf
-                  variante="leise"
-                  symbol="wiederholen"
-                  aria-label="Wiederholen"
-                  disabled={testAktiv(test.phase)}
-                  grundId="test-sperrhinweis"
-                  title="Wiederholen (Strg+Y)"
-                  onClick={() => wsRef.current && void verlaufAendern(wsRef.current, true)}
-                />
-              </div>
-              <div className="knopfgruppe ansichtknopfgruppe">
-                <Knopf
-                  variante="leise"
-                  symbol="eigenschaften"
-                  aria-label="Eigenschaften"
-                  aria-pressed={eigenschaftenOffen}
-                  onClick={() => (eigenschaftenOffen ? eigenschaftenSchliessen() : eigenschaftenOeffnen())}
-                >
-                  Eigenschaften
-                </Knopf>
-              </div>
-            </>
-          )}
-          <div className="hauptaktion">
             {arbeitsbereich === 'ablauf' && !testAktiv(test.phase) && (
               <Knopf
                 variante="primaer"
@@ -1336,11 +1256,11 @@ export function Anwendung() {
                 grundId="status-aktion"
                 onClick={() => void testStarten()}
               >
-                {hatBusiness && testOptionen.business?.modus === 'vorschau'
+                {hatBusiness && (testOptionen.business?.modus ?? 'prueflauf') === 'vorschau'
                   ? 'Datenvorschau laden'
-                  : hatBusiness && testOptionen.business?.modus === 'prueflauf'
+                  : hatBusiness && (testOptionen.business?.modus ?? 'prueflauf') === 'prueflauf'
                     ? 'Prüflauf starten'
-                    : 'Testen'}
+                    : 'Workflow ausführen'}
               </Knopf>
             )}
             {testAktiv(test.phase) && (
@@ -1377,6 +1297,93 @@ export function Anwendung() {
             >
               Exportieren
             </Knopf>
+          </nav>
+        </header>
+        <div className="workflow-navigation">
+          <Arbeitsbereiche wert={arbeitsbereich} setzen={setArbeitsbereich} />
+          <nav className="werkzeugleiste" aria-label="Bearbeitungswerkzeuge">
+            <div className="knopfgruppe">
+              <Menue
+                beschriftung="Workflow"
+                symbol="unten"
+                eintraege={[
+                  {
+                    text: 'Neuer Workflow',
+                    symbol: 'neu',
+                    aktion: () => void projektAktion('neu'),
+                  },
+                  {
+                    text: 'Workflow öffnen',
+                    symbol: 'oeffnen',
+                    aktion: () => void projektAktion('oeffnen'),
+                  },
+                  {
+                    text: 'Kopie anlegen',
+                    symbol: 'speichern',
+                    gesperrt: testAktiv(test.phase),
+                    grund: 'Stoppe den Lauf vor dem Speichern.',
+                    aktion: () => void projektAktion('unter'),
+                  },
+                  {
+                    text: 'Als Entwurf sichern',
+                    symbol: 'entwurf',
+                    aktion: () => void entwurfJetztSichern(),
+                  },
+                  {
+                    text: 'Projektangaben',
+                    symbol: 'info',
+                    gesperrt: testAktiv(test.phase),
+                    grund: 'Stoppe den Lauf vor Änderungen.',
+                    aktion: () => setDialog('projekt'),
+                  },
+                  {
+                    text: 'Workflowparameter',
+                    gesperrt: testAktiv(test.phase),
+                    grund: 'Stoppe den Lauf vor Änderungen.',
+                    aktion: () => {
+                      setArbeitsbereich('daten');
+                      setDialog('parameter');
+                    },
+                  },
+                ]}
+              />
+            </div>
+            {arbeitsbereich === 'ablauf' && (
+              <>
+                <span className="werkzeug-trenner" />
+                <div className="knopfgruppe">
+                  <Knopf
+                    variante="leise"
+                    symbol="rueckgaengig"
+                    aria-label="Rückgängig"
+                    disabled={testAktiv(test.phase)}
+                    grundId="test-sperrhinweis"
+                    title="Rückgängig (Strg+Z)"
+                    onClick={() => wsRef.current && void verlaufAendern(wsRef.current)}
+                  />
+                  <Knopf
+                    variante="leise"
+                    symbol="wiederholen"
+                    aria-label="Wiederholen"
+                    disabled={testAktiv(test.phase)}
+                    grundId="test-sperrhinweis"
+                    title="Wiederholen (Strg+Y)"
+                    onClick={() => wsRef.current && void verlaufAendern(wsRef.current, true)}
+                  />
+                </div>
+                <div className="knopfgruppe ansichtknopfgruppe">
+                  <Knopf
+                    variante="leise"
+                    symbol="eigenschaften"
+                    aria-label="Eigenschaften"
+                    aria-pressed={eigenschaftenOffen}
+                    onClick={() => (eigenschaftenOffen ? eigenschaftenSchliessen() : eigenschaftenOeffnen())}
+                  >
+                    Eigenschaften
+                  </Knopf>
+                </div>
+              </>
+            )}
             <Menue
               beschriftung="Ansicht"
               symbol="unten"
@@ -1406,9 +1413,8 @@ export function Anwendung() {
                 },
               ]}
             />
-          </div>
-        </nav>
-        <Arbeitsbereiche wert={arbeitsbereich} setzen={setArbeitsbereich} />
+          </nav>
+        </div>
         <div
           className="workflow-panel workflow-panel--ablauf"
           id="workflow-ablauf"

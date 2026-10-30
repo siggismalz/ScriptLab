@@ -362,7 +362,7 @@ test('Langer Python-Test teilt die Startsperre mit VBS und endet bei Navigation,
     await testVorbereiten(s);
     await testStarten(s);
     const erster = await laeuftMitAusgabe(s, 'PYTHON VOR PAUSE');
-    await expect(s.seite.getByRole('button', { name: 'Testen', exact: true })).toHaveCount(0);
+    await expect(s.seite.getByRole('button', { name: 'Workflow ausführen', exact: true })).toHaveCount(0);
     const vbs = neuesProjekt('vbs');
     vbs.editor.blocks!.blocks[0].next = { block: ausgabe('VBS DARF NICHT PARALLEL STARTEN') };
     const parallel = await s.seite.evaluate(async (projekt) => {
