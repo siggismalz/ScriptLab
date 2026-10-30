@@ -7,7 +7,7 @@ import type { Dokument, Einstellungen } from '../../src/gemeinsam/bruecke';
 import { projektPruefen } from '../../src/kern/projekt';
 import { beispiele } from '../../src/renderer/hilfe';
 
-const bilder = resolve('artifacts/vorlagen-ui');
+const bilder = resolve('artifacts/karten-vorlagen');
 interface Sitzung {
   app: ElectronApplication;
   seite: Page;
@@ -47,7 +47,10 @@ async function starten(darstellung: 'hell' | 'dunkel', textSkalierung: 1 | 2): P
 }
 
 async function beenden(s: Sitzung) {
-  await s.app.evaluate(({ app }) => app.exit(0)).catch(() => {});
+  if (s.app.process().exitCode === null && s.app.process().signalCode === null) {
+    const geschlossen = s.app.waitForEvent('close');
+    await Promise.all([geschlossen, s.app.evaluate(({ app }) => app.exit(0)).catch(() => {})]);
+  }
   const ziel = resolve(s.ordner);
   if (
     !ziel.startsWith(resolve(tmpdir()) + sep) ||
@@ -89,6 +92,77 @@ for (const farbe of ['hell', 'dunkel'] as const) {
         const bereich = s.seite.getByTestId('beispiele');
         await expect(bereich.getByRole('article')).toHaveCount(11);
         await expect(bereich.getByRole('button', { name: 'Als Vorlage öffnen', exact: true })).toHaveCount(0);
+        const karten = bereich.getByRole('article');
+        async function raster(spalten: 1 | 2 | 3) {
+          const boxen = await karten.evaluateAll((elemente) =>
+            elemente.slice(0, 4).map((e) => {
+              const b = e.getBoundingClientRect();
+              return { x: b.x, y: b.y, rechts: b.right, unten: b.bottom };
+            }),
+          );
+          for (let n = 1; n < spalten; n++) {
+            expect(Math.abs(boxen[n].y - boxen[0].y)).toBeLessThan(1);
+            expect(boxen[n].x).toBeGreaterThan(boxen[n - 1].rechts);
+          }
+          expect(Math.abs(boxen[spalten].x - boxen[0].x)).toBeLessThan(1);
+          expect(boxen[spalten].y).toBeGreaterThan(boxen[0].unten);
+          await mkdir(bilder, { recursive: true });
+          const breite = await s.seite.evaluate(() => innerWidth);
+          await writeFile(
+            join(bilder, `raster-${farbe}-${100 * skala}-${breite}.json`),
+            JSON.stringify({ spalten, boxen }, null, 2),
+          );
+        }
+        await raster(skala === 1 ? 3 : 1);
+        await bild(s.seite, `kartenraster-${farbe}-${100 * skala}`);
+        if (skala === 1) {
+          await s.app.evaluate(({ BrowserWindow }) =>
+            BrowserWindow.getAllWindows()[0].setContentSize(1100, 720),
+          );
+          await expect.poll(() => s.seite.evaluate(() => innerWidth)).toBe(1100);
+          await raster(2);
+          await s.app.evaluate(({ BrowserWindow }) =>
+            BrowserWindow.getAllWindows()[0].setContentSize(1280, 720),
+          );
+          await expect.poll(() => s.seite.evaluate(() => innerWidth)).toBe(1280);
+          await raster(3);
+        }
+        const ersteAuswahl = karten.nth(0).getByRole('button', { name: beispiele[0].name, exact: true });
+        await bereich.getByRole('combobox', { name: 'Beispiele nach Sprache filtern', exact: true }).focus();
+        await s.seite.keyboard.press('Tab');
+        await expect(ersteAuswahl).toBeFocused();
+        const fokus = await karten.nth(0).evaluate((e) => {
+          const style = getComputedStyle(e);
+          return { stil: style.outlineStyle, breite: style.outlineWidth, abstand: style.outlineOffset };
+        });
+        expect(fokus.stil).not.toBe('none');
+        await writeFile(join(bilder, `fokus-${farbe}-${100 * skala}.json`), JSON.stringify(fokus, null, 2));
+        await ersteAuswahl.press('Enter');
+        await expect(bereich.getByRole('heading', { name: 'Vor dem ersten Lauf', exact: true })).toHaveCount(
+          1,
+        );
+        await expect(ersteAuswahl).toHaveAttribute('aria-expanded', 'true');
+        const ausgewaehlt = await karten.nth(0).boundingBox();
+        const rasterbreite = await bereich.locator('.vorlagen-liste').evaluate((e) => e.clientWidth);
+        expect(ausgewaehlt!.width).toBeCloseTo(rasterbreite, 0);
+        // Auch der Ergebnisbereich gehört zur auswählbaren Kartenfläche; nur der Öffnenknopf öffnet.
+        const ergebnisFlaeche = karten.nth(1).getByText(beispiele[1].ergebnis, { exact: true });
+        await ergebnisFlaeche.scrollIntoViewIfNeeded();
+        const ergebnisBox = await ergebnisFlaeche.boundingBox();
+        expect(ergebnisBox).not.toBeNull();
+        await s.seite.mouse.click(
+          ergebnisBox!.x + ergebnisBox!.width / 2,
+          ergebnisBox!.y + ergebnisBox!.height / 2,
+        );
+        await expect(ersteAuswahl).toHaveAttribute('aria-expanded', 'false');
+        await expect(
+          karten.nth(1).getByRole('button', { name: beispiele[1].name, exact: true }),
+        ).toHaveAttribute('aria-expanded', 'true');
+        await expect(bereich.getByRole('heading', { name: 'Vor dem ersten Lauf', exact: true })).toHaveCount(
+          1,
+        );
+        expect((await dokument(s.seite)).projekt).toEqual(vorher.projekt);
+        await keinLauf(s.seite);
         const suche = bereich.getByRole('searchbox', { name: 'Vorlagen suchen', exact: true });
         const aufgabe = bereich.getByRole('combobox', { name: 'Aufgabe', exact: true });
         const sprache = bereich.getByRole('combobox', {

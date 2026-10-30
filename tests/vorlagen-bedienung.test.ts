@@ -97,4 +97,31 @@ describe('Vorlagenauswahl vor einer bewussten eigenen Kopie', () => {
     expect(leer).toContain('Filter zurücksetzen');
     expect(leer).not.toContain('<article ');
   });
+
+  it('zeigt lange und HTML-ähnliche Karteninhalte unverändert als Text statt als Markup', () => {
+    const aktion = vi.fn();
+    const vorlage: BeispielInfo = {
+      ...beispiele[0],
+      name: 'Ein langer deutscher Vorlagentitel für die gemeinsame Prüfung aller synthetischen Außenstellendaten',
+      ergebnis: '<script>Kein aktiver Inhalt</script> & überprüfbare Werte',
+      vorbereitung: 'C:\\Synthetische Geschäftsdaten mit langem Ordnernamen\\Außenstelle\\Quelle.csv',
+    };
+    const html = renderToStaticMarkup(
+      createElement(VorlagenBereich, {
+        vorlagen: [vorlage],
+        filter: ohneFilter,
+        aendern: aktion,
+        auswahl: vorlage.id,
+        auswaehlen: aktion,
+        gesperrt: false,
+        oeffnen: aktion,
+      }),
+    );
+    expect(html).toContain(vorlage.name);
+    expect(html).toContain('&lt;script&gt;Kein aktiver Inhalt&lt;/script&gt; &amp; überprüfbare Werte');
+    expect(html).not.toContain('<script>');
+    expect(html).toContain(vorlage.vorbereitung);
+    expect(html.match(/Vor dem ersten Lauf/g)).toHaveLength(1);
+    expect(aktion).not.toHaveBeenCalled();
+  });
 });

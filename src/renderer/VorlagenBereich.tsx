@@ -4,6 +4,7 @@ import type { Skriptsprache } from '../kern/sprachen';
 import { sprachdaten } from '../kern/sprachen';
 import { Feld, Auswahlfeld } from './komponenten/Feld';
 import { Knopf } from './komponenten/Knopf';
+import { Karte } from './komponenten/Karte';
 import './vorlagen.css';
 
 export interface VorlagenFilter {
@@ -137,12 +138,17 @@ export function VorlagenBereich({
               filter.bereich === 'dokumente' ? vorlage.dokumentvorlagen!.join(', ') : vorlage.name;
             const detailId = `${id}-${vorlage.id}`;
             return (
-              <article
+              <Karte
                 key={vorlage.id}
                 className={`vorlagen-eintrag ${offen ? 'ist-ausgewaehlt' : ''}`}
                 aria-label={`${vorlage.name} – ${sprachdaten[vorlage.skriptsprache].bezeichnung}`}
+                hervorgehoben={offen}
               >
-                <div className="vorlagen-zeilenkopf">
+                <div className="vorlagen-kartenkopf">
+                  <div className="vorlagen-metadaten">
+                    <span>{vorlage.aufgabe}</span>
+                    <span>{sprachdaten[vorlage.skriptsprache].bezeichnung}</span>
+                  </div>
                   <h2>
                     <Knopf
                       variante="leise"
@@ -155,15 +161,11 @@ export function VorlagenBereich({
                       {titel}
                     </Knopf>
                   </h2>
-                  <span className="vorlagen-sprache">{sprachdaten[vorlage.skriptsprache].bezeichnung}</span>
+                  {filter.bereich === 'dokumente' && (
+                    <p className="vorlagen-zuordnung">Workflow: {vorlage.name}</p>
+                  )}
+                  <p className="vorlagen-ergebnis">{vorlage.ergebnis}</p>
                 </div>
-                {filter.bereich === 'dokumente' && (
-                  <p className="vorlagen-zuordnung">Workflow: {vorlage.name}</p>
-                )}
-                <p className="vorlagen-ergebnis">
-                  <span>{vorlage.aufgabe}</span>
-                  {vorlage.ergebnis}
-                </p>
                 {offen && (
                   <div className="vorlagen-details" id={detailId}>
                     <div className="vorlagen-detailspalten">
@@ -215,7 +217,7 @@ export function VorlagenBereich({
                     </div>
                   </div>
                 )}
-              </article>
+              </Karte>
             );
           })}
         </div>
