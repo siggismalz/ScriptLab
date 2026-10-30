@@ -4,6 +4,8 @@ Die Designquelle ist `src/gestaltung/tokens.ts`. `designTokensAnwenden()` setzt 
 
 ## Tokens und Zweck
 
+Die folgenden Hexwerte dokumentieren einen früheren Gestaltungsstand. Maßgeblich sind die aktuellen Hell-/Dunkelwerte in `src/gestaltung/tokens.ts` und das [Designsystem](gestaltung/DESIGNSYSTEM.md); dieser Qualitätsdurchgang führt kein weiteres Farbsystem ein.
+
 - Arbeitsfläche `#14171B`, Seiten-/Werkzeugflächen `#1B1F24`, Überlagerungen `#242A31`: Der Ablauf bleibt die größte zusammenhängende Fläche.
 - Text `#F1F3F5`, Hilfen `#B4BDC8`: Hilfen bleiben auch in normaler Schrift kontrastreich.
 - Akzent `#88B4FF` und dunkler Text `#121820`: Eine gefüllte Hauptaktion und HTML-Fokusrahmen; keine dekorativen Akzentflächen.

@@ -1,0 +1,274 @@
+{
+  "beschreibung": "Synthetische isolierte Helfer- und Projektmessungen; keine allgemeine App-Beschleunigungszusage.",
+  "qualitaet-run01-python-vorher.json": {
+    "python": "3.15.2 (tags/v3.15.2:5e58eaa, Oct 25 2026, 17:27:03) [MSC v.1951 64 bit (AMD64)]",
+    "plattform": "Windows-11-10.0.26200-SP0",
+    "messungen": [
+      {
+        "eintraege": 100,
+        "zugriffe": 250,
+        "median_ms": 1.341099999990547,
+        "messungen_ms": [1.4071000005060341, 1.341099999990547, 1.3267000003907015],
+        "spitzenbytes_einzelzugriff": 1600,
+        "pruefsumme": 24750
+      },
+      {
+        "eintraege": 10000,
+        "zugriffe": 250,
+        "median_ms": 68.52840000010474,
+        "messungen_ms": [68.55030000042461, 67.9707999997845, 68.52840000010474],
+        "spitzenbytes_einzelzugriff": 85856,
+        "pruefsumme": 2499750
+      },
+      {
+        "eintraege": 100000,
+        "zugriffe": 250,
+        "median_ms": 823.2018999997308,
+        "messungen_ms": [823.2018999997308, 836.5168000000267, 811.7042000003494],
+        "spitzenbytes_einzelzugriff": 801664,
+        "pruefsumme": 24999750
+      }
+    ]
+  },
+  "qualitaet-run01-python-nachher.json": {
+    "python": "3.15.2 (tags/v3.15.2:5e58eaa, Oct 25 2026, 17:27:03) [MSC v.1951 64 bit (AMD64)]",
+    "plattform": "Windows-11-10.0.26200-SP0",
+    "messungen": [
+      {
+        "eintraege": 100,
+        "zugriffe": 250,
+        "median_ms": 0.5149999997229315,
+        "messungen_ms": [0.5314999998518033, 0.5149999997229315, 0.5001999998057727],
+        "spitzenbytes_einzelzugriff": 736,
+        "pruefsumme": 24750
+      },
+      {
+        "eintraege": 10000,
+        "zugriffe": 250,
+        "median_ms": 0.4914999999527936,
+        "messungen_ms": [0.5246000000624917, 0.48750000041763997, 0.4914999999527936],
+        "spitzenbytes_einzelzugriff": 736,
+        "pruefsumme": 2499750
+      },
+      {
+        "eintraege": 100000,
+        "zugriffe": 250,
+        "median_ms": 0.4912000003969297,
+        "messungen_ms": [0.5014999997001723, 0.49029999991034856, 0.4912000003969297],
+        "spitzenbytes_einzelzugriff": 736,
+        "pruefsumme": 24999750
+      }
+    ]
+  },
+  "qualitaet-run01-vbs-vorher.json": {
+    "plattform": "win32",
+    "arch": "x64",
+    "messungen": [
+      [100, 0, 24750],
+      [100, 0, 24750],
+      [100, 0, 24750],
+      [10000, 7.8125, 2499750],
+      [10000, 15.625, 2499750],
+      [10000, 15.625, 2499750],
+      [100000, 234.375, 24999750],
+      [100000, 234.375, 24999750],
+      [100000, 242.1875, 24999750]
+    ]
+  },
+  "qualitaet-run01-vbs-nachher.json": {
+    "plattform": "win32",
+    "arch": "x64",
+    "messungen": [
+      [100, 0, 24750],
+      [100, 0, 24750],
+      [100, 0, 24750],
+      [10000, 0, 2499750],
+      [10000, 0, 2499750],
+      [10000, 0, 2499750],
+      [100000, 7.8125, 24999750],
+      [100000, 0, 24999750],
+      [100000, 0, 24999750]
+    ]
+  },
+  "qualitaet-projektumfang-vorher.json": {
+    "stand": "fa6b208 (Projektprüfung)",
+    "node": "v24.19.0",
+    "plattform": "win32",
+    "faelle": [
+      {
+        "anzahl": 50,
+        "bytes_formatiert": 54183,
+        "bytes_kompakt": 5200,
+        "pruefung_ms": [
+          2.365000000000009, 0.2342000000000155, 0.1588000000000136, 0.18649999999999523, 0.18369999999998754
+        ],
+        "status": "bestanden"
+      },
+      {
+        "anzahl": 150,
+        "bytes_formatiert": 431683,
+        "bytes_kompakt": 15000,
+        "pruefung_ms": [
+          0.3049999999999784, 0.3120000000000118, 0.3036000000000172, 0.35599999999999454, 0.23329999999998563
+        ],
+        "status": "bestanden"
+      },
+      {
+        "anzahl": 500,
+        "bytes_formatiert": 4588283,
+        "bytes_kompakt": 49650,
+        "pruefung_ms": [],
+        "status": "fehlgeschlagen",
+        "fehler": "Das Projekt enthält zu viele oder zu tief verschachtelte Bausteine."
+      },
+      {
+        "anzahl": 1000,
+        "bytes_formatiert": 18176283,
+        "bytes_kompakt": 99150,
+        "pruefung_ms": [],
+        "status": "fehlgeschlagen",
+        "fehler": "Das Projekt enthält zu viele oder zu tief verschachtelte Bausteine."
+      },
+      {
+        "anzahl": 2000,
+        "bytes_formatiert": 72354283,
+        "bytes_kompakt": 200150,
+        "pruefung_ms": [],
+        "status": "fehlgeschlagen",
+        "fehler": "Das Projekt enthält zu viele oder zu tief verschachtelte Bausteine."
+      }
+    ]
+  },
+  "qualitaet-projektumfang-nachher.json": {
+    "stand": "88dee7da6d0254fa143176cfb1c6abe81db06fb0 + Arbeitsbaum",
+    "node": "v24.19.0",
+    "plattform": "win32",
+    "faelle": [
+      {
+        "anzahl": 50,
+        "bytes_formatiert": 54183,
+        "bytes_kompakt": 5200,
+        "pruefung_ms": [
+          2.588099999999997, 0.4446000000000083, 0.33089999999998554, 0.2954000000000008, 0.2861000000000047
+        ],
+        "status": "bestanden"
+      },
+      {
+        "anzahl": 150,
+        "bytes_formatiert": 431683,
+        "bytes_kompakt": 15000,
+        "pruefung_ms": [
+          0.6199000000000012, 0.7229000000000099, 0.4210999999999956, 0.39560000000000173, 0.3673000000000002
+        ],
+        "status": "bestanden"
+      },
+      {
+        "anzahl": 500,
+        "bytes_formatiert": 4588283,
+        "bytes_kompakt": 49650,
+        "pruefung_ms": [
+          1.3403999999999883, 0.9682999999999993, 0.8479999999999848, 1.169700000000006, 0.8334000000000117
+        ],
+        "status": "bestanden"
+      },
+      {
+        "anzahl": 1000,
+        "bytes_formatiert": 18176283,
+        "bytes_kompakt": 99150,
+        "pruefung_ms": [3.0438999999999794, 1.8179000000000087, 2.636799999999994, 2.6875, 2.16579999999999],
+        "status": "bestanden"
+      },
+      {
+        "anzahl": 2000,
+        "bytes_formatiert": 72354283,
+        "bytes_kompakt": 200150,
+        "pruefung_ms": [],
+        "status": "fehlgeschlagen",
+        "fehler": "Der aktuelle Editor unterstützt höchstens 1000 Bausteine pro Workflow. Größere Abläufe können die Oberfläche blockieren. Verkürze den Ablauf oder verwende Schleifen für wiederkehrende Schritte. Die Projektdatei bleibt unverändert."
+      }
+    ]
+  },
+  "million-bedienung.json": {
+    "version": 1,
+    "synthetischeDaten": true,
+    "zeilen": 1000000,
+    "phaseVorBedienung": "laeuft",
+    "businessSchrittVorBedienung": "last-lesen",
+    "zoomAntwortMs": 96.35170000000016,
+    "verschiebenAntwortMs": 185.04649999999947,
+    "dauerMs": 6031.627399999999,
+    "phase": "beendet",
+    "exitcode": 0,
+    "ausgabeSha256": "0fae9b294cc23c239a4c3ff9342994844433426d46099721b08301bd6337d909",
+    "ungespeicherteQuelleVerwendet": true
+  },
+  "million-stoppen.json": {
+    "version": 1,
+    "synthetischeDaten": true,
+    "zeilen": 1000000,
+    "phaseVorStopp": "laeuft",
+    "phase": "abgebrochen",
+    "exitcode": 3221225786,
+    "stoppenMs": 1091.9661000000015,
+    "dauerMs": 4497.467500000001,
+    "ausgabeSha256": "0fae9b294cc23c239a4c3ff9342994844433426d46099721b08301bd6337d909",
+    "ausgabeNachStoppErhalten": true,
+    "editorWiederBearbeitbar": true
+  },
+  "dateistapel-1000": {
+    "synthetische_daten": true,
+    "beispielquellen_unveraendert": true,
+    "benchmark": {
+      "dateien": 1000,
+      "publizierte_dateien": 2000,
+      "dauer_sekunden": 10.478,
+      "eingabebytes": 53000,
+      "alle_ausgaben_und_archive_hashgleich": true,
+      "zeitlimit_sekunden": 120,
+      "grenzen": {
+        "max_ausgaben": 3000,
+        "max_temp_bytes": 4294967296,
+        "duckdb_speicher": "256MB"
+      },
+      "rechner": {
+        "cpu": "13th Gen Intel(R) Core(TM) i7-13700",
+        "logische_prozessoren": 24,
+        "physischer_ram_bytes": 68333776896,
+        "windows": "10.0.26200",
+        "architektur": "x64",
+        "python": "3.12.6",
+        "pakete": {
+          "duckdb": "2.0.0",
+          "openpyxl": "3.1.5",
+          "python-docx": "1.2.0",
+          "reportlab": "5.1.0",
+          "pypdf": "6.21.2",
+          "et-xmlfile": "2.0.0",
+          "lxml": "6.1.3",
+          "typing-extensions": "4.16.0",
+          "pillow": "13.0.0",
+          "charset-normalizer": "3.5.2",
+          "defusedxml": "0.7.1"
+        }
+      },
+      "messung": {
+        "working_set_bytes": 44720128,
+        "os_peak_working_set_bytes": 44720128,
+        "private_bytes": 33824768,
+        "sampled_max_working_set_bytes": 44470272,
+        "sampled_max_private_bytes": 33878016,
+        "sampled_max_temp_und_staging_bytes": 53,
+        "sampled_max_context_temp_bytes": 0,
+        "sampled_max_staging_bytes": 53,
+        "stichproben": 312,
+        "soll_abstand_ms": 25,
+        "max_beobachteter_abstand_ms": 47.013,
+        "speicher_messumfang": "Eigener gebundener Prüfprozess; OS-Working-Set-Peak seit Prozessbeginn, Private Bytes als Stichprobe.",
+        "temp_messumfang": "Privater TEMP/TMP/TMPDIR des eigenen Jobs inklusive Bibliotheken und Kontext plus .scriptlab-Staging unter der eigenen Stapelkopie; keine fremden Tempordner.",
+        "grenze": "Stichproben können kurzlebige Spitzen übersehen; beobachtete Temp-/Private-Maxima sind keine garantierten absoluten Peaks."
+      },
+      "isolierter_benchmark_ohne_cde_vorlauf": true
+    },
+    "python": "3.12.6"
+  }
+}

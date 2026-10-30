@@ -15,9 +15,9 @@ Die npm-Registry wurde vor der Installation für `latest` und Engines abgefragt.
 
 Entwicklungsumgebung: Windows 11 Pro x64, Build 26200; Node.js 24.19.0, npm 11.17.0, Git 2.46.1.windows.1. Die Engines der gewählten Werkzeuge passen zu Node.js 24.
 
-## Optionale Python-Laufzeit
+## Python-Laufzeit
 
-Python wird nicht mit der Anwendung ausgeliefert. Unterstützt wird finales CPython 3.12 bis 3.15 für Windows x64. Praktisch wurden die vorhandene 3.12.6-Installation und eine separate offizielle portable 3.15.2-Laufzeit geprüft; die vollständigen Ergebnisse und Grenzen stehen in [PYTHON.md](PYTHON.md). Die am 26.10.2026 geprüfte [offizielle Windows-Downloadliste](https://www.python.org/downloads/windows/) führt 3.15.2 als stabile aktuelle Version. Die jeweiligen Minor-Dokumentationen werden ausdrücklich verwendet, insbesondere [3.12](https://docs.python.org/3.12/) und [3.15](https://docs.python.org/3.15/).
+Die App liefert inzwischen CPython 3.15.2 für Windows x64 einschließlich Tcl/Tk und elf Business-Paketen mit. Herkunft und feste Prüfsummen stehen in [Python-Herkunft](../laufzeit/python-herkunft.md); der Build prüft das vollständige Manifest. Endnutzer benötigen für interne Läufe keine Einrichtung. Exportierte Scripts benötigen weiterhin eine eigene passende Umgebung. Die Prüfmodule unterstützen finales CPython 3.12 bis 3.15; frühere externe Laufzeitnachweise in [PYTHON.md](PYTHON.md) bleiben ihrem damaligen Stand zugeordnet.
 
 Die Windows-CI verwendet ausschließlich für Entwicklungstests CPython 3.15.2 x64 und [actions/setup-python v7.1.0](https://github.com/actions/setup-python/releases/tag/v7.1.0), fest auf Commit `6d4fd22b20465ccc0f7354476588e8df7c9ca0e0` gepinnt. Eine isolierte CI-venv wird ohne pip, Aktivierung oder Paketdownload angelegt. Die Anwendungserkennung ruft weder den älteren Launcher noch den Install Manager über die Befehlsauflösung auf und installiert nichts automatisch.
 

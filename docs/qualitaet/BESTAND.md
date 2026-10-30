@@ -18,7 +18,7 @@ Windows x64, Node 24.19.0, npm 11.17.0. Paketdefinition und Lockfile stimmen bei
 | Vorschau / Parameter / Ergebnisse | `src/kern/datenvorschau.ts`, `src/renderer/Datenbereich.tsx`, `ParameterDialog.tsx`, `BusinessVorbereitung.tsx`, `BusinessErgebnis.tsx`, `Laufverwaltung.tsx`; bewusste Vorschau, Prüflauf und echte Ausführung getrennt |
 | Export / Einstellungen / Laufzeit | `src/main/business-export.ts`, `dateien.ts`, `src/windows/{python,business-laufzeit,app-laufzeit,signatur,updates}.ts`, `ExportDialog.tsx`, `EinstellungenDialog.tsx`; eigenständige .py/.vbs/ZIP-Ausgaben |
 | Gestaltung / Komponenten | `src/gestaltung/{tokens,blocklyThema,blockAuswahl}.ts`, `src/renderer/komponenten/`, bereichsbezogene CSS-Dateien; vorhandene Petrol-/Grün-/Grautokens und beide Themen weiterführen |
-| Tests / Build / Installer / Update | `tests/**/*.test.ts`, `tests/business/*.py`, `tests/desktop/*.spec.ts`, `scripts/bauen.mjs`, `electron-builder.yml`, `.github/workflows/{windows,release}.yml`; normale main-Pushes prüfen Windows, Releases nur per Tag/manuellem Releaseauftrag |
+| Tests / Build / Installer / Update | `tests/**/*.test.ts`, `tests/business/*.py`, `tests/desktop/*.spec.ts`, `scripts/bauen.mjs`, `electron-builder.yml`, `.github/workflows/{windows-pruefung,release}.yml`; normale main-Pushes prüfen Windows, Releases nur per Tag/manuellem Releaseauftrag |
 
 Die katalogbasierte Einzelauflistung steht in [BAUSTEINREGISTER.md](BAUSTEINREGISTER.md). Testreferenzen darin sind Suchhinweise, keine Behauptung einer vollständigen Prüfung sämtlicher Varianten.
 
