@@ -25,6 +25,8 @@ import {
   bedingungsGruppeSetzen,
   bedingungAufloesen,
   literalTypSetzen,
+  pruefregelArtSetzen,
+  pruefregelSpaltenSetzen,
 } from '../src/renderer/business-regeln';
 
 const nichts = () => {};
@@ -517,5 +519,51 @@ describe('Verständliche, typisierte Business-Formulare', () => {
     expect(neu.minimum).toEqual({ art: 'wert', typ: 'TEXT', wert: '10' });
     expect(neu.maximum).toEqual({ art: 'wert', typ: 'TEXT', wert: '20' });
     expect(regel.minimum.typ).toBe('GANZZAHL');
+  });
+  it('zeigt bei Qualitätsregeln ausschließlich die zur Prüfungsart passenden Felder', () => {
+    const pflicht = formular('sl_biz_pruefen', {
+      regeln: [{ art: 'NICHT_LEER', spalte: 'Kundennummer', minimum: 10, typ: 'GANZZAHL', werte: ['alt'] }],
+    });
+    expect(pflicht).toContain('value="Kundennummer"');
+    expect(pflicht).not.toContain('>Datentyp</label>');
+    expect(pflicht).not.toContain('Grenze (optional)');
+    expect(pflicht).not.toContain('>Erlaubte Werte</legend>');
+    const zeilen = formular('sl_biz_pruefen', {
+      regeln: [{ art: 'ZEILENZAHL', minimum: 3, maximum: 5, spalte: 'Alt' }],
+    });
+    expect(zeilen).toContain('Mindestens so viele Zeilen (optional)');
+    expect(zeilen).toContain('value="3"');
+    expect(zeilen).not.toContain('>Spalte</label>');
+    expect(zeilen).not.toContain('value="Alt"');
+    const erlaubt = formular('sl_biz_pruefen', {
+      regeln: [
+        {
+          art: 'ERLAUBTE_WERTE',
+          spalte: 'Freigabe',
+          typ: 'WAHRHEIT',
+          werte: [{ art: 'wert', typ: 'WAHRHEIT', wert: false }],
+        },
+      ],
+    });
+    expect(erlaubt).toContain('>Datentyp</label>');
+    expect(erlaubt).toContain('<option value="nein" selected="">Nein</option>');
+    expect(erlaubt).not.toContain('Grenze (optional)');
+  });
+  it('erhält eine alte Einzelspalte bei eindeutigen Schlüsseln und alle Eingaben beim Regelwechsel', () => {
+    const regel = {
+      art: 'EINDEUTIG',
+      spalte: 'Kundennummer',
+      minimum: { art: 'wert', typ: 'GANZZAHL', wert: 2 },
+    };
+    const vorher = structuredClone(regel);
+    const html = formular('sl_biz_pruefen', { regeln: [regel] });
+    expect(html).toContain('value="Kundennummer"');
+    expect(regel).toEqual(vorher);
+    expect(pruefregelArtSetzen(regel, 'BEREICH')).toEqual({ ...regel, art: 'BEREICH' });
+    expect(pruefregelSpaltenSetzen(regel, [])).toEqual({
+      art: 'EINDEUTIG',
+      spalten: [],
+      minimum: regel.minimum,
+    });
   });
 });

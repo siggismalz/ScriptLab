@@ -30,6 +30,7 @@ import {
   literalTypSetzen,
   neuerVergleich,
   pruefregelArtSetzen,
+  pruefregelSpaltenSetzen,
   pruefregelZusammenfassung,
 } from './business-regeln';
 import './business.css';
@@ -855,6 +856,182 @@ function BedingungFeld({
     </div>
   );
 }
+function PruefregelZahlgrenze({
+  titel,
+  wert,
+  aendern,
+  gesperrt,
+  feldPfad,
+}: {
+  titel: string;
+  wert: JsonWert;
+  aendern: (wert: JsonWert) => void;
+  gesperrt: boolean;
+  feldPfad: string[];
+}) {
+  const formular = useContext(FormularKontext);
+  const pfad = ['konfiguration', ...feldPfad];
+  const fehler = formular.feldFehler.filter((f) => JSON.stringify(f.feldPfad) === JSON.stringify(pfad));
+  const roh = objekt(wert).art === 'wert' ? objekt(wert).wert : wert;
+  return (
+    <div data-konfig-pfad={JSON.stringify(pfad)} role="group" aria-label={titel} tabIndex={-1}>
+      <Feld
+        beschriftung={titel}
+        value={String(roh ?? '')}
+        inputMode="numeric"
+        disabled={gesperrt}
+        fehler={fehler.map((f) => f.text).join(' ') || undefined}
+        onChange={(e) => aendern(parameterWertAusText('Zahl', e.target.value))}
+      />
+    </div>
+  );
+}
+
+function PruefregelEingabe({
+  wert,
+  felder,
+  feldPfad,
+  aendern,
+  entfernen,
+  gesperrt,
+}: {
+  wert: JsonWert;
+  felder: KonfigFeld[];
+  feldPfad: string[];
+  aendern: (wert: JsonWert) => void;
+  entfernen: () => void;
+  gesperrt: boolean;
+}) {
+  const formular = useContext(FormularKontext);
+  const r = objekt(wert);
+  const art = String(r.art ?? 'NICHT_LEER');
+  const vollPfad = ['konfiguration', ...feldPfad];
+  const fehler = formular.feldFehler.filter((f) => vollPfad.every((teil, i) => f.feldPfad[i] === teil));
+  const fehlerKennung = fehler.length ? JSON.stringify(fehler) : '';
+  const hatGrenze = (name: string) => r[name] !== undefined && r[name] !== null && r[name] !== '';
+  const spalten =
+    Array.isArray(r.spalten) && r.spalten.length
+      ? r.spalten
+      : typeof r.spalte === 'string' && r.spalte.trim()
+        ? [r.spalte]
+        : [];
+  const benoetigtSpalte = !['EINDEUTIG', 'ZEILENZAHL'].includes(art);
+  const unvollstaendig =
+    (benoetigtSpalte && !String(r.spalte ?? '').trim()) ||
+    (art === 'EINDEUTIG' && !spalten.length) ||
+    (['BEREICH', 'ZEILENZAHL'].includes(art) && !hatGrenze('minimum') && !hatGrenze('maximum')) ||
+    (art === 'ERLAUBTE_WERTE' && (!Array.isArray(r.werte) || !r.werte.length));
+  const [offen, setOffen] = useState(Boolean(fehlerKennung) || unvollstaendig);
+  useEffect(() => {
+    if (fehlerKennung) setOffen(true);
+  }, [fehlerKennung]);
+  const typ = regelTyp(r, 'TEXT');
+  const feld = (name: string, aktuellerWert = r[name], setzen?: (neu: JsonWert) => void) => {
+    const definition = felder.find((f) => f.name === name)!;
+    return (
+      <KonfigEingabe
+        key={name}
+        feld={definition}
+        wert={aktuellerWert ?? definition.standard}
+        aendern={setzen ?? ((neu) => aendern({ ...r, [name]: neu }))}
+        parameter={formular.parameter}
+        gesperrt={gesperrt}
+        feldPfad={[...feldPfad, name]}
+      />
+    );
+  };
+  const grenzeSetzen = (name: string, neu: JsonWert) => {
+    const naechste = { ...r };
+    const literal = objekt(neu);
+    if (literal.wert === null || literal.wert === '') delete naechste[name];
+    else naechste[name] = neu;
+    aendern(naechste);
+  };
+  return (
+    <details
+      className="business-pruefregel"
+      open={offen}
+      onToggle={(e) => setOffen(e.currentTarget.open)}
+      data-konfig-pfad={JSON.stringify(vollPfad)}
+      aria-invalid={fehler.length ? true : undefined}
+    >
+      <summary>
+        {pruefregelZusammenfassung(wert)}
+        {fehler.length > 0 && (
+          <span className="text-fehler">
+            {' '}
+            · {fehler.length === 1 ? '1 Hinweis' : fehler.length + ' Hinweise'}
+          </span>
+        )}
+      </summary>
+      <div className="business-formular">
+        {feld('art', art, (neu) => aendern(pruefregelArtSetzen(wert, String(neu))))}
+        {!['NICHT_LEER', 'EINDEUTIG', 'BEREICH', 'TYP', 'ERLAUBTE_WERTE', 'ZEILENZAHL'].includes(art) ? (
+          <p role="status">
+            Diese gespeicherte Prüfregel bleibt erhalten. Wähle eine unterstützte Prüfung, um sie anzupassen.
+          </p>
+        ) : (
+          <>
+            {benoetigtSpalte && feld('spalte')}
+            {art === 'EINDEUTIG' &&
+              feld('spalten', spalten, (neu) => aendern(pruefregelSpaltenSetzen(wert, neu)))}
+            {['BEREICH', 'TYP', 'ERLAUBTE_WERTE'].includes(art) &&
+              feld('typ', typ, (neu) => aendern(regelTypAendern(r, neu)))}
+            {art === 'BEREICH' &&
+              ['minimum', 'maximum'].map((name) => (
+                <KonfigEingabe
+                  key={name}
+                  feld={{
+                    ...felder.find((f) => f.name === name)!,
+                    titel: name === 'minimum' ? 'Untere Grenze (optional)' : 'Obere Grenze (optional)',
+                  }}
+                  wert={literalFuerFormular(hatGrenze(name) ? r[name] : null, typ)}
+                  aendern={(neu) => grenzeSetzen(name, neu)}
+                  parameter={formular.parameter}
+                  gesperrt={gesperrt}
+                  feldPfad={[...feldPfad, name]}
+                />
+              ))}
+            {art === 'ZEILENZAHL' &&
+              ['minimum', 'maximum'].map((name) => (
+                <PruefregelZahlgrenze
+                  key={name}
+                  titel={
+                    name === 'minimum'
+                      ? 'Mindestens so viele Zeilen (optional)'
+                      : 'Höchstens so viele Zeilen (optional)'
+                  }
+                  wert={r[name] ?? null}
+                  gesperrt={gesperrt}
+                  feldPfad={[...feldPfad, name]}
+                  aendern={(neu) => {
+                    const naechste = { ...r };
+                    if (neu === null || neu === '') delete naechste[name];
+                    else naechste[name] = neu;
+                    aendern(naechste);
+                  }}
+                />
+              ))}
+            {art === 'ERLAUBTE_WERTE' &&
+              feld(
+                'werte',
+                (Array.isArray(r.werte) ? r.werte : []).map((w) => literalFuerFormular(w, typ)),
+                (neu) =>
+                  aendern({
+                    ...r,
+                    werte: (Array.isArray(neu) ? neu : []).map((w) => literalFuerFormular(w, typ)),
+                  }),
+              )}
+          </>
+        )}
+        <Knopf variante="leise" disabled={gesperrt} onClick={entfernen}>
+          Prüfregel entfernen
+        </Knopf>
+      </div>
+    </details>
+  );
+}
+
 interface KonfigEingabeEigenschaften {
   feld: KonfigFeld;
   wert: JsonWert;
@@ -964,6 +1141,26 @@ function KonfigEingabeInhalt({
             feldPfad={[...feldPfad, f.name]}
           />
         ))}
+      </fieldset>
+    );
+  if (feld.art === 'liste' && feld.name === 'regeln')
+    return (
+      <fieldset>
+        <legend>{feld.titel}</legend>
+        {teile.map((teil, i) => (
+          <PruefregelEingabe
+            key={i}
+            wert={teil}
+            felder={feld.felder!}
+            feldPfad={[...feldPfad, String(i)]}
+            gesperrt={gesperrt}
+            aendern={(neu) => aendern(teile.map((v, n) => (n === i ? neu : v)))}
+            entfernen={() => aendern(teile.filter((_, n) => n !== i))}
+          />
+        ))}
+        <Knopf disabled={gesperrt} onClick={() => aendern([...teile, { art: 'NICHT_LEER', spalte: '' }])}>
+          Prüfregel hinzufügen
+        </Knopf>
       </fieldset>
     );
   if (feld.art === 'liste' || feld.art === 'spalten')

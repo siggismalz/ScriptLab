@@ -61,6 +61,12 @@ export function pruefregelArtSetzen(wert: JsonWert, art: string): Record<string,
   return { ...objekt(wert), art };
 }
 
+/** Alte Einzelspalten werden erst bei einer ausdrücklichen Bearbeitung abgelöst. */
+export function pruefregelSpaltenSetzen(wert: JsonWert, spalten: JsonWert): Record<string, JsonWert> {
+  const { spalte: _bisher, ...regel } = objekt(wert);
+  return { ...regel, spalten };
+}
+
 export function pruefregelZusammenfassung(wert: JsonWert): string {
   const w = objekt(wert);
   const namen: Record<string, string> = {

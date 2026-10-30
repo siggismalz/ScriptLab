@@ -176,4 +176,44 @@ describe('Belegte Feldbezüge für Quelle und Zuordnung', () => {
       ws.dispose();
     }
   });
+  it('öffnet genau die betroffene Prüfregel und behält den ursprünglichen Index der Grenze', () => {
+    const ws = new Blockly.Workspace();
+    try {
+      const block = ws.newBlock('sl_biz_pruefen');
+      block.data = JSON.stringify({
+        konfiguration: {
+          regeln: [
+            { art: 'NICHT_LEER', spalte: 'Kundennummer' },
+            {
+              art: 'BEREICH',
+              spalte: 'Betrag',
+              typ: 'GANZZAHL',
+              minimum: { art: 'wert', typ: 'GANZZAHL', wert: 10 },
+            },
+          ],
+        },
+        eingaben: {},
+      });
+      const vorher = block.data;
+      const text = 'Prüfe die untere Grenze.';
+      const html = renderToStaticMarkup(
+        createElement(BusinessEigenschaften, {
+          ws: ws as Blockly.WorkspaceSvg,
+          block,
+          parameter: [],
+          gesperrt: false,
+          geaendert: () => {},
+          feldFehler: [{ feldPfad: ['konfiguration', 'regeln', '1', 'minimum'], text }],
+        }),
+      );
+      expect(html.match(/<details class="business-pruefregel" open=""/g)).toHaveLength(1);
+      expect(html).toContain(
+        'data-konfig-pfad="[&quot;konfiguration&quot;,&quot;regeln&quot;,&quot;1&quot;,&quot;minimum&quot;]"',
+      );
+      expect(html.split(text)).toHaveLength(2);
+      expect(block.data).toBe(vorher);
+    } finally {
+      ws.dispose();
+    }
+  });
 });
