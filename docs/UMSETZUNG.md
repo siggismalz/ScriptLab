@@ -24,6 +24,12 @@ Wichtige Entscheidungen:
 
 Aktuelle Qualitätsarbeit und ihre Grenzen stehen in [qualitaet/ARBEITSPLAN.md](qualitaet/ARBEITSPLAN.md); frühere Abnahmen behalten ihren jeweils angegebenen Stand.
 
+## Backlog: Mail-Workflows und eigener SMTP-Dienst
+
+Nutzerwunsch vom 30. Oktober 2026: eine einfache Mail-Karte, bevorzugt mit einem von ScriptLab selbst angebotenen SMTP-Dienst. Zunächst zurückgestellt zugunsten der ausdrücklich beauftragten ML-Workflows. Kein funktionsloser Mail-Einstieg in der Oberfläche.
+
+Ein eigener Dienst für zuverlässigen Internetversand benötigt neben SMTP insbesondere DNS-/Domainkonfiguration, Warteschlange, Zustellversuche, sichere Betriebsregeln und nachvollziehbare Annahme-/Fehlerzustände. Vor einer Umsetzung klären, ob ein vollständiger Versanddienst oder ein Versandbaustein für einen vorhandenen Mailserver gewünscht ist. Bei letzterem zusätzlich geschützte Zugangsdaten außerhalb von Projekten/Parametern, Anhänge, bewusst freigegebenen Versand und unklare beziehungsweise teilweise Annahme ohne automatische Doppelsendung spezifizieren. Dieser Eintrag beauftragt weder neue Cloudinfrastruktur noch einen SMTP-Listener im aktuellen ML-Durchgang.
+
 ## Anschlussaufgabe: besonders lange Editorfolgen
 
 Lineare und verzweigte 2.000-Blockbestände blockierten in wiederholten Windows-Electron-Proben beim erneuten Laden den Renderer, einschließlich CDP-Profilabschluss; der Hauptprozess blieb ansprechbar. Die gespeicherte verzweigte Datei war unabhängig gültig. Die genaue native Ursache ist nicht belegt. Einzelne rekursive Blockly-Lade-/Renderpfade sind nachgewiesen, erklären den beobachteten vollständigen Stillstand aber nicht abschließend. Eine zusätzliche Pfadtiefengrenze reichte nicht. Der aktuelle Durchgang schützt deshalb einheitlich vor mehr als 1.000 Gesamtblöcken; die fachliche Verschachtelungsgrenze bleibt 150. Dies ist eine offengelegte technische Einschränkung gegenüber dem bisher theoretisch angebotenen 2.000er Maximum, keine erreichte 2.000-Block-Abnahme.

@@ -20,9 +20,9 @@ describe('Business-Projektformat', () => {
   });
   it('migriert alte Projekte ohne Veränderung der Verbindungen und Ansicht', () => {
     const p = neuesProjekt('python');
-    const { business: _, ...alt } = p;
+    const { business: _, workflowArt: _art, ...alt } = p;
     const neu = projektPruefen({ ...alt, schemaVersion: 2 });
-    expect(neu.schemaVersion).toBe(3);
+    expect(neu.schemaVersion).toBe(4);
     expect(neu.skriptsprache).toBe('python');
     expect(neu.editor).toEqual(p.editor);
     expect(neu.ansicht).toEqual(p.ansicht);

@@ -3,6 +3,7 @@ import { definitionNachTyp } from './katalog';
 import { sprachePruefen, type Skriptsprache } from './sprachen';
 import { businessProjektPruefen, leeresBusinessProjekt, type BusinessProjekt } from './business-modell';
 import paket from '../../package.json' with { type: 'json' };
+import { workflowArtPruefen, type WorkflowArt } from './workflowarten';
 
 /** Das Projekt speichert ausschließlich Daten. Es enthält niemals ausführbaren Anwendungscode. */
 export interface EditorBlock {
@@ -25,7 +26,8 @@ export interface EditorBlock {
 }
 
 export interface Projekt {
-  schemaVersion: 3;
+  schemaVersion: 4;
+  workflowArt: WorkflowArt;
   business: BusinessProjekt;
   skriptsprache: Skriptsprache;
   appVersion: string;
@@ -73,9 +75,14 @@ export function projektPruefen(wert: unknown): Projekt {
     throw new Error(meldung);
   };
   if (!objekt(wert)) return fehler('Die Projektdatei enthält kein gültiges Projekt.');
-  if (wert.schemaVersion !== 1 && wert.schemaVersion !== 2 && wert.schemaVersion !== 3)
+  if (
+    wert.schemaVersion !== 1 &&
+    wert.schemaVersion !== 2 &&
+    wert.schemaVersion !== 3 &&
+    wert.schemaVersion !== 4
+  )
     return fehler(
-      typeof wert.schemaVersion === 'number' && wert.schemaVersion > 3
+      typeof wert.schemaVersion === 'number' && wert.schemaVersion > 4
         ? 'Dieses Projekt wurde mit einem neueren Dateiformat gespeichert. Bitte ScriptLab aktualisieren.'
         : 'Die Schemaversion der Projektdatei wird nicht unterstützt.',
     );
@@ -84,6 +91,7 @@ export function projektPruefen(wert: unknown): Projekt {
       (k) =>
         ![
           'schemaVersion',
+          'workflowArt',
           'business',
           'skriptsprache',
           'appVersion',
@@ -102,6 +110,11 @@ export function projektPruefen(wert: unknown): Projekt {
   const skriptsprache = Object.hasOwn(wert, 'skriptsprache') ? sprachePruefen(wert.skriptsprache) : 'vbs';
   if (wert.schemaVersion === 1 && skriptsprache !== 'vbs')
     return fehler('Python-Projekte benötigen das Projektformat 2. Die Datei wird nicht verändert.');
+  const workflowArt = wert.schemaVersion === 4 ? workflowArtPruefen(wert.workflowArt) : 'allgemein';
+  if (wert.schemaVersion !== 4 && Object.hasOwn(wert, 'workflowArt'))
+    return fehler('Spezialisierte Workflows benötigen Projektformat 4. Die Datei bleibt unverändert.');
+  if (workflowArt === 'ml' && skriptsprache !== 'python')
+    return fehler('Machine-Learning-Workflows verwenden Python. Die Datei bleibt unverändert.');
   if (
     wert.projektKennung !== undefined &&
     (typeof wert.projektKennung !== 'string' ||
@@ -339,10 +352,14 @@ export function projektPruefen(wert: unknown): Projekt {
     }
   }
   // Kopieren entfernt geteilte Referenzen und verhindert spätere Änderungen am geprüften Objekt.
-  const business = wert.schemaVersion === 3 ? businessProjektPruefen(wert.business) : leeresBusinessProjekt();
+  const business =
+    wert.schemaVersion === 3 || wert.schemaVersion === 4
+      ? businessProjektPruefen(wert.business)
+      : leeresBusinessProjekt();
   const projekt = {
     ...JSON.parse(jsonSchreiben(wert)),
-    schemaVersion: 3,
+    schemaVersion: 4,
+    workflowArt,
     skriptsprache,
     business,
   } as Projekt;
@@ -403,10 +420,17 @@ function variablenIdentitaetenErgaenzen(projekt: Projekt): void {
   if (variablen.length) projekt.editor.variables = variablen;
 }
 
-export function neuesProjekt(skriptsprache: Skriptsprache = 'vbs'): Projekt {
+export function neuesProjekt(
+  skriptsprache: Skriptsprache = 'vbs',
+  workflowArt: WorkflowArt = 'allgemein',
+): Projekt {
   sprachePruefen(skriptsprache);
+  workflowArtPruefen(workflowArt);
+  if (workflowArt === 'ml' && skriptsprache !== 'python')
+    throw new Error('Machine Learning benötigt Python.');
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
+    workflowArt,
     business: leeresBusinessProjekt(),
     skriptsprache,
     appVersion: paket.version,

@@ -8,6 +8,7 @@ import {
 } from './business-katalog';
 import type { BusinessSchritt } from './business-modell';
 import { businessKonfigurationFeldfehler } from './business-validierung';
+import { bausteinVerfuegbar } from './workflowarten';
 
 export interface Meldung {
   blockId?: string;
@@ -72,6 +73,11 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
   for (const block of alle)
     if (!definitionNachTyp.has(block.type))
       fehler(block, 'Dieser Bausteintyp wird von ScriptLab nicht unterstützt.');
+    else if (!bausteinVerfuegbar(block.type, projekt.skriptsprache, projekt.workflowArt))
+      fehler(
+        block,
+        'Dieser Baustein gehört nicht zur gewählten Workflowart oder Sprache. Sein Inhalt bleibt erhalten.',
+      );
   const starts = alle.filter((b) => b.type === 'sl_start' && aktiv(b));
   if (starts.length !== 1)
     meldungen.push({

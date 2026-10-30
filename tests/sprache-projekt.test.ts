@@ -32,7 +32,7 @@ function namensProjekt(sprache: 'vbs' | 'python' = 'vbs'): Projekt {
 describe('Versionierte Sprache und stabile Variablen', () => {
   it.each(['vbs', 'python'] as const)('erstellt und erhält %s samt vollständigem Zustand', (sprache) => {
     const p = projektPruefen(namensProjekt(sprache));
-    expect(p.schemaVersion).toBe(3);
+    expect(p.schemaVersion).toBe(4);
     expect(p.skriptsprache).toBe(sprache);
     expect(projektPruefen(JSON.parse(JSON.stringify(p)))).toEqual(p);
     expect(p.ansicht).toEqual({ zoom: 1.25, x: -30, y: 80 });
@@ -41,6 +41,7 @@ describe('Versionierte Sprache und stabile Variablen', () => {
   it('migriert nur fehlende alte Sprachangaben als VBS und behält Namensaliase', () => {
     const roh = { ...namensProjekt(), schemaVersion: 1 } as Record<string, unknown>;
     delete roh.skriptsprache;
+    delete roh.workflowArt;
     const p = projektPruefen(roh);
     expect(p.skriptsprache).toBe('vbs');
     expect(p.editor.variables).toHaveLength(1);
@@ -59,7 +60,7 @@ describe('Versionierte Sprache und stabile Variablen', () => {
     const p = { ...neuesProjekt() } as Record<string, unknown>;
     delete p.skriptsprache;
     expect(() => projektPruefen(p)).toThrow(/Scriptsprache/);
-    expect(() => projektPruefen({ ...neuesProjekt(), schemaVersion: 4 })).toThrow(/neueren/);
+    expect(() => projektPruefen({ ...neuesProjekt(), schemaVersion: 5 })).toThrow(/neueren/);
     expect(() => projektPruefen({ ...neuesProjekt('python'), schemaVersion: 1 })).toThrow(/Projektformat 2/);
   });
   it('ordnet Variablen nach Identität zu und erhält die Zuordnung beim Umbenennen', () => {
@@ -125,6 +126,7 @@ describe('Sprache in echten Projektdateien und Entwürfen', () => {
   it('öffnet ein altes Projekt ohne dessen Bytes zu überschreiben', async () => {
     const p = { ...namensProjekt(), schemaVersion: 1 } as Record<string, unknown>;
     delete p.skriptsprache;
+    delete p.workflowArt;
     const original = JSON.stringify(p);
     const pfad = join(ordner, 'Alt.scriptlab');
     await writeFile(pfad, original, 'utf8');

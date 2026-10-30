@@ -4,6 +4,7 @@ import { readFile, readdir, stat, mkdir, unlink } from 'node:fs/promises';
 import { join, win32 } from 'node:path';
 import { z } from 'zod';
 import { projektPruefen, type Projekt } from '../kern/projekt';
+import { projektStandDaten } from '../kern/workflowarten';
 import type { ProjektEintrag, EntwurfEintrag, EntwurfStatus, Verfuegbarkeit } from '../gemeinsam/bruecke';
 import { atomarSchreiben, MAX_PROJEKT_BYTES, dateiFehler } from './dateien';
 
@@ -52,8 +53,9 @@ export function windowsPfadSchluessel(dateipfad: string): string {
   return win32.normalize(dateipfad).replace(/\\+$/, '').toLowerCase();
 }
 export function projektHash(projekt: Projekt): string {
-  const { ansicht: _ansicht, ...inhalt } = projekt;
-  return createHash('sha256').update(jsonSchreiben(inhalt)).digest('hex');
+  return createHash('sha256')
+    .update(jsonSchreiben(projektStandDaten(projekt)))
+    .digest('hex');
 }
 export function leererEntwurf(projekt: Projekt): boolean {
   const bloecke = projekt.editor.blocks?.blocks ?? [];

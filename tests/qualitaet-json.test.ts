@@ -147,8 +147,10 @@ describe('Iteratives JSON für bestehende Daten- und Hashverträge', () => {
     };
     const text = jsonSchreiben(projekt);
     expect(text).toBe(JSON.stringify(projekt));
-    const { ansicht: _ansicht, ...inhalt } = projekt;
-    const bisherigerHash = createHash('sha256').update(JSON.stringify(inhalt)).digest('hex');
+    const { ansicht: _ansicht, workflowArt: _art, ...inhalt } = projekt;
+    const bisherigerHash = createHash('sha256')
+      .update(JSON.stringify({ ...inhalt, schemaVersion: 3 }))
+      .digest('hex');
     expect(projektHash(projekt)).toBe(bisherigerHash);
     expect(testStandHash(projekt)).toBe(bisherigerHash);
     const kopie = projektPruefen(projekt);

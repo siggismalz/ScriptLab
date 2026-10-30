@@ -14,6 +14,7 @@ import { businessSchritte, businessModusPruefen } from '../kern/business';
 import { parameterWertePruefen } from '../kern/business-modell';
 import { datenvorschauProjekt } from '../kern/datenvorschau';
 import { jsonSchreiben } from '../gemeinsam/json';
+import { projektStandDaten } from '../kern/workflowarten';
 
 export const testOptionenSchema = z
   .object({
@@ -42,8 +43,9 @@ export const testOptionenSchema = z
   .strict();
 
 export function testStandHash(projekt: Projekt): string {
-  const { ansicht: _ansicht, ...inhalt } = projekt;
-  return createHash('sha256').update(jsonSchreiben(inhalt)).digest('hex');
+  return createHash('sha256')
+    .update(jsonSchreiben(projektStandDaten(projekt)))
+    .digest('hex');
 }
 interface Lauf {
   projekt: Projekt;
@@ -94,6 +96,7 @@ export class TestlaufDienst {
     private readonly pythonErmitteln?: (
       tkinterNoetig: boolean,
       signal: AbortSignal,
+      projekt?: Projekt,
     ) => Promise<PythonInstallation>,
     private readonly business?: {
       paketwurzel: string;
@@ -264,7 +267,7 @@ export class TestlaufDienst {
         this.zustand.meldung = lauf.dialogeNoetig
           ? 'Python und die benötigten Tk-Dialoge werden geprüft.'
           : 'Die mitgelieferte Python-Laufzeit wird vorbereitet.';
-        const python = await this.pythonErmitteln(lauf.dialogeNoetig, lauf.abbruch.signal);
+        const python = await this.pythonErmitteln(lauf.dialogeNoetig, lauf.abbruch.signal, lauf.projekt);
         if (lauf.grund) return;
         // Dieser Lauf behält genau die geprüfte Datei, auch wenn später Einstellungen geändert werden.
         lauf.python = Object.freeze({ ...python, pfad: pythonDateipfadPruefen(python.pfad) });
@@ -280,6 +283,13 @@ export class TestlaufDienst {
             ),
           );
           const b = optionen.business!;
+          if (lauf.projekt.workflowArt === 'ml')
+            await pruefen(
+              cp(join(this.business.paketwurzel, 'scriptlab_ml'), join(lauf.ordner, 'scriptlab_ml'), {
+                recursive: true,
+                filter: (p) => !p.includes('__pycache__') && !p.endsWith('.pyc'),
+              }),
+            );
           await mkdir(join(lauf.ordner, 'arbeitsdaten'), { recursive: true });
           const parameter = parameterWertePruefen(lauf.projekt.business.parameter, {
             ...Object.fromEntries(lauf.projekt.business.parameter.map((p) => [p.name, p.standard])),
@@ -309,6 +319,7 @@ export class TestlaufDienst {
             join(lauf.ordner, 'scriptlab-kontext.json'),
             JSON.stringify({
               version: 1,
+              ml_aktiv: lauf.projekt.workflowArt === 'ml',
               basis: optionen.basisVerzeichnis,
               ...(this.ausgabeWurzel ? { ausgabe_wurzel: this.ausgabeWurzel } : {}),
               modus: b.modus,

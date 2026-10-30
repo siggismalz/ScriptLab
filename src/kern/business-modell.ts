@@ -13,6 +13,7 @@ export const fachlicheTypen = [
   'Dokument',
   'Dokumentvorlage',
   'Ergebnis',
+  'MLModell',
 ] as const;
 export type FachlicherTyp = (typeof fachlicheTypen)[number];
 export type Betriebsmodus = 'vorschau' | 'prueflauf' | 'ausfuehren';
@@ -29,7 +30,7 @@ const parameterSchema = z
   .object({
     name: z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/),
     beschriftung: z.string().min(1).max(160),
-    typ: z.enum(fachlicheTypen).exclude(['Tabelle', 'Datensatz', 'Ergebnis', 'Dateiliste']),
+    typ: z.enum(fachlicheTypen).exclude(['Tabelle', 'Datensatz', 'Ergebnis', 'Dateiliste', 'MLModell']),
     erforderlich: z.boolean(),
     standard: z.union([z.string().max(32768), z.number().finite(), z.boolean(), z.null()]),
     hilfe: z.string().max(2000),
@@ -56,7 +57,7 @@ export const businessProjektSchema = z
           .object({
             name: z.string().min(1).max(160),
             pfad: z.string().min(1).max(32768),
-            art: z.enum(['Vorlage', 'Schrift', 'Bild']),
+            art: z.enum(['Vorlage', 'Schrift', 'Bild', 'Modell']),
           })
           .strict(),
       )
