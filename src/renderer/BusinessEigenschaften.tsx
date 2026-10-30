@@ -1318,19 +1318,22 @@ function KonfigEingabeInhalt({
         {w.art === 'DEZIMAL' && (
           <>
             <Feld
-              beschriftung="Gesamtzahl der Ziffern (1–38)"
-              type="number"
-              value={Number(w.praezision ?? 18)}
-              disabled={gesperrt}
-              onChange={(e) => aendern({ ...w, praezision: Number(e.target.value) })}
-            />
-            <Feld
               beschriftung="Nachkommastellen"
               type="number"
               value={Number(w.skala ?? 2)}
               disabled={gesperrt}
               onChange={(e) => aendern({ ...w, skala: Number(e.target.value) })}
             />
+            <details className="business-ausdruckdetails" open={feldUngueltig || undefined}>
+              <summary>Genauigkeit anpassen</summary>
+              <Feld
+                beschriftung="Gesamtzahl der Ziffern (1–38)"
+                type="number"
+                value={Number(w.praezision ?? 18)}
+                disabled={gesperrt}
+                onChange={(e) => aendern({ ...w, praezision: Number(e.target.value) })}
+              />
+            </details>
           </>
         )}
       </>
