@@ -286,11 +286,11 @@ test('Python-Sprachfilter öffnet eine echte Vorlage als unabhängige Projektkop
     const vorlage = projektPruefen(JSON.parse(original.toString('utf8')));
     await s.seite.getByRole('button', { name: 'Beispielworkflows', exact: true }).click();
     const liste = s.seite.getByTestId('beispiele');
-    await expect(liste.getByRole('article')).toHaveCount(11);
+    await expect(liste.getByRole('article')).toHaveCount(13);
     await liste
       .getByRole('combobox', { name: 'Beispiele nach Sprache filtern', exact: true })
       .selectOption('python');
-    await expect(liste.getByRole('article')).toHaveCount(8);
+    await expect(liste.getByRole('article')).toHaveCount(10);
     await expect(liste.getByRole('article', { name: /VBScript/ })).toHaveCount(0);
     const karte = liste.getByRole('article', {
       name: 'Dateinamen als Textliste speichern – Python',

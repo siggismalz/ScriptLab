@@ -202,6 +202,8 @@ test('beginnt mit einem leeren Start und isoliert den Renderer', async () => {
     require: 'undefined',
     process: 'undefined',
     schnittstelle: [
+      'mlLesen',
+      'mlAktion',
       'businessLesen',
       'businessAktion',
       'laden',

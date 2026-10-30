@@ -32,9 +32,37 @@ node scripts/python-buendel.mjs --vorbereiten
 node scripts/python-buendel.mjs --pruefen
 ```
 
-Das Build-Bündel liegt unter `artifacts/python-buendel/python`, in der Anwendung unter `resources/python`. Herkunft, Prüfsummen und Beilagen dokumentiert [Python-Herkunft](../laufzeit/python-herkunft.md). Endnutzer wählen keinen Interpreter und installieren keine Pakete. Ein Workflowstart lädt nichts nach. **Einstellungen → Laufzeit** zeigt den tatsächlichen Komponentenstatus und eine erneute Bestandsprüfung.
+Das Build-Bündel liegt unter `artifacts/python-buendel/python`, in der Anwendung unter `resources/python`. Herkunft, Prüfsummen und Beilagen dokumentiert [Python-Herkunft](../laufzeit/python-herkunft.md). Für diese Basis wählen Endnutzer keinen Interpreter und installieren keine Pakete. Das zusätzliche ML-Profil ist ausdrücklich optional. Ein Workflowstart lädt nichts nach. **Einstellungen → Laufzeit** zeigt den tatsächlichen Komponentenstatus und eine erneute Bestandsprüfung.
 
 VBS verwendet die verfügbare Windows-VBScript-Komponente. ScriptLab aktiviert keine Windows-Features und ändert keine Unternehmensrichtlinien. Bearbeiten, Speichern und Exportieren bleiben auch ohne VBS-Laufzeit möglich.
+
+## Optionales CPU-ML-Profil
+
+Die dritte Erstellungskarte **Machine Learning** legt einen Python-Workflow mit `workflowArt: 'ml'` an. Die gemeinsame Verfügbarkeitsprüfung in `kern/workflowarten.ts` begrenzt Palette, Suche und fachliche Prüfung auf vorhandene CSV-/XLSX- und Tabellenaktionen sowie vier Modellaktionen. Allgemeines Python und VBS behalten ihren bisherigen Katalog. [ML-Bedienung und Export](ML.md) beschreibt den Nutzerweg.
+
+Die Basisinstallation enthält keine ML-Wheels. Unter **Einstellungen → Laufzeit** richtet nur ein bewusster Online-/Offlineauftrag das vollständige private CPU-Profil ein. Es kopiert die manifestgeprüfte Basis, installiert die 21 festen Pins in diesem eigenen Ordner und aktiviert das Profil erst nach Prüfung atomar. Das Basisbündel und ein vorheriges Profil bleiben bei einem Fehler erhalten. `mlLesen` liest beziehungsweise prüft; `mlAktion` akzeptiert nur `pruefen|einrichten|offline|abbrechen`, keine freien Pakete, URLs oder Shellbefehle. Bearbeiten, Speichern und Exportieren benötigen kein ML-Profil.
+
+Feste Dateien: `laufzeit/ml-profil.json`, `requirements-ml.in`, die kanonische `requirements-ml.lock` und `ml-notices.md`. Geprüft ist Windows x64 mit CPython 3.15.2 und dem festgelegten CPU-Paketsatz; andere Pythonversionen, GPU und freie Architekturen gehören nicht zum Vertrag.
+
+Nach dem Basisbuild ein eigenes Entwicklungsprofil bewusst einrichten und prüfen:
+
+```powershell
+node scripts/ml-vorbereiten.mjs --online
+node scripts/ml-vorbereiten.mjs --pruefen
+```
+
+Der Onlinecache dieses Entwicklungsprofils liegt unter `artifacts/ml/laufzeit/wheels`. Ohne `--online` verwendet das Einrichtungswerkzeug ausschließlich die vollständigen, fest geprüften ML-Wheels unter `artifacts/ml/wheels`. Für die unten aufgeführte Offline-Desktopprüfung müssen die 21 geprüften Wheels ebenfalls in diesem zweiten Ordner bereitliegen; die Onlineeinrichtung allein befüllt ihn nicht. Das Wartungswerkzeug `node scripts/ml-lock.mjs --herunterladen` beschafft diese festen Wheels und erzeugt Profil-/Lockmetadaten neu; es ist kein automatischer Buildschritt. Änderungen an diesen Dateien benötigen einen eigenen Diff- und Kompatibilitätsreview. `node scripts/ml-lizenzen.mjs` erzeugt die Beilagen aus genau diesen Wheels.
+
+Gezielte optionale Nachweise nach vorbereiteter Umgebung:
+
+```powershell
+$env:SCRIPTLAB_ML_TESTS = '1'
+npx vitest run tests/ml-laufzeit.test.ts tests/ml-export.test.ts tests/ml-ausfuehrung-native.test.ts
+npx playwright test tests/desktop/ml-ui.spec.ts tests/desktop/ml-ausfuehrung.spec.ts --workers=1 --reporter=list
+Remove-Item Env:SCRIPTLAB_ML_TESTS
+```
+
+Die native Integration benötigt das aktive Entwicklungsprofil, die vollständigen Offline-Wheels und den gebauten Testhost. Der Electronfall richtet bewusst eine eigene Profilkopie über die Offlineauswahl ein; er ist kein schneller reiner Komponententest. Python-Backendfälle stehen in `tests/business/test_ml.py` und benötigen für echte RF-/Torch-Fälle denselben optionalen Paketsatz. Direkte Prüfstarts des gebündelten Interpreters verwenden `-I -B`, damit keine Bytecodedateien das Integritätsmanifest verändern. Ohne Freigabe beziehungsweise ohne Paket übersprungene Fälle sind kein ML-Laufzeitnachweis. Reine ML-Projekt-/UI-Modulprüfungen bleiben Teil von `npm test`.
 
 ## Bauen und paketieren
 
@@ -59,7 +87,9 @@ Ein unsignierter Testinstaller ist kein produktives Release. Gewöhnliche Commit
 
 ## Projektformat und lokale Ablage
 
-`.scriptlab` enthält den bearbeitbaren JSON-Projektzustand in Schema 3: Sprache, stabile Variablen-IDs, Ansicht, Parameterdefinitionen und nicht geheime Parametersätze. Schema 1 wird als VBS übernommen; Schema 2 behält seine Sprache und erhält leere Business-Angaben. Ein Projekt wechselt seine Sprache nicht nachträglich. `.py`, `.vbs` und Business-ZIPs sind keine rückimportierbaren Projektformate.
+`.scriptlab` enthält den bearbeitbaren JSON-Projektzustand in **Schema 4**: Sprache, Workflowart, stabile Variablen-IDs, Ansicht, Parameterdefinitionen und nicht geheime Parametersätze. Schema 1 wird als VBS übernommen; Schema 2 behält seine Sprache und erhält leere Business-Angaben. Formate 1–3 werden als `allgemein` übernommen, ohne ihre Quelldatei zu überschreiben. ML verlangt ausdrücklich Python. Sprache und Workflowart eines bestehenden Projekts sind unveränderlich. Die Projektbibliothek schreibt **Indexschema 3** und liest die bisherigen Indexfassungen weiter. `.py`, `.vbs` und Business-ZIPs sind keine rückimportierbaren Projektformate.
+
+Die fachlichen Standhashes allgemeiner Workflows verwenden weiterhin ihre Schema-3-Darstellung ohne Ansicht und neue Standardart. Dadurch täuscht die Migration keinen geänderten Inhalt vor; der rohe Datei-Bytehash für externe Konflikte bleibt getrennt. ML-Läufe binden vor Journalbeginn die vollständige tatsächliche Profilidentität einschließlich aller 21 Paketversionen, Lockdatei und eigener Laufzeitmodule. Ein geändertes Modell, geänderte Originalquellen oder eine andere Laufzeit dürfen keine unpassenden früheren Ergebnisse wiederverwenden. [Integrationsreview](qualitaet/ML-REVIEW-INTEGRATION.md) hält die konkreten Schutzstellen und Prüfgrenzen fest.
 
 Einstellungen, `projektbibliothek.json`, Entwürfe, Workflows, Arbeitsdateien und Laufhistorie liegen außerhalb der Installation im Electron-Nutzerverzeichnis, gewöhnlich `%APPDATA%\ScriptLab`:
 
@@ -92,6 +122,8 @@ Python-Quelltext verwendet UTF-8 ohne BOM und CRLF, VBS UTF-16LE mit BOM und CRL
 
 Ein Business-ZIP enthält Script, Business-Module, feste Lockdatei, Parametervorlage, Anleitung und Vera-Schrift mit Lizenz, aber keinen Interpreter. Eigene Vorlagen, Bilder und Schriften werden nur nach ausdrücklicher Auswahl beigefügt. Geschäftsdaten, Journale und Protokolle werden nicht automatisch übernommen. Die Umgebung beim Empfänger muss zum dokumentierten Paketsatz passen; der Scriptstart installiert nichts.
 
+Ein ML-ZIP ergänzt `scriptlab_ml`, die unveränderte kanonische `requirements-ml.lock` und ML-Lizenzbeilagen. Erst den Business-Lock, dann den ML-Lock mit `--require-hashes --only-binary=:all:` installieren. Online benötigt der zweite Schritt zusätzlich `--extra-index-url https://download.pytorch.org/whl/cpu`; offline beide Schritte mit `--no-index --find-links <vollständiger Paketordner>` ausführen. Die Lockdatei bleibt neben den Modulen, weil ihr Bytehash auch Modell- und Journalidentität bindet. Die [vollständigen Empfängerbefehle](ML.md#eigenständig-ohne-scriptlab-ausführen) vermeiden eine Vermischung mit der App-internen Einrichtung.
+
 VBS-Exporte benötigen die Windows-VBScript-Komponente, Windows Script Host und gegebenenfalls zugelassene Windows-Komponenten. VBScript ist abgekündigt. [Optionale VBS-Signaturen](SIGNATUR.md) verwenden ein ausgewähltes gültiges Zertifikat aus dem Windows-Zertifikatspeicher; Python-Exporte haben kein implementiertes Signaturverfahren. Anwendungs- und Nutzerzertifikate sind getrennt. Eine Signatur garantiert weder einen ungefährlichen Ablauf noch die Ausführung ohne Windows- oder Unternehmenswarnungen.
 
 ## Prüfungen und Gestaltungsnachweise
@@ -103,6 +135,7 @@ Prüfberichte gelten für ihren tatsächlich genannten Quell- und Paketstand. Mo
 - [Prüfplan](PRUEFPLAN.md), [Business-Abnahmestand](BUSINESS-ABNAHME.md) und [historische Abnahme](ABNAHME.md).
 - [Designsystem](gestaltung/DESIGNSYSTEM.md), [aktuelle Regeln- und Datenbedienung](REGELN-UND-DATEN.md) und [zugehörige Windows-Ansichten](regeln-daten/ANSICHTEN.html). Die [vorherige Produktverbesserung](PRODUKT-VERBESSERUNG.md) und [UI-Straffung](UEBERSICHTLICHKEIT.md) bewahren ihre früheren Nachweise.
 - [Datenumfang und Lastmessungen](BUSINESS-LEISTUNG-DATEN.md), [Dokumentbeispiele](BUSINESS-BEISPIELE-PRUEFUNG.md) und [Testlaufleitfaden](TESTLAUF.md).
+- ML-Nachweise getrennt nach [Bedienung](qualitaet/ML-BEDIENUNG.md), [Laufzeit](qualitaet/ML-LAUFZEIT.md), [Verarbeitung](qualitaet/ML-VERARBEITUNG.md) und [Projekt-/IPC-Review](qualitaet/ML-REVIEW-INTEGRATION.md). Einzelne erfolgreiche Exporte oder CPU-Läufe ersetzen keine vollständige Paket-, Update- oder Anwenderabnahme.
 
 ## Nutzung und Lizenzen
 
@@ -110,7 +143,7 @@ Die [ScriptLab-Nutzungslizenz](../LICENSE.txt) erlaubt private, nichtkommerziell
 
 Fremdbibliotheken behalten ihre jeweiligen Lizenzen. [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) inventarisiert Produktionsabhängigkeiten und Originalhinweise; der fehlende vollständige Originaltext von `lazy-val@1.0.5` ist ausdrücklich vermerkt. `LICENSE.electron.txt` und `LICENSES.chromium.html` liegen der Windows-Distribution bei.
 
-Der Python-Paketsatz hat eigene [Business-Lizenzhinweise](../laufzeit/business-notices.md). Die mitgelieferte Vera-Schrift wird mit Original-Lizenz ausgeliefert; Windows-Schriften werden nicht weiterverteilt.
+Der Python-Paketsatz hat eigene [Business-Lizenzhinweise](../laufzeit/business-notices.md); das optionale Profil besitzt zusätzliche [ML-Lizenzhinweise](../laufzeit/ml-notices.md). Die mitgelieferte Vera-Schrift wird mit Original-Lizenz ausgeliefert; Windows-Schriften werden nicht weiterverteilt.
 
 Lizenzhinweise offline erzeugen beziehungsweise auf Aktualität prüfen:
 

@@ -8,17 +8,20 @@ ScriptLab ist ein visueller Automatisierungsbaukasten für **Windows 11 x64**. D
 
 ## Was ScriptLab kann
 
-| Aufgabe                   | Vorhandene Funktionen                                                                                                                   |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Tabellen verarbeiten      | CSV und Excel einlesen, Datentypen festlegen, filtern, sortieren, berechnen, zusammenfassen und mit Stammdaten verbinden.               |
-| Dokumente erstellen       | Werte und Tabellen in Word-Vorlagen einsetzen, XLSX-Dateien und PDF-Berichte erzeugen, Text aus PDFs auslesen.                          |
-| Dateien bearbeiten        | Dateien suchen, kopieren und verschieben; Dateien und Ordner prüfen, Ordner anlegen und Abläufe mit Bedingungen oder Schleifen steuern. |
-| Abläufe steuern           | Variablen, Listen, Eingaben, Bedingungen, Schleifen und Workflowparameter verwenden.                                                    |
-| Ergebnisse nachvollziehen | Begrenzte Datenvorschau, Laufhistorie, bestätigte Ausgaben, Hinweise, Fehler und vollständige Laufberichte ansehen.                     |
+| Aufgabe                     | Vorhandene Funktionen                                                                                                                                                       |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tabellen verarbeiten        | CSV und Excel einlesen, Datentypen festlegen, filtern, sortieren, berechnen, zusammenfassen und mit Stammdaten verbinden.                                                   |
+| Dokumente erstellen         | Werte und Tabellen in Word-Vorlagen einsetzen, XLSX-Dateien und PDF-Berichte erzeugen, Text aus PDFs auslesen.                                                              |
+| Dateien bearbeiten          | Dateien suchen, kopieren und verschieben; Dateien und Ordner prüfen, Ordner anlegen und Abläufe mit Bedingungen oder Schleifen steuern.                                     |
+| Abläufe steuern             | Variablen, Listen, Eingaben, Bedingungen, Schleifen und Workflowparameter verwenden.                                                                                        |
+| Modelle mit Tabellen nutzen | In einem eigenen ML-Workflow Klassifikation oder Regression mit Random Forest beziehungsweise PyTorch auf CPU trainieren, Modelle speichern/laden und Vorhersagen erzeugen. |
+| Ergebnisse nachvollziehen   | Begrenzte Datenvorschau, Laufhistorie, bestätigte Ausgaben, Hinweise, Fehler und vollständige Laufberichte ansehen.                                                         |
 
-**Python** ist die Hauptsprache für Geschäftsprozesse, Tabellen, Dokumente und größere Aufgaben. Die Anwendung enthält CPython einschließlich Tcl/Tk und die festgelegten Business-Pakete. Dafür müssen Anwender weder Python noch zusätzliche Pakete installieren.
+**Python** ist die Hauptsprache für Geschäftsprozesse, Tabellen, Dokumente und größere Aufgaben. Die Anwendung enthält CPython einschließlich Tcl/Tk und die festgelegten Business-Pakete. Für diese Grundausstattung müssen Anwender weder Python noch zusätzliche Pakete installieren. Das zusätzliche **CPU-Paket für Machine Learning** wird separat und ausdrücklich online oder aus einem vorbereiteten Offlineordner eingerichtet.
 
 **VBScript (VBS)** bleibt für kleinere Windows-Automatisierungen und vorhandene Projekte erhalten. Die Ausführung benötigt die verfügbare Windows-VBScript-Komponente und passende Richtlinien. Die gemeinsamen Grundbausteine sind für beide Sprachen vorhanden; die zusätzlichen Business-Funktionen gehören zu Python. Ein bestehender Workflow behält seine Sprache.
+
+**Neuer Workflow** bietet drei Karten: **Python**, **VBS** und **Machine Learning**. Machine Learning verwendet ebenfalls Python, mit einem auf Tabellen und die vier Modellaktionen begrenzten Bausteinkatalog. Ein bestehender Workflow behält seine Art; allgemeine Python-/VBS-Workflows behalten ihren bisherigen Katalog.
 
 ## Oberfläche und Arbeitsbereiche
 
@@ -51,17 +54,31 @@ Die folgenden Schritte zeigen den Einstieg mit einer Python-Business-Vorlage, zu
 
 ![Vorlagenkarten zeigen Aufgabe, Sprache und erwartetes Ergebnis vor dem Öffnen einer eigenen Kopie.](docs/qualitaet/karten-ansichten/vorlagen-hell.png)
 
-Es gibt **elf Beispielworkflows**: fünf Python-Business-Vorlagen sowie drei Einstiegsabläufe jeweils für Python und VBS. Die Einstiege zeigen eine Nachricht, sichern eine Testdatei oder schreiben Dateinamen in eine Textliste.
+Es gibt **13 Beispielworkflows**: fünf bisherige Python-Business-Vorlagen, zwei ML-Vorlagen sowie drei Einstiegsabläufe jeweils für Python und VBS. Die Einstiege zeigen eine Nachricht, sichern eine Testdatei oder schreiben Dateinamen in eine Textliste.
 
-| Business-Vorlage                                                                      | Beispielergebnis mit den mitgelieferten Testdaten                                                        |
-| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| [Monatliche Auswertung](beispiele/business/A-Monatsauswertung/README.md)              | Umsätze nach Region zusammenfassen und als XLSX/PDF ausgeben: Nord 150, Süd 80, insgesamt 230.           |
-| [Bestellungen mit Stammdaten ergänzen](beispiele/business/B-Bestellungen/README.md)   | Drei Bestellungen zuordnen; K9 bleibt als Fehlerhinweis sichtbar. Zugeordneter Betrag: 85.               |
-| [Bestellvorschlag als Word-Dokument](beispiele/business/C-Bestellvorschlag/README.md) | Zwei Positionen für einen Lieferanten in eine DOCX-Vorlage einsetzen: 15 und 12, insgesamt 27 Einheiten. |
-| [Dokumenteingang geordnet ablegen](beispiele/business/D-Dokumenteingang/README.md)    | Zwei Textbelege als Kopien ablegen; ein Scan erhält einen Hinweis. Originale bleiben erhalten.           |
-| [Dateistapel verarbeiten und fortsetzen](beispiele/business/E-Dateistapel/README.md)  | Gültige CSVs verarbeiten und nach bestätigtem Ergebnis archivieren; fehlerhafte Quellen erhalten.        |
+| Business-Vorlage                                                                          | Beispielergebnis mit den mitgelieferten Testdaten                                                                       |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| [Monatliche Auswertung](beispiele/business/A-Monatsauswertung/README.md)                  | Umsätze nach Region zusammenfassen und als XLSX/PDF ausgeben: Nord 150, Süd 80, insgesamt 230.                          |
+| [Bestellungen mit Stammdaten ergänzen](beispiele/business/B-Bestellungen/README.md)       | Drei Bestellungen zuordnen; K9 bleibt als Fehlerhinweis sichtbar. Zugeordneter Betrag: 85.                              |
+| [Bestellvorschlag als Word-Dokument](beispiele/business/C-Bestellvorschlag/README.md)     | Zwei Positionen für einen Lieferanten in eine DOCX-Vorlage einsetzen: 15 und 12, insgesamt 27 Einheiten.                |
+| [Dokumenteingang geordnet ablegen](beispiele/business/D-Dokumenteingang/README.md)        | Zwei Textbelege als Kopien ablegen; ein Scan erhält einen Hinweis. Originale bleiben erhalten.                          |
+| [Dateistapel verarbeiten und fortsetzen](beispiele/business/E-Dateistapel/README.md)      | Gültige CSVs verarbeiten und nach bestätigtem Ergebnis archivieren; fehlerhafte Quellen erhalten.                       |
+| [Machine Learning: Kategorien erkennen](beispiele/business/F-ML-Klassifikation/README.md) | 200 synthetische Zeilen in 160 Trainings-/40 Testzeilen teilen; ein Modell speichern und 20 neue Zeilen klassifizieren. |
+| [Machine Learning: Zahlenwerte vorhersagen](beispiele/business/G-ML-Regression/README.md) | Getrennte Testdaten mit MAE/RMSE/R² bewerten; ein Modell speichern und für 20 neue Zeilen Zahlenwerte vorhersagen.      |
 
 Unter **Dokumentvorlagen** ist die vorhandene `Bestellung.docx` dem zugehörigen Workflow zugeordnet. Sie wird mit dessen eigener Kopie verwendet. Die Beispiele enthalten synthetische Daten; ein Bestellvorschlag versendet keine Bestellung.
+
+## Machine Learning mit Tabellendaten
+
+Die vier Modellaktionen heißen **Modell trainieren**, **Modell speichern**, **Modell laden** und **Vorhersagen erzeugen**. Vorhandene CSV-/XLSX- und Tabellenbausteine bereiten die Daten vor und schreiben Ergebnisse. Wähle Klassifikation für Kategorien oder Regression für Zahlenwerte. Random Forest und das feste neuronale PyTorch-Netz verwenden ausschließlich die CPU. Standardmäßig bleiben 20 % der Daten für die unabhängige Testbewertung zurück; die Vorverarbeitung lernt nur aus den übrigen 80 %.
+
+Unter **Einstellungen → Laufzeit → Machine-Learning-Komponenten** kannst du das CPU-Paket ausdrücklich online einrichten oder einen vorbereiteten Offline-Paketordner verwenden. Das Öffnen oder Auswählen eines Workflows und der Workflowstart installieren nichts. Ohne Paket bleiben Bearbeiten, Speichern und Exportieren möglich.
+
+Vorschau und Prüflauf trainieren und speichern kein Modell. Ein vorhandenes unterstütztes Modell darf dabei lesend für Vorhersagen verwendet werden; geplante Trainingsergebnisse werden nicht als echte Vorhersagen ausgegeben. Erst die echte Ausführung trainiert beziehungsweise veröffentlicht Dateien. Die Qualitätsanzeige zeigt bestätigte Testmetriken, keine Qualitätsgarantie für neue Daten.
+
+Die eigene `.slmodell`-Datei enthält Modell, Spaltenschema und Qualitätsangaben. Beliebige Pickle-/Joblib-Dateien oder fremde Modellarchitekturen werden nicht importiert. Modelle sind an die geprüfte Laufzeit und Lockdatei gebunden. Training ist unter anderem auf 100.000 Zeilen und 128 Eingabespalten begrenzt; dies ist keine Zusage für den gesamten Speicherbedarf. [ML-Anleitung](docs/ML.md) erklärt Einrichtung, Datenvorbereitung, Modellgrenzen und eigenständigen Export.
+
+![Bestätigte ML-Ergebnisse der synthetischen Klassifikationsvorlage mit getrennten Trainings- und Testzeilen.](docs/qualitaet/ml-ansichten/ergebnisse-hell.png)
 
 ## Vorschau, Prüfung und echte Ausführung
 
@@ -91,6 +108,8 @@ Workflows, Entwürfe, Arbeitsdateien und Laufhistorie liegen außerhalb der Inst
 
 Vorlagen, Bilder und Schriften werden einem Business-Paket nur nach ausdrücklicher Ressourcenauswahl beigefügt. Geschäftsdaten, Berichte und Journale werden nicht automatisch mitgenommen. Beim eigenständigen Script beziehen sich relative Pfade standardmäßig auf den Scriptordner; absolute Pfade müssen zum Zielrechner passen. Der Scriptstart installiert keine Pakete. `.py`, `.vbs` und Business-ZIPs lassen sich nicht als bearbeitbare Projekte zurückimportieren.
 
+Bei ML-Workflows enthält das Business-Paket zusätzlich die ML-Module, die unveränderte `requirements-ml.lock` und Lizenzhinweise. Der Empfänger richtet seine eigene passende CPU-Umgebung ausdrücklich ein. Online ist zusätzlich der offizielle PyTorch-CPU-Index nötig; offline werden beide vollständigen Wheelsätze verwendet. Die [ML-Exportanleitung](docs/ML.md#eigenständig-ohne-scriptlab-ausführen) enthält die genauen Befehle.
+
 ## Installation und Entwicklung
 
 ScriptLab befindet sich im Entwicklungsstand **0.2.0**. Ein öffentliches Installationspaket ist bisher nicht veröffentlicht; spätere Downloads gehören auf die [GitHub-Releases-Seite](https://github.com/siggismalz/ScriptLab/releases). Lokale Testinstaller sind keine produktive Freigabe.
@@ -106,7 +125,7 @@ npm ci
 npm run dev
 ```
 
-`npm run dev` baut die Anwendung und öffnet Electron. Es startet keinen Webserver; nach Codeänderungen erneut bauen und starten. Bei der ersten Buildvorbereitung werden das festgelegte Python-Bündel und die Business-Pakete heruntergeladen und geprüft. Die installierte Anwendung bringt diese Komponenten mit und lädt bei einem Workflowstart nichts nach.
+`npm run dev` baut die Anwendung und öffnet Electron. Es startet keinen Webserver; nach Codeänderungen erneut bauen und starten. Bei der ersten Buildvorbereitung werden das festgelegte Python-Bündel und die Business-Pakete heruntergeladen und geprüft. Die installierte Anwendung bringt diese Grundkomponenten mit. Das optionale ML-Profil gehört zur ausdrücklichen separaten Einrichtung; ein Workflowstart lädt nichts nach.
 
 ### Prüfen und einen Testinstaller bauen
 
@@ -138,6 +157,7 @@ Der NSIS-Testinstaller entsteht unter `release/ScriptLab-0.2.0-Setup-x64.exe`; d
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Bedienung und Geschäftsabläufe | [Aktuelle Bedienung](docs/NEUE-BEDIENUNG.md), [Business-Workflows](docs/BUSINESS-BEDIENUNG.md)                                                                |
 | Daten, Dokumente und Dateien   | [Tabellenverarbeitung](docs/BUSINESS-DATEN.md), [Dokumente und Dateisicherheit](docs/BUSINESS-DOKUMENTE.md)                                                   |
+| Machine Learning               | [Bedienung, Grenzen und Export](docs/ML.md), [abgegrenzte UI-Nachweise](docs/qualitaet/ML-BEDIENUNG.md)                                                       |
 | Ablage und Laufhistorie        | [Automatische Ablage und gespeicherte Läufe](docs/WEITERENTWICKLUNG.md)                                                                                       |
 | Oberfläche und Karten          | [Designsystem](docs/gestaltung/DESIGNSYSTEM.md), [Kartenansichten und Prüfungen](docs/qualitaet/KARTEN.md)                                                    |
 | Entwicklung und Architektur    | [Entwicklungsanleitung](docs/ENTWICKLUNG.md), [Architektur](docs/ARCHITEKTUR.md), [Versionen und Quellen](docs/VERSIONEN.md)                                  |
@@ -147,6 +167,6 @@ Der NSIS-Testinstaller entsteht unter `release/ScriptLab-0.2.0-Setup-x64.exe`; d
 
 ScriptLab ist **keine Open-Source-Software**. Die [ScriptLab-Nutzungslizenz](LICENSE.txt) erlaubt private, nichtkommerzielle Nutzung kostenlos, einschließlich persönlichen Lernens und eigener Studienaufgaben. Betriebliche, berufliche oder selbstständige Nutzung erfordert eine gesonderte kostenpflichtige Vereinbarung mit **Leon Stolz**; auch interner geschäftlicher Einsatz ist kommerziell. Eine öffentliche Quellcodeablage ersetzt diese Vereinbarung nicht.
 
-Eigene Daten, Workflowdefinitionen und fachliche Ergebnisse bleiben eigene Inhalte. Rechtmäßig erzeugte Exporte dürfen nach den Lizenzbedingungen unabhängig ausgeführt, angepasst und weitergegeben werden; beim Empfänger ist dafür keine zusätzliche ScriptLab-Lizenz erforderlich. Enthaltene Komponenten behalten ihre Lizenzhinweise: [Drittanbieter](THIRD_PARTY_NOTICES.md), [Business-Pakete](laufzeit/business-notices.md) und [Python-Herkunft](laufzeit/python-herkunft.md).
+Eigene Daten, Workflowdefinitionen und fachliche Ergebnisse bleiben eigene Inhalte. Rechtmäßig erzeugte Exporte dürfen nach den Lizenzbedingungen unabhängig ausgeführt, angepasst und weitergegeben werden; beim Empfänger ist dafür keine zusätzliche ScriptLab-Lizenz erforderlich. Enthaltene Komponenten behalten ihre Lizenzhinweise: [Drittanbieter](THIRD_PARTY_NOTICES.md), [Business-Pakete](laufzeit/business-notices.md), [optionales ML-Profil](laufzeit/ml-notices.md) und [Python-Herkunft](laufzeit/python-herkunft.md).
 
 Entwickelt von **Leon Stolz**.

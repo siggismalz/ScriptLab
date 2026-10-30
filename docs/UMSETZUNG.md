@@ -24,6 +24,10 @@ Wichtige Entscheidungen:
 
 Aktuelle Qualitätsarbeit und ihre Grenzen stehen in [qualitaet/ARBEITSPLAN.md](qualitaet/ARBEITSPLAN.md); frühere Abnahmen behalten ihren jeweils angegebenen Stand.
 
+## Nachtrag: spezialisierte ML-Workflows
+
+Der anschließend bestätigte ML-Auftrag ergänzt den bestehenden Python-Editor um einen begrenzten Tabellen-/Modellkatalog mit optionalem CPU-Profil. Klassifikation und Regression mit Random Forest beziehungsweise PyTorch sind umgesetzt; [Bedienung, Grenzen und Export](ML.md) sowie [Aufträge und Verträge](qualitaet/ML-PLAN.md) beschreiben diesen gesonderten Umfang. Die vorangegangenen reinen Qualitätsdurchgänge werden dadurch nicht nachträglich als ML-Implementierung dargestellt.
+
 ## Backlog: Mail-Workflows und eigener SMTP-Dienst
 
 Nutzerwunsch vom 30. Oktober 2026: eine einfache Mail-Karte, bevorzugt mit einem von ScriptLab selbst angebotenen SMTP-Dienst. Zunächst zurückgestellt zugunsten der ausdrücklich beauftragten ML-Workflows. Kein funktionsloser Mail-Einstieg in der Oberfläche.

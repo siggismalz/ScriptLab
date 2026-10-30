@@ -144,11 +144,14 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     const vorher = (await dokument(seite)).dokument;
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
     const wahl = seite.getByRole('dialog', { name: 'Neuer Workflow', exact: true });
-    await expect(wahl.getByRole('radiogroup', { name: 'Skriptsprache', exact: true })).toBeVisible();
+    await expect(
+      wahl.getByRole('radiogroup', { name: 'Workflowart und Skriptsprache', exact: true }),
+    ).toBeVisible();
     await expect(wahl.getByRole('radio', { name: 'Python', exact: true })).not.toBeChecked();
     await expect(wahl.getByRole('radio', { name: 'VBScript (VBS)', exact: true })).not.toBeChecked();
+    await expect(wahl.getByRole('radio', { name: 'Machine Learning', exact: true })).not.toBeChecked();
     await expect(wahl.getByRole('button', { name: 'Workflow erstellen', exact: true })).toBeDisabled();
-    await expect(wahl.getByText('Wähle zuerst Python oder VBScript (VBS).')).toBeVisible();
+    await expect(wahl.getByText('Wähle zuerst Python, VBScript (VBS) oder Machine Learning.')).toBeVisible();
     await wahl.getByRole('button', { name: 'Abbrechen', exact: true }).click();
     expect((await dokument(seite)).dokument).toEqual(vorher);
     expect((await dokument(seite)).einstellungen.letzteSkriptsprache).toBeNull();
