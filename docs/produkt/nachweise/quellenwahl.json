@@ -1,0 +1,12 @@
+{
+  "profil": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Quellenwahl-4PELwZ\\Profil",
+  "fenster": "1280 × 720 logische Pixel",
+  "quellstand": "5933021",
+  "pruefungen": [
+    "Neuen Filter mit echtem Mauszeiger gezogen, native Einfügemarkierung sichtbar, Quelle vorausgefüllt, einmal Rückgängig entfernt neuen Block und erhält CSV-Quelle.",
+    "Wiederholen stellt Block und exakt dieselbe Quellenreferenz wieder her.",
+    "Klickalternative fügt Zusammenfassen mit Quellenreferenz ein; einmal Rückgängig entfernt den neuen Schritt und erhält CSV-Quelle."
+  ],
+  "rendererfehler": [],
+  "ergebnis": "bestanden"
+}

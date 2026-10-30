@@ -40,6 +40,7 @@ extraResources:
       - '**/*.md'
       - '**/*.png'
       - '**/*.gif'
+      - '**/*.html'
       - '**/*.json'
 win:
   icon: assets/scriptlab.ico

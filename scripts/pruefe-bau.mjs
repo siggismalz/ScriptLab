@@ -561,7 +561,7 @@ await pruefen('Dokumentation und Lizenzhinweise', async () => {
   // electron-builder schliesst extraResources beim Packen aus app.asar aus.
   // Die Lizenzbeilage wird deshalb am tatsaechlich ausgelieferten Ressourcenort verglichen.
   const dokumente = (await dateienSammeln(join(wurzel, 'docs'))).filter((name) =>
-    /\.(md|png|json)$/.test(name),
+    /\.(md|png|gif|html|json)$/.test(name),
   );
   verlangen(
     JSON.stringify(dokumente) === JSON.stringify((await dateienSammeln(join(ressourcen, 'docs'))).sort()),
