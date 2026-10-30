@@ -97,12 +97,27 @@ export async function businessPaketDateien(
     });
   for (const name of ['requirements-business.lock', 'requirements-business.in', 'business-notices.md'])
     dateien.push({ name, inhalt: await readFile(join(paketwurzel, name)) });
+  if (projekt.workflowArt === 'ml') {
+    for (const name of (await readdir(join(paketwurzel, 'scriptlab_ml'))).sort())
+      if (/^[a-z_]+\.py$/.test(name))
+        dateien.push({
+          name: `scriptlab_ml/${name}`,
+          inhalt: await readFile(join(paketwurzel, 'scriptlab_ml', name)),
+        });
+    for (const name of ['requirements-ml.lock', 'requirements-ml.in', 'ml-notices.md'])
+      dateien.push({ name, inhalt: await readFile(join(paketwurzel, name)) });
+  }
   dateien.push({ name: 'LICENSE.txt', inhalt: await readFile(join(dirname(paketwurzel), 'LICENSE.txt')) });
   const parameter = Object.fromEntries(projekt.business.parameter.map((p) => [p.name, p.standard ?? '']));
   let summe = dateien.reduce((s, d) => s + d.inhalt.length, 0);
   for (const pfad of ressourcen) {
     const s = await stat(pfad);
-    if (!s.isFile() || s.size > 16 * 1024 ** 2 || !/\.(docx|xlsx|ttf|png|jpg|jpeg)$/i.test(pfad))
+    if (
+      !s.isFile() ||
+      s.size > 16 * 1024 ** 2 ||
+      !/\.(docx|xlsx|ttf|png|jpg|jpeg|slmodell)$/i.test(pfad) ||
+      (/\.slmodell$/i.test(pfad) && projekt.workflowArt !== 'ml')
+    )
       throw new Error('Eine ausgewählte Ressource ist ungeeignet oder größer als 16 MiB.');
     summe += s.size;
     if (summe > 64 * 1024 ** 2) throw new Error('Das Business-Paket darf höchstens 64 MiB enthalten.');
@@ -132,6 +147,14 @@ export async function businessPaketDateien(
     ),
   });
   const anleitung = dateien.find((d) => d.name === 'ANLEITUNG.txt')!;
+  if (projekt.workflowArt === 'ml')
+    anleitung.inhalt = Buffer.concat([
+      Buffer.from(
+        'Machine Learning (CPU)\r\nCPython 3.15.2 x64 verwenden. Erst requirements-business.lock mit --require-hashes --only-binary=:all: installieren. Danach: python -m pip install --require-hashes --only-binary=:all: --extra-index-url https://download.pytorch.org/whl/cpu -r requirements-ml.lock. Alle Versionen und Hashes sind festgelegt. Offline beide Wheelsätze im vorbereiteten Paketordner bereitstellen und fuer beide Lockdateien --no-index --find-links <Paketordner> statt des zusaetzlichen Online-Index verwenden. Die kanonische requirements-ml.lock bleibt unverändert neben den Modulen.\r\nNur echte Ausführung trainiert oder speichert Modelle. Der Prüflauf plant diese Schritte ohne Training. Ein vorhandenes .slmodell kann lesend verwendet werden. Das gespeicherte Modell entspricht der angezeigten Testbewertung, ohne anschließendes Training auf allen Daten.\r\nBeigefügte Modellressourcen: höchstens 16 MiB pro Datei und 64 MiB Paket. Größere Modelle separat kopieren und den Pfadparameter ausdrücklich anpassen. Rohdaten werden nicht automatisch beigefügt.\r\n\r\n',
+        'utf8',
+      ),
+      anleitung.inhalt,
+    ]);
   anleitung.inhalt = Buffer.concat([
     anleitung.inhalt,
     Buffer.from(

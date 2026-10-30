@@ -404,7 +404,25 @@ export function businessKonfigurationFeldfehler(
     zahl(wert.zeile ?? 1, 'Word-Musterzeile', 0);
     text(wert.praefix ?? 'Position', 'Positionspräfix');
   }
-  if (op === 'daten.importieren' || op === 'daten.exportieren') {
+  if (op === 'ml.trainieren') {
+    imFeld(['zielspalte'], () => text(k.zielspalte, 'Vorherzusagende Spalte'));
+    imFeld(['merkmale'], () => {
+      spalten(k.merkmale, 'Eingabespalten');
+      if (Array.isArray(k.merkmale) && k.merkmale.includes(k.zielspalte))
+        melden('Die vorherzusagende Spalte darf nicht als Eingabespalte verwendet werden.');
+    });
+    imFeld(['aufgabe'], () => wahl(k.aufgabe, ['KLASSIFIKATION', 'REGRESSION'], 'Aufgabe'));
+    imFeld(['verfahren'], () => wahl(k.verfahren, ['RANDOM_FOREST', 'PYTORCH'], 'Modellverfahren'));
+    imFeld(['testanteil'], () => zahl(k.testanteil, 'Testanteil', 0.05, 0.5, false));
+    imFeld(['zufallsseed'], () => zahl(k.zufallsseed, 'Zufallsseed', 0, 2147483647));
+    imFeld(['baeume'], () => zahl(k.baeume, 'Anzahl Bäume', 1, 1000));
+    imFeld(['max_tiefe'], () => zahl(k.max_tiefe, 'Baumtiefe', 1, 32));
+    imFeld(['epochen'], () => zahl(k.epochen, 'Trainingsepochen', 1, 1000));
+  } else if (op === 'ml.speichern' || op === 'ml.laden') {
+    imFeld(['pfad'], () => pfad(k.pfad, 'Modelldatei', '.slmodell'));
+  } else if (op === 'ml.vorhersagen') {
+    imFeld(['ausgabespalte'], () => text(k.ausgabespalte, 'Neue Vorhersagespalte'));
+  } else if (op === 'daten.importieren' || op === 'daten.exportieren') {
     benoetigt('pfad', 'Dateipfad');
     const o = objekt(k.optionen) ? k.optionen : {};
     if (

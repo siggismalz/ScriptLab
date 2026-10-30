@@ -59,6 +59,14 @@ function businessBeispiel(def: (typeof businessDefinitionen)[number]): string {
       'Durchlaufe den zuvor erfassten Dateistapel. Die Variable „Aktuelle Datei“ kann in den Eigenschaften einer Kopier-, Tabellen- oder Dokumentaktion als Quelle gewählt werden.',
     'ablauf.fehler':
       'Versuche das Lesen einer Datei und gib im Fehlerzweig einen Hinweis aus. Der Bericht bewahrt den Fehler. Stoppen, Zeitlimit und unklare Dateizustände werden nicht verschluckt.',
+    'ml.trainieren':
+      'Für eine Klassifikation synthetischer Messdaten wählst du „Messwert“ als Eingabe und „Kategorie“ als Ziel. Erst die echte Ausführung trainiert das gewählte CPU-Verfahren und meldet die Bewertung am getrennten Testanteil.',
+    'ml.speichern':
+      'Speichere das verbundene Modell als „Messwerte.slmodell“. Mit der Vorgabe „Fehler“ bleibt eine vorhandene Modelldatei erhalten. Im Prüflauf wird nur das Ziel geplant, kein Modell trainiert oder gespeichert.',
+    'ml.laden':
+      'Lade das zuvor gespeicherte „Messwerte.slmodell“ beim bewussten Lauf und verbinde es mit „Vorhersagen erzeugen“. Unterstützte ScriptLab-Modelle werden geprüft; beliebige Python-Pickle-Dateien werden nicht geladen.',
+    'ml.vorhersagen':
+      'Verbinde ein trainiertes oder geladenes Modell und eine neue Tabelle mit passenden Eingabespalten. Das Ergebnis ergänzt „Vorhersage“; vorhandene Spalten und die Zeilenreihenfolge bleiben erhalten.',
   };
   return beispiele[def.operation];
 }

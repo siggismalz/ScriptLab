@@ -16,6 +16,7 @@ type Sortierung = 'zuletzt' | 'name';
 type Sprachfilter = 'alle' | Skriptsprache;
 
 export interface AktiverWorkflowInfo {
+  workflowArt?: 'allgemein' | 'ml';
   projektKennung: string;
   name: string;
   dateiname: string | null;
@@ -337,7 +338,9 @@ export function Startbereich(props: StartbereichEigenschaften) {
           className="start-workflowsprache"
           aria-label={`Sprache: ${sprachdaten[projekt.skriptsprache].bezeichnung}`}
         >
-          {sprachdaten[projekt.skriptsprache].kurzbezeichnung}
+          {projekt.workflowArt === 'ml'
+            ? 'Machine Learning · Python'
+            : sprachdaten[projekt.skriptsprache].kurzbezeichnung}
         </span>
         <span
           className={`start-dateistatus ${fehlt ? 'start-dateistatus--fehler' : zustand === 'geaendert' ? 'start-dateistatus--hinweis' : ''}`}
@@ -451,7 +454,9 @@ export function Startbereich(props: StartbereichEigenschaften) {
           className="start-workflowsprache"
           aria-label={`Sprache: ${sprachdaten[workflow.skriptsprache].bezeichnung}`}
         >
-          {sprachdaten[workflow.skriptsprache].kurzbezeichnung}
+          {workflow.workflowArt === 'ml'
+            ? 'Machine Learning · Python'
+            : sprachdaten[workflow.skriptsprache].kurzbezeichnung}
         </span>
         <span className="start-dateistatus">
           <Symbol name={workflow.geaendert ? 'entwurf' : 'info'} groesse={16} />

@@ -1,4 +1,5 @@
 import type { BausteinDefinition } from './katalog';
+import { mlDefinitionen } from './ml-katalog';
 import { kategoriefarben } from '../gestaltung/tokens';
 import { jsonDatenPruefen, type BusinessSchritt, type FachlicherTyp, type JsonWert } from './business-modell';
 
@@ -41,6 +42,7 @@ export interface BusinessDefinition {
 /** Gleiche fachliche Bezeichnungen in Formularen und zugehörigen Meldungen. */
 export function businessEingabeTitel(name: string, typ: FachlicherTyp): string {
   const titel: Record<string, string> = {
+    modell: 'Modell',
     links: 'Erste Tabelle',
     rechts: 'Zweite Tabelle',
     dateien: 'Dateien',
@@ -780,13 +782,14 @@ block(
   [],
 );
 alle.at(-1)!.steuerung = 'fehler';
+alle.push(...mlDefinitionen);
 export const businessDefinitionen = alle;
 export const businessNachTyp = new Map(alle.map((d) => [d.typ, d]));
 export const businessBlocklyDefinitionen: BausteinDefinition[] = alle.map((d) => ({
   typ: d.typ,
   name: d.name,
   kategorie: d.gruppe,
-  farbe: kategoriefarben[d.gruppe as keyof typeof kategoriefarben],
+  farbe: kategoriefarben[d.gruppe as keyof typeof kategoriefarben] ?? kategoriefarben['Daten aufbereiten'],
   form: 'anweisung',
   nachricht:
     d.steuerung === 'stapel'

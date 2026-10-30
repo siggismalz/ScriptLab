@@ -1,0 +1,41 @@
+.ml-laufzeit,
+.ml-ergebnis {
+  min-width: 0;
+}
+.ml-ergebnis h4 {
+  margin: 0;
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+}
+.ml-laufzeit > * + *,
+.ml-ergebnis > * + * {
+  margin-block-start: var(--abstand-16);
+}
+.ml-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--abstand-12);
+}
+.ml-aktionen .sl-knopf {
+  max-width: 100%;
+  white-space: normal;
+}
+.ml-aktionen .sl-knopf-mit-grund {
+  max-width: 100%;
+}
+.ml-angaben {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20em), 1fr));
+  gap: var(--abstand-12) var(--abstand-24);
+}
+.ml-angaben dt {
+  color: var(--farbe-text-sekundaer);
+}
+.ml-angaben dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.ml-fortschritt progress {
+  width: min(100%, 32em);
+  accent-color: var(--farbe-akzent);
+}

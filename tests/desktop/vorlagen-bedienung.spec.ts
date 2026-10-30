@@ -90,7 +90,7 @@ for (const farbe of ['hell', 'dunkel'] as const) {
         const vorlage = projektPruefen(JSON.parse(original.toString('utf8')));
         await s.seite.getByRole('button', { name: 'Beispielworkflows', exact: true }).click();
         const bereich = s.seite.getByTestId('beispiele');
-        await expect(bereich.getByRole('article')).toHaveCount(11);
+        await expect(bereich.getByRole('article')).toHaveCount(beispiele.length);
         await expect(bereich.getByRole('button', { name: 'Als Vorlage öffnen', exact: true })).toHaveCount(0);
         const karten = bereich.getByRole('article');
         async function raster(spalten: 1 | 2 | 3) {
@@ -218,7 +218,7 @@ for (const farbe of ['hell', 'dunkel'] as const) {
         await expect(bereich).toContainText('Keine passenden Vorlagen gefunden');
         await expect(bereich.getByRole('article')).toHaveCount(0);
         await bereich.getByRole('button', { name: 'Filter zurücksetzen', exact: true }).click();
-        await expect(bereich.getByRole('article')).toHaveCount(11);
+        await expect(bereich.getByRole('article')).toHaveCount(beispiele.length);
         await expect(auswahl).toHaveAttribute('aria-expanded', 'true');
         // Erst dieser bewusste Knopfdruck ändert den aktiven Workflow.
         await verwenden.click();

@@ -87,6 +87,10 @@ try {
   )
     throw new Error('Der mitgelieferte Business-Paketsatz ist nicht vollständig bereit.');
   bericht.businessPakete = business.wert.status.pakete.length;
+  const ml = await seite.evaluate(() => window.scriptlab.mlLesen());
+  if (!ml.ok || ml.wert.aktiv || ml.wert.status?.zustand !== 'fehlt')
+    throw new Error('Das optionale ML-Paket wird im frischen Profil nicht korrekt als fehlend erkannt.');
+  bericht.mlStatusOhneEinrichtung = ml.wert.status.zustand;
   const geladen = await seite.evaluate(() => window.scriptlab.laden());
   if (!geladen.ok) throw new Error(geladen.meldung);
   const neu = await seite.evaluate((p) => window.scriptlab.neu(p, 'python'), geladen.wert.dokument.projekt);
@@ -131,6 +135,15 @@ try {
     pythonVersion: zustand.pythonVersion,
     dateiinhalt: inhalt,
   };
+  const vorher = await seite.evaluate(() => window.scriptlab.laden());
+  if (!vorher.ok) throw new Error(vorher.meldung);
+  const mlNeu = await seite.evaluate(
+    (p) => window.scriptlab.neu(p, 'python', 'ml'),
+    vorher.wert.dokument.projekt,
+  );
+  if (!mlNeu.ok || mlNeu.wert?.projekt.workflowArt !== 'ml')
+    throw new Error('Die spezialisierte ML-Neuanlage funktioniert im Paket nicht.');
+  bericht.mlNeuanlageOhneEinrichtung = true;
   bericht.bestanden = true;
 } catch (fehler) {
   bericht.fehler = String(fehler.stack ?? fehler);

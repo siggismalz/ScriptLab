@@ -45,6 +45,8 @@ import { businessBeispiele } from '../kern/business-beispiele';
 import { grundvorlageKopieren } from './grundvorlagen';
 import { quellenauswahlLesen } from '../kern/quellenauswahl';
 import { appLaufzeitPruefen } from '../windows/app-laufzeit';
+import { mlStatusPruefen, mlEinrichten, mlInstallationErmitteln } from '../windows/ml-laufzeit';
+import type { MLStatus, MLFortschritt } from '../gemeinsam/ml-laufzeit';
 import { Laufablage, laufDateipfad, laufProtokollText } from './laufablage';
 import type { TestZustand } from '../gemeinsam/testlauf';
 
@@ -75,6 +77,10 @@ let businessStatus: BusinessStatus | null = null;
 let businessFortschritt: BusinessFortschritt | null = null;
 let businessAuftrag: AbortController | null = null;
 let businessFertig: Promise<void> | null = null;
+let mlStatus: MLStatus | null = null;
+let mlFortschritt: MLFortschritt | null = null;
+let mlAuftrag: AbortController | null = null;
+let mlFertig: Promise<MLStatus> | null = null;
 const businessPaketwurzel = () =>
   app.isPackaged ? join(process.resourcesPath, 'laufzeit') : join(app.getAppPath(), 'laufzeit');
 let projekt = neuesProjekt();
@@ -130,6 +136,8 @@ function uebernehmen(daten: unknown, sicherungPlanen = true): Projekt {
     throw new Error(
       'Die Sprache dieses Workflows ist festgelegt. Erstelle für eine andere Sprache einen neuen Workflow.',
     );
+  if (geprueft.workflowArt !== projekt.workflowArt)
+    throw new Error('Die Workflowart ist festgelegt. Erstelle für eine andere Art einen neuen Workflow.');
   if (testDienst?.aktiv() && testStandHash(geprueft) !== testStandHash(projekt))
     throw new Error('Während des Tests sind Änderungen am Workflow gesperrt. Stoppe den Test zuerst.');
   if (geprueft.projektKennung && geprueft.projektKennung !== projekt.projektKennung)
@@ -200,6 +208,42 @@ function appPythonOrdner(): string {
   return app.isPackaged
     ? join(process.resourcesPath, 'python')
     : join(app.getAppPath(), 'artifacts/python-buendel/python');
+}
+function mlOptionen(signal?: AbortSignal) {
+  return {
+    basisWurzel: appPythonOrdner(),
+    wurzel: join(app.getPath('userData'), 'ml-laufzeiten'),
+    helper: testWerkzeugPfad(),
+    technischeOrdner: join(app.getPath('userData'), 'ml-pruefungen'),
+    paketwurzel: businessPaketwurzel(),
+    signal,
+    fortschritt: (stand: MLFortschritt) => {
+      mlFortschritt = stand;
+    },
+  };
+}
+/** Auch die erste reine Statusprüfung gehört zum kontrollierten Laufzeitauftrag. */
+async function mlVorgangStarten(funktion: (signal: AbortSignal) => Promise<MLStatus>): Promise<MLStatus> {
+  const auftrag = new AbortController();
+  mlAuftrag = auftrag;
+  mlFortschritt = null;
+  const fertig = (async () => {
+    try {
+      mlStatus = await funktion(auftrag.signal);
+      return mlStatus;
+    } finally {
+      if (mlAuftrag === auftrag) {
+        mlAuftrag = null;
+        mlFortschritt = null;
+      }
+    }
+  })();
+  mlFertig = fertig;
+  try {
+    return await fertig;
+  } finally {
+    if (mlFertig === fertig) mlFertig = null;
+  }
 }
 async function pythonErmitteln(_tkinter = false, signal?: AbortSignal): Promise<PythonInstallation> {
   if (pythonPruefAuftrag) return pythonPruefAuftrag;
@@ -539,7 +583,7 @@ function ipcEinrichten(): void {
     }),
   );
   registrieren('datenvorschau-starten', async (daten) => {
-    if (dialogAktiv || testDienst.aktiv())
+    if (dialogAktiv || testDienst.aktiv() || mlAuftrag)
       throw new Error('Schließe den aktuellen Vorgang ab, bevor du eine Datenvorschau lädst.');
     const w = z
       .object({
@@ -567,6 +611,10 @@ function ipcEinrichten(): void {
       },
     });
     await mkdir(optionen.basisVerzeichnis!, { recursive: true });
+    if (dialogAktiv || mlAuftrag || testDienst.aktiv())
+      throw new Error('Der Laufzeitplatz ist inzwischen belegt oder ein Dialog geöffnet.');
+    if (stand.projektKennung !== projekt.projektKennung || testStandHash(stand) !== testStandHash(projekt))
+      throw new Error('Der Workflow wurde inzwischen geändert. Prüfe den aktuellen Stand und starte erneut.');
     return testDienst.starten(stand, optionen);
   });
   registrieren('lauf-liste', async () => {
@@ -624,7 +672,7 @@ function ipcEinrichten(): void {
     optionen: { ...testOptionen, basisVerzeichnis: arbeitsordnerFuer() },
   }));
   registrieren('test-starten', async (daten) => {
-    if (businessAuftrag)
+    if (businessAuftrag || mlAuftrag)
       throw new Error(
         'Die Business-Laufzeit wird gerade eingerichtet oder geprüft. Warte bis zum Abschluss.',
       );
@@ -636,9 +684,14 @@ function ipcEinrichten(): void {
       .parse(daten);
     const stand = projektPruefen(uebernehmen(auswahl.projekt));
     const basis = arbeitsordnerFuer();
-    testOptionen = testOptionenSchema.parse({ ...auswahl.optionen, basisVerzeichnis: basis });
+    const laufOptionen = testOptionenSchema.parse({ ...auswahl.optionen, basisVerzeichnis: basis });
     await mkdir(basis, { recursive: true });
-    return testDienst.starten(stand, testOptionen);
+    if (dialogAktiv || mlAuftrag || testDienst.aktiv())
+      throw new Error('Der Laufzeitplatz ist inzwischen belegt oder ein Dialog geöffnet.');
+    if (stand.projektKennung !== projekt.projektKennung || testStandHash(stand) !== testStandHash(projekt))
+      throw new Error('Der Workflow wurde inzwischen geändert. Prüfe den aktuellen Stand und starte erneut.');
+    testOptionen = laufOptionen;
+    return testDienst.starten(stand, laufOptionen);
   });
   registrieren('test-stoppen', (daten) => {
     const id = z.string().uuid().parse(daten);
@@ -698,14 +751,19 @@ function ipcEinrichten(): void {
   registrieren('neu', (daten) =>
     mitDialog(async () => {
       const auswahl = z
-        .object({ projekt: z.unknown(), sprache: z.enum(['python', 'vbs']) })
+        .object({
+          projekt: z.unknown(),
+          sprache: z.enum(['python', 'vbs']),
+          workflowArt: z.enum(['allgemein', 'ml']).default('allgemein'),
+        })
         .strict()
         .parse(daten);
+      const neues = neuesProjekt(auswahl.sprache, auswahl.workflowArt);
       uebernehmen(auswahl.projekt);
       if (!(await aenderungenSichern())) return null;
       await lokaleEinstellungenSpeichern((aktuell) => ({ ...aktuell, letzteSkriptsprache: auswahl.sprache }));
       await verworfenenEntwurfBereinigen();
-      projektAktivieren(neuesProjekt(auswahl.sprache), null, null);
+      projektAktivieren(neues, null, null);
       return dokument();
     }),
   );
@@ -748,6 +806,8 @@ function ipcEinrichten(): void {
             'business-bestellvorschlag',
             'business-belege',
             'business-stapel',
+            'business-ml-klassifikation',
+            'business-ml-regression',
           ]),
         })
         .strict()
@@ -998,7 +1058,15 @@ function ipcEinrichten(): void {
               filters: [
                 {
                   name: 'Vorlagen, Bilder und Schriften',
-                  extensions: ['docx', 'xlsx', 'ttf', 'png', 'jpg', 'jpeg'],
+                  extensions: [
+                    'docx',
+                    'xlsx',
+                    'ttf',
+                    'png',
+                    'jpg',
+                    'jpeg',
+                    ...(stand.workflowArt === 'ml' ? ['slmodell'] : []),
+                  ],
                 },
               ],
             });
@@ -1085,6 +1153,39 @@ function ipcEinrichten(): void {
     fortschritt: businessFortschritt,
     aktiv: !!businessAuftrag,
   }));
+  registrieren('ml-lesen', async () => {
+    if (!mlStatus && !mlAuftrag && !dialogAktiv && !testDienst.aktiv() && !businessAuftrag)
+      await mlVorgangStarten((signal) => mlStatusPruefen(mlOptionen(signal)));
+    return { status: mlStatus, aktiv: !!mlAuftrag, fortschritt: mlFortschritt };
+  });
+  registrieren('ml-aktion', async (daten) => {
+    const art = z.enum(['pruefen', 'einrichten', 'offline', 'abbrechen']).parse(daten);
+    if (art === 'abbrechen') {
+      mlAuftrag?.abort();
+      if (mlFertig) await mlFertig.catch(() => {});
+      return mlStatus;
+    }
+    if (dialogAktiv) throw new Error('Schließe zuerst den geöffneten Dialog.');
+    if (mlAuftrag || businessAuftrag || testDienst.aktiv())
+      throw new Error('Beende den laufenden Workflow oder die Laufzeiteinrichtung zuerst.');
+    let offlineOrdner: string | undefined;
+    if (art === 'offline') {
+      const auswahl = await mitDialog(() =>
+        dialog.showOpenDialog(fenster, {
+          title: 'Vorbereiteten ML-Paketordner auswählen',
+          properties: ['openDirectory'],
+        }),
+      );
+      if (auswahl.canceled || !auswahl.filePaths[0]) return mlStatus;
+      offlineOrdner = auswahl.filePaths[0];
+      if (mlAuftrag || testDienst.aktiv()) throw new Error('Der Laufzeitplatz ist inzwischen belegt.');
+    }
+    return mlVorgangStarten((signal) =>
+      art === 'pruefen'
+        ? mlStatusPruefen(mlOptionen(signal))
+        : mlEinrichten(mlOptionen(signal), offlineOrdner),
+    );
+  });
   registrieren('business-aktion', async (daten) => {
     const art = z.enum(['pruefen', 'einrichten', 'offline', 'abbrechen']).parse(daten);
     if (art === 'abbrechen') return businessStatus;
@@ -1120,8 +1221,8 @@ function ipcEinrichten(): void {
     if (aktion === 'pruefen') return aktualisierungen.pruefen();
     if (aktion === 'laden') return aktualisierungen.herunterladen();
     return mitDialog(async () => {
-      if (businessAuftrag)
-        throw new Error('Beende die Einrichtung der Business-Laufzeit vor der Updateinstallation.');
+      if (businessAuftrag || mlAuftrag)
+        throw new Error('Beende die Laufzeiteinrichtung vor der Updateinstallation.');
       await aktuellenStandAnfordern();
       if (aktualisierungen.zustandLesen().phase !== 'bereit-zur-installation')
         throw new Error('Es liegt noch kein geprüftes Update zur Installation bereit.');
@@ -1136,6 +1237,10 @@ function ipcEinrichten(): void {
       });
       if (antwort.response !== 0 || !(await aenderungenSichern())) return aktualisierungen.zustandLesen();
       await verworfenenEntwurfBereinigen();
+      if (businessAuftrag || mlAuftrag || testDienst.aktiv())
+        throw new Error(
+          'Beende den laufenden Workflow oder die Laufzeiteinrichtung vor der Updateinstallation.',
+        );
       darfSchliessen = true;
       try {
         aktualisierungen.installieren();
@@ -1221,6 +1326,10 @@ async function fensterErstellen(): Promise<void> {
         businessAuftrag.abort();
         await businessFertig;
       }
+      if (mlAuftrag) {
+        mlAuftrag.abort();
+        await mlFertig?.catch(() => {});
+      }
       await aktuellenStandAnfordern();
       if (await aenderungenSichern()) {
         await verworfenenEntwurfBereinigen();
@@ -1272,7 +1381,10 @@ else {
       testDienst = new TestlaufDienst(
         testWerkzeugPfad(),
         join(app.getPath('userData'), 'testlaeufe'),
-        (tkinter, signal) => pythonErmitteln(tkinter, signal),
+        (tkinter, signal, stand) =>
+          stand?.workflowArt === 'ml'
+            ? mlInstallationErmitteln(mlOptionen(signal))
+            : pythonErmitteln(tkinter, signal),
         {
           paketwurzel: businessPaketwurzel(),
           journaleOrdner: join(app.getPath('userData'), 'business-journale'),

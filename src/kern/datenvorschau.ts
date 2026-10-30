@@ -13,6 +13,8 @@ const lesendeTabellenschritte = new Set([
   'daten.gruppieren',
   'daten.pruefen',
   'daten.vorschau',
+  'ml.laden',
+  'ml.vorhersagen',
 ]);
 
 /** Eine ausdrücklich angeforderte Vorschau endet am gewählten Schritt, unabhängig von unfertigen Nachfolgern. */

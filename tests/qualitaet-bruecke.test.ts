@@ -137,8 +137,10 @@ describe('Weltgrenze mit festen fachlichen Brückenmethoden', () => {
     }
   });
 
-  it('erhält alle 44 festen Kanalzuordnungen ohne allgemeinen Aufrufkanal', async () => {
+  it('erhält alle 46 festen Kanalzuordnungen ohne allgemeinen Aufrufkanal', async () => {
     const kanaele: Record<string, string> = {
+      mlLesen: 'ml-lesen',
+      mlAktion: 'ml-aktion',
       businessLesen: 'business-lesen',
       businessAktion: 'business-aktion',
       laden: 'laden',
@@ -188,12 +190,12 @@ describe('Weltgrenze mit festen fachlichen Brückenmethoden', () => {
       string,
       (...daten: unknown[]) => Promise<unknown>
     >;
-    expect(Object.keys(kanaele)).toHaveLength(44);
+    expect(Object.keys(kanaele)).toHaveLength(46);
     for (const [methode, kanal] of Object.entries(kanaele)) {
       await bruecke[methode]('eins', 'zwei', 'drei');
       expect(electron.invoke.mock.lastCall?.[0], methode).toBe(`scriptlab:${kanal}`);
     }
-    expect(electron.invoke).toHaveBeenCalledTimes(44);
+    expect(electron.invoke).toHaveBeenCalledTimes(46);
   });
 
   it('transportiert Standanfrage und Abmeldung als feste Funktionen ohne verlorene Projektwerte', () => {
@@ -237,6 +239,8 @@ describe('Weltgrenze mit festen fachlichen Brückenmethoden', () => {
 
   it('exportiert ausschließlich feste fachliche Aktionen und keine freien Kanäle oder Electronobjekte', () => {
     const erwartet = [
+      'mlLesen',
+      'mlAktion',
       'businessLesen',
       'businessAktion',
       'laden',

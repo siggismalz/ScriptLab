@@ -80,6 +80,10 @@ export function businessAuswahlText(wert: string, feld = ''): string {
   return (
     (
       {
+        KLASSIFIKATION: 'Kategorie erkennen (Klassifikation)',
+        REGRESSION: 'Zahlenwert vorhersagen (Regression)',
+        RANDOM_FOREST: 'Random Forest · scikit-learn',
+        PYTORCH: 'Neuronales Netz · PyTorch (CPU)',
         FEHLER: 'Mit Fehler anhalten',
         STOPP: 'Mit Fehler anhalten',
         UEBERSPRINGEN: 'Überspringen und berichten',

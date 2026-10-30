@@ -191,7 +191,7 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     expect(intern.dateiname).toBe(`${intern.projektKennung}.scriptlab`);
     await speicherDiagnose(s, projektdatei, vorschau, 'erfolg');
     const gespeichert = JSON.parse(await readFile(projektdatei, 'utf8'));
-    expect(gespeichert).toMatchObject({ schemaVersion: 3, skriptsprache: 'python' });
+    expect(gespeichert).toMatchObject({ schemaVersion: 4, skriptsprache: 'python' });
     const exportdatei = join(s.ordner, 'Python-Export.py');
     await s.app.evaluate(({ dialog }, datei) => {
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: datei });

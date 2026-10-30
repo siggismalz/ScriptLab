@@ -3,7 +3,7 @@
 }
 .sprachwahl-karten {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--abstand-16);
   min-width: 0;
   margin: var(--abstand-16) 0 0;
@@ -57,10 +57,14 @@
 }
 .sprachwahl-vorteil,
 .sprachwahl-hinweis,
+.sprachwahl-ml-hinweis,
 .sprachwahl-startgrund {
   color: var(--farbe-text-sekundaer);
 }
 .sprachwahl-startgrund {
+  margin-top: var(--abstand-16);
+}
+.sprachwahl-ml-hinweis {
   margin-top: var(--abstand-16);
 }
 @media (max-width: 899px) {

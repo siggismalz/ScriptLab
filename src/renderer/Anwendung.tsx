@@ -6,6 +6,7 @@ import { bausteinDefinitionen } from '../kern/katalog';
 import { maximaleBausteinzahl, neuesProjekt, projektPruefen, type Projekt } from '../kern/projekt';
 import { skriptErzeugen } from '../kern/skript';
 import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
+import type { WorkflowArt } from '../kern/workflowarten';
 import { scriptlabThema, scriptlabThemaFuer } from '../gestaltung/blocklyThema';
 import { blockAuswahlKennzeichnen } from '../gestaltung/blockAuswahl';
 import { farben, masse, designTokensAnwenden, farbschemaAufloesen } from '../gestaltung/tokens';
@@ -521,6 +522,7 @@ export function Anwendung() {
   async function projektAktion(
     art: 'neu' | 'oeffnen' | 'speichern' | 'unter' | BeispielKennung,
     neueSprache?: Skriptsprache,
+    neueWorkflowArt: WorkflowArt = 'allgemein',
   ) {
     if (art === 'neu' && !neueSprache) {
       setDialog('sprache');
@@ -532,7 +534,7 @@ export function Anwendung() {
         const stand = standLesen();
         const r =
           art === 'neu'
-            ? await window.scriptlab.neu(stand, neueSprache!)
+            ? await window.scriptlab.neu(stand, neueSprache!, neueWorkflowArt)
             : art === 'oeffnen'
               ? await window.scriptlab.oeffnen(stand)
               : beispiele.some((b) => b.id === art)
@@ -1226,6 +1228,7 @@ export function Anwendung() {
                   dateiname: datei,
                   geaendert,
                   skriptsprache: projekt.skriptsprache,
+                  workflowArt: projekt.workflowArt,
                 }
               : null
           }
@@ -1471,6 +1474,7 @@ export function Anwendung() {
             <div className="test-palette" inert={testAktiv(test.phase)}>
               <Palette
                 sprache={projekt.skriptsprache}
+                workflowArt={projekt.workflowArt}
                 ws={workspace}
                 eingeklappt={einstellungen.paletteEingeklappt}
                 umschalten={() =>
@@ -1991,9 +1995,9 @@ export function Anwendung() {
         offen={dialog === 'sprache'}
         vorauswahl={einstellungen.letzteSkriptsprache}
         abbrechen={() => setDialog(null)}
-        erstellen={(wahl) => {
+        erstellen={(wahl, art) => {
           setDialog(null);
-          void projektAktion('neu', wahl);
+          void projektAktion('neu', wahl, art);
         }}
       />
       <ProjektDialog

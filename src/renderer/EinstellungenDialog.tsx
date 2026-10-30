@@ -9,6 +9,8 @@ import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
 import { Statusanzeige } from './komponenten/Statusanzeige';
 import type { PythonStatus } from '../gemeinsam/python';
 import type { BusinessStatus } from '../gemeinsam/business-laufzeit';
+import type { MLStatus, MLFortschritt } from '../gemeinsam/ml-laufzeit';
+import { MlLaufzeit } from './MlLaufzeit';
 import './einstellungen-laufzeit.css';
 
 export function EinstellungenDialog({
@@ -65,6 +67,59 @@ export function EinstellungenDialog({
   const [businessStatus, setBusinessStatus] = useState<BusinessStatus | null>(null);
   const [komponentenFehler, setKomponentenFehler] = useState('');
   const [komponentenLaden, setKomponentenLaden] = useState(false);
+  const [mlStatus, setMlStatus] = useState<MLStatus | null>(null);
+  const [mlAktiv, setMlAktiv] = useState(false);
+  const [mlFortschritt, setMlFortschritt] = useState<MLFortschritt | null>(null);
+  const [mlFehler, setMlFehler] = useState('');
+  useEffect(() => {
+    if (!offen || bereich !== 'laufzeit') return;
+    let aktuell = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    async function lesen() {
+      try {
+        const r = await window.scriptlab.mlLesen();
+        if (!aktuell) return;
+        if (!r.ok) {
+          setMlFehler(r.meldung);
+          return;
+        }
+        setMlStatus(r.wert.status);
+        setMlAktiv(r.wert.aktiv);
+        setMlFortschritt(r.wert.fortschritt);
+        if (r.wert.aktiv) timer = setTimeout(() => void lesen(), 500);
+      } catch {
+        if (aktuell)
+          setMlFehler('Der ML-Komponentenstatus konnte nicht geladen werden. Erneut prüfen ist möglich.');
+      }
+    }
+    void lesen();
+    return () => {
+      aktuell = false;
+      clearTimeout(timer);
+    };
+  }, [offen, bereich, mlAktiv]);
+  async function mlAktion(art: 'pruefen' | 'einrichten' | 'offline' | 'abbrechen') {
+    setMlFehler('');
+    if (art !== 'abbrechen') setMlAktiv(true);
+    try {
+      const r = await window.scriptlab.mlAktion(art);
+      if (r.ok) setMlStatus(r.wert);
+      else setMlFehler(r.meldung);
+    } catch {
+      setMlFehler('Die ML-Aktion konnte nicht abgeschlossen werden. Prüfe den Komponentenstatus.');
+    } finally {
+      try {
+        const r = await window.scriptlab.mlLesen();
+        if (r.ok) {
+          setMlStatus(r.wert.status);
+          setMlAktiv(r.wert.aktiv);
+          setMlFortschritt(r.wert.fortschritt);
+        }
+      } catch {
+        setMlAktiv(false);
+      }
+    }
+  }
   useEffect(() => {
     if (bereich === 'signatur' && (!projektOptionenAnzeigen || projekt.skriptsprache !== 'vbs'))
       setBereich('darstellung');
@@ -329,6 +384,13 @@ export function EinstellungenDialog({
             )}
           </details>
         </section>
+        <MlLaufzeit
+          status={mlStatus}
+          aktiv={mlAktiv}
+          fortschritt={mlFortschritt}
+          fehler={mlFehler}
+          aktion={(art) => void mlAktion(art)}
+        />
       </div>
       <div
         role="tabpanel"

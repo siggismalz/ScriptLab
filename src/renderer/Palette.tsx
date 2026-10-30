@@ -6,6 +6,7 @@ import { Knopf } from './komponenten/Knopf';
 import { Feld } from './komponenten/Feld';
 import { Symbol, type SymbolName } from './komponenten/Icon';
 import type { Skriptsprache } from '../kern/sprachen';
+import { bausteinVerfuegbar, type WorkflowArt } from '../kern/workflowarten';
 
 export interface PlatzierungsAuftrag {
   art: 'einfuegen' | 'verschieben';
@@ -49,8 +50,28 @@ const palettengruppen: { id: string; titel: string; symbol: SymbolName; kategori
   },
 ];
 
+/** Verfügbarkeit bleibt zentral; diese Gruppen ordnen nur den begrenzten ML-Katalog. */
+const mlPalettengruppen: typeof palettengruppen = [
+  { id: 'ml-daten', titel: 'Daten laden', symbol: 'oeffnen', kategorien: ['Daten laden'] },
+  {
+    id: 'ml-aufbereitung',
+    titel: 'Tabellen vorbereiten',
+    symbol: 'eigenschaften',
+    kategorien: ['Daten aufbereiten', 'Daten verbinden', 'Daten zusammenfassen', 'Datenqualität'],
+  },
+  {
+    id: 'ml-modelle',
+    titel: 'Modelle und Vorhersagen',
+    symbol: 'bausteine',
+    kategorien: ['Machine Learning'],
+  },
+  { id: 'ml-ausgabe', titel: 'Ergebnisse speichern', symbol: 'speichern', kategorien: ['Daten ausgeben'] },
+  { id: 'ml-ablauf', titel: 'Ablauf erläutern', symbol: 'info', kategorien: ['Ablauf'] },
+];
+
 export function Palette({
   sprache = 'vbs',
+  workflowArt = 'allgemein',
   ws,
   eingeklappt,
   umschalten,
@@ -63,6 +84,7 @@ export function Palette({
   meldung,
 }: {
   sprache?: Skriptsprache;
+  workflowArt?: WorkflowArt;
   ws: Blockly.WorkspaceSvg | null;
   eingeklappt: boolean;
   umschalten: () => void;
@@ -81,9 +103,9 @@ export function Palette({
   const inhalt = useRef<HTMLDivElement>(null);
   const gruppentitel = useRef<HTMLHeadingElement>(null);
   const gruppenknoepfe = useRef(new Map<string, HTMLButtonElement>());
-  const verfuegbar = bausteinDefinitionen.filter((b) => sprache === 'python' || !b.typ.startsWith('sl_biz_'));
+  const verfuegbar = bausteinDefinitionen.filter((b) => bausteinVerfuegbar(b.typ, sprache, workflowArt));
   const kategorien = [...new Set(verfuegbar.map((b) => b.kategorie))];
-  const gruppen = palettengruppen
+  const gruppen = (workflowArt === 'ml' ? mlPalettengruppen : palettengruppen)
     .map((g) => ({ ...g, kategorien: g.kategorien.filter((k) => kategorien.includes(k)) }))
     .filter((g) => g.kategorien.length > 0);
   const gruppe = gruppen.find((g) => g.id === gruppenId) ?? null;
@@ -243,6 +265,7 @@ export function Palette({
                     bausteinDefinitionen.some(
                       (b) =>
                         b.typ.startsWith('sl_biz_') &&
+                        bausteinVerfuegbar(b.typ, 'python', 'allgemein') &&
                         `${b.name} ${b.kategorie} ${b.hilfe}`.toLocaleLowerCase('de').includes(filter),
                     ) && (
                       <details className="palette-pythonhinweis">

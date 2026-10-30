@@ -27,6 +27,7 @@ extraResources:
       - '*.lock'
       - '*.in'
       - '*.md'
+      - '*.json'
   - from: artifacts/native/ScriptLab.Testhost.exe
     to: ScriptLab.Testhost.exe
   - from: scripts/signatur-helper.ps1

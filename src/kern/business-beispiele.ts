@@ -35,4 +35,20 @@ export const businessBeispiele = [
     beschreibung: 'CSV-Dateien prüfen, bestätigte Ergebnisse schreiben und erfolgreiche Quellen archivieren.',
     erwartung: 'Fehlerhafte Quelle bleibt erhalten · bestätigte Ergebnisse beim Fortsetzen prüfen',
   },
+  {
+    id: 'business-ml-klassifikation',
+    name: 'Machine Learning: Kategorien erkennen',
+    ordner: 'F-ML-Klassifikation',
+    beschreibung:
+      'Mit synthetischen Tabellendaten ein Modell trainieren, getrennt bewerten, speichern und neue Zeilen klassifizieren.',
+    erwartung: '200 Trainings-/Testzeilen · 20 neue Vorhersagen · eigenes gespeichertes Modell',
+  },
+  {
+    id: 'business-ml-regression',
+    name: 'Machine Learning: Zahlenwerte vorhersagen',
+    ordner: 'G-ML-Regression',
+    beschreibung:
+      'Einen Zahlenwert aus Tabellenmerkmalen vorhersagen; Random Forest und neuronales Netz sind wählbar.',
+    erwartung: '200 Trainings-/Testzeilen · 20 neue Vorhersagen · MAE/RMSE/R² aus unabhängigen Testdaten',
+  },
 ] as const;

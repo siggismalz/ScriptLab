@@ -8,6 +8,8 @@ async function aufrufen(kanal: string, daten?: unknown) {
 
 // Die Sandbox erhält ausschließlich diese fachlichen Aufrufe, keine Electron-Objekte.
 const bruecke: ScriptLabBruecke = {
+  mlLesen: () => aufrufen('scriptlab:ml-lesen'),
+  mlAktion: (art) => aufrufen('scriptlab:ml-aktion', art),
   businessLesen: () => aufrufen('scriptlab:business-lesen'),
   businessAktion: (art) => aufrufen('scriptlab:business-aktion', art),
   laden: () => aufrufen('scriptlab:laden'),
@@ -27,7 +29,8 @@ const bruecke: ScriptLabBruecke = {
       ipcRenderer.removeListener('scriptlab:stand-anfordern', anfrage);
     };
   },
-  neu: (projekt, sprache) => aufrufen('scriptlab:neu', { projekt, sprache }),
+  neu: (projekt, sprache, workflowArt = 'allgemein') =>
+    aufrufen('scriptlab:neu', { projekt, sprache, workflowArt }),
   oeffnen: (projekt) => aufrufen('scriptlab:oeffnen', projekt),
   beispielOeffnen: (projekt, beispiel) => aufrufen('scriptlab:beispiel', { projekt, beispiel }),
   speichern: (projekt, unter) => aufrufen('scriptlab:speichern', { projekt, unter }),

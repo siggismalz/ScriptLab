@@ -73,7 +73,14 @@ export const beispiele: readonly BeispielInfo[] = [
     skriptsprache: 'python' as const,
     name: b.name,
     dateiname: `business/${b.ordner}/workflow.scriptlab`,
-    aufgabe: (['business-monat', 'business-bestellungen'] as readonly string[]).includes(b.id)
+    aufgabe: (
+      [
+        'business-monat',
+        'business-bestellungen',
+        'business-ml-klassifikation',
+        'business-ml-regression',
+      ] as readonly string[]
+    ).includes(b.id)
       ? ('Daten' as const)
       : b.id === 'business-stapel'
         ? ('Dateien' as const)
@@ -82,8 +89,9 @@ export const beispiele: readonly BeispielInfo[] = [
     ...(b.id === 'business-bestellvorschlag' ? { dokumentvorlagen: ['Bestellung.docx'] } : {}),
     beschreibung: b.beschreibung,
     lernziele: ['Parameter, Strukturprüfung, Vorschau und echte Ausführung unterscheiden'],
-    vorbereitung:
-      'Verwendet die mitgelieferten Business-Komponenten. Beim Verwenden der Vorlage werden synthetische Testdateien in den Arbeitsordner eines eigenen Workflows kopiert. Der Bezug bleibt beim Speichern und Wiederherstellen erhalten. Für eigene Geschäftsdaten die Quellen bewusst ändern und Ausgabeziele prüfen. PDF-Berichte können die mitgelieferte Vera-Schrift verwenden. Öffnen startet keine Verarbeitung.',
+    vorbereitung: b.id.startsWith('business-ml-')
+      ? 'Benötigt für die Ausführung das optionale CPU-Paket unter Einstellungen → Laufzeit. Die Vorlage erstellt eine eigene ML-Workflowkopie mit synthetischen CSV-Daten. Nur echte Ausführung trainiert und speichert ein Modell; der Prüflauf plant diese Schritte. Für neue Läufe bestehende Ausgaben prüfen. Die 20 Vorhersagezeilen sind nicht die unabhängigen Testdaten der Qualitätsbewertung. Öffnen startet weder Training noch Einrichtung.'
+      : 'Verwendet die mitgelieferten Business-Komponenten. Beim Verwenden der Vorlage werden synthetische Testdateien in den Arbeitsordner eines eigenen Workflows kopiert. Der Bezug bleibt beim Speichern und Wiederherstellen erhalten. Für eigene Geschäftsdaten die Quellen bewusst ändern und Ausgabeziele prüfen. PDF-Berichte können die mitgelieferte Vera-Schrift verwenden. Öffnen startet keine Verarbeitung.',
   })),
   ...vbsBeispiele,
   ...vbsBeispiele.map((beispiel): BeispielInfo => ({

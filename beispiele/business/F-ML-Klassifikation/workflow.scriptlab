@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 4,
+  "workflowArt": "ml",
+  "skriptsprache": "python",
+  "appVersion": "0.2.0",
+  "name": "Machine Learning: Kategorien erkennen",
+  "beschreibung": "Synthetisches CPU-Beispiel mit getrennten Testdaten; kein Training beim Öffnen.",
+  "business": {
+    "parameter": [
+      {
+        "name": "Training",
+        "beschriftung": "Trainingsdaten",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "training.csv",
+        "hilfe": ""
+      },
+      {
+        "name": "NeueDaten",
+        "beschriftung": "Neue Daten",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "neue-daten.csv",
+        "hilfe": ""
+      },
+      {
+        "name": "Modell",
+        "beschriftung": "Gespeichertes Modell",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "modell.slmodell",
+        "hilfe": ""
+      },
+      {
+        "name": "Ausgabe",
+        "beschriftung": "Vorhersageausgabe",
+        "typ": "Datei",
+        "erforderlich": true,
+        "standard": "vorhersagen.csv",
+        "hilfe": ""
+      }
+    ],
+    "parametersaetze": {
+      "test": {},
+      "echt": {}
+    },
+    "ressourcen": []
+  },
+  "editor": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "sl_start",
+          "id": "start",
+          "x": 80,
+          "y": 96,
+          "next": {
+            "block": {
+              "type": "sl_biz_lesen_csv",
+              "id": "Training lesen",
+              "fields": {
+                "NAME": "Training lesen"
+              },
+              "data": "{\"konfiguration\":{\"format\":\"CSV\",\"pfad\":{\"parameter\":\"Training\"},\"optionen\":{\"trennzeichen\":\";\"}},\"eingaben\":{}}",
+              "next": {
+                "block": {
+                  "type": "sl_biz_typ",
+                  "id": "Training Zahlen",
+                  "fields": {
+                    "NAME": "Training Zahlen"
+                  },
+                  "data": "{\"konfiguration\":{\"aktion\":\"TYP\",\"spalte\":\"Wert\",\"typ\":\"ZAHL\",\"fehlwerte\":\"STOPP\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"Training lesen\"}}}",
+                  "next": {
+                    "block": {
+                      "type": "sl_biz_ml_train",
+                      "id": "Modell trainieren",
+                      "fields": {
+                        "NAME": "Modell trainieren"
+                      },
+                      "data": "{\"konfiguration\":{\"aufgabe\":\"KLASSIFIKATION\",\"verfahren\":\"RANDOM_FOREST\",\"zielspalte\":\"Ziel\",\"merkmale\":[\"Wert\",\"Gruppe\"]},\"eingaben\":{\"tabelle\":{\"referenz\":\"Training Zahlen\"}}}",
+                      "next": {
+                        "block": {
+                          "type": "sl_biz_ml_save",
+                          "id": "Modell speichern",
+                          "fields": {
+                            "NAME": "Modell speichern"
+                          },
+                          "data": "{\"konfiguration\":{\"pfad\":{\"parameter\":\"Modell\"},\"konflikt\":\"FEHLER\"},\"eingaben\":{\"modell\":{\"referenz\":\"Modell trainieren\"}}}",
+                          "next": {
+                            "block": {
+                              "type": "sl_biz_lesen_csv",
+                              "id": "Neue Daten lesen",
+                              "fields": {
+                                "NAME": "Neue Daten lesen"
+                              },
+                              "data": "{\"konfiguration\":{\"format\":\"CSV\",\"pfad\":{\"parameter\":\"NeueDaten\"},\"optionen\":{\"trennzeichen\":\";\"}},\"eingaben\":{}}",
+                              "next": {
+                                "block": {
+                                  "type": "sl_biz_typ",
+                                  "id": "Neue Zahlen",
+                                  "fields": {
+                                    "NAME": "Neue Zahlen"
+                                  },
+                                  "data": "{\"konfiguration\":{\"aktion\":\"TYP\",\"spalte\":\"Wert\",\"typ\":\"ZAHL\",\"fehlwerte\":\"STOPP\"},\"eingaben\":{\"tabelle\":{\"referenz\":\"Neue Daten lesen\"}}}",
+                                  "next": {
+                                    "block": {
+                                      "type": "sl_biz_ml_predict",
+                                      "id": "Vorhersagen erzeugen",
+                                      "fields": {
+                                        "NAME": "Vorhersagen erzeugen"
+                                      },
+                                      "data": "{\"konfiguration\":{\"ausgabespalte\":\"Vorhersage\"},\"eingaben\":{\"modell\":{\"referenz\":\"Modell trainieren\"},\"tabelle\":{\"referenz\":\"Neue Zahlen\"}}}",
+                                      "next": {
+                                        "block": {
+                                          "type": "sl_biz_schreiben_csv",
+                                          "id": "Vorhersagen speichern",
+                                          "fields": {
+                                            "NAME": "Vorhersagen speichern"
+                                          },
+                                          "data": "{\"konfiguration\":{\"format\":\"CSV\",\"pfad\":{\"parameter\":\"Ausgabe\"},\"konflikt\":\"FEHLER\",\"optionen\":{\"trennzeichen\":\";\"}},\"eingaben\":{\"tabelle\":{\"referenz\":\"Vorhersagen erzeugen\"}}}"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "ansicht": {
+    "zoom": 1,
+    "x": 0,
+    "y": 0
+  },
+  "exportOptionen": {
+    "signieren": false,
+    "zertifikatFingerabdruck": "",
+    "zeitstempelUrl": ""
+  }
+}

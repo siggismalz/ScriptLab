@@ -8,6 +8,7 @@ import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
 import type { PythonStatus } from '../gemeinsam/python';
 import type { ReactNode } from 'react';
 import { BusinessErgebnis } from './BusinessErgebnis';
+import { MlErgebnis } from './MlErgebnis';
 import { businessOptionenVorbereiten, VorbereitungsPruefung } from './BusinessVorbereitung';
 
 export interface TestbereichEigenschaften {
@@ -650,6 +651,11 @@ export function Testbereich(props: TestbereichEigenschaften) {
             </>
           ) : (
             <>
+              {(zustand.workflowArt === 'ml' ||
+                zustand.business.ereignisse.some((e) => e.art === 'ml_training') ||
+                Array.isArray(zustand.business.bericht?.ml_training)) && (
+                <MlErgebnis business={zustand.business} aktiv={aktiv} />
+              )}
               <BusinessErgebnis
                 key={zustand.laufId}
                 business={zustand.business}

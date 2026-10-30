@@ -242,13 +242,15 @@ describe('Lokale Hilfe und vorhandene Vorlagen', () => {
     expect(hilfeDurchsuchen('<script>keinehilfe</script>')).toEqual([]);
   });
 
-  it('verweist auf die elf echten Beispielprojekte und gültige Vorlagenlinks', async () => {
+  it('verweist auf alle dreizehn echten Beispielprojekte und gültige Vorlagenlinks', async () => {
     expect(beispiele.map((b) => b.id)).toEqual([
       'business-monat',
       'business-bestellungen',
       'business-bestellvorschlag',
       'business-belege',
       'business-stapel',
+      'business-ml-klassifikation',
+      'business-ml-regression',
       'begruessung',
       'backup',
       'dateiliste',

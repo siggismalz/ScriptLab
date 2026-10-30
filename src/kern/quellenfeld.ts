@@ -16,7 +16,7 @@ export function istQuellenfeld(
       name === 'vorlage' ||
       name === 'quelle' ||
       name === 'ordner' ||
-      (name === 'pfad' && def.operation === 'daten.importieren')
+      (name === 'pfad' && ['daten.importieren', 'ml.laden'].includes(def.operation))
     );
   }
   if (

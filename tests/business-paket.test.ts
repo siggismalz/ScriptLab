@@ -39,7 +39,7 @@ describe('Business-Paket', () => {
 describe.skipIf(process.platform !== 'win32' || process.env.SCRIPTLAB_BUSINESS_TESTS !== '1')(
   'Eigenständiges Business-Paket unter Windows ohne laufende Electron-Anwendung',
   () => {
-    for (const b of businessBeispiele)
+    for (const b of businessBeispiele.filter((b) => !b.id.startsWith('business-ml-')))
       it(`führt exportiertes ${b.id} eigenständig aus`, async () => {
         const ordner = await mkdtemp(join(tmpdir(), 'ScriptLab-Business-Paket-QA-'));
         try {

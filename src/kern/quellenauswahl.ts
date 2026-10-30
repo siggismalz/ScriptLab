@@ -33,6 +33,7 @@ export function quellenauswahlLesen(projekt: Projekt, blockId: string, feldPfad:
   const ordner = feld === 'ordner';
   let endungen = ['*'];
   if (bild) endungen = ['png', 'jpg', 'jpeg'];
+  else if (def.operation === 'ml.laden') endungen = ['slmodell'];
   else if (feld === 'vorlage') endungen = [def.operation.includes('xlsx') ? 'xlsx' : 'docx'];
   else if (def.operation.includes('pdf') || def.operation === 'dateien.beleg_ablegen') endungen = ['pdf'];
   else if (def.operation === 'daten.importieren' && typeof cfg.format === 'string')

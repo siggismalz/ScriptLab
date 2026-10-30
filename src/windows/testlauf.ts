@@ -157,6 +157,8 @@ export class TestlaufDienst {
       laufId: id,
       projektKennung: projekt.projektKennung ?? null,
       projektName: projekt.name,
+      workflowArt: projekt.workflowArt,
+      laufzeitProfil: projekt.workflowArt === 'ml' ? 'ml-cpu' : 'basis',
       skriptsprache: projekt.skriptsprache,
       pythonVersion: null,
       standHash: testStandHash(original),
@@ -290,6 +292,13 @@ export class TestlaufDienst {
                 filter: (p) => !p.includes('__pycache__') && !p.endsWith('.pyc'),
               }),
             );
+          if (lauf.projekt.workflowArt === 'ml')
+            await pruefen(
+              cp(
+                join(this.business.paketwurzel, 'requirements-ml.lock'),
+                join(lauf.ordner, 'requirements-ml.lock'),
+              ),
+            );
           await mkdir(join(lauf.ordner, 'arbeitsdaten'), { recursive: true });
           const parameter = parameterWertePruefen(lauf.projekt.business.parameter, {
             ...Object.fromEntries(lauf.projekt.business.parameter.map((p) => [p.name, p.standard])),
@@ -319,7 +328,7 @@ export class TestlaufDienst {
             join(lauf.ordner, 'scriptlab-kontext.json'),
             JSON.stringify({
               version: 1,
-              ml_aktiv: lauf.projekt.workflowArt === 'ml',
+              ...(lauf.projekt.workflowArt === 'ml' ? { ml_aktiv: true } : {}),
               basis: optionen.basisVerzeichnis,
               ...(this.ausgabeWurzel ? { ausgabe_wurzel: this.ausgabeWurzel } : {}),
               modus: b.modus,
@@ -421,6 +430,8 @@ export class TestlaufDienst {
         await unlink(join(lauf.ordner, 'abbruch.signal')).catch(() => {});
         await rm(join(lauf.ordner, 'arbeitsdaten'), { recursive: true, force: true }).catch(() => {});
         await rm(join(lauf.ordner, 'scriptlab_business'), { recursive: true, force: true }).catch(() => {});
+        await rm(join(lauf.ordner, 'scriptlab_ml'), { recursive: true, force: true }).catch(() => {});
+        await unlink(join(lauf.ordner, 'requirements-ml.lock')).catch(() => {});
         await rmdir(lauf.ordner).catch(() => {});
       })();
       if (lauf.grund) {

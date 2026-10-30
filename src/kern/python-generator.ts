@@ -474,6 +474,7 @@ export function pythonErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): 
   if (mitBusiness) {
     hinzufuegen('# Das Business-Paket liegt neben diesem Script; keine Downloads beim Start.');
     hinzufuegen('sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))');
+    if (geprueft.workflowArt === 'ml') hinzufuegen('sys.dont_write_bytecode = True');
     hinzufuegen(
       'from scriptlab_business.ausfuehrung import schritt as sl_business_schritt, kontext_laden, abschliessen',
     );
@@ -528,7 +529,7 @@ def sl_wert(kennung, auswerten):
     );
   if (mitBusiness)
     hinzufuegen(
-      `        sl_business_kontext = kontext_laden(__file__, json.loads(${pythonText(JSON.stringify({ workflow_id: geprueft.projektKennung ?? '', workflow_hash: '', projekt_name: geprueft.name, parameter: geprueft.business.parameter, standard_parameter: geprueft.business.parametersaetze.test }))}), ${token ? pythonText(token) : 'None'})`,
+      `        sl_business_kontext = kontext_laden(__file__, json.loads(${pythonText(JSON.stringify({ workflow_id: geprueft.projektKennung ?? '', workflow_hash: '', projekt_name: geprueft.name, parameter: geprueft.business.parameter, standard_parameter: geprueft.business.parametersaetze.test, ...(geprueft.workflowArt === 'ml' ? { workflow_art: 'ml' } : {}) }))}), ${token ? pythonText(token) : 'None'})`,
     );
   if (mitBusiness && mitDateien) hinzufuegen('        sl_basis = str(sl_business_kontext.basis)');
   hinzufuegen('        sl_haupt()');

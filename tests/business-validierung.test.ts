@@ -37,6 +37,13 @@ function gueltigeKonfiguration(def: BusinessDefinition): Record<string, JsonWert
     if (Object.hasOwn(k, name)) k[name] = `${name}.dat`;
   }
   switch (def.operation) {
+    case 'ml.trainieren':
+      Object.assign(k, { zielspalte: 'Ziel', merkmale: ['Eingang'] });
+      break;
+    case 'ml.speichern':
+    case 'ml.laden':
+      k.pfad = 'Modell.slmodell';
+      break;
     case 'daten.spalten':
       Object.assign(k, {
         spalten: ['ID'],

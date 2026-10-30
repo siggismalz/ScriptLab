@@ -23,6 +23,7 @@ const eintragSchema = z
     name: z.string().min(1).max(160),
     beschreibung: z.string().max(10000),
     skriptsprache: z.enum(['python', 'vbs']),
+    workflowArt: z.enum(['allgemein', 'ml']).default('allgemein'),
     pfad,
     zuletztGeoeffnet: zeit.nullable(),
     geaendertAm: zeit,
@@ -33,6 +34,7 @@ const eintragSchema = z
   .strict();
 const alterEintragSchema = eintragSchema.extend({ skriptsprache: z.enum(['python', 'vbs']).default('vbs') });
 const indexSchema = z.union([
+  z.object({ schemaVersion: z.literal(3), projekte: z.array(eintragSchema).max(2000) }).strict(),
   z.object({ schemaVersion: z.literal(2), projekte: z.array(eintragSchema).max(2000) }).strict(),
   z.object({ schemaVersion: z.literal(1), projekte: z.array(alterEintragSchema).max(2000) }).strict(),
 ]);
@@ -218,7 +220,7 @@ export class Projektindex extends SerielleAblage {
   }
   private async schreiben(projekte: ProjektEintrag[]): Promise<void> {
     if (this.gesperrt) throw new Error(this.hinweis!);
-    const daten = indexSchema.parse({ schemaVersion: 2, projekte });
+    const daten = indexSchema.parse({ schemaVersion: 3, projekte });
     await atomarSchreiben(this.datei, `${JSON.stringify(daten, null, 2)}\n`);
     this.projekte = daten.projekte;
   }
@@ -241,6 +243,7 @@ export class Projektindex extends SerielleAblage {
         name: stand.projekt.name,
         beschreibung: stand.projekt.beschreibung,
         skriptsprache: stand.projekt.skriptsprache,
+        workflowArt: stand.projekt.workflowArt,
         pfad: dateipfad,
         zuletztGeoeffnet: geoeffnet ? new Date().toISOString() : (alt?.zuletztGeoeffnet ?? null),
         geaendertAm: stand.geaendertAm,
@@ -377,6 +380,7 @@ export class Entwurfspeicher extends SerielleAblage {
           name: e.projekt.name,
           beschreibung: e.projekt.beschreibung,
           skriptsprache: e.projekt.skriptsprache,
+          workflowArt: e.projekt.workflowArt,
           gesichertAm: e.gesichertAm,
           ausgangspfad: e.ausgangspfad,
           baselineHash: e.baselineHash,

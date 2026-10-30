@@ -18,6 +18,8 @@ export const abgeschlosseneLaufphasen = [
 ] as const;
 export type AbgeschlosseneLaufphase = (typeof abgeschlosseneLaufphasen)[number];
 export interface LaufEintrag {
+  workflowArt?: 'allgemein' | 'ml';
+  laufzeitProfil?: 'basis' | 'ml-cpu';
   laufId: string;
   projektKennung: string;
   projektName: string;
@@ -53,6 +55,8 @@ export interface ZeilenZuordnung {
   blockId: string;
 }
 export interface TestZustand {
+  workflowArt?: 'allgemein' | 'ml';
+  laufzeitProfil?: 'basis' | 'ml-cpu';
   business?: {
     schritt: string | null;
     schrittnamen?: Record<string, string>;

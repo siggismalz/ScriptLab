@@ -93,7 +93,7 @@ for (const [darstellung, textSkalierung] of [
             () => null,
           ),
         )
-        .toBe(3);
+        .toBe(4);
       await laufansichtWaehlen(seite, 'Vorbereitung');
       const panel = seite.getByTestId('test-panel');
       await panel.getByLabel('Modus', { exact: true }).selectOption('vorschau');

@@ -4,6 +4,8 @@ import type { TestOptionen, TestZustand, LaufListe } from './testlauf';
 import type { Skriptsprache } from '../kern/sprachen';
 import type { PythonStatus } from './python';
 import type { BusinessStatus, BusinessFortschritt } from './business-laufzeit';
+import type { WorkflowArt } from '../kern/workflowarten';
+import type { MLStatus, MLFortschritt } from './ml-laufzeit';
 
 export type BeispielKennung =
   | 'business-monat'
@@ -11,6 +13,8 @@ export type BeispielKennung =
   | 'business-bestellvorschlag'
   | 'business-belege'
   | 'business-stapel'
+  | 'business-ml-klassifikation'
+  | 'business-ml-regression'
   | 'begruessung'
   | 'backup'
   | 'dateiliste'
@@ -46,6 +50,7 @@ export interface Verfuegbarkeit {
   meldung: string;
 }
 export interface ProjektEintrag {
+  workflowArt?: WorkflowArt;
   skriptsprache: Skriptsprache;
   id: string;
   projektKennung: string;
@@ -59,6 +64,7 @@ export interface ProjektEintrag {
   verfuegbarkeit: VerfuegbarkeitsZustand;
 }
 export interface EntwurfEintrag {
+  workflowArt?: WorkflowArt;
   skriptsprache: Skriptsprache;
   id: string;
   projektKennung: string;
@@ -86,6 +92,8 @@ export interface ExportErgebnis {
   signatur: SignaturErgebnis | null;
 }
 export interface ScriptLabBruecke {
+  mlLesen(): Promise<Antwort<{ status: MLStatus | null; aktiv: boolean; fortschritt: MLFortschritt | null }>>;
+  mlAktion(art: 'pruefen' | 'einrichten' | 'offline' | 'abbrechen'): Promise<Antwort<MLStatus | null>>;
   businessLesen(): Promise<
     Antwort<{ status: BusinessStatus | null; fortschritt: BusinessFortschritt | null; aktiv: boolean }>
   >;
@@ -96,7 +104,7 @@ export interface ScriptLabBruecke {
   aendern(projekt: Projekt): Promise<Antwort<void>>;
   darstellungBereit(projekt: Projekt): Promise<Antwort<Dokument>>;
   beiStandAnfrage(lesen: () => Projekt): () => void;
-  neu(projekt: Projekt, sprache: Skriptsprache): Promise<Antwort<Dokument | null>>;
+  neu(projekt: Projekt, sprache: Skriptsprache, workflowArt?: WorkflowArt): Promise<Antwort<Dokument | null>>;
   oeffnen(projekt: Projekt): Promise<Antwort<Dokument | null>>;
   beispielOeffnen(projekt: Projekt, beispiel: BeispielKennung): Promise<Antwort<Dokument | null>>;
   speichern(projekt: Projekt, unter: boolean): Promise<Antwort<Dokument | null>>;
