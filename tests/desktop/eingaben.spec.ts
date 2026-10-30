@@ -1,4 +1,5 @@
 import { sprachwahlBestaetigen } from './sprache';
+import { einstellungenOeffnen as einstellungenDialogOeffnen } from './ansichten';
 import { test as basisTest, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, readFile, writeFile, mkdir, stat, rm } from 'node:fs/promises';
@@ -58,14 +59,11 @@ async function projektLesen(): Promise<Projekt> {
   });
 }
 async function einstellungenOeffnen() {
-  await seite.getByRole('button', { name: 'Weitere Funktionen', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
-  const dialog = seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
-  await expect(dialog).toBeVisible();
-  return dialog;
+  return einstellungenDialogOeffnen(seite);
 }
 async function zeitstempelOeffnen() {
   const dialog = await einstellungenOeffnen();
+  await dialog.getByRole('tab', { name: 'VBS-Signatur', exact: true }).click();
   await dialog.getByRole('checkbox', { name: 'Exportierte Datei signieren' }).check();
   await dialog.getByText('Zeitstempel einrichten', { exact: true }).click();
   const feld = dialog.getByRole('textbox', { name: 'Zeitstempeldienst (optional)', exact: true });
@@ -216,13 +214,10 @@ test('behandelt eine schrittweise getippte Zeitstempeladresse als ruhigen Entwur
   await expect(dialog).not.toBeVisible();
 });
 
-test('hält fehlerhafte Entwürfe aus dem Projekt heraus und erhält die Datei bei Speichern-Abbruch', async () => {
-  const datei = join(ordner, 'Unveraendert.scriptlab');
-  await app.evaluate(({ dialog }, ziel) => {
-    dialog.showSaveDialog = async () => ({ canceled: false, filePath: ziel });
-  }, datei);
+test('hält fehlerhafte Einstellungen aus dem Projekt heraus und erhält die Datei bei Export-Abbruch', async () => {
+  const datei = join(ordner, 'Profil', 'Workflows', `${(await projektLesen()).projektKennung}.scriptlab`);
   await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
-  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
   const original = await readFile(datei);
   const { dialog, feld } = await zeitstempelOeffnen();
   await feld.pressSequentially('h');
@@ -242,12 +237,16 @@ test('hält fehlerhafte Entwürfe aus dem Projekt heraus und erhält die Datei b
   await app.evaluate(({ dialog }) => {
     dialog.showSaveDialog = async () => ({ canceled: true, filePath: '' });
   });
-  await seite.getByRole('button', { name: 'Projektmenü', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Speichern unter', exact: true }).click();
+  await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
+  const exportdialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
+  await exportdialog.getByRole('combobox', { name: 'Inhalt', exact: true }).selectOption('projekt');
+  await exportdialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
+  await expect(exportdialog).not.toBeVisible();
   await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
   expect(await readFile(datei)).toEqual(original);
   expect((await projektLesen()).exportOptionen.zeitstempelUrl).toBe('');
   await einstellungenOeffnen();
+  await dialog.getByRole('tab', { name: 'VBS-Signatur', exact: true }).click();
   if (!(await feld.isVisible())) await dialog.getByText('Zeitstempel einrichten', { exact: true }).click();
   await expect(feld).toHaveValue('');
 });
@@ -353,7 +352,7 @@ test.describe('vorhandenes Profil aus der bisherigen Anwendung', () => {
     expect(gelesen.wert.einstellungen).toEqual({
       automatischeUpdates: false,
       vorabversionen: true,
-      darstellung: 'dunkel',
+      darstellung: 'hell',
       palettenBreite: 272,
       paletteEingeklappt: false,
       eigenschaftenAngeheftet: false,
@@ -363,8 +362,10 @@ test.describe('vorhandenes Profil aus der bisherigen Anwendung', () => {
     });
     expect((await seite.getByTestId('palette').boundingBox())!.width).toBeCloseTo(272, 0);
     const dialog = await einstellungenOeffnen();
+    await dialog.getByRole('tab', { name: 'Updates', exact: true }).click();
     await expect(dialog.getByRole('checkbox', { name: 'Automatisch nach Updates suchen' })).not.toBeChecked();
     await expect(dialog.getByRole('checkbox', { name: 'Vorabversionen bewusst zulassen' })).toBeChecked();
+    await dialog.getByRole('tab', { name: 'Darstellung', exact: true }).click();
     await expect(dialog.getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })).toHaveValue(
       '1',
     );
@@ -513,12 +514,9 @@ for (const beispiel of beispiele) {
 }
 
 test('weist eine fremde Beispiel-ID ab und erhält das aktuelle gespeicherte Projekt', async () => {
-  const datei = join(ordner, 'Aktuelles-Projekt.scriptlab');
-  await app.evaluate(({ dialog }, ziel) => {
-    dialog.showSaveDialog = async () => ({ canceled: false, filePath: ziel });
-  }, datei);
+  const datei = join(ordner, 'Profil', 'Workflows', `${(await projektLesen()).projektKennung}.scriptlab`);
   await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
-  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
   const vorher = await seite.evaluate(() => window.scriptlab.laden());
   expect(vorher.ok).toBe(true);
   if (!vorher.ok) throw new Error(vorher.meldung);
@@ -540,5 +538,5 @@ test('weist eine fremde Beispiel-ID ab und erhält das aktuelle gespeicherte Pro
   const danach = await seite.evaluate(() => window.scriptlab.laden());
   expect(danach.ok && danach.wert.dokument).toEqual(vorher.wert.dokument);
   expect(await readFile(datei)).toEqual(original);
-  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
 });

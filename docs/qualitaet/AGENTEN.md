@@ -21,3 +21,12 @@ Auftrag: vorhandene Daten-, Datei- und Dokumentoperationen mit unabhängigen Sol
 ## Unabhängige Qualitätssicherung
 
 Nach Abschluss eines Fachpakets erhält ein anderer freier Fachagent einen ausschließlich lesenden Reviewauftrag für Annahmen, Diff und unabhängige Ergebnisnachweise. Der Hauptagent prüft und testet alle integrierten Pakete erneut. Ein Agentenbericht ersetzt weder Integration noch Testausführung.
+
+## Folgerunde: bestehende Desktoptests aktuell halten
+
+Ausgang: `3bf7da6`, danach lokaler Scroll-/Layoutfix. Die Gesamtregression scheiterte schon vor Fachprüfungen an entfernten Knöpfen und alten Speicher-/Laufbasen. Auftrag an alle: nur tatsächliche UI-Wege migrieren, Sollinhalte und Originalschutz erhalten; interne Speicherung von bewusstem Export trennen, keine Assertions oder Fristen zur Grünfärbung abschwächen. Produktfehler an Root melden. Kein Git/Build durch Agenten. Vorhandene gemeinsame Helfer `tests/desktop/ansichten.ts` und `sprache.ts` bleiben bei Root. Testbilder nach `artifacts/qualitaet-desktop`, historische Galerien erhalten. Abschlussgesamtprüfung nach Ende der parallelen Teilsitzungen mit einem Worker.
+
+- **Bedienung / QA-02:** ausschließlich `anwendung.spec.ts`, `ux.spec.ts`, `startseite.spec.ts`; reale Navigation, Clipboard, Projekt-/Entwurfsschutz, Fokus und Darstellungswege. Bericht `agent-desktop-ux.md`; unabhängiger Scrollreview `review-scroll.md`.
+- **Ausführung / QA-03:** ausschließlich `python-ui.spec.ts`, `python-lebenszyklus.spec.ts`, `testlauf.spec.ts`, `testlauf-ui.spec.ts`; beide Sprachen, gebündelte App-Laufzeit statt externer CI-Testlaufzeit, tatsächliches Prozessende, unveränderte Dateien. Bericht `agent-desktop-lauf.md`.
+- **Businessdaten / QA-04:** ausschließlich `business-ui.spec.ts`, `business-zustaende.spec.ts`, `business-last.spec.ts`; echte Daten-Sollwerte, feste App-Arbeitsordner, Prüflauf/Echtlauf und ZIP. Optionale Millionenlasten nicht nebenbei parallel ausführen; sie bleiben separat gekennzeichnet. Bericht `agent-desktop-business.md`, darin unabhängige Layoutnachprüfung UX-03.
+- **Root:** `arbeitsstand-schutz.spec.ts`, `eingaben.spec.ts`, `gestaltung-navigation.spec.ts`, `ziehen.spec.ts` sowie gemeinsame Helfer und sämtliche Produktkorrekturen/Integration. Der entfernte Speichern-unter-Dialog wird beispielsweise durch internen Konfliktkopieschutz plus abbrechbaren Projektdateiexport ersetzt; der frühere Dialog wird nicht vorgetäuscht.

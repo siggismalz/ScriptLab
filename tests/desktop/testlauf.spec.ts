@@ -66,6 +66,13 @@ async function oeffnen(p: Projekt, panel = true) {
   }, datei);
   await workflowBefehl(seite, 'oeffnen');
   await bereit();
+  basis = await seite.evaluate(async () => {
+    const r = await window.scriptlab.testLesen();
+    if (!r.ok || !r.wert.optionen.basisVerzeichnis) throw Error('Der Workflow-Arbeitsordner fehlt.');
+    return r.wert.optionen.basisVerzeichnis;
+  });
+  expect(basis).toContain(join(ordner, 'Profil', 'Arbeitsdateien'));
+  await mkdir(basis, { recursive: true });
   if (panel) {
     await laufansichtWaehlen(seite, 'Vorbereitung');
     await expect(seite.getByTestId('test-panel')).toBeVisible();
@@ -132,17 +139,12 @@ test('führt den ungespeicherten Editorstand aus und schreibt relative Dateien a
   const original = await readFile(datei);
   expect((await zustand()).laufId).toBeNull();
   await expect(stat(join(basis, 'Echtes Testergebnis.txt'))).rejects.toMatchObject({ code: 'ENOENT' });
-  // Explizite Wahl über denselben fachlichen Ordnerdialog wie ein Nutzer, kein allgemeiner Dateizugriff im Renderer.
-  await app.evaluate(({ dialog }, p) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [p] });
-  }, basis);
-  await seite.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
-  await expect(
-    seite.getByRole('textbox', { name: 'Basisordner für den nächsten Lauf', exact: true }),
-  ).toHaveValue(basis);
+  await seite.getByText('ScriptLab-Arbeitsordner', { exact: true }).click();
+  await expect(seite.locator('.lauf-ordnerpfad')).toHaveText(basis);
   await arbeitsbereichWaehlen(seite, 'Ablauf');
   await seite.locator(`g[data-id="${a.id}"]`).click({ position: { x: 60, y: 18 } });
-  await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
+  if (!(await seite.getByTestId('eigenschaften-panel').isVisible()))
+    await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
   const feld = seite.getByTestId('eigenschaften-panel').getByRole('textbox', { name: 'Text', exact: true });
   await feld.fill('NEUER UNGESPEICHERTER TEXT ä 😀');
   await seite.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
@@ -160,7 +162,7 @@ test('führt den ungespeicherten Editorstand aus und schreibt relative Dateien a
   await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Ungespeicherte Änderungen');
   await expect(seite.getByTestId('test-panel')).toContainText('Lauf beendet');
   await laufansichtWaehlen(seite, 'Protokoll');
-  await seite.getByRole('button', { name: 'Ausgabe kopieren', exact: true }).click();
+  await seite.getByRole('button', { name: 'Protokoll kopieren', exact: true }).click();
   // Fremde vorhandene Zwischenablageinhalte werden weder ausgegeben noch als Testanhang gespeichert.
   await expect
     .poll(() =>
@@ -169,8 +171,8 @@ test('führt den ungespeicherten Editorstand aus und schreibt relative Dateien a
       ),
     )
     .toBe(true);
-  await mkdir('artifacts/testlauf', { recursive: true });
-  await seite.screenshot({ path: 'artifacts/testlauf/editor-ausgabe.png' });
+  await mkdir('artifacts/qualitaet-desktop/lauf/testlauf', { recursive: true });
+  await seite.screenshot({ path: 'artifacts/qualitaet-desktop/lauf/testlauf/editor-ausgabe.png' });
 });
 
 test('zeigt einen neuen Testkontext vor dem tatsächlichen Start sichtbar an', async () => {
@@ -184,28 +186,54 @@ test('zeigt einen neuen Testkontext vor dem tatsächlichen Start sichtbar an', a
   expect((await zustand()).ausgabe).toContain('KONTEXT BEWUSST GEPRÜFT');
 });
 
-test('erhält die gewählte Testbasis beim Speichern unter und schlägt beim erneuten Öffnen den Projektordner vor', async () => {
+test('erhält den automatischen Arbeitsordner beim internen Speichern, Projektexport und erneuten Öffnen', async () => {
   const datei = await oeffnen(projektMit(ausgabe('NUR BEWUSST TESTEN')));
-  await app.evaluate(({ dialog }, pfad) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
-  }, basis);
-  await seite.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
+  const original = await readFile(datei);
+  const vorherigeBasis = basis;
+  const kennung = JSON.parse(original.toString('utf8')).projektKennung;
+  await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
+  await expect
+    .poll(() =>
+      seite.evaluate(async () => {
+        const r = await window.scriptlab.laden();
+        if (!r.ok) throw Error(r.meldung);
+        return r.wert.dokument.dateiname;
+      }),
+    )
+    .toBe(`${kennung}.scriptlab`);
+  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
+  const intern = await seite.evaluate(async () => {
+    const r = await window.scriptlab.laden();
+    if (!r.ok) throw Error(r.meldung);
+    return r.wert.dokument;
+  });
+  expect(intern.dateiname).toBe(`${intern.projektKennung}.scriptlab`);
+  expect(
+    JSON.parse(await readFile(join(ordner, 'Profil', 'Workflows', intern.dateiname!), 'utf8')).projektKennung,
+  ).toBe(intern.projektKennung);
   const ziel = join(ordner, 'Eigene Projektkopie.scriptlab');
   await app.evaluate(({ dialog }, pfad) => {
     dialog.showSaveDialog = async () => ({ canceled: false, filePath: pfad });
   }, ziel);
-  await seite.getByRole('button', { name: 'Workflow', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Speichern unter', exact: true }).click();
+  await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
+  const exportdialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
+  await exportdialog.getByRole('combobox', { name: 'Inhalt', exact: true }).selectOption('projekt');
+  await exportdialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
   await expect.poll(async () => (await stat(ziel).catch(() => null))?.isFile()).toBe(true);
-  const feld = seite.getByRole('textbox', { name: 'Basisordner für den nächsten Lauf', exact: true });
-  await expect(feld).toHaveValue(basis);
-  await app.evaluate(({ dialog }, pfad) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
-  }, datei);
+  expect((await zustand()).laufId).toBeNull();
+  expect(await readFile(datei)).toEqual(original);
+  expect(JSON.parse(await readFile(ziel, 'utf8')).editor).toEqual(intern.projekt.editor);
+  await app.evaluate(
+    ({ dialog }, pfad) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
+    },
+    join(ordner, 'Profil', 'Workflows', intern.dateiname!),
+  );
   await workflowBefehl(seite, 'oeffnen');
   await bereit();
   await laufansichtWaehlen(seite, 'Vorbereitung');
-  await expect(feld).toHaveValue(ordner);
+  const neu = await seite.evaluate(() => window.scriptlab.testLesen());
+  expect(neu.ok && neu.wert.optionen.basisVerzeichnis).toBe(vorherigeBasis);
   expect((await zustand()).laufId).toBeNull();
 });
 
@@ -218,7 +246,8 @@ test('sperrt Bearbeitung, erhält Auswahl und Zoom und stoppt auch mit zugeklapp
   await arbeitsbereichWaehlen(seite, 'Ablauf');
   await seite.locator(`g[data-id="${a.id}"]`).click({ position: { x: 60, y: 18 } });
   await expect(seite.locator(`g[data-id="${a.id}"]`)).toHaveClass(/scriptlabAuswahl/);
-  await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
+  if (!(await seite.getByTestId('eigenschaften-panel').isVisible()))
+    await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
   await expect(
     seite.getByTestId('eigenschaften-panel').getByRole('textbox', { name: 'Text', exact: true }),
   ).toBeDisabled();
@@ -228,12 +257,13 @@ test('sperrt Bearbeitung, erhält Auswahl und Zoom und stoppt auch mit zugeklapp
   await seite.getByRole('button', { name: 'Stoppen', exact: true }).click();
   expect((await fertig()).phase).toBe('abgebrochen');
   expect((await zustand()).ausgabe).not.toContain('DARF NICHT ERSCHEINEN');
-  await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
+  if (!(await seite.getByTestId('eigenschaften-panel').isVisible()))
+    await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
   const feld = seite.getByTestId('eigenschaften-panel').getByRole('textbox', { name: 'Text', exact: true });
   await expect(feld).toBeEnabled();
   await feld.fill('Nach Test geändert');
   await seite.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
-  await laufansichtWaehlen(seite, 'Vorbereitung');
+  await laufansichtWaehlen(seite, 'Übersicht');
   await expect(seite.getByTestId('test-panel')).toContainText('seit diesem Lauf geändert');
 });
 
@@ -303,7 +333,7 @@ test('lässt alte Ausgabe beim Lesen stehen und kopiert sie auch während eines 
   await log.hover();
   await seite.mouse.wheel(0, -10000);
   await expect.poll(() => log.evaluate((el) => el.scrollTop)).toBe(0);
-  await seite.getByRole('button', { name: 'Ausgabe kopieren', exact: true }).click();
+  await seite.getByRole('button', { name: 'Protokoll kopieren', exact: true }).click();
   expect(testAktiv((await zustand()).phase)).toBe(true);
   await expect
     .poll(() =>
@@ -405,7 +435,8 @@ test('Schließen stoppt zuerst den Test und verwirft ungespeicherte Änderungen 
   await oeffnen(projektMit(a, warten()));
   await arbeitsbereichWaehlen(seite, 'Ablauf');
   await seite.locator(`g[data-id="${a.id}"]`).click({ position: { x: 60, y: 18 } });
-  await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
+  if (!(await seite.getByTestId('eigenschaften-panel').isVisible()))
+    await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
   await seite
     .getByTestId('eigenschaften-panel')
     .getByRole('textbox', { name: 'Text', exact: true })

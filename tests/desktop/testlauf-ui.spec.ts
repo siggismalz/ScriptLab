@@ -91,7 +91,10 @@ async function starten(): Promise<Sitzung> {
       .toBe(true);
     await expect(seite.locator('.blocklyBlockCanvas g[data-id="ui_testausgabe"]')).toBeVisible();
     await expect(seite.getByRole('button', { name: 'Workflow ausführen', exact: true })).toBeEnabled();
-    return { app, seite, ordner, basis, projektdatei };
+    const r = await seite.evaluate(() => window.scriptlab.testLesen());
+    if (!r.ok || !r.wert.optionen.basisVerzeichnis) throw Error('Der Workflow-Arbeitsordner fehlt.');
+    expect(r.wert.optionen.basisVerzeichnis).toContain(join(ordner, 'Profil', 'Arbeitsdateien'));
+    return { app, seite, ordner, basis: r.wert.optionen.basisVerzeichnis, projektdatei };
   } catch (fehler) {
     await app.evaluate(({ app }) => app.exit(0)).catch(() => {});
     await testordnerEntfernen(ordner);
@@ -180,14 +183,8 @@ for (const textgroesse of [100, 200] as const) {
       const panelhoehe = await panel.evaluate((element) => element.getBoundingClientRect().height);
       expect(panelhoehe).toBeGreaterThanOrEqual(200);
 
-      // Nur diese Dateiauswahl ist eine gesteuerte Dialogantwort. Die Ausführung bleibt echt.
-      await s.app.evaluate(({ dialog }, basis) => {
-        dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [basis] });
-      }, s.basis);
-      await panel.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
-      await expect(
-        panel.getByRole('textbox', { name: 'Basisordner für den nächsten Lauf', exact: true }),
-      ).toHaveValue(s.basis);
+      await panel.getByText('ScriptLab-Arbeitsordner', { exact: true }).click();
+      await expect(panel.locator('.lauf-ordnerpfad')).toHaveText(s.basis);
       const zeitlimit = panel.getByLabel('Zeitlimit in Sekunden', { exact: true });
       await feldEinblenden(zeitlimit);
       await zeitlimit.fill('10');
@@ -199,15 +196,23 @@ for (const textgroesse of [100, 200] as const) {
         return r.wert.dokument.projekt.editor;
       });
       await laufStarten(seite);
-      await expect
-        .poll(
-          async () => {
-            const r = await seite.evaluate(() => window.scriptlab.testLesen());
-            return r.ok ? r.wert.zustand.phase : r.meldung;
-          },
-          { timeout: 20000 },
-        )
-        .toBe('beendet');
+      try {
+        await expect
+          .poll(
+            async () => {
+              const r = await seite.evaluate(() => window.scriptlab.testLesen());
+              return r.ok ? r.wert.zustand.phase : r.meldung;
+            },
+            { timeout: 20000 },
+          )
+          .toBe('beendet');
+      } catch (fehler) {
+        await test.info().attach('tatsaechlicher-laufzustand', {
+          body: JSON.stringify(await seite.evaluate(() => window.scriptlab.testLesen()), null, 2),
+          contentType: 'application/json',
+        });
+        throw fehler;
+      }
       await expect(panel.getByRole('tab', { name: 'Übersicht', exact: true })).toHaveAttribute(
         'aria-selected',
         'true',
@@ -303,8 +308,8 @@ for (const textgroesse of [100, 200] as const) {
         }),
       ).toEqual(vorher);
       await laufansichtWaehlen(seite, 'Protokoll');
-      await mkdir('artifacts/testlauf', { recursive: true });
-      const name = `artifacts/testlauf/laufansicht-1280-text-${textgroesse}`;
+      await mkdir('artifacts/qualitaet-desktop/lauf/testlauf', { recursive: true });
+      const name = `artifacts/qualitaet-desktop/lauf/testlauf/laufansicht-1280-text-${textgroesse}`;
       await zweiFrames(seite);
       await seite.screenshot({ path: `${name}.png` });
       await writeFile(

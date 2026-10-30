@@ -135,16 +135,22 @@ async function oeffnen(s: Sitzung, projekt: Projekt): Promise<string> {
   await s.app.evaluate(({ dialog }, pfad) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
   }, datei);
-  await s.seite.getByRole('button', { name: 'Workflow öffnen', exact: true }).click();
+  await workflowBefehl(s.seite, 'oeffnen');
   await editorBereit(s);
+  const r = await s.seite.evaluate(() => window.scriptlab.testLesen());
+  if (!r.ok || !r.wert.optionen.basisVerzeichnis) throw Error('Der Workflow-Arbeitsordner fehlt.');
+  s.basis = r.wert.optionen.basisVerzeichnis;
+  expect(s.basis).toContain(join(s.profil, 'Arbeitsdateien'));
   return datei;
 }
 async function textBearbeiten(s: Sitzung, id: string, text: string): Promise<void> {
   await arbeitsbereichWaehlen(s.seite, 'Ablauf');
   await s.seite.locator(`g[data-id="${id}"]`).click({ position: { x: 60, y: 18 } });
-  await s.seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
+  if (!(await s.seite.getByTestId('eigenschaften-panel').isVisible()))
+    await s.seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
   const eigenschaften = s.seite.getByTestId('eigenschaften-panel');
   const feld = eigenschaften.getByRole('textbox', { name: 'Text', exact: true });
+  await expect(feld).toBeVisible();
   await feld.fill(text);
   await feld.press('Tab');
   await eigenschaften.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
@@ -155,25 +161,20 @@ async function runtimePruefen(s: Sitzung): Promise<PythonInstallation> {
   if (!antwort.ok) throw new Error(antwort.meldung);
   const status = antwort.wert;
   if (status.zustand !== 'bereit' || !status.installation) {
-    test.skip(!process.env.SCRIPTLAB_TEST_PYTHON, `Lokale Python-Laufzeit fehlt: ${status.meldung}`);
-    throw new Error(`Der ausdrücklich vorgegebene Testinterpreter ist nicht bereit: ${status.meldung}`);
+    throw new Error(`Die mitgelieferte App-Laufzeit ist nicht bereit: ${status.meldung}`);
   }
-  if (process.env.SCRIPTLAB_TEST_PYTHON)
-    expect(await realpath(status.installation.pfad)).toBe(await realpath(process.env.SCRIPTLAB_TEST_PYTHON));
+  expect(await realpath(status.installation.pfad)).toBe(
+    await realpath(resolve('artifacts/python-buendel/python/python.exe')),
+  );
   if (process.env.SCRIPTLAB_TEST_PYTHON_VERSION)
     expect(status.installation.version).toBe(process.env.SCRIPTLAB_TEST_PYTHON_VERSION);
   return status.installation;
 }
 async function testVorbereiten(s: Sitzung, sekunden = 10): Promise<void> {
   await laufansichtWaehlen(s.seite, 'Vorbereitung');
-  await s.app.evaluate(({ dialog }, pfad) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
-  }, s.basis);
   const panel = s.seite.getByTestId('test-panel');
-  await panel.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
-  await expect(
-    panel.getByRole('textbox', { name: 'Basisordner für den nächsten Lauf', exact: true }),
-  ).toHaveValue(s.basis);
+  await panel.getByText('ScriptLab-Arbeitsordner', { exact: true }).click();
+  await expect(panel.locator('.lauf-ordnerpfad')).toHaveText(s.basis);
   await zeitlimitSetzen(s, sekunden);
 }
 async function zeitlimitSetzen(s: Sitzung, sekunden: number): Promise<void> {
@@ -244,10 +245,10 @@ test('Python-Entwurf überlebt den Appneustart und wird nur bewusst ohne automat
     // Nur das eigene isolierte Electron beenden. Die bereits bestätigte Sicherung bleibt erhalten.
     await appBeenden(s.app);
     Object.assign(s, await starten(s.ordner));
-    await expect(s.seite.getByTestId('entwuerfe-hinweis')).toContainText('bewusst fortzusetzen');
+    await expect(s.seite.getByTestId('entwuerfe-hinweis')).toContainText('1 Entwurf');
     await expect(s.seite.getByRole('button', { name: /^Weiterbearbeiten/ })).toHaveCount(0);
     expect((await zustand(s)).laufId).toBeNull();
-    await s.seite.getByRole('button', { name: 'Entwürfe anzeigen', exact: true }).click();
+    await s.seite.getByTestId('entwuerfe-hinweis').click();
     const liste = s.seite.getByTestId('entwuerfe');
     await liste
       .getByRole('combobox', { name: 'Entwürfe nach Sprache filtern', exact: true })

@@ -1,4 +1,5 @@
 import { sprachwahlBestaetigen } from './sprache';
+import { workflowBefehl, ansichtsMenueAktion, einstellungenOeffnen } from './ansichten';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, readFile, writeFile, mkdir, rm, stat } from 'node:fs/promises';
@@ -48,7 +49,7 @@ async function starten(faktor = 1, breite = 1280, hoehe = 720): Promise<Sitzung>
     }
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
     await sprachwahlBestaetigen(seite);
-    await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+    await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
     await seite.evaluate(
       () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
     );
@@ -89,7 +90,7 @@ async function oeffnen(s: Sitzung, dateiname: keyof typeof uiTestprojekte): Prom
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [ziel] });
     dialog.showMessageBox = async () => ({ response: 2, checkboxChecked: false });
   }, datei);
-  await s.seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
+  await workflowBefehl(s.seite, 'oeffnen');
   await expect.poll(async () => (await projektLesen(s.seite)).name).toBe(uiTestprojekte[dateiname].name);
   await expect
     .poll(() => s.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle()))
@@ -97,7 +98,7 @@ async function oeffnen(s: Sitzung, dateiname: keyof typeof uiTestprojekte): Prom
   await expect
     .poll(() => s.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle()))
     .toContain('ScriptLab');
-  await expect(s.seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await expect(s.seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
   await expect
     .poll(async () => {
       const r = await s.seite.evaluate(() => window.scriptlab.laden());
@@ -124,6 +125,15 @@ async function scriptExportieren(seite: Page): Promise<void> {
   await dialog.getByRole('combobox', { name: 'Inhalt', exact: true }).selectOption('script');
   await dialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
 }
+async function projektExportieren(seite: Page): Promise<void> {
+  await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
+  const dialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
+  await dialog.getByRole('combobox', { name: 'Inhalt', exact: true }).selectOption('projekt');
+  await dialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
+}
+async function codevorschauOeffnen(seite: Page) {
+  await ansichtsMenueAktion(seite, 'Codevorschau öffnen');
+}
 
 async function projektLesen(seite: Page): Promise<Projekt> {
   return seite.evaluate(async () => {
@@ -148,11 +158,11 @@ function alleBausteine(p: Projekt): EditorBlock[] {
 }
 
 async function screenshot(seite: Page, name: string): Promise<void> {
-  await mkdir('artifacts/ui', { recursive: true });
+  await mkdir('artifacts/qualitaet-desktop/agent-ux-bilder', { recursive: true });
   await seite.evaluate(
     () => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
   );
-  await seite.screenshot({ path: `artifacts/ui/${name}.png` });
+  await seite.screenshot({ path: `artifacts/qualitaet-desktop/agent-ux-bilder/${name}.png` });
 }
 
 async function eigenschaftenOeffnen(seite: Page, blockId: string): Promise<void> {
@@ -167,16 +177,6 @@ async function eigenschaftMitWert(seite: Page, wert: string) {
   for (let i = 0; i < (await felder.count()); i++)
     if ((await felder.nth(i).inputValue()) === wert) return felder.nth(i);
   throw new Error('Die vollständige Eigenschaft ist in keinem normal großen Eingabefeld erreichbar.');
-}
-
-async function einstellungenOeffnen(seite: Page): Promise<void> {
-  const direkt = seite.getByRole('button', { name: 'Einstellungen', exact: true });
-  if (await direkt.isVisible()) await direkt.click();
-  else {
-    await seite.getByRole('button', { name: /^(Menü|Weitere Aktionen|Weitere Funktionen|Mehr)$/ }).click();
-    await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
-  }
-  await expect(seite.getByRole('dialog', { name: 'Einstellungen', exact: true })).toBeVisible();
 }
 
 for (const faktor of [1, 1.25, 1.5, 2]) {
@@ -209,9 +209,9 @@ for (const faktor of [1, 1.25, 1.5, 2]) {
         hoehe: innerHeight,
         devicePixelRatio,
       }));
-      await mkdir('artifacts/ui', { recursive: true });
+      await mkdir('artifacts/qualitaet-desktop/agent-ux-bilder', { recursive: true });
       await writeFile(
-        `artifacts/ui/dpi-${faktor * 100}.json`,
+        `artifacts/qualitaet-desktop/agent-ux-bilder/dpi-${faktor * 100}.json`,
         JSON.stringify(
           {
             typ: 'Prozess-DPI, keine Änderung der Windows-Anzeigeeinstellungen',
@@ -256,6 +256,8 @@ test('UX: Suche hat Treffer, einen eigenen Leerzustand und stellt die Kategorie 
     await expect(palette).toContainText('Keine Bausteine gefunden');
     await palette.getByRole('button', { name: 'Suche leeren', exact: true }).first().click();
     await expect(suche).toHaveValue('');
+    await palette.getByRole('button', { name: 'Werte und Eingaben', exact: true }).click();
+    await palette.getByRole('button', { name: 'Ein- und Ausgaben', exact: true }).click();
     await expect(palette.getByRole('button', { name: /^Baustein einfügen:.*Nachricht/i })).toBeVisible();
     await suche.fill('Absichtlich kein Treffer 981');
     await screenshot(s.seite, 'suche-ohne-treffer');
@@ -319,8 +321,9 @@ test('UX: ungültiger Entwurf bleibt speicherbar und Export führt zu konkreten 
     await oeffnen(s, '04-Fehlende-Pflichtwerte.scriptlab');
     const datei = join(s.ordner, 'Unvollständig.scriptlab');
     await speicherziel(s, datei);
-    await s.seite.getByRole('button', { name: 'Projektmenü', exact: true }).click();
-    await s.seite.getByRole('menuitem', { name: 'Speichern unter', exact: true }).click();
+    await s.seite.getByRole('button', { name: 'Speichern', exact: true }).click();
+    await expect(s.seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
+    await projektExportieren(s.seite);
     await expect
       .poll(async () =>
         stat(datei)
@@ -422,7 +425,7 @@ test('UX: verschachtelter Ablauf zeigt 28-Block-Ansicht und optionale schreibges
     await screenshot(s.seite, 'workflow-28-bausteine');
     await oeffnen(s, '02-Verschachtelte-Ablaeufe.scriptlab');
     await s.seite.getByRole('button', { name: 'Alles anzeigen', exact: true }).click();
-    await s.seite.getByRole('button', { name: 'Codevorschau', exact: true }).click();
+    await codevorschauOeffnen(s.seite);
     const code = s.seite.getByTestId('code-panel');
     await expect(code).toBeVisible();
     expect(await code.locator('pre').getAttribute('contenteditable')).not.toBe('true');
@@ -468,7 +471,8 @@ test('UX: vollständiger Aufgabenweg mit einzelnen Klicks, Umordnen, Rückgängi
       .toBe(1);
     const kommentar = alleBausteine(await projektLesen(s.seite)).find((b) => b.type === 'sl_comment')!;
     await eigenschaftenOeffnen(s.seite, kommentar.id);
-    await s.seite.getByRole('button', { name: /^(Baustein )?Verschieben$/i }).click();
+    await s.seite.getByRole('button', { name: 'Bausteinaktionen', exact: true }).click();
+    await s.seite.getByRole('menuitem', { name: 'Verschieben', exact: true }).click();
     await s.seite.getByRole('button', { name: /Nach.*Workflow starten/i }).click();
     await expect
       .poll(async () => {
@@ -488,6 +492,8 @@ test('UX: vollständiger Aufgabenweg mit einzelnen Klicks, Umordnen, Rückgängi
     const projektdatei = join(s.ordner, 'Eigene Klickprüfung.scriptlab');
     await speicherziel(s, projektdatei);
     await s.seite.getByRole('button', { name: 'Speichern', exact: true }).click();
+    await expect(s.seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
+    await projektExportieren(s.seite);
     await expect
       .poll(async () =>
         stat(projektdatei)
@@ -503,7 +509,7 @@ test('UX: vollständiger Aufgabenweg mit einzelnen Klicks, Umordnen, Rückgängi
       dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [datei] });
       dialog.showMessageBox = async () => ({ response: 2, checkboxChecked: false });
     }, projektdatei);
-    await s.seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
+    await workflowBefehl(s.seite, 'oeffnen');
     await expect
       .poll(async () =>
         alleBausteine(await projektLesen(s.seite)).some(
@@ -514,7 +520,9 @@ test('UX: vollständiger Aufgabenweg mit einzelnen Klicks, Umordnen, Rückgängi
     const exportdatei = join(s.ordner, 'Eigene Klickprüfung.vbs');
     await speicherziel(s, exportdatei);
     await scriptExportieren(s.seite);
-    await expect(s.seite.getByRole('heading', { name: 'Script gespeichert', exact: true })).toBeVisible();
+    await expect(s.seite.getByRole('status', { name: 'Export abgeschlossen', exact: true })).toContainText(
+      'Das Script wurde gespeichert.',
+    );
     await expect
       .poll(() =>
         stat(exportdatei)
@@ -538,7 +546,7 @@ test('UX: fehlende gewünschte Signaturkonfiguration verhindert eine falsche Erf
     const exportdatei = join(s.ordner, 'Nicht signiert freigegeben.vbs');
     await speicherziel(s, exportdatei);
     await scriptExportieren(s.seite);
-    await expect(s.seite.getByTestId('statusleiste')).toContainText(/Zertifikat|Signatur/);
+    await expect(s.seite.getByRole('alert')).toContainText(/Zertifikat|Signatur/);
     await expect(s.seite.getByTestId('statusleiste')).not.toContainText('Signatur gültig');
     await expect(stat(exportdatei)).rejects.toThrow();
     await screenshot(s.seite, 'signatur-nicht-eingerichtet');
@@ -609,6 +617,7 @@ for (const zustand of ['verfuegbar', 'laedt', 'fehler'] as const) {
       }, zustand);
       await einstellungenOeffnen(s.seite);
       const dialog = s.seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
+      await dialog.getByRole('tab', { name: 'Updates', exact: true }).click();
       await expect(dialog).toContainText(
         zustand === 'verfuegbar'
           ? 'verfügbar'
@@ -684,7 +693,10 @@ test('UX: tatsächliche SVG-Textflächen, Auswahl und eigener Eingabefokus bleib
       expect(p.schrift, p.text).toBeGreaterThanOrEqual(13.5);
       expect(p.textDeckkraft, p.text).toBe(1);
     }
-    await writeFile('artifacts/ui/svg-kontraste.json', JSON.stringify(ausgewertet, null, 2));
+    await writeFile(
+      'artifacts/qualitaet-desktop/agent-ux-bilder/svg-kontraste.json',
+      JSON.stringify(ausgewertet, null, 2),
+    );
     await s.seite.bringToFront();
     await s.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus());
     await s.seite.locator('g[data-id="ui-name-setzen"]').click({ position: { x: 56, y: 22 } });
@@ -708,7 +720,7 @@ test('UX: tatsächliche SVG-Textflächen, Auswahl und eigener Eingabefokus bleib
         tatsaechlicheBreite: stil.strokeWidth,
       };
     });
-    const fokusRgb = `rgb(${[1, 3, 5].map((i) => Number.parseInt(farben.canvasFokus.slice(i, i + 2), 16)).join(', ')})`;
+    const fokusRgb = `rgb(${[1, 3, 5].map((i) => Number.parseInt(farben.blockFokus.slice(i, i + 2), 16)).join(', ')})`;
     expect(navigationsstil.aktiveTastatur).toBe(true);
     expect(navigationsstil.knotenfarbe.toUpperCase()).toBe(farben.canvasFokus);
     expect(navigationsstil.baumfarbe.toUpperCase()).toBe(farben.akzent);
@@ -750,7 +762,7 @@ test('UX: tatsächliche SVG-Textflächen, Auswahl und eigener Eingabefokus bleib
       )
       .toBe('Name');
     await writeFile(
-      'artifacts/ui/navigationsfokus.json',
+      'artifacts/qualitaet-desktop/agent-ux-bilder/navigationsfokus.json',
       JSON.stringify({ block: navigationsstil, feld: feldstil }, null, 2),
     );
     expect(feldstil.kontur).toBe(fokusRgb);
@@ -779,8 +791,8 @@ test('UX: prozessweise simulierte Kontrastfarben und reduzierte Bewegung behalte
     await s.seite.emulateMedia({ forcedColors: 'active', reducedMotion: 'reduce' });
     expect(await s.seite.evaluate(() => matchMedia('(forced-colors: active)').matches)).toBe(true);
     expect(await s.seite.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
-    await s.seite.getByRole('button', { name: 'Weitere Funktionen', exact: true }).focus();
-    await s.seite.keyboard.press('Shift+Tab');
+    await s.seite.getByRole('button', { name: 'Workflow ausführen', exact: true }).focus();
+    await s.seite.keyboard.press('Tab');
     await expect(s.seite.getByRole('button', { name: 'Exportieren', exact: true })).toBeFocused();
     const stil = await s.seite.getByRole('button', { name: 'Exportieren', exact: true }).evaluate((el) => ({
       transition: getComputedStyle(el).transitionDuration,

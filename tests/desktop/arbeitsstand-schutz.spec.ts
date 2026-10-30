@@ -1,4 +1,11 @@
-import { arbeitsbereichWaehlen, laufansichtWaehlen, laufStarten, startseiteWaehlen } from './ansichten';
+import {
+  arbeitsbereichWaehlen,
+  laufansichtWaehlen,
+  laufStarten,
+  startseiteWaehlen,
+  workflowBefehl,
+  workflowMenueAktion,
+} from './ansichten';
 import { sprachwahlBestaetigen } from './sprache';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
@@ -62,15 +69,14 @@ async function bibliothekLesen(): Promise<ProjektBibliothek> {
 }
 async function editorBereit(): Promise<void> {
   await expect(seite.getByTestId('palette')).toBeVisible();
-  await expect(seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
   await expect.poll(async () => (await dokumentLesen()).darstellungNoetig).toBe(false);
   await seite.evaluate(
     () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
   );
 }
 async function benennen(name: string): Promise<void> {
-  await seite.getByRole('button', { name: 'Projektmenü', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Projektangaben', exact: true }).click();
+  await workflowMenueAktion(seite, 'Projektangaben');
   const dialog = seite.getByRole('dialog', { name: 'Projektangaben', exact: true });
   await dialog.getByRole('textbox', { name: 'Projektname', exact: true }).fill(name);
   await dialog.getByRole('button', { name: 'Übernehmen', exact: true }).click();
@@ -82,11 +88,8 @@ async function guardAntwort(response: number): Promise<void> {
   }, response);
 }
 async function speichern(datei: string): Promise<Buffer> {
-  await app.evaluate(({ dialog }, ziel) => {
-    dialog.showSaveDialog = async () => ({ canceled: false, filePath: ziel });
-  }, datei);
   await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
-  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
   return readFile(datei);
 }
 async function entwurfAbwarten(): Promise<string> {
@@ -159,49 +162,46 @@ async function schreibbremseLoesen(): Promise<void> {
   });
 }
 
-test('erhält nach Konfliktkopie und anschließendem Entwurf-Speichern-Abbruch die aktuelle Projektkennung', async () => {
-  await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+test('erhält Konfliktoriginal, fremden Entwurf und Kopiekennung bei abgebrochenem Projektdateiexport', async () => {
+  await workflowBefehl(seite, 'neu');
   await sprachwahlBestaetigen(seite);
   await benennen('Entwurf B zur späteren Auswahl');
   const entwurfB = await entwurfAbwarten();
   await guardAntwort(1);
-  await seite.getByRole('button', { name: 'Neu', exact: true }).click();
+  await workflowBefehl(seite, 'neu');
   await sprachwahlBestaetigen(seite);
   await benennen('Gespeicherter Arbeitsstand A');
-  const dateiA = join(ordner, 'Arbeitsstand-A.scriptlab');
-  const dateiC = join(ordner, 'Konfliktkopie-C.scriptlab');
-  const originalA = await speichern(dateiA);
   const kennungA = (await dokumentLesen()).projektKennung;
+  const dateiA = join(ordner, 'Profil', 'Workflows', `${kennungA}.scriptlab`);
+  const originalA = await speichern(dateiA);
   await benennen('Eigene ungespeicherte Änderungen aus A');
-  const externA: Projekt = { ...JSON.parse(originalA.toString('utf8')), name: 'A wurde außerhalb geändert' };
-  const externeBytes = Buffer.from(`${JSON.stringify(externA, null, 2)}\n`);
+  const externeBytes = Buffer.from(
+    JSON.stringify({ ...JSON.parse(originalA.toString('utf8')), name: 'A wurde außerhalb geändert' }),
+  );
   await writeFile(dateiA, externeBytes);
-  const bVorher = await readFile(join(ordner, 'Profil', 'entwuerfe', `${entwurfB}.json`));
-  await app.evaluate(({ dialog }, ziel) => {
-    let nummer = 0;
-    dialog.showMessageBox = async () => ({ response: 0, checkboxChecked: false });
-    dialog.showSaveDialog = async () => {
-      nummer++;
-      if (nummer === 1) return { canceled: false, filePath: ziel };
-      if (nummer === 2) return { canceled: true, filePath: '' };
-      throw new Error('Unerwarteter zusätzlicher Speicherdialog.');
-    };
-  }, dateiC);
-  await startseiteWaehlen(seite);
-  await seite.getByRole('button', { name: 'Entwürfe', exact: true }).click();
-  const karte = seite
-    .getByTestId('entwuerfe')
-    .getByRole('article', { name: 'Entwurf B zur späteren Auswahl', exact: true });
-  await karte.getByRole('button', { name: 'Als Projekt speichern', exact: true }).click();
-  await expect.poll(async () => (await dokumentLesen()).dateiname).toBe(basename(dateiC));
-  await seite.getByRole('button', { name: 'Zur Startseite', exact: true }).click();
-  await expect(seite.getByRole('button', { name: /^Weiterbearbeiten/ })).toBeEnabled();
-  await seite.getByRole('button', { name: /^Weiterbearbeiten/ }).click();
+  const bPfad = join(ordner, 'Profil', 'entwuerfe', `${entwurfB}.json`);
+  const bVorher = await readFile(bPfad);
+  await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
+  await expect(seite.getByRole('alert')).toContainText('außerhalb von ScriptLab geändert');
+  expect((await dokumentLesen()).projektKennung).toBe(kennungA);
+  expect(await readFile(dateiA)).toEqual(externeBytes);
+  await workflowMenueAktion(seite, 'Kopie anlegen');
+  await editorBereit();
+  const kopie = await dokumentLesen();
+  expect(kopie.projektKennung).not.toBe(kennungA);
+  const dateiC = join(ordner, 'Profil', 'Workflows', `${kopie.projektKennung}.scriptlab`);
   const gespeichertC = await readFile(dateiC);
   const standC = JSON.parse(gespeichertC.toString('utf8')) as Projekt;
-  expect(standC.projektKennung).not.toBe(kennungA);
+  await app.evaluate(({ dialog }) => {
+    dialog.showSaveDialog = async () => ({ canceled: true, filePath: '' });
+  });
+  await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
+  const exportdialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
+  await exportdialog.getByRole('combobox', { name: 'Inhalt', exact: true }).selectOption('projekt');
+  await exportdialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
+  await expect(exportdialog).not.toBeVisible();
   expect((await dokumentLesen()).projektKennung).toBe(standC.projektKennung);
-  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+  expect(await readFile(dateiC)).toEqual(gespeichertC);
   await benennen('C nach dem Abbruch weiter bearbeitet');
   await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Ungespeicherte Änderungen');
   const neuerEntwurf = await entwurfAbwarten();
@@ -214,7 +214,7 @@ test('erhält nach Konfliktkopie und anschließendem Entwurf-Speichern-Abbruch d
   expect(sicherung.baselineHash).toBe(createHash('sha256').update(gespeichertC).digest('hex'));
   expect(await readFile(dateiC)).toEqual(gespeichertC);
   expect(await readFile(dateiA)).toEqual(externeBytes);
-  expect(await readFile(join(ordner, 'Profil', 'entwuerfe', `${entwurfB}.json`))).toEqual(bVorher);
+  expect(await readFile(bPfad)).toEqual(bVorher);
   await speichern(dateiC);
   const fertigC = JSON.parse(await readFile(dateiC, 'utf8')) as Projekt;
   expect(fertigC.projektKennung).toBe(standC.projektKennung);
@@ -222,7 +222,6 @@ test('erhält nach Konfliktkopie und anschließendem Entwurf-Speichern-Abbruch d
   expect(await readFile(dateiA)).toEqual(externeBytes);
   expect((await bibliothekLesen()).entwuerfe.some((e) => e.id === entwurfB)).toBe(true);
 });
-
 test('sperrt Eigenschaften, Blockly und Tastenkürzel während echter ausstehender Schreib-I/O', async () => {
   await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
   await sprachwahlBestaetigen(seite);
@@ -230,7 +229,7 @@ test('sperrt Eigenschaften, Blockly und Tastenkürzel während echter ausstehend
   await benennen('Test mit gezielt langsamer Dateispeicherung');
   const feld = await nachrichtFeld();
   await feld.fill('Vorher gespeicherte Nachricht');
-  const datei = join(ordner, 'Langsamer-Schreibtest.scriptlab');
+  const datei = join(ordner, 'Profil', 'Workflows', `${(await dokumentLesen()).projektKennung}.scriptlab`);
   const original = await speichern(datei);
   await feld.fill('Diese Nachricht soll jetzt gespeichert werden');
   await expect
@@ -282,7 +281,7 @@ test('sperrt Eigenschaften, Blockly und Tastenkürzel während echter ausstehend
     ),
   ).toBe(1);
   await schreibbremseLoesen();
-  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+  await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
   const fertig = JSON.parse(await readFile(datei, 'utf8')) as Projekt;
   expect(fertig.projektKennung).toBe(gewuenscht.projektKennung);
   expect(fertig.editor).toEqual(gewuenscht.editor);
@@ -298,7 +297,7 @@ for (const weg of ['Dateidialog', 'Projektbibliothek'] as const) {
     await benennen('Workflow A – Version 1');
     const feld = await nachrichtFeld();
     await feld.fill('Nachricht aus Version 1');
-    const datei = join(ordner, 'Wieder-geoeffnetes-A.scriptlab');
+    const datei = join(ordner, 'Profil', 'Workflows', `${(await dokumentLesen()).projektKennung}.scriptlab`);
     const version1 = await speichern(datei);
     await feld.fill('Nachricht aus Version 2, vor dem Öffnen noch nicht gespeichert');
     await benennen('Workflow A – Version 2');
@@ -309,7 +308,7 @@ for (const weg of ['Dateidialog', 'Projektbibliothek'] as const) {
       await app.evaluate(({ dialog }, ziel) => {
         dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [ziel] });
       }, datei);
-      await seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
+      await workflowBefehl(seite, 'oeffnen');
     } else {
       await startseiteWaehlen(seite);
       await seite.getByRole('button', { name: 'Meine gespeicherten Workflows', exact: true }).click();
@@ -326,7 +325,7 @@ for (const weg of ['Dateidialog', 'Projektbibliothek'] as const) {
     expect(geoeffnet.geaendert).toBe(false);
     const rendererFeld = await nachrichtFeld();
     await expect(rendererFeld).toHaveValue('Nachricht aus Version 2, vor dem Öffnen noch nicht gespeichert');
-    await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+    await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
     const dateistand = JSON.parse(await readFile(datei, 'utf8')) as Projekt;
     expect(dateistand.name).toBe(version2.name);
     expect(dateistand.projektKennung).toBe(version2.projektKennung);

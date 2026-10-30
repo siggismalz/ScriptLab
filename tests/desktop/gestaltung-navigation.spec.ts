@@ -405,7 +405,11 @@ test('Gestaltung: größere lokale Workflowliste erhält Suche, Auswahl und Scro
     await expect(liste.locator('[data-projekt-id]')).toHaveCount(30);
     await expect(seiten).toContainText('Seite 2 von 2');
     await expect(liste.locator(`[data-projekt-id="${ausgewaehlt}"]`)).toHaveClass(/ist-ausgewaehlt/);
-    await expect.poll(async () => Math.abs((await s.seite.getByTestId('start-inhalt').evaluate((e) => e.scrollTop)) - scrollVorher)).toBeLessThan(8);
+    await expect
+      .poll(async () =>
+        Math.abs((await s.seite.getByTestId('start-inhalt').evaluate((e) => e.scrollTop)) - scrollVorher),
+      )
+      .toBeLessThan(8);
     const zeileDanach = await liste.locator(`[data-projekt-id="${ausgewaehlt}"]`).boundingBox();
     expect(Math.abs(zeileDanach!.y - zeileVorher!.y)).toBeLessThan(8);
     await liste.getByLabel('Gespeicherte Workflows durchsuchen', { exact: true }).fill('Workflow 078');
