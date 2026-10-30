@@ -439,16 +439,50 @@ function pfadHelfer(
   On Error GoTo 0
   SL_Systemfehler nummer, beschreibung, "Pfad prüfen"
 End Function
+${
+  ausgabeWurzel
+    ? `
+' Der feste Windows-Host kann 8.3-Namen zum Langnamen erweitern. Für den
+' Grenzvergleich erhalten bestehende Vorfahren auf beiden Seiten dieselbe Form.
+Function SL_Vergleichspfad(wert)
+  Dim pfad, rest, eltern, eintrag
+  pfad = sl_fso.GetAbsolutePathName(wert) : rest = ""
+  Do
+    Set eintrag = Nothing
+    If sl_fso.FileExists(pfad) Then
+      Set eintrag = sl_fso.GetFile(pfad)
+    ElseIf sl_fso.FolderExists(pfad) Then
+      Set eintrag = sl_fso.GetFolder(pfad)
+    End If
+    If Not eintrag Is Nothing Then
+      If Len(rest) = 0 Then
+        SL_Vergleichspfad = eintrag.ShortPath
+      Else
+        SL_Vergleichspfad = sl_fso.BuildPath(eintrag.ShortPath, rest)
+      End If
+      Exit Function
+    End If
+    If Len(rest) > 0 Then rest = "\\" & rest
+    rest = sl_fso.GetFileName(pfad) & rest
+    eltern = sl_fso.GetParentFolderName(pfad)
+    If Len(eltern) = 0 Or StrComp(eltern, pfad, vbTextCompare) = 0 Then SL_Fehler "Der Ausgabepfad kann nicht mit dem ScriptLab-Appdatenordner verglichen werden. Prüfe Laufwerk und Ordner."
+    pfad = eltern
+  Loop
+End Function
+`
+    : ''
+}
 
 Function SL_Zielpfad(wert)
-  Dim pfad${ausgabeWurzel ? ', wurzel, grenze, pruefpfad, eltern, eintrag' : ''}
+  Dim pfad${ausgabeWurzel ? ', wurzel, grenze, vergleich, pruefpfad, eltern, eintrag' : ''}
   pfad = SL_Pfad(wert)${
     ausgabeWurzel
       ? `
-  wurzel = sl_fso.GetAbsolutePathName(${vbsText(ausgabeWurzel)})
+  wurzel = SL_Vergleichspfad(${vbsText(ausgabeWurzel)})
+  vergleich = SL_Vergleichspfad(pfad)
   grenze = wurzel
   If Right(grenze, 1) <> "\\" Then grenze = grenze & "\\"
-  If StrComp(pfad, wurzel, vbTextCompare) <> 0 And StrComp(Left(pfad, Len(grenze)), grenze, vbTextCompare) <> 0 Then SL_Fehler "Ausgaben dieses Laufs müssen im ScriptLab-Appdatenordner gespeichert werden: " & pfad
+  If StrComp(vergleich, wurzel, vbTextCompare) <> 0 And StrComp(Left(vergleich, Len(grenze)), grenze, vbTextCompare) <> 0 Then SL_Fehler "Ausgaben dieses Laufs müssen im ScriptLab-Appdatenordner gespeichert werden: " & pfad
   ' GetAbsolutePathName löst keine Windows-Verknüpfungen auf. Alle vorhandenen
   ' Vorfahren werden daher vor der ersten Schreibwirkung auf Reparsepunkte geprüft.
   pruefpfad = pfad
