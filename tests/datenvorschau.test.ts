@@ -1,12 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { datenvorschauProjekt } from '../src/kern/datenvorschau';
+import { datenvorschauProjekt, datenvorschauKontext } from '../src/kern/datenvorschau';
 import { skriptErzeugen } from '../src/kern/skript';
 import type { Projekt } from '../src/kern/projekt';
 
 const beispiel = (): Projekt =>
   JSON.parse(readFileSync('beispiele/business/A-Monatsauswertung/workflow.scriptlab', 'utf8'));
 describe('Ausdrückliche Datenvorschau bis zum gewählten Schritt', () => {
+  it('erhält Quellenvorschläge bei späteren Bearbeitungen und verwirft sie bei geänderter Herkunft', () => {
+    const p = beispiel();
+    const vorher = datenvorschauKontext(p, 'a-import');
+    expect(vorher).not.toBeNull();
+    p.ansicht.zoom = 1.5;
+    p.business.parametersaetze.test.PDF_Ziel = 'anderer-bericht.pdf';
+    const folgeschritt = p.editor.blocks!.blocks[0].next!.block.next!.block;
+    folgeschritt.data = JSON.stringify({ konfiguration: { spalte: 'Andere Spalte' }, eingaben: {} });
+    expect(datenvorschauKontext(p, 'a-import')).toBe(vorher);
+    p.business.parametersaetze.test.Quelldatei = 'andere-quelle.csv';
+    expect(datenvorschauKontext(p, 'a-import')).not.toBe(vorher);
+    p.editor.blocks!.blocks[0].next!.block.enabled = false;
+    expect(datenvorschauKontext(p, 'a-import')).toBeNull();
+  });
   it('benötigt weder unvollständige Nachfolger noch deren Pflichtparameter und erhält das Original', () => {
     const p = beispiel();
     p.business.parameter.find((v) => v.name === 'PDF_Ziel')!.standard = '';

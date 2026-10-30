@@ -48,7 +48,7 @@ import { Arbeitsbereiche, type Arbeitsbereich } from './komponenten/Arbeitsberei
 import { Marke } from './komponenten/Marke';
 import { BusinessVorbereitung } from './BusinessVorbereitung';
 import { businessSchritte } from '../kern/business';
-import { datenvorschauHinweis } from '../kern/datenvorschau';
+import { datenvorschauHinweis, datenvorschauKontext } from '../kern/datenvorschau';
 import { parameterVerweiseUmbenennen } from '../kern/parameterAendern';
 import {
   BlockDatenEreignis,
@@ -78,9 +78,9 @@ function antwort<T>(r: Antwort<T>): T {
 export function Anwendung() {
   const [test, setTest] = useState<TestZustand>(testBereit);
   const [vorschauen, setVorschauen] = useState<
-    Record<string, { zustand: TestZustand; inhalt: string; parameter: string }>
+    Record<string, { zustand: TestZustand; inhalt: string | null; parameter: string }>
   >({});
-  const vorschauAnfrage = useRef<{ inhalt: string; parameter: string } | null>(null);
+  const vorschauAnfrage = useRef<{ inhalt: string | null; parameter: string } | null>(null);
   const vorschauGemerkt = useRef<string | null>(null);
   const [parameterZiel, setParameterZiel] = useState<{ name: string; anfrage: number } | null>(null);
   const [feldZiel, setFeldZiel] = useState<{ blockId: string; pfad: string[]; anfrage: number } | null>(null);
@@ -639,7 +639,10 @@ export function Anwendung() {
     const stand = structuredClone(standLesen());
     testAnfrage.current = true;
     testInhalt.current = testInhaltsText(stand);
-    vorschauAnfrage.current = { inhalt: testInhalt.current, parameter: vorschauParameterKennung() };
+    vorschauAnfrage.current = {
+      inhalt: datenvorschauKontext(stand, blockId),
+      parameter: vorschauParameterKennung(),
+    };
     fehlerSchliessen();
     try {
       testUebernehmen({
@@ -813,26 +816,38 @@ export function Anwendung() {
       ),
     );
   }, [test, projekt.projektKennung]);
-  const aktuelleVorschauen = Object.fromEntries(
-    Object.entries(vorschauen)
-      .filter(([, v]) => v.zustand.projektKennung === projekt.projektKennung)
-      .map(([id, v]) => [
-        id,
-        {
-          zustand: v.zustand,
-          veraltet: v.inhalt !== testInhaltsText(projekt) || v.parameter !== vorschauParameterKennung(),
-        },
-      ]),
+  const vorschauParameter = vorschauParameterKennung();
+  const aktuelleVorschauen = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(vorschauen)
+          .filter(([, v]) => v.zustand.projektKennung === projekt.projektKennung)
+          .map(([id, v]) => [
+            id,
+            {
+              zustand: v.zustand,
+              veraltet:
+                v.inhalt === null ||
+                v.inhalt !== datenvorschauKontext(projekt, id) ||
+                v.parameter !== vorschauParameter,
+            },
+          ]),
+      ),
+    [vorschauen, projekt, vorschauParameter],
   );
-  const spaltenNachQuelle = Object.fromEntries(
-    Object.entries(aktuelleVorschauen)
-      .filter(([, v]) => !v.veraltet)
-      .map(([id, v]) => [
-        id,
-        Array.isArray(v.zustand.business?.vorschau?.spalten)
-          ? (v.zustand.business!.vorschau!.spalten as { name: string }[]).map((s) => s.name)
-          : [],
-      ]),
+  const spaltenNachQuelle = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(aktuelleVorschauen)
+          .filter(([, v]) => !v.veraltet)
+          .map(([id, v]) => [
+            id,
+            Array.isArray(v.zustand.business?.vorschau?.spalten)
+              ? (v.zustand.business!.vorschau!.spalten as { name: string }[]).map((s) => s.name)
+              : [],
+          ]),
+      ),
+    [aktuelleVorschauen],
   );
   const parameterKontext = {
     parametersatz: testOptionen.business?.parametersatz ?? ('test' as const),

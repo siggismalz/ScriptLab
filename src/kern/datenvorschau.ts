@@ -74,3 +74,14 @@ export function datenvorschauHinweis(projekt: Projekt, blockId: string | null): 
     return e instanceof Error ? e.message : 'Dieser Schritt kann nicht einzeln geprüft werden.';
   }
 }
+
+/** Nachgelagerte Bearbeitungen verändern das geladene Ergebnis dieses Schritts nicht. */
+export function datenvorschauKontext(projekt: Projekt, blockId: string): string | null {
+  try {
+    const { ansicht: _ansicht, ...inhalt } = datenvorschauProjekt(projekt, blockId);
+    return JSON.stringify(inhalt);
+  } catch {
+    // Ein nicht mehr prüfbarer Vorlauf darf keine als aktuell geltenden Vorschläge liefern.
+    return null;
+  }
+}
