@@ -58,6 +58,7 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
   const absicht = useRef(false);
   const anfrage = useRef(0);
   const anforderung = useRef(props.vorbereitungAnfrage);
+  const uebersichtAnfrage = useRef(props.uebersichtAnfordern);
   const listeRef = useRef<HTMLDivElement>(null);
   const detailRef = useRef<HTMLDivElement>(null);
 
@@ -99,6 +100,16 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
     anforderung.current = props.vorbereitungAnfrage;
     vorbereiten();
   }, [props.vorbereitungAnfrage]);
+  useEffect(() => {
+    if (uebersichtAnfrage.current === props.uebersichtAnfordern) return;
+    uebersichtAnfrage.current = props.uebersichtAnfordern;
+    absicht.current = true;
+    anfrage.current++;
+    setAuswahl(null);
+    setListeOffen(false);
+    setDetailLaedt(null);
+    requestAnimationFrame(() => detailRef.current?.focus());
+  }, [props.uebersichtAnfordern]);
 
   function vorbereiten() {
     absicht.current = true;

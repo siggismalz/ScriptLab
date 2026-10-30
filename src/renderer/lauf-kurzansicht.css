@@ -1,0 +1,61 @@
+.lauf-kurzansicht {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: var(--abstand-8) var(--abstand-16);
+  border-block-end: 1px solid var(--farbe-trennung);
+  background: var(--farbe-grundflaeche);
+  color: var(--farbe-text);
+}
+.lauf-kurzansicht-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--abstand-8) var(--abstand-16);
+}
+.lauf-kurzansicht-status {
+  flex: 1 1 24em;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.lauf-kurzansicht-meldung {
+  margin-inline-start: var(--abstand-8);
+  white-space: pre-wrap;
+}
+.lauf-kurzansicht-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--abstand-4);
+  max-inline-size: 100%;
+}
+.lauf-kurzansicht-aktionen .sl-knopf {
+  max-inline-size: 100%;
+  white-space: normal;
+}
+.lauf-kurzansicht-summen,
+.lauf-kurzansicht-hinweis {
+  margin: var(--abstand-4) 0 0;
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+  overflow-wrap: anywhere;
+}
+.lauf-kurzansicht-ausgabe {
+  min-inline-size: 0;
+  max-block-size: min(6rem, 16dvh);
+  margin: var(--abstand-8) 0 0;
+  padding: var(--abstand-8);
+  overflow: auto;
+  overscroll-behavior: contain;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--farbe-kontur);
+  border-radius: var(--radius-normal);
+  background: var(--farbe-arbeitsflaeche);
+  color: var(--farbe-text);
+  font-family: var(--schrift-code-familie);
+  font-size: calc(var(--schrift-code) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+}

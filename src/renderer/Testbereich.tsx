@@ -31,6 +31,7 @@ export interface TestbereichEigenschaften {
   blockAnzeigen: (blockId: string) => void;
   historisch?: boolean;
   vorbereitungAnfordern?: number;
+  uebersichtAnfordern?: number;
   neuenLaufVorbereiten?: () => void;
   protokollSpeichern?: () => void;
   dateiAnzeigen?: (art: 'ausgabe' | 'bericht', index?: number) => Promise<void>;
@@ -137,6 +138,7 @@ export function Testbereich(props: TestbereichEigenschaften) {
   const endeVerfolgen = useRef(true);
   const [amEnde, setAmEnde] = useState(true);
   const [pruefanfrage, setPruefanfrage] = useState(0);
+  const uebersichtAnfrage = useRef(props.uebersichtAnfordern);
   const titelId = useId(),
     hinweisId = useId(),
     startGrundId = useId();
@@ -154,6 +156,12 @@ export function Testbereich(props: TestbereichEigenschaften) {
   useEffect(() => {
     if (props.historisch) setAnsicht('uebersicht');
   }, [props.historisch, zustand.laufId]);
+
+  useEffect(() => {
+    if (uebersichtAnfrage.current === props.uebersichtAnfordern) return;
+    uebersichtAnfrage.current = props.uebersichtAnfordern;
+    setAnsicht('uebersicht');
+  }, [props.uebersichtAnfordern]);
 
   useEffect(() => {
     if (aktiv) {

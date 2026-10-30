@@ -9,6 +9,8 @@ import { Knopf } from './komponenten/Knopf';
 import { Karte } from './komponenten/Karte';
 import { ParameterWertEingabe } from './ParameterDialog';
 import { laufPfadangaben, laufPfadZusammenfassung } from './laufpfade';
+import { businessOptionenVorbereiten } from './laufstart';
+export { businessOptionenVorbereiten, businessVorgaben } from './laufstart';
 
 export function laufprofilWert(sekunden: number): string {
   return (
@@ -19,21 +21,6 @@ export function laufprofilWert(sekunden: number): string {
       >
     )[sekunden] ?? 'eigenes'
   );
-}
-export const businessVorgaben: NonNullable<TestOptionen['business']> = {
-  modus: 'prueflauf',
-  parametersatz: 'test',
-  parameter: {},
-  speicherMB: 512,
-  tempGB: 4,
-  fortsetzen: false,
-};
-
-/** Ein neuer Business-Kontext beginnt mit einem Prüflauf; eine bewusste Wahl bleibt erhalten. */
-export function businessOptionenVorbereiten(optionen: TestOptionen): TestOptionen {
-  return optionen.business
-    ? optionen
-    : { ...optionen, business: structuredClone(businessVorgaben), zeitlimitSekunden: 7200 };
 }
 /** Ein Startversuch blendet echte Parameterfehler in der bestehenden Vorbereitung ein. */
 export const VorbereitungsPruefung = createContext(0);

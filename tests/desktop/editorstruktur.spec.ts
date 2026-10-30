@@ -5,7 +5,7 @@ import { basename, join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { neuesProjekt } from '../../src/kern/projekt';
 import type { Dokument, Einstellungen } from '../../src/gemeinsam/bruecke';
-import { arbeitsbereichWaehlen, laufStarten, workflowBefehl } from './ansichten';
+import { arbeitsbereichWaehlen, workflowBefehl } from './ansichten';
 
 const nachweise = resolve('artifacts/editorstruktur');
 const projektname =
@@ -189,8 +189,18 @@ for (const farbe of ['hell', 'dunkel'] as const) {
         expect((await zustand(page)).laufId).toBeNull();
         expect((await dokument(page)).projekt.editor).toEqual(vorher.projekt.editor);
 
-        await laufStarten(page);
+        const ausfuehren = page.getByRole('button', { name: 'Workflow ausführen', exact: true });
+        await imFenster(ausfuehren);
+        await ausfuehren.focus();
+        await ausfuehren.press('Enter');
         await expect.poll(async () => (await zustand(page)).phase).toBe('laeuft');
+        await expect(page.getByRole('tab', { name: 'Ablauf', exact: true })).toHaveAttribute(
+          'aria-selected',
+          'true',
+        );
+        await imFenster(page.getByRole('button', { name: 'Laufdetails', exact: true }));
+        const laufCanvas = await canvas.boundingBox();
+        expect(laufCanvas!.height).toBeGreaterThanOrEqual(120);
         const laufId = (await zustand(page)).laufId;
         await arbeitsbereichWaehlen(page, 'Daten und Parameter');
         expect((await zustand(page)).laufId).toBe(laufId);

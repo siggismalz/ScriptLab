@@ -46,6 +46,8 @@ import { Menue } from './komponenten/Menue';
 import { Startbereich } from './Startbereich';
 import { EditorNavigation } from './EditorNavigation';
 import { Laufverwaltung } from './Laufverwaltung';
+import { LaufKurzansicht } from './LaufKurzansicht';
+import { laufOptionenVorbereiten, laufParameterPruefen, LaufParameterFehler } from './laufstart';
 import { Datenbereich } from './Datenbereich';
 import { ExportDialog } from './ExportDialog';
 import { Arbeitsbereiche, type Arbeitsbereich } from './komponenten/Arbeitsbereiche';
@@ -97,12 +99,12 @@ export function Anwendung() {
   });
   const [arbeitsbereich, setArbeitsbereich] = useState<Arbeitsbereich>('ablauf');
   const [laufVorbereitungAnfrage, setLaufVorbereitungAnfrage] = useState(0);
+  const [laufDetailsAnfrage, setLaufDetailsAnfrage] = useState(0);
   const arbeitsbereichRef = useRef<Arbeitsbereich>('ablauf');
   arbeitsbereichRef.current = arbeitsbereich;
   const testSperre = useRef(false);
   const testAnfrage = useRef(false);
   const testInhalt = useRef<string | null>(null);
-  const testKontextGesehen = useRef<string | null>(null);
   const [ansicht, setAnsicht] = useState<'start' | 'editor'>('start');
   const [editorBegonnen, setEditorBegonnen] = useState(false);
   const [startZiel, setStartZiel] = useState<'start' | 'hilfe' | 'projekte' | 'beispiele'>('start');
@@ -133,7 +135,6 @@ export function Anwendung() {
   const [projekt, setProjekt] = useState(projektRef.current);
   useEffect(() => {
     setTestOptionen((alt) => ({ basisVerzeichnis: alt.basisVerzeichnis, zeitlimitSekunden: 120 }));
-    testKontextGesehen.current = null;
   }, [projekt.projektKennung]);
   const [datei, setDatei] = useState<string | null>(null);
   const [geaendert, setGeaendert] = useState(false);
@@ -189,7 +190,6 @@ export function Anwendung() {
     [projekt.editor, projekt.exportOptionen, projekt.skriptsprache, projekt.business],
   );
   const sprache = sprachdaten[projekt.skriptsprache];
-  const hatBusiness = businessSchritte(projekt).length > 0;
   const sichtbareHinweise = ergebnis.meldungen.filter(
     (m) => pruefungAngefordert || (m.blockId && beruehrt.has(m.blockId)),
   );
@@ -632,9 +632,6 @@ export function Anwendung() {
     const { ansicht: _ansicht, ...inhalt } = p;
     return jsonSchreiben(inhalt);
   }
-  function testKontextKennung(optionen = testOptionen): string {
-    return `${projektRef.current.projektKennung}:${jsonSchreiben(optionen)}`;
-  }
   function vorschauParameterKennung() {
     return jsonSchreiben({
       satz: testOptionen.business?.parametersatz ?? 'test',
@@ -714,29 +711,37 @@ export function Anwendung() {
     }
     setTest(neu);
   }
-  async function testStarten() {
+  async function testStarten(direkt = false) {
     if (testAnfrage.current || testSperre.current || busy.current) return;
-    setLaufVorbereitungAnfrage((n) => n + 1);
-    setArbeitsbereich('laeufe');
     setVorschauOffen(false);
     setExportiert(null);
     fehlerSchliessen();
-    const stand = projektPruefen(standLesen());
-    const pruefung = skriptErzeugen(stand);
-    if (!pruefung.code) {
-      setPruefungAngefordert(true);
-      setHinweiseOffen(true);
-      melden('Vervollständige die markierten Bausteine vor dem Test.', 'hinweis');
-      const erstesProblem = pruefung.meldungen.find((m) => m.stufe === 'fehler');
-      blockAnzeigen(erstesProblem?.blockId, erstesProblem?.feldPfad);
+    let stand: Projekt;
+    let optionen: TestOptionen;
+    try {
+      stand = projektPruefen(standLesen());
+      const pruefung = skriptErzeugen(stand);
+      if (!pruefung.code) {
+        setPruefungAngefordert(true);
+        setHinweiseOffen(true);
+        melden('Vervollständige die markierten Bausteine vor der Ausführung.', 'hinweis');
+        const erstesProblem = pruefung.meldungen.find((m) => m.stufe === 'fehler');
+        blockAnzeigen(erstesProblem?.blockId, erstesProblem?.feldPfad);
+        return;
+      }
+      optionen = laufOptionenVorbereiten(stand, testOptionen, direkt);
+      laufParameterPruefen(stand, optionen);
+    } catch (e) {
+      melden(e instanceof Error ? e.message : 'Der Workflow konnte nicht geprüft werden.', 'fehler');
+      if (e instanceof LaufParameterFehler) {
+        setArbeitsbereich('daten');
+        setParameterZiel((alt) => ({ name: e.parameterName ?? '', anfrage: (alt?.anfrage ?? 0) + 1 }));
+      }
       return;
     }
-    if (testKontextGesehen.current !== testKontextKennung()) {
-      testKontextGesehen.current = testKontextKennung();
-      melden('Prüfe unter Läufe den Modus und die Parameter und starte den Lauf danach bewusst.', 'hinweis');
-      return;
-    }
+    if (!direkt) setLaufVorbereitungAnfrage((n) => n + 1);
     testAnfrage.current = true;
+    const vorherigerInhalt = testInhalt.current;
     testInhalt.current = testInhaltsText(stand);
     testUebernehmen({
       ...testBereit(),
@@ -744,18 +749,25 @@ export function Anwendung() {
       projektName: stand.name,
       skriptsprache: stand.skriptsprache,
       projektKennung: stand.projektKennung ?? null,
-      optionen: testOptionen,
+      optionen,
       meldung: 'Der aktuelle Editorstand wird geprüft.',
     });
     setPlatzierung(null);
     platzierungRef.current = null;
     try {
-      testUebernehmen(antwort(await window.scriptlab.testStarten(stand, testOptionen)));
+      testUebernehmen(antwort(await window.scriptlab.testStarten(stand, optionen)));
     } catch (e) {
+      testInhalt.current = vorherigerInhalt;
+      const meldung = e instanceof Error ? e.message : 'Der Workflow konnte nicht gestartet werden.';
+      melden(meldung, 'fehler');
       testUebernehmen({
         ...testBereit(),
         phase: 'fehlgeschlagen',
-        meldung: e instanceof Error ? e.message : 'Der Test konnte nicht gestartet werden.',
+        projektName: stand.name,
+        projektKennung: stand.projektKennung ?? null,
+        skriptsprache: stand.skriptsprache,
+        optionen,
+        meldung,
       });
     } finally {
       testAnfrage.current = false;
@@ -1302,13 +1314,9 @@ export function Anwendung() {
                 symbol="testen"
                 disabled={!!verarbeitung}
                 grundId="status-aktion"
-                onClick={() => void testStarten()}
+                onClick={() => void testStarten(true)}
               >
-                {hatBusiness && (testOptionen.business?.modus ?? 'prueflauf') === 'vorschau'
-                  ? 'Datenvorschau laden'
-                  : hatBusiness && (testOptionen.business?.modus ?? 'prueflauf') === 'prueflauf'
-                    ? 'Prüflauf starten'
-                    : 'Workflow ausführen'}
+                Workflow ausführen
               </Knopf>
             )}
             {testAktiv(test.phase) && (
@@ -1470,6 +1478,17 @@ export function Anwendung() {
           aria-labelledby="bereich-ablauf"
           hidden={arbeitsbereich !== 'ablauf'}
         >
+          <LaufKurzansicht
+            zustand={
+              test.projektKennung && test.projektKennung !== projekt.projektKennung ? testBereit() : test
+            }
+            veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
+            details={() => {
+              setLaufDetailsAnfrage((n) => n + 1);
+              setArbeitsbereich('laeufe');
+            }}
+            blockAnzeigen={(id) => blockAnzeigen(id)}
+          />
           <main className={`arbeitszeile ${angeheftet ? 'mit-eigenschaften' : ''}`}>
             <div className="test-palette" inert={testAktiv(test.phase)}>
               <Palette
@@ -1875,6 +1894,7 @@ export function Anwendung() {
             workflowStand={testInhaltsText(projekt)}
             sichtbar={ansicht === 'editor' && arbeitsbereich === 'laeufe'}
             vorbereitungAnfrage={laufVorbereitungAnfrage}
+            uebersichtAnfordern={laufDetailsAnfrage}
             workflowInfo={{ name: projekt.name, geaendert }}
             businessVorbereitung={
               businessSchritte(projekt).length > 0 ? (
@@ -1898,16 +1918,10 @@ export function Anwendung() {
             veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
             gesperrt={!!verarbeitung}
             schliessen={() => setArbeitsbereich('ablauf')}
-            starten={() => {
-              testKontextGesehen.current = testKontextKennung();
-              void testStarten();
-            }}
+            starten={() => void testStarten()}
             stoppen={() => void testStoppen()}
             ordnerWaehlen={() => void testOrdnerWaehlen()}
-            optionenAendern={(neu) => {
-              setTestOptionen(neu);
-              testKontextGesehen.current = testKontextKennung(neu);
-            }}
+            optionenAendern={setTestOptionen}
             kopieren={() =>
               void window.scriptlab.testAusgabeKopieren().then((r) => {
                 if (!r.ok) melden(r.meldung, 'fehler');

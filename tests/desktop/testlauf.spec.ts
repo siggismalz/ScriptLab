@@ -58,8 +58,8 @@ async function bereit() {
     () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))),
   );
 }
-async function oeffnen(p: Projekt, panel = true) {
-  const datei = join(ordner, 'Desktoptest.scriptlab');
+async function oeffnen(p: Projekt, panel = true, dateiname = 'Desktoptest.scriptlab') {
+  const datei = join(ordner, dateiname);
   await writeFile(datei, JSON.stringify(p));
   await app.evaluate(({ dialog }, pfad) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
@@ -175,15 +175,42 @@ test('führt den ungespeicherten Editorstand aus und schreibt relative Dateien a
   await seite.screenshot({ path: 'artifacts/qualitaet-desktop/lauf/testlauf/editor-ausgabe.png' });
 });
 
-test('zeigt einen neuen Testkontext vor dem tatsächlichen Start sichtbar an', async () => {
-  await oeffnen(projektMit(ausgabe('KONTEXT BEWUSST GEPRÜFT')), false);
-  await seite.getByRole('button', { name: 'Workflow ausführen', exact: true }).click();
-  await expect(seite.getByTestId('test-panel')).toBeVisible();
-  await expect(seite.getByTestId('test-panel')).toContainText(ordner);
+test('führt den gebauten Workflow mit einem Klick aus und zeigt Details erst auf Wunsch', async () => {
+  await oeffnen(projektMit(ausgabe('DIREKT IM EDITOR AUSGEFÜHRT')), false);
   expect((await zustand()).laufId).toBeNull();
   await seite.getByRole('button', { name: 'Workflow ausführen', exact: true }).click();
+  await expect(seite.getByRole('region', { name: 'Aktueller Lauf' })).toContainText(
+    'DIREKT IM EDITOR AUSGEFÜHRT',
+  );
+  await expect(seite.getByRole('tab', { name: 'Ablauf', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(seite.getByTestId('test-panel')).toBeHidden();
   expect((await fertig()).phase).toBe('beendet');
-  expect((await zustand()).ausgabe).toContain('KONTEXT BEWUSST GEPRÜFT');
+  const laufId = (await zustand()).laufId;
+  await seite.getByRole('button', { name: 'Laufdetails', exact: true }).click();
+  await expect(seite.getByTestId('test-panel')).toBeVisible();
+  await expect(seite.getByTestId('test-panel')).toContainText(ordner);
+  await expect(
+    seite.getByTestId('test-panel').getByRole('tab', { name: 'Übersicht', exact: true }),
+  ).toHaveAttribute('aria-selected', 'true');
+  expect((await zustand()).laufId).toBe(laufId);
+  const anderesProjekt = projektMit(ausgabe('ANDERER WORKFLOW NOCH NICHT GESTARTET'));
+  await oeffnen(anderesProjekt, false, 'Anderer Workflow.scriptlab');
+  await expect
+    .poll(() =>
+      seite.evaluate(async () => {
+        const r = await window.scriptlab.laden();
+        return r.ok && r.wert.dokument.projektKennung;
+      }),
+    )
+    .toBe(anderesProjekt.projektKennung);
+  await arbeitsbereichWaehlen(seite, 'Läufe');
+  await expect(
+    seite.getByTestId('test-panel').getByRole('tab', { name: 'Vorbereitung', exact: true }),
+  ).toHaveAttribute('aria-selected', 'true');
+  expect((await zustand()).laufId).toBe(laufId);
 });
 
 test('erhält den automatischen Arbeitsordner beim internen Speichern, Projektexport und erneuten Öffnen', async () => {

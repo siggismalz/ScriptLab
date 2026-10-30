@@ -52,7 +52,7 @@ export async function workflowBefehl(seite: Page, befehl: 'neu' | 'oeffnen') {
   } else await seite.getByRole('button', { name, exact: true }).click();
 }
 
-/** Bewusster Start nach Prüfung der Vorbereitung, einschließlich vorhandener Kontextbestätigung. */
+/** Start aus der optionalen Vorbereitung mit dem dort bewusst gewählten Modus. */
 export async function laufStarten(seite: Page) {
   await laufansichtWaehlen(seite, 'Vorbereitung');
   const vorher = await seite.evaluate(async () => {
@@ -64,27 +64,6 @@ export async function laufStarten(seite: Page) {
     name: /^(Workflow ausführen|Prüflauf starten|Datenvorschau laden)$/,
   });
   await start.click();
-  let antwort = '';
-  await expect
-    .poll(
-      async () => {
-        const z = await seite.evaluate(async () => {
-          const r = await window.scriptlab.testLesen();
-          if (!r.ok) throw Error(r.meldung);
-          return r.wert.zustand;
-        });
-        antwort =
-          z.laufId !== vorher || ['vorbereitung', 'laeuft', 'stoppt'].includes(z.phase)
-            ? 'gestartet'
-            : (await seite.locator('#status-aktion').textContent())?.includes('Prüfe unter Läufe')
-              ? 'kontext-bestaetigen'
-              : '';
-        return antwort;
-      },
-      { timeout: 5000 },
-    )
-    .not.toBe('');
-  if (antwort === 'kontext-bestaetigen') await start.click();
   await expect
     .poll(
       async () => {

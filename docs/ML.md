@@ -61,11 +61,13 @@ Random Forest verwendet einen CPU-Thread. PyTorch verwendet eine feste Architekt
 
 ## Prüfen, ausführen und Ergebnisse verstehen
 
-**Codevorschau / Strukturprüfung** erzeugt beziehungsweise prüft Quelltext ohne Verarbeitung. Unter **Läufe → Vorbereitung** kontrollierst du Modus, Parameter, Arbeitsordner, Quellen und Ziele. Ein Moduswechsel startet noch nichts.
+**Workflow ausführen** startet den gebauten ML-Ablauf mit den vorhandenen Parameterwerten direkt im Editor. Die ML-Komponenten müssen zuvor eingerichtet sein. Status und Ausgabe erscheinen über dem Ablauf; **Laufdetails** öffnet die ausführlichen Ergebnisse. Der direkte Start verwendet die echte Ausführung, auch wenn vorher eine Vorschau oder ein Prüflauf gewählt war.
+
+**Codevorschau / Strukturprüfung** erzeugt beziehungsweise prüft Quelltext ohne Verarbeitung. Optional kontrollierst du unter **Läufe → Vorbereitung** Modus, Parameter, Arbeitsordner, Quellen und Ziele. Ein Moduswechsel startet noch nichts.
 
 - **Prüflauf ohne Zieländerungen** und Vorschau planen Training und Modellspeicherung. Sie trainieren und veröffentlichen weder Modelldatei noch CSV-Ausgabe. Nachfolger eines nur geplanten Trainings bleiben ebenfalls geplant; es werden keine Vorhersagen erfunden.
 - Ein bereits vorhandenes unterstütztes Modell darf in einem bewusst gestarteten prüfenden Lauf lesend geladen und für Vorhersagen verwendet werden. Das benötigt die passende ML-Laufzeit. Fachliche Zieldateien werden dabei nicht veröffentlicht.
-- Erst **Ausführen · echte Dateiänderungen** und anschließend **Workflow ausführen** trainieren beziehungsweise schreiben die tatsächlichen Ergebnisse. Kontrolliere vorhandene Ziele und ihre Konfliktregeln vor dem Start.
+- **Workflow ausführen** im Editor trainiert beziehungsweise schreibt die tatsächlichen Ergebnisse. In der optionalen Vorbereitung wählst du dafür **Ausführen · echte Dateiänderungen**. Vorhandene Ziele und ihre Konfliktregeln gelten weiterhin.
 
 Unter **Läufe** zeigt **ML-Ergebnisse** bestätigte Trainings-/Testzeilen, Verfahren, Merkmale, Zielspalte und die vom Backend gemeldeten Testmetriken. Ein allgemeiner Prozessabschluss allein bestätigt keine Modellqualität.
 

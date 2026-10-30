@@ -49,8 +49,8 @@ Die folgenden Schritte zeigen den Einstieg mit einer Python-Business-Vorlage, zu
 2. Eine Karte auswählen und Ergebnis, Vorbereitung sowie enthaltene Dateien prüfen. Die Auswahl startet keinen Lauf.
 3. **Als Vorlage öffnen** wählen. ScriptLab erstellt eine eigene bearbeitbare Kopie und übernimmt die mitgelieferten Testdaten in deren Arbeitsordner. Die Vorlage bleibt erhalten.
 4. Bausteine, Quellen und Parameter anpassen. **Speichern** sichert den Workflow intern; für eine weiterzugebende Projektdatei dient **Exportieren**.
-5. Bei einem unterstützten Business-Tabellenschritt die **Datenvorschau laden**. Anschließend unter **Läufe → Vorbereitung** Modus, Parametersatz, Quellen und Ausgabeziele prüfen.
-6. Bei unterstützten Python-Business-Workflows einen **Prüflauf ohne Zieländerungen** starten und seine Hinweise ansehen. Erst danach bewusst **Ausführen · echte Dateiänderungen** wählen und **Workflow ausführen** betätigen. Der Moduswechsel allein startet nichts. Grundbausteine und VBS werden ausdrücklich mit einem echten Lauf getestet.
+5. **Workflow ausführen** startet den aktuellen Ablauf sofort mit den konfigurierten Bausteinen und Parameterwerten. Vorheriges Speichern ist nicht nötig. Du bleibst im Editor und siehst Status und Ausgabe direkt über dem Ablauf; **Stoppen** ist oben erreichbar. Fehlende Pflichtangaben führen gezielt zur Korrektur.
+6. **Laufdetails** öffnet bei Bedarf Ergebnisse und Protokoll. Unter **Läufe → Vorbereitung** kannst du Arbeitsordner, Zeitlimit und Parameter anpassen oder bei unterstützten Python-Business-Workflows ausdrücklich einen **Prüflauf ohne Zieländerungen** wählen. Die **Datenvorschau** bleibt separat erreichbar. Diese optionalen Prüfungen sind keine Voraussetzung für den direkten Start; der Hauptknopf führt immer wirklich aus, auch nach einer Vorschau.
 
 ![Vorlagenkarten zeigen Aufgabe, Sprache und erwartetes Ergebnis vor dem Öffnen einer eigenen Kopie.](docs/qualitaet/karten-ansichten/vorlagen-hell.png)
 
