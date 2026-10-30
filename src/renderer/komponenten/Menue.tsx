@@ -64,7 +64,14 @@ export function Menue({
             document.querySelectorAll<HTMLElement>(
               'button:not(:disabled), a[href], input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]',
             ),
-          ).filter((kandidat) => !liste.current?.contains(kandidat) && kandidat.getClientRects().length > 0);
+          ).filter(
+            (kandidat) =>
+              !liste.current?.contains(kandidat) &&
+              kandidat.tabIndex >= 0 &&
+              !kandidat.matches(':disabled') &&
+              !kandidat.closest('[inert]') &&
+              kandidat.getClientRects().length > 0,
+          );
           const index = knopf ? erreichbare.indexOf(knopf) : -1;
           schliessen();
           (erreichbare[index + (event.shiftKey ? -1 : 1)] ?? knopf)?.focus({ preventScroll: true });
