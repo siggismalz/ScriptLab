@@ -360,6 +360,13 @@ describe('Verständliche, typisierte Business-Formulare', () => {
       argument: wert,
     });
     expect(ausdruckArtSetzen({ art: 'funktion', funktion: 'JAHR', argument: wert }, 'spalte')).toEqual(wert);
+    const berechnung = {
+      art: 'rechnen',
+      operator: 'MUL',
+      links: wert,
+      rechts: { art: 'wert', typ: 'ZAHL', wert: 2 },
+    };
+    expect(ausdruckArtSetzen(ausdruckArtSetzen(berechnung, 'funktion'), 'rechnen')).toEqual(berechnung);
     const gruppe = { art: 'UND', kinder: [{ art: 'vergleich', spalte: 'Region', operator: 'IST_LEER' }] };
     expect(bedingungAufloesen(gruppe)).toEqual(gruppe.kinder[0]);
     const mehrere = { art: 'UND', kinder: [...gruppe.kinder, ...gruppe.kinder] };
@@ -406,7 +413,10 @@ describe('Verständliche, typisierte Business-Formulare', () => {
     expect(datalist.match(/<option/g)).toHaveLength(200);
     expect(datalist).toContain('value="Region"');
     expect(datalist).toContain('value="Betrag"');
-    expect(html.match(/list="business-spalten-[^"]+"/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(html).toContain('Spaltenvorschläge: Gruppieren nach');
+    expect(html).toContain('type="checkbox"');
+    expect(html).toContain('Spalte 1 nach oben');
+    expect(html).toContain('list="business-spalten-');
     const join = formular('sl_biz_verknuepfen', { schluessel: [{ links: 'ID', rechts: 'Kunde' }] }, [
       'ID',
       'Kunde',

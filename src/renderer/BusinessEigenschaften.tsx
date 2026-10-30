@@ -33,6 +33,8 @@ import {
   pruefregelSpaltenSetzen,
   pruefregelZusammenfassung,
 } from './business-regeln';
+import { ZuordnungsFeld } from './ZuordnungsFeld';
+import { SpaltenAuswahl } from './SpaltenAuswahl';
 import './business.css';
 const objekt = (w: JsonWert): Record<string, JsonWert> =>
   w && typeof w === 'object' && !Array.isArray(w) ? w : {};
@@ -1163,6 +1165,26 @@ function KonfigEingabeInhalt({
         </Knopf>
       </fieldset>
     );
+  if (feld.art === 'spalten' && ['spalten', 'schluessel'].includes(feld.name))
+    return (
+      <SpaltenAuswahl
+        titel={feld.titel}
+        werte={teile}
+        vorschlaege={formular.spalten}
+        aendern={aendern}
+        gesperrt={gesperrt}
+        renderGebunden={(teil, i, setzen) => (
+          <KonfigEingabe
+            feld={{ name: String(i), titel: `Spalte ${i + 1}`, art: 'text', standard: '' }}
+            wert={teil}
+            aendern={setzen}
+            parameter={parameter}
+            gesperrt={gesperrt}
+            feldPfad={[...feldPfad, String(i)]}
+          />
+        )}
+      />
+    );
   if (feld.art === 'liste' || feld.art === 'spalten')
     return (
       <fieldset>
@@ -1229,52 +1251,49 @@ function KonfigEingabeInhalt({
         </Knopf>
       </fieldset>
     );
-  if (feld.art === 'zuordnung')
+  if (feld.art === 'zuordnung') {
+    const schluesselTitel =
+      feld.name === 'namen'
+        ? 'Vorhandene Spalte'
+        : ['zellen', 'formeln'].includes(feld.name)
+          ? 'Zelladresse'
+          : 'Platzhalter';
+    const wertTitel =
+      feld.name === 'namen'
+        ? 'Neuer Spaltenname'
+        : feld.name === 'summen'
+          ? 'Wertspalte'
+          : feld.name === 'formeln'
+            ? 'Excel-Formel'
+            : 'Wert';
     return (
-      <fieldset>
-        <legend>{feld.titel}</legend>
-        {Object.entries(w).map(([k, v], i) => (
-          <div key={i}>
-            <Feld
-              beschriftung="Ausgangswert / Feldname"
-              list={formular.spalten.length && feld.name === 'namen' ? formular.spaltenListe : undefined}
-              value={k}
-              disabled={gesperrt}
-              onChange={(e) => {
-                const neu = { ...w };
-                delete neu[k];
-                neu[e.target.value] = v;
-                aendern(neu);
-              }}
-            />
-            <KonfigEingabe
-              feld={{ name: k, titel: 'Neuer Wert / Zuordnung', art: 'text', standard: '' }}
-              wert={v}
-              gesperrt={gesperrt}
-              parameter={parameter}
-              aendern={(neu) => aendern({ ...w, [k]: neu })}
-              feldPfad={[...feldPfad, k]}
-            />
-            <Knopf
-              disabled={gesperrt}
-              onClick={() => {
-                const neu = { ...w };
-                delete neu[k];
-                aendern(neu);
-              }}
-            >
-              Zuordnung entfernen
-            </Knopf>
-          </div>
-        ))}
-        <Knopf
-          disabled={gesperrt}
-          onClick={() => aendern({ ...w, [`Feld${Object.keys(w).length + 1}`]: '' })}
-        >
-          Zuordnung hinzufügen
-        </Knopf>
-      </fieldset>
+      <ZuordnungsFeld
+        key={`${formular.blockId}:${JSON.stringify(feldPfad)}`}
+        titel={feld.titel}
+        wert={w}
+        aendern={aendern}
+        gesperrt={gesperrt}
+        schluesselTitel={schluesselTitel}
+        wertTitel={wertTitel}
+        vorschlaege={feld.name === 'namen' ? formular.spalten : []}
+        renderWert={(name, teil, setzen) => (
+          <KonfigEingabe
+            feld={{
+              name: feld.name === 'summen' ? 'spalte' : name,
+              titel: wertTitel,
+              art: 'text',
+              standard: '',
+            }}
+            wert={teil}
+            gesperrt={gesperrt}
+            parameter={parameter}
+            aendern={setzen}
+            feldPfad={[...feldPfad, name]}
+          />
+        )}
+      />
     );
+  }
   if (feld.art === 'typ')
     return (
       <>

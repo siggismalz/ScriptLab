@@ -30,11 +30,11 @@ export function bedingungAufloesen(wert: JsonWert): JsonWert {
 export function ausdruckArtSetzen(wert: JsonWert, art: string): JsonWert {
   const w = objekt(wert);
   if (w.art === art) return wert;
+  // Beim Zurückwechseln wird die bewusst umschlossene Berechnung wiederhergestellt.
+  if (w.art === 'funktion' && objekt(w.argument).art === art) return w.argument;
   if (art === 'funktion') return { art, funktion: 'JAHR', argument: wert };
   if (art === 'rechnen')
     return { art, operator: 'ADD', links: wert, rechts: { art: 'wert', typ: 'ZAHL', wert: 0 } };
-  // Eine zuvor angewendete Funktion lässt sich zum unveränderten Argument zurückführen.
-  if (w.art === 'funktion' && objekt(w.argument).art === art) return w.argument;
   if (art === 'spalte') return { art, name: '' };
   return { art: 'wert', typ: 'TEXT', wert: '' };
 }

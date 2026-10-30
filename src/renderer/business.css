@@ -83,6 +83,100 @@
   min-height: 32px;
   padding: var(--abstand-4) var(--abstand-8);
 }
+.business-pruefregel {
+  border-top: 1px solid var(--farbe-trennung);
+  padding-top: var(--abstand-4);
+}
+.business-pruefregel > summary {
+  font-weight: var(--gewicht-semibold);
+  overflow-wrap: anywhere;
+}
+.business-pruefregel > .business-formular {
+  padding-block: var(--abstand-8);
+}
+.zuordnung-liste,
+.spaltenauswahl-liste {
+  display: grid;
+  gap: var(--abstand-12);
+  min-width: 0;
+}
+.zuordnung-zeile + .zuordnung-zeile {
+  padding-top: var(--abstand-12);
+  border-top: 1px solid var(--farbe-trennung);
+}
+.zuordnung-kopf,
+.zuordnung-aktionen,
+.spaltenauswahl-aktionen {
+  display: flex;
+  align-items: center;
+  gap: var(--abstand-4);
+  min-width: 0;
+}
+.zuordnung-kopf {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: var(--abstand-8);
+}
+.zuordnung-schluessel {
+  flex: 1 1 80px;
+  font-weight: var(--gewicht-semibold);
+  overflow-wrap: anywhere;
+}
+.zuordnung-wert,
+.spaltenauswahl-wert {
+  min-width: 0;
+}
+.zuordnung-aktionen .sl-knopf {
+  min-height: 32px;
+  padding: var(--abstand-4) var(--abstand-8);
+}
+.spaltenauswahl-vorschlaege > summary {
+  min-height: 32px;
+  padding-block: var(--abstand-4);
+  color: var(--farbe-text-sekundaer);
+}
+.spaltenauswahl-treffer {
+  max-height: 240px;
+  overflow: auto;
+  scroll-padding: var(--abstand-8);
+  margin-top: var(--abstand-8);
+}
+.spaltenauswahl-vorschlag {
+  display: flex;
+  align-items: center;
+  gap: var(--abstand-8);
+  min-height: 36px;
+  padding: var(--abstand-4);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.spaltenauswahl-vorschlag:hover {
+  background: var(--farbe-auswahl-flaeche);
+}
+.spaltenauswahl-vorschlag input {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--farbe-akzent);
+}
+.spaltenauswahl-zeile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--abstand-4);
+  min-width: 0;
+}
+.spaltenauswahl-aktionen .sl-knopf {
+  width: 32px;
+  min-width: 32px;
+  height: 36px;
+  padding: var(--abstand-4);
+}
+.spaltenauswahl-hinweis {
+  color: var(--farbe-text-sekundaer);
+  margin-block: var(--abstand-8);
+}
 .business-vorschau {
   max-height: 280px;
   overflow: auto;
