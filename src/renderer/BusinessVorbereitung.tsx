@@ -3,10 +3,11 @@ import type { Projekt } from '../kern/projekt';
 import type { TestOptionen } from '../gemeinsam/testlauf';
 import { businessSchritte } from '../kern/business';
 import { businessDefinitionen } from '../kern/business-katalog';
-import { parameterWertePruefen, type JsonWert } from '../kern/business-modell';
+import { parameterWertePruefen } from '../kern/business-modell';
 import { Auswahlfeld, Feld } from './komponenten/Feld';
 import { Knopf } from './komponenten/Knopf';
 import { ParameterWertEingabe } from './ParameterDialog';
+import { laufPfadangaben, laufPfadZusammenfassung } from './laufpfade';
 
 export function laufprofilWert(sekunden: number): string {
   return (
@@ -72,56 +73,35 @@ export function BusinessVorbereitung({
   useEffect(() => {
     if (pruefungAngefordert && fehlerAnzahl) setParameterOffen(true);
   }, [pruefanfrage, fehlerAnzahl, pruefungAngefordert]);
-  function pfadwert(wert: JsonWert | undefined): string {
-    if (wert === undefined || wert === null || wert === '') return 'Noch nicht angegeben';
-    if (typeof wert !== 'object') return String(wert);
-    if (!Array.isArray(wert) && typeof wert.parameter === 'string') {
-      const p = parameter[wert.parameter];
-      return p === null || p === undefined || p === ''
-        ? `Parameter ${wert.parameter} ist nicht gesetzt`
-        : String(p);
-    }
-    return 'Wird im betreffenden Schritt berechnet';
-  }
   const konflikttexte: Record<string, string> = {
     FEHLER: 'Nicht überschreiben; mit Fehler abbrechen',
     UEBERSPRINGEN: 'Vorhandene Datei überspringen',
     NEUER_NAME: 'Unter neuem Namen speichern',
     ERSETZEN: 'Vorhandene Datei ersetzen',
   };
-  const pfadschritte = schritte.filter((s) =>
-    Object.keys(s.konfiguration).some((name) => /pfad|quelle|ziel|vorlage|ordner|konflikt/i.test(name)),
-  );
+  const pfadschritte = schritte
+    .map((schritt) => {
+      const definition = businessDefinitionen.find((d) => d.operation === schritt.operation);
+      return {
+        schritt,
+        definition,
+        angaben: definition ? laufPfadangaben(definition, schritt.konfiguration, parameter) : [],
+      };
+    })
+    .filter(
+      ({ definition, angaben }) =>
+        angaben.length || definition?.felder.some((feld) => feld.name === 'konflikt'),
+    );
   const konfliktregeln = [
     ...new Set(
-      pfadschritte.flatMap((s) => {
-        const def = businessDefinitionen.find((d) => d.operation === s.operation);
-        const standard = def?.felder.find((f) => f.name === 'konflikt')?.standard;
-        const regel = s.konfiguration.konflikt ?? standard;
+      pfadschritte.flatMap(({ schritt, definition }) => {
+        const standard = definition?.felder.find((f) => f.name === 'konflikt')?.standard;
+        const regel = schritt.konfiguration.konflikt ?? standard;
         return typeof regel === 'string' && konflikttexte[regel] ? [konflikttexte[regel]] : [];
       }),
     ),
   ];
-  const konfiguriertePfade = pfadschritte.flatMap((s) => {
-    const def = businessDefinitionen.find((d) => d.operation === s.operation);
-    return (def?.felder ?? [])
-      .filter((f) => /pfad|quelle|ziel|vorlage|ordner/i.test(f.name))
-      .flatMap((feld) => {
-        const voll = pfadwert(s.konfiguration[feld.name] ?? feld.standard);
-        if (
-          voll === 'Noch nicht angegeben' ||
-          voll.startsWith('Parameter ') ||
-          voll === 'Wird im betreffenden Schritt berechnet'
-        )
-          return [];
-        return [
-          { ziel: Boolean(def?.schreibt), voll, kurz: voll.split(/[\\/]/).filter(Boolean).at(-1) ?? voll },
-        ];
-      });
-  });
-  const ersteQuelle = konfiguriertePfade.find((p) => !p.ziel);
-  const erstesZiel = konfiguriertePfade.find((p) => p.ziel);
-  const pfadZusammenfassung = [ersteQuelle?.kurz, erstesZiel?.kurz].filter(Boolean).join(' → ');
+  const pfadZusammenfassung = laufPfadZusammenfassung(pfadschritte.flatMap((s) => s.angaben));
   return (
     <section className="business-parameter">
       <div className="lauf-kernauswahl">
@@ -203,12 +183,9 @@ export function BusinessVorbereitung({
       <details className="lauf-quellenuebersicht">
         <summary>
           Quellen und Ausgabeziele
-          {pfadZusammenfassung && (
-            <span
-              className="lauf-pfadkurz"
-              title={[ersteQuelle?.voll, erstesZiel?.voll].filter(Boolean).join(' → ')}
-            >
-              {pfadZusammenfassung}
+          {pfadZusammenfassung.text && (
+            <span className="lauf-pfadkurz" title={pfadZusammenfassung.titel}>
+              {pfadZusammenfassung.text}
             </span>
           )}
         </summary>
@@ -218,27 +195,25 @@ export function BusinessVorbereitung({
           </p>
         )}
         <ul>
-          {pfadschritte.map((s) => {
-            const def = businessDefinitionen.find((d) => d.operation === s.operation);
-            const felder =
-              def?.felder.filter((f) => /pfad|quelle|ziel|vorlage|ordner|konflikt/i.test(f.name)) ?? [];
+          {pfadschritte.map(({ schritt, definition, angaben }) => {
+            const konfliktFeld = definition?.felder.find((feld) => feld.name === 'konflikt');
+            const konflikt = schritt.konfiguration.konflikt ?? konfliktFeld?.standard;
             return (
-              <li key={s.id}>
-                <strong>{s.bezeichnung ?? def?.name ?? 'Verarbeitungsschritt'}</strong>
+              <li key={schritt.id}>
+                <strong>{schritt.bezeichnung ?? definition?.name ?? 'Verarbeitungsschritt'}</strong>
                 <dl>
-                  {felder.map((feld) => {
-                    const wert = s.konfiguration[feld.name] ?? feld.standard;
-                    return (
-                      <div key={feld.name}>
-                        <dt>{feld.titel}</dt>
-                        <dd>
-                          {feld.name === 'konflikt'
-                            ? (konflikttexte[String(wert)] ?? pfadwert(wert))
-                            : pfadwert(wert)}
-                        </dd>
-                      </div>
-                    );
-                  })}
+                  {angaben.map((angabe) => (
+                    <div key={JSON.stringify(angabe.feldPfad)}>
+                      <dt>{angabe.titel}</dt>
+                      <dd>{angabe.wert.text}</dd>
+                    </div>
+                  ))}
+                  {konfliktFeld && (
+                    <div>
+                      <dt>{konfliktFeld.titel}</dt>
+                      <dd>{konflikttexte[String(konflikt)] ?? 'Nicht bekannt'}</dd>
+                    </div>
+                  )}
                 </dl>
               </li>
             );
@@ -246,7 +221,7 @@ export function BusinessVorbereitung({
         </ul>
         {!pfadschritte.length && <p>Keine fest konfigurierten Dateiquellen oder Ausgabeziele.</p>}
         <p className="testbereich-hilfe">
-          Relative Pfade verwenden den ScriptLab-Arbeitsordner. Berechnete Ziele stehen erst im jeweiligen
+          Relative Pfade verwenden den ScriptLab-Arbeitsordner. Berechnete Pfade stehen erst im jeweiligen
           Schritt fest.
         </p>
       </details>
