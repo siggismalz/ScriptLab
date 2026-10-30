@@ -1,6 +1,7 @@
 // Entpacktes Testpaket mit isoliertem Profil und ohne externes Python prüfen.
 // Aufruf: node scripts/qualitaet-paket-pruefen.mjs <ScriptLab.exe> [Bericht.json]
 import { _electron as electron } from 'playwright';
+import { expect } from '@playwright/test';
 import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { once } from 'node:events';
 import { execFileSync } from 'node:child_process';
@@ -102,6 +103,9 @@ try {
   bericht.mlNeuanlageOhneEinrichtung = true;
   const neu = await seite.evaluate((p) => window.scriptlab.neu(p, 'python'), mlNeu.wert.projekt);
   if (!neu.ok || !neu.wert) throw new Error('Der synthetische Python-Workflow konnte nicht angelegt werden.');
+  // Die vorigen IPC-Proben ersetzen den Main-Stand. Vor echter UI-Bedienung denselben Stand laden.
+  await seite.reload();
+  await expect(seite.getByTestId('editor-sprache')).toHaveText('Python');
   const projekt = neu.wert.projekt;
   const soll = 'ScriptLab-Paketprüfung: Grüße äöü';
   projekt.editor.blocks.blocks[0].next = {
@@ -115,11 +119,32 @@ try {
       },
     },
   };
-  const start = await seite.evaluate(
-    (p) => window.scriptlab.testStarten(p, { basisVerzeichnis: null, zeitlimitSekunden: 30 }),
-    projekt,
+  const projektdatei = join(basis, 'Paketprüfung.scriptlab');
+  await writeFile(projektdatei, JSON.stringify(projekt));
+  await app.evaluate(({ dialog }, pfad) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
+  }, projektdatei);
+  await seite.getByRole('button', { name: 'Workflow öffnen', exact: true }).click();
+  const ausfuehren = seite.getByRole('navigation', { name: 'Projektaktionen' }).getByRole('button', {
+    name: 'Workflow ausführen',
+    exact: true,
+  });
+  await expect(ausfuehren).toBeEnabled();
+  await ausfuehren.click();
+  await expect
+    .poll(
+      async () => {
+        const r = await seite.evaluate(() => window.scriptlab.testLesen());
+        return r.ok ? r.wert.zustand.laufId : null;
+      },
+      { timeout: 15000 },
+    )
+    .not.toBeNull();
+  await expect(seite.getByRole('tab', { name: 'Ablauf', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
   );
-  if (!start.ok) throw new Error(start.meldung);
+  await expect(seite.getByTestId('test-panel')).toBeHidden();
   const frist = Date.now() + 40_000;
   let zustand;
   do {
@@ -130,6 +155,10 @@ try {
     await new Promise((fertig) => setTimeout(fertig, 100));
   } while (Date.now() < frist);
   if (zustand.phase !== 'beendet' || zustand.exitcode !== 0) throw new Error(zustand.meldung);
+  await expect(seite.getByRole('region', { name: 'Aktueller Lauf', exact: true })).toContainText(
+    'Workflow beendet',
+  );
+  bericht.direktstartImEditor = true;
   const abstand = relative(profil, zustand.optionen.basisVerzeichnis);
   if (abstand.startsWith('..') || isAbsolute(abstand))
     throw new Error('Die Ausgabe liegt außerhalb des Testprofils.');
