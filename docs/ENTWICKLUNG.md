@@ -99,7 +99,7 @@ VBS-Exporte benötigen die Windows-VBScript-Komponente, Windows Script Host und 
 Prüfberichte gelten für ihren tatsächlich genannten Quell- und Paketstand. Modulprüfungen, echte Laufzeitprüfungen, UI-Aufnahmen, Installerprüfung und produktive Updatekette sind getrennte Nachweise.
 
 - [Prüfplan](PRUEFPLAN.md), [Business-Abnahmestand](BUSINESS-ABNAHME.md) und [historische Abnahme](ABNAHME.md).
-- [Designsystem](gestaltung/DESIGNSYSTEM.md), [aktuelle Produktverbesserung](PRODUKT-VERBESSERUNG.md) und [zugehörige Windows-Ansichten](produkt/ANSICHTEN.html). Die [UI-Straffung](UEBERSICHTLICHKEIT.md) bewahrt ihren früheren Nachweis.
+- [Designsystem](gestaltung/DESIGNSYSTEM.md), [aktuelle Regeln- und Datenbedienung](REGELN-UND-DATEN.md) und [zugehörige Windows-Ansichten](regeln-daten/ANSICHTEN.html). Die [vorherige Produktverbesserung](PRODUKT-VERBESSERUNG.md) und [UI-Straffung](UEBERSICHTLICHKEIT.md) bewahren ihre früheren Nachweise.
 - [Datenumfang und Lastmessungen](BUSINESS-LEISTUNG-DATEN.md), [Dokumentbeispiele](BUSINESS-BEISPIELE-PRUEFUNG.md) und [Testlaufleitfaden](TESTLAUF.md).
 
 ## Nutzung und Lizenzen

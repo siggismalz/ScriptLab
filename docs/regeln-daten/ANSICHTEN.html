@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="de">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ScriptLab – Regeln und Daten</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+    }
+    body {
+      max-width: 1280px;
+      margin: auto;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 32px;
+    }
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid #81939d;
+    }
+    figure {
+      margin: 16px 0 24px;
+    }
+    figcaption {
+      margin-top: 8px;
+    }
+    a {
+      color: light-dark(#0f6cbd, #86b9ef);
+    }
+  </style>
+  <h1>ScriptLab: Regeln und Daten einfacher bearbeiten</h1>
+  <p>
+    Echte Windows-Aufnahmen mit synthetischen Daten vom 30. Oktober 2026.
+    <a href="../REGELN-UND-DATEN.md">Änderungen und Prüfgrenzen</a> ·
+    <a href="sichtstand.json">Einzelnachweis</a>
+  </p>
+  <h2>Einfacher Filter: vorher und nachher</h2>
+  <figure>
+    <img
+      src="vorher-filter.png"
+      alt="Vorheriger Filter mit mehreren Ausdrucksauswahlen vor dem eigentlichen Vergleichswert"
+    />
+    <figcaption>Vorher: Die Auswahl der Ausdrucksarten verdrängt den Vergleichswert nach unten.</figcaption>
+  </figure>
+  <figure>
+    <img src="filter-hell.png" alt="Aktueller Filter mit Spalte, Vergleich und sichtbarem Vergleichswert" />
+    <figcaption>
+      Nachher: dieselbe Beispielaufgabe mit direkter Bearbeitung von Spalte, Vergleich und Wert.
+    </figcaption>
+  </figure>
+  <h2>Zuordnungen und Spalten</h2>
+  <figure>
+    <img
+      src="zuordnung-doppelter-name.png"
+      alt="Doppelter Zuordnungsname wird mit erhaltener Eingabe zurückgewiesen"
+    />
+    <figcaption>Ein bereits vorhandener Name verändert keine der bisherigen Zuordnungen.</figcaption>
+  </figure>
+  <figure>
+    <img
+      src="spaltenauswahl-hell.png"
+      alt="Mehrfachauswahl echter Vorschau-Spalten mit Auf- und Ab-Aktionen"
+    />
+  </figure>
+  <figure><img src="spaltenauswahl-dunkel.png" alt="Spaltenauswahl im dunklen Thema" /></figure>
+  <h2>Bedingungen und Datenfunktionen</h2>
+  <figure>
+    <img
+      src="bedingungsgruppe-hell.png"
+      alt="Bedingungsgruppe mit direkter ODER-Verknüpfung und vorhandenen Vergleichen"
+    />
+  </figure>
+  <figure><img src="funktion-datum-hell.png" alt="Monat aus einer Datumsspalte berechnen" /></figure>
+  <figure>
+    <img src="funktion-vorschau.png" alt="Tatsächliche Vorschauergebnisse der Monatsfunktion" />
+  </figure>
+  <figure>
+    <img
+      src="funktion-muster-hell.png"
+      alt="Vorhandene Mustersuche mit Suchmuster und Ergebnisgruppe bearbeiten"
+    />
+  </figure>
+  <h2>Passende Felder für Qualitätsprüfungen</h2>
+  <figure>
+    <img src="pruefregel-zeilen-hell.png" alt="Zeilenzahlregel zeigt ausschließlich passende Grenzen" />
+  </figure>
+  <figure>
+    <img src="pruefregel-bereich-hell.png" alt="Bereichsregel mit Spalte, Dezimaltyp und Prüfgrenzen" />
+  </figure>
+  <figure>
+    <img
+      src="pruefregeln-laufergebnis.png"
+      alt="Die tatsächliche Bereichs- und Schlüsselprüfung wurde erfolgreich ausgeführt"
+    />
+  </figure>
+  <figure><img src="pruefregel-dunkel.png" alt="Bereichsregel im dunklen Thema" /></figure>
+  <figure><img src="pruefregel-schmal.png" alt="Bereichsregel im 960 mal 680 Pixel großen Fenster" /></figure>
+  <figure>
+    <img
+      src="pruefregel-ui200.png"
+      alt="Prüfregel bei 200 Prozent Textvergrößerung und unverändertem Canvaszoom"
+    />
+  </figure>
+  <h2>Vorlage und Ausgabeziel</h2>
+  <figure>
+    <img src="quellen-und-ziele.png" alt="Vorlage.xlsx ist Quelle, Bericht.xlsx das Ausgabeziel" />
+    <figcaption>
+      Konfigurierte Rollen in der Vorbereitung. Diese Aufnahme beinhaltet keine Verarbeitung der
+      Vorlagendatei.
+    </figcaption>
+  </figure>
+</html>

@@ -1,0 +1,18 @@
+{
+  "datum": "2026-10-30T18:26:20.323Z",
+  "profil": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Regeln-Daten-uU4Dky\\Profil",
+  "pruefungen": [
+    "UND/ODER ändert die direkte Gruppe; beide Kinder und Undo/Redo erhalten. Die echte ODER-Vorschau enthält Nord und Süd.",
+    "Doppelter Name übernimmt nichts und erhält den Eingabetext. Gültige Umbenennung ist atomar rückgängig; Fokus kehrt zur umbenannten Zeile zurück. Hinzufügen füllt Namenslücken ohne Überschreiben.",
+    "Mehrere Spalten aus echter quellengenauer Vorschau auswählbar; Vorschläge bleiben nach dem ersten Klick erhalten. Auf/Ab ändert nur Reihenfolge; Undo erhält ausgewählte Spalten.",
+    "Monatsfunktion erhält ihr Argument und liefert echte Vorschauwerte. Mustersuche mit Gruppe1 wird als strukturierter Ausdruck ausgeführt; kein Programmtext eingegeben.",
+    "Pflichtwert-, Zeilenzahl- und Bereichsregel zeigen passende Felder; andere gespeicherte Angaben bleiben erhalten. Beide Themen,960×680 und200% UI-Text angesehen.",
+    "Die konfigurierten Bereichs- und Schlüsselregeln wurden mit den echten synthetischen CSV-Daten im Prüflauf erfolgreich ausgeführt.",
+    "Die echte Laufvorbereitung zeigt Vorlage.xlsx als Quelle und Bericht.xlsx als Ziel; Öffnen der Ansicht startet keinen Lauf."
+  ],
+  "rendererfehler": [],
+  "grenzen": [
+    "Eigene Sichtprüfung mit synthetischen Beispieldaten, kein Nutzertest.",
+    "Keine vollständige Windows-Skalierungsmatrix oder Gesamtregression."
+  ]
+}

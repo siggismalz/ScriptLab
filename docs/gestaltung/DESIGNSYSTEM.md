@@ -80,7 +80,7 @@ Die Palette benötigt standardmäßig 272 px, Eigenschaften 320 px. Bei 1280 × 
 
 Die behutsame Straffung vom 28. Oktober 2026 erhält alle direkten Aktionen. Die Startseite führt den aktiven Workflow anhand seiner Kennung einmal in höchstens fünf letzten Zeilen. Einstiegskarten besitzen mindestens 56 px Höhe und wachsen für umbrechenden Text. In Datenlisten trägt die Auswahl Semibold, normale Schritte Regular. Feldfehler stehen einmal vollständig am Feld; die Abschnittszusammenfassung verwendet kurze Ansprunglinks. Historie und Lauftabs teilen sich eine Kopfleiste.
 
-Der Projektkopf ist der dauerhafte Ort des Speicherzustands, auch bei 200 Prozent UI-Text. Entwurfssicherung und Projektdatei bleiben sprachlich unterschieden. Erfolgsbestätigungen bleiben vier Sekunden sichtbar und enden bei einem Kontextwechsel; handlungsbedürftige Fehler verschwinden nicht durch diesen Timer. Die aktuellen Bilder und Prüfgrenzen stehen in [UEBERSICHTLICHKEIT.md](../UEBERSICHTLICHKEIT.md).
+Der Projektkopf ist der dauerhafte Ort des Speicherzustands, auch bei 200 Prozent UI-Text. Entwurfssicherung und Projektdatei bleiben sprachlich unterschieden. Erfolgsbestätigungen bleiben vier Sekunden sichtbar und enden bei einem Kontextwechsel; handlungsbedürftige Fehler verschwinden nicht durch diesen Timer. Bilder und Prüfgrenzen dieser Straffung vom 28. Oktober 2026 stehen in [UEBERSICHTLICHKEIT.md](../UEBERSICHTLICHKEIT.md).
 
 - `Knopf`: Standard, leise, Primäraktion, Gefahr; Hover, gedrückt, sichtbar fokussiert, deaktiviert und beschäftigt. Wichtige Aktionen besitzen Text. Deaktivierungsgründe bleiben zugänglich.
 - `Feld`, `Textfeld`, `Auswahlfeld`: dauerhafte Beschriftung, eigener Hilfetext, Fehler unmittelbar am Feld, Eingaben bleiben nach Fehlern erhalten.
@@ -103,11 +103,25 @@ Neue Business-Bausteine mit genau einer Ergebniseingabe erhalten den passenden d
 
 Häufige Felder bleiben unmittelbar sichtbar; seltene Optionen stehen unter „Weitere Einstellungen“. Feldfehler öffnen den betroffenen Abschnitt. Die Eigenschaften unterstützen „Datenvorschau“ als kontextbezogenen Ansichtswechsel. Erst „Datenvorschau laden“ liest Daten. „Zum Baustein“ kehrt zur Bearbeitung zurück und erhält beim direkten Rückweg Canvasposition und Zoom. Diese Navigation erzeugt weder eine fachliche Änderung noch einen Lauf.
 
+### Regeln und Daten schrittweise bearbeiten
+
+Filter beginnen mit Spalte, Vergleich und Vergleichswert. Weitere Bedingungen, Untergruppen und Umkehrung sind gezielte Erweiterungen. Der Wechsel zwischen UND und ODER erhält die Kinder einer Gruppe. Umkehrung aufheben und eine Gruppe mit genau einer Bedingung auflösen sind getrennte Aktionen; keine davon verwirft weitere Bedingungen.
+
+Berechnungen bieten die acht vorhandenen Funktionen über verständliche Namen an: Jahr, Monat und Tag, Rand-Leerzeichen entfernen, Groß- und Kleinbuchstaben, Textlänge sowie Text anhand eines Suchmusters auslesen. Erweiterte Musterangaben mit Ergebnisgruppe und kurzen Hinweisen erscheinen nur dort, wo sie benötigt werden. Einfache Operanden zeigen ihren Wert zuerst; Wertquelle und Datentyp stehen bei Bedarf in Details. Bestehende Ausdrücke und Bindungen werden nicht durch bloßes Anzeigen ersetzt.
+
+Qualitätsregeln zeigen nur die für ihre Prüfart nötigen Felder. Ihre Zusammenfassung bleibt beim Einklappen sichtbar. Unvollständige Regeln und betroffene Regeln mit Feldfehlern öffnen sich zur Korrektur. Ein Wechsel der Prüfart erhält bisherige Eingaben, statt sie vorsorglich zu löschen.
+
+`SpaltenAuswahl` ergänzt fachliche Spaltenlisten um eine suchbare Mehrfachauswahl aus der Vorschau der zugeordneten Quelle. Neue Namen werden angehängt; die Auswahlreihenfolge bleibt erhalten und lässt sich mit Auf-/Ab-Aktionen ändern. Manuelle Namen und gespeicherte Wertbindungen bleiben verwendbar. Fehlende Vorschlagsdaten sind kein Nachweis für einen falschen Namen. Die Vorschlagsliste lädt keine Daten. Ihre Aktualität richtet sich nach dem benötigten Vorlauf der jeweiligen Vorschau und den Parameterwerten; spätere Bearbeitungsschritte machen sie nicht allein ungültig.
+
+`ZuordnungsFeld` trennt den gespeicherten Namen von dessen Umbenennung. Der Dialog übernimmt einen gültigen Namen atomar oder erhält bei Abbruch den bisherigen Stand. Leere, doppelte und vom Dateiformat nicht unterstützte Namen werden am Entwurf erklärt; vorhandene Zuordnungen und Werte bleiben erhalten. Neue Einträge erhalten einen freien Namen. Nach erfolgreicher Umbenennung kehrt der Fokus zur entsprechenden Zeile zurück.
+
+Quellen und Ausgabeziele folgen der tatsächlichen Aufgabe eines Felds. Eine gelesene Dokumentvorlage ist eine Quelle; das daraus erzeugte Dokument ist ein Ausgabeziel. Anzeigen und Aufklappen dieser Angaben starten keine Verarbeitung.
+
 ## Bewusste Grenzen
 
 Der Hauptprozess ordnet aktuelle und lokal gespeicherte Läufe dem geöffneten Workflow zu. Die dauerhafte Historie ist mengen- und größenbegrenzt; Details stehen in [WEITERENTWICKLUNG.md](../WEITERENTWICKLUNG.md). Sie ist keine automatische Wiederaufnahme laufender Prozesse. Exportformate und Signaturunterstützung bleiben wie implementiert: VBS-Script optional signierbar, Business-Paket ohne vorgetäuschte ZIP-Signatur. Exportierte Scripts benötigen ihre externe Laufzeit; der mitgelieferte Interpreter gehört zur Anwendung. Dokumentvorlagen werden über die vorhandene unabhängige Beispielkopie einschließlich Ressourcen verwendet.
 
-Die vollständige Abnahme und ihre Grenzen stehen in [PRUEFUNG.md](PRUEFUNG.md). Kontrastprüfungen und eigene Sichtprüfung sind keine vollständige Barrierefreiheitszertifizierung oder Nutzertests.
+Die aktuellen Ansichten und tatsächlich geprüften Arbeitswege stehen in [REGELN-UND-DATEN.md](../REGELN-UND-DATEN.md) und der [Ansichtengalerie](../regeln-daten/ANSICHTEN.html). Die frühere Gestaltungsabnahme in [PRUEFUNG.md](PRUEFUNG.md) bleibt ihrem damaligen Stand zugeordnet. Kontrastprüfungen und eigene Sichtprüfung sind keine vollständige Barrierefreiheitszertifizierung oder Nutzertests.
 
 ## Offizielle Grundlagen
 

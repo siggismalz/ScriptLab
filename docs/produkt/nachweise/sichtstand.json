@@ -1,6 +1,6 @@
 {
-  "datum": "2026-10-30T17:47:54.547Z",
-  "profil": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Produkt-I7Aj6k\\Profil",
+  "datum": "2026-10-30T18:28:25.561Z",
+  "profil": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Produkt-dCidkR\\Profil",
   "geometrie": {
     "kopf": {
       "x": 0,
@@ -30,16 +30,16 @@
   "ausgaben": [
     {
       "name": "Monatsbericht.xlsx",
-      "bytes": 4927,
-      "sha256": "d38964799749afed326a59b98d16c3c9d5bb61c8cea451802a05a9332c485ddb"
+      "bytes": 4926,
+      "sha256": "fda3193e36adbf778a940cff8e4b554899eacd086070fdca6ffba870e67b63e3"
     },
     {
       "name": "Monatsbericht.pdf",
       "bytes": 22482,
-      "sha256": "fa23517b22c39ecc9bd7434de547ed33b4c0d48e8ee01202b97ebe1ba83a9cfc"
+      "sha256": "336972b6b420fbcddf7fcb3bd9a799384ecbff263201bc7ca1902826a2b90c61"
     }
   ],
-  "laufId": "4fe88dfc-3c43-41b9-8f4e-5b94a9782f07",
+  "laufId": "42c4f418-5082-4d37-877e-54881207cf8c",
   "grenzen": [
     "Eigene Windows-Sichtprüfung mit synthetischen Daten, kein Nutzertest.",
     "Keine vollständige neue Windows-DPI-Matrix oder gesamte Python-/VBS-Regression."
