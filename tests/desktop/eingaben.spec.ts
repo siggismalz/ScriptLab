@@ -422,18 +422,18 @@ test('weist ungültige UI-Einstellungen über IPC ab und erhält den gespeichert
 const beispiele = [
   {
     datei: '01-Begruessung.scriptlab',
-    name: 'Eine Begrüßung',
-    blockanzahl: 3,
+    name: 'Eine Nachricht anzeigen',
+    blockanzahl: 4,
   },
   {
     datei: '02-Datei-Backup.scriptlab',
-    name: 'Testdatei sichern',
-    blockanzahl: 13,
+    name: 'Eine Testdatei sichern',
+    blockanzahl: 14,
   },
   {
     datei: '03-Dateinamenliste.scriptlab',
-    name: 'Dateinamen in eine Textdatei schreiben',
-    blockanzahl: 17,
+    name: 'Dateinamen als Textliste speichern',
+    blockanzahl: 18,
   },
 ];
 
@@ -475,12 +475,13 @@ for (const beispiel of beispiele) {
     await zieleUnveraendert();
     await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
     await seite.getByRole('menuitem', { name: 'Vorlagen', exact: true }).click();
-    await seite
+    const vorlagenzeile = seite
       .getByTestId('beispiele')
-      .getByRole('article')
-      .filter({ hasText: beispiel.datei })
-      .getByRole('button', { name: 'Als Vorlage öffnen', exact: true })
-      .click();
+      .getByRole('article', { name: `${beispiel.name} – VBScript (VBS)`, exact: true });
+    await vorlagenzeile.getByRole('button', { name: beispiel.name, exact: true }).click();
+    await vorlagenzeile.getByText('Enthaltene Dateien und Sprache', { exact: true }).click();
+    await expect(vorlagenzeile).toContainText(beispiel.datei);
+    await vorlagenzeile.getByRole('button', { name: 'Als Vorlage öffnen', exact: true }).click();
     await expect.poll(async () => (await projektLesen()).name).toBe(`${beispiel.name} (Kopie)`);
     const geladen = await projektLesen();
     expect(geladen.projektKennung).toMatch(/^[a-f0-9-]{36}$/i);

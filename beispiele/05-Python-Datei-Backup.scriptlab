@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
   "appVersion": "0.1.0",
-  "name": "Testdatei sichern",
-  "beschreibung": "Vor einem eigenständigen Start neben der exportierten VBS-Datei den Ordner ScriptLab-Testdaten\\Backup\\Quelle anlegen und dort beispiel.txt mit beliebigem Testinhalt speichern. Das Script prüft die Quelle, legt den Sicherungsordner an und kopiert die Testdatei. Eine vorhandene Sicherung wird nicht überschrieben. Alle Pfade beziehen sich auf den Speicherort der VBS-Datei.",
+  "name": "Eine Testdatei sichern",
+  "beschreibung": "Kopiert die mitgelieferte synthetische Datei ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt nach ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt. Die Quelle bleibt erhalten; ein vorhandenes Ziel wird nicht überschrieben und der Lauf meldet einen Fehler. Im Editor erscheint das Ergebnis im Laufprotokoll. Im Editor gelten die Pfade relativ zum Arbeitsordner, beim eigenständigen Export relativ zum Skriptordner; ScriptLab-Testdaten dafür mitkopieren. Erst „Ausführen“ oder der bewusste Skriptstart verändert Dateien.",
   "editor": {
     "blocks": {
       "languageVersion": 0,
@@ -14,106 +14,139 @@
           "y": 65,
           "next": {
             "block": {
-              "type": "sl_if",
-              "id": "beispiel_12",
-              "inputs": {
-                "BEDINGUNG": {
-                  "block": {
-                    "type": "sl_exists",
-                    "id": "beispiel_9",
-                    "fields": {
-                      "ART": "DATEI"
-                    },
-                    "inputs": {
-                      "PFAD": {
-                        "block": {
-                          "type": "sl_text",
-                          "id": "beispiel_8",
-                          "fields": {
-                            "TEXT": "ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt"
-                          }
-                        }
-                      }
-                    }
-                  }
-                },
-                "DANN": {
-                  "block": {
-                    "type": "sl_mkdir",
-                    "id": "beispiel_2",
-                    "inputs": {
-                      "PFAD": {
-                        "block": {
-                          "type": "sl_text",
-                          "id": "beispiel_1",
-                          "fields": {
-                            "TEXT": "ScriptLab-Testdaten\\Backup\\Sicherung"
-                          }
-                        }
-                      }
-                    },
-                    "next": {
+              "type": "sl_comment",
+              "id": "vorlage_hinweis",
+              "fields": {
+                "TEXT": "Die Quelle bleibt erhalten; ein vorhandenes Ziel führt zum Fehler."
+              },
+              "next": {
+                "block": {
+                  "type": "sl_if",
+                  "id": "beispiel_12",
+                  "inputs": {
+                    "BEDINGUNG": {
                       "block": {
-                        "type": "sl_copy",
-                        "id": "beispiel_5",
+                        "type": "sl_exists",
+                        "id": "beispiel_9",
                         "fields": {
-                          "ZIELREGEL": "FEHLER"
+                          "ART": "DATEI"
                         },
                         "inputs": {
-                          "QUELLE": {
+                          "PFAD": {
                             "block": {
                               "type": "sl_text",
-                              "id": "beispiel_3",
+                              "id": "beispiel_8",
                               "fields": {
                                 "TEXT": "ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt"
                               }
                             }
-                          },
-                          "ZIEL": {
+                          }
+                        }
+                      }
+                    },
+                    "DANN": {
+                      "block": {
+                        "type": "sl_mkdir",
+                        "id": "beispiel_2",
+                        "inputs": {
+                          "PFAD": {
                             "block": {
                               "type": "sl_text",
-                              "id": "beispiel_4",
+                              "id": "beispiel_1",
                               "fields": {
-                                "TEXT": "ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt"
+                                "TEXT": "ScriptLab-Testdaten\\Backup\\Sicherung"
                               }
                             }
                           }
-                        },
-                        "next": {
-                          "block": {
-                            "type": "sl_message",
-                            "id": "beispiel_7",
-                            "inputs": {
-                              "TEXT": {
-                                "block": {
-                                  "type": "sl_text",
-                                  "id": "beispiel_6",
-                                  "fields": {
-                                    "TEXT": "Die Testdatei wurde nach ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt kopiert."
-                                  }
-                                }
+                        }
+                      }
+                    },
+                    "SONST": {
+                      "block": {
+                        "type": "sl_output",
+                        "id": "beispiel_11",
+                        "inputs": {
+                          "TEXT": {
+                            "block": {
+                              "type": "sl_text",
+                              "id": "beispiel_10",
+                              "fields": {
+                                "TEXT": "Die Quelle fehlt. Prüfe im Arbeitsordner ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt. Es wurde keine Sicherung erstellt."
                               }
                             }
                           }
                         }
                       }
                     }
-                  }
-                },
-                "SONST": {
-                  "block": {
-                    "type": "sl_message",
-                    "id": "beispiel_11",
-                    "inputs": {
-                      "TEXT": {
-                        "block": {
-                          "type": "sl_text",
-                          "id": "beispiel_10",
-                          "fields": {
-                            "TEXT": "Die Testquelle fehlt. Lege neben dieser VBS-Datei ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt an."
+                  },
+                  "next": {
+                    "block": {
+                      "type": "sl_copy",
+                      "id": "beispiel_5",
+                      "fields": {
+                        "ZIELREGEL": "FEHLER"
+                      },
+                      "inputs": {
+                        "QUELLE": {
+                          "block": {
+                            "type": "sl_text",
+                            "id": "beispiel_3",
+                            "fields": {
+                              "TEXT": "ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt"
+                            }
+                          }
+                        },
+                        "ZIEL": {
+                          "block": {
+                            "type": "sl_text",
+                            "id": "beispiel_4",
+                            "fields": {
+                              "TEXT": "ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt"
+                            }
                           }
                         }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "sl_output",
+                          "id": "beispiel_7",
+                          "inputs": {
+                            "TEXT": {
+                              "block": {
+                                "type": "sl_text",
+                                "id": "beispiel_6",
+                                "fields": {
+                                  "TEXT": "Die Testdatei wurde nach ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt kopiert."
+                                }
+                              }
+                            }
+                          },
+                          "icons": {
+                            "comment": {
+                              "text": "Diese Ausgabe erfolgt erst nach erfolgreichem Kopieren. Im Editor und unter cscript.exe erscheint sie im Protokoll beziehungsweise in der Konsole. Der Windows-Fensterhost wscript.exe zeigt Textausgaben als Nachricht an.",
+                              "pinned": false,
+                              "width": 320,
+                              "height": 130
+                            }
+                          }
+                        }
+                      },
+                      "icons": {
+                        "comment": {
+                          "text": "Die Konfliktregel „Fehler melden“ schützt eine vorhandene Sicherung. Vor einer erneuten Ausführung ein anderes Ziel wählen oder die eigene Testsicherung bewusst entfernen.",
+                          "pinned": false,
+                          "width": 320,
+                          "height": 130
+                        }
                       }
+                    }
+                  },
+                  "icons": {
+                    "comment": {
+                      "text": "Nur bei vorhandener Quelldatei wird der Sicherungsordner angelegt. Fehlt die Quelle, erklärt die Ausgabe das Problem; der anschließende Kopierschritt beendet den Lauf als Fehler.",
+                      "pinned": false,
+                      "width": 320,
+                      "height": 130
                     }
                   }
                 }

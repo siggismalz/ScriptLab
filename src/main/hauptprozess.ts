@@ -42,6 +42,7 @@ import type { BusinessStatus, BusinessFortschritt } from '../gemeinsam/business-
 import { businessSchritte } from '../kern/business';
 import { businessPaketDateien, zipErzeugen } from './business-export';
 import { businessBeispiele } from '../kern/business-beispiele';
+import { grundvorlageKopieren } from './grundvorlagen';
 import { quellenauswahlLesen } from '../kern/quellenauswahl';
 import { appLaufzeitPruefen } from '../windows/app-laufzeit';
 import { Laufablage, laufDateipfad, laufProtokollText } from './laufablage';
@@ -798,6 +799,9 @@ function ipcEinrichten(): void {
               anpassen(name, w),
             ]),
           );
+      } else if (['backup', 'backup-python', 'dateiliste', 'dateiliste-python'].includes(auswahl.beispiel)) {
+        beispielBasis = arbeitsordnerFuer(beispielKennung);
+        await grundvorlageKopieren(basis, beispielBasis, auswahl.beispiel);
       }
       await verworfenenEntwurfBereinigen();
       projektAktivieren(

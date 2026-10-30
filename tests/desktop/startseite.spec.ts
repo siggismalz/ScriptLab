@@ -36,8 +36,17 @@ async function starten(ordner?: string, dpi?: number): Promise<Sitzung> {
   return { app, seite, ordner: basis, profil };
 }
 
+async function prozessBeenden(s: Sitzung): Promise<void> {
+  const prozess = s.app.process();
+  if (prozess.exitCode !== null || prozess.signalCode !== null) return;
+  // evaluate(app.exit) bestätigt noch kein Prozessende. Vor dem Auslöser registrieren,
+  // damit auch der Windows-Launcher und seine Standardstreams vor rmdir beendet sind.
+  const geschlossen = s.app.waitForEvent('close');
+  await Promise.all([geschlossen, s.app.evaluate(({ app }) => app.exit(0)).catch(() => {})]);
+}
+
 async function beenden(s: Sitzung): Promise<void> {
-  await s.app.evaluate(({ app }) => app.exit(0)).catch(() => {});
+  await prozessBeenden(s);
   const ziel = resolve(s.ordner);
   if (!ziel.startsWith(resolve(tmpdir()) + sep) || !basename(ziel).startsWith('ScriptLab-Startseite-'))
     throw new Error('Unsicherer temporärer Testpfad.');
@@ -189,7 +198,7 @@ async function neustarten(s: Sitzung, absturz = false): Promise<void> {
       });
     });
     await beendet;
-  } else await s.app.evaluate(({ app }) => app.exit(0));
+  } else await prozessBeenden(s);
   const neu = await starten(s.ordner);
   Object.assign(s, neu);
 }
@@ -560,8 +569,15 @@ for (const beispiel of beispiele) {
         .filter({
           has: s.seite.getByRole('heading', { name: beispiel.name, exact: true }),
         });
+      await karte.getByRole('button', { name: beispiel.name, exact: true }).click();
       await karte.getByRole('button', { name: 'Als Vorlage öffnen', exact: true }).click();
-      await expect(s.seite.getByTestId('palette')).toBeVisible();
+      await expect
+        .poll(async () => {
+          const d = await dokumentLesen(s);
+          return { name: d.projekt.name, darstellungNoetig: d.darstellungNoetig };
+        })
+        .toEqual({ name: `${vorlage.name} (Kopie)`, darstellungNoetig: false });
+      await editorBereit(s);
       const kopie = await dokumentLesen(s);
       expect(kopie.projekt.name).toBe(`${vorlage.name} (Kopie)`);
       expect(kopie.projektKennung).toMatch(/^[a-f0-9-]{36}$/i);
@@ -611,7 +627,9 @@ test('Startseite: lokale Hilfethemen, Suche und Vorlagenlink funktionieren ohne 
       })
       .click();
     await expect(s.seite.getByTestId('palette')).toBeVisible();
-    expect((await dokumentLesen(s)).projekt.editor.blocks!.blocks[0].next!.block.type).toBe('sl_message');
+    const kopie = (await dokumentLesen(s)).projekt.editor.blocks!.blocks[0].next!.block;
+    expect(kopie.type).toBe('sl_comment');
+    expect(kopie.next!.block.type).toBe('sl_message');
     expect(netzanfragen).toEqual([]);
   } finally {
     await beenden(s);

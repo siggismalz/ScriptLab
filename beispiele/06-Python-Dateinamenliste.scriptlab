@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
   "appVersion": "0.1.0",
-  "name": "Dateinamen in eine Textdatei schreiben",
-  "beschreibung": "Vor einem eigenständigen Start neben der exportierten VBS-Datei ScriptLab-Testdaten\\Dateiliste\\Eingang mit einigen beliebigen Testdateien anlegen. Das Script ermittelt die Dateien ohne Unterordner und schreibt ihre Blattnamen einschließlich Dateiendung in die UTF-8-Datei ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt. Eine vorhandene Dateinamen.txt wird ausdrücklich ersetzt. Öffnen und Exportieren führen keine dieser Aktionen aus.",
+  "name": "Dateinamen als Textliste speichern",
+  "beschreibung": "Listet die mitgelieferten synthetischen Dateien in ScriptLab-Testdaten\\Dateiliste\\Eingang ohne Unterordner auf und schreibt ihre Namen einschließlich Endung sortiert in die UTF-8-Datei ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt. Die Quelldateien bleiben unverändert. Eine vorhandene Ergebnisdatei wird ausdrücklich ersetzt; bei leerem Eingang bleibt die Überschrift. Im Editor erscheint das Ergebnis im Laufprotokoll. Im Editor ist der Arbeitsordner die Pfadbasis, beim eigenständigen Export der Skriptordner; ScriptLab-Testdaten dafür mitkopieren. Erst „Ausführen“ oder der bewusste Skriptstart schreibt die Liste.",
   "editor": {
     "blocks": {
       "languageVersion": 0,
@@ -14,143 +14,176 @@
           "y": 65,
           "next": {
             "block": {
-              "type": "sl_set",
-              "id": "beispiel_7",
+              "type": "sl_comment",
+              "id": "vorlage_hinweis",
               "fields": {
-                "VAR": "Dateien"
-              },
-              "inputs": {
-                "WERT": {
-                  "block": {
-                    "type": "sl_list_files",
-                    "id": "beispiel_6",
-                    "inputs": {
-                      "PFAD": {
-                        "block": {
-                          "type": "sl_text",
-                          "id": "beispiel_5",
-                          "fields": {
-                            "TEXT": "ScriptLab-Testdaten\\Dateiliste\\Eingang"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
+                "TEXT": "Nur Dateien direkt im Eingang; die Ergebnisliste wird ersetzt."
               },
               "next": {
                 "block": {
-                  "type": "sl_write_text",
-                  "id": "beispiel_10",
+                  "type": "sl_set",
+                  "id": "beispiel_7",
                   "fields": {
-                    "KODIERUNG": "UTF8"
+                    "VAR": "Dateien"
                   },
                   "inputs": {
-                    "PFAD": {
+                    "WERT": {
                       "block": {
-                        "type": "sl_text",
-                        "id": "beispiel_8",
-                        "fields": {
-                          "TEXT": "ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt"
-                        }
-                      }
-                    },
-                    "TEXT": {
-                      "block": {
-                        "type": "sl_text",
-                        "id": "beispiel_9",
-                        "fields": {
-                          "TEXT": "Dateinamen im Testordner:\r\n"
+                        "type": "sl_list_files",
+                        "id": "beispiel_6",
+                        "inputs": {
+                          "PFAD": {
+                            "block": {
+                              "type": "sl_text",
+                              "id": "beispiel_5",
+                              "fields": {
+                                "TEXT": "ScriptLab-Testdaten\\Dateiliste\\Eingang"
+                              }
+                            }
+                          }
                         }
                       }
                     }
                   },
                   "next": {
                     "block": {
-                      "type": "sl_foreach",
-                      "id": "beispiel_14",
+                      "type": "sl_write_text",
+                      "id": "beispiel_10",
                       "fields": {
-                        "VAR": "Aktuelle Datei"
+                        "KODIERUNG": "UTF8"
                       },
                       "inputs": {
-                        "LISTE": {
+                        "PFAD": {
                           "block": {
-                            "type": "sl_get",
-                            "id": "beispiel_11",
+                            "type": "sl_text",
+                            "id": "beispiel_8",
                             "fields": {
-                              "VAR": "Dateien"
+                              "TEXT": "ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt"
                             }
                           }
                         },
-                        "ABLAUF": {
+                        "TEXT": {
                           "block": {
-                            "type": "sl_append_text",
-                            "id": "beispiel_13",
+                            "type": "sl_text",
+                            "id": "beispiel_9",
                             "fields": {
-                              "KODIERUNG": "UTF8"
-                            },
-                            "inputs": {
-                              "PFAD": {
-                                "block": {
-                                  "type": "sl_text",
-                                  "id": "beispiel_12",
-                                  "fields": {
-                                    "TEXT": "ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt"
-                                  }
-                                }
-                              },
-                              "TEXT": {
-                                "block": {
-                                  "type": "sl_join",
-                                  "id": "beispiel_4",
-                                  "inputs": {
-                                    "A": {
-                                      "block": {
-                                        "type": "sl_basename",
-                                        "id": "beispiel_2",
-                                        "inputs": {
-                                          "PFAD": {
-                                            "block": {
-                                              "type": "sl_get",
-                                              "id": "beispiel_1",
-                                              "fields": {
-                                                "VAR": "Aktuelle Datei"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "B": {
-                                      "block": {
-                                        "type": "sl_newline",
-                                        "id": "beispiel_3"
-                                      }
-                                    }
-                                  }
-                                }
-                              }
+                              "TEXT": "Dateinamen im Testordner:\r\n"
                             }
                           }
                         }
                       },
                       "next": {
                         "block": {
-                          "type": "sl_message",
-                          "id": "beispiel_16",
+                          "type": "sl_foreach",
+                          "id": "beispiel_14",
+                          "fields": {
+                            "VAR": "Aktuelle Datei"
+                          },
                           "inputs": {
-                            "TEXT": {
+                            "LISTE": {
                               "block": {
-                                "type": "sl_text",
-                                "id": "beispiel_15",
+                                "type": "sl_get",
+                                "id": "beispiel_11",
                                 "fields": {
-                                  "TEXT": "Die Dateinamen stehen jetzt in ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt."
+                                  "VAR": "Dateien"
+                                }
+                              }
+                            },
+                            "ABLAUF": {
+                              "block": {
+                                "type": "sl_append_text",
+                                "id": "beispiel_13",
+                                "fields": {
+                                  "KODIERUNG": "UTF8"
+                                },
+                                "inputs": {
+                                  "PFAD": {
+                                    "block": {
+                                      "type": "sl_text",
+                                      "id": "beispiel_12",
+                                      "fields": {
+                                        "TEXT": "ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt"
+                                      }
+                                    }
+                                  },
+                                  "TEXT": {
+                                    "block": {
+                                      "type": "sl_join",
+                                      "id": "beispiel_4",
+                                      "inputs": {
+                                        "A": {
+                                          "block": {
+                                            "type": "sl_basename",
+                                            "id": "beispiel_2",
+                                            "inputs": {
+                                              "PFAD": {
+                                                "block": {
+                                                  "type": "sl_get",
+                                                  "id": "beispiel_1",
+                                                  "fields": {
+                                                    "VAR": "Aktuelle Datei"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "B": {
+                                          "block": {
+                                            "type": "sl_newline",
+                                            "id": "beispiel_3"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "next": {
+                            "block": {
+                              "type": "sl_output",
+                              "id": "beispiel_16",
+                              "inputs": {
+                                "TEXT": {
+                                  "block": {
+                                    "type": "sl_text",
+                                    "id": "beispiel_15",
+                                    "fields": {
+                                      "TEXT": "Die Dateinamen stehen jetzt in ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt."
+                                    }
+                                  }
+                                }
+                              },
+                              "icons": {
+                                "comment": {
+                                  "text": "Die Ausgabe bestätigt erst nach der letzten geschriebenen Zeile den Ergebnisort. Im Editor und unter cscript.exe erscheint sie im Protokoll beziehungsweise in der Konsole. wscript.exe zeigt Textausgaben als Nachricht an.",
+                                  "pinned": false,
+                                  "width": 320,
+                                  "height": 130
                                 }
                               }
                             }
                           }
                         }
+                      },
+                      "icons": {
+                        "comment": {
+                          "text": "Ersetzt nur Dateinamen.txt und schreibt die Überschrift auch bei leerem Eingang. Die Quelldateien bleiben unverändert; UTF-8 erhält deutsche Dateinamen.",
+                          "pinned": false,
+                          "width": 320,
+                          "height": 130
+                        }
                       }
+                    }
+                  },
+                  "icons": {
+                    "comment": {
+                      "text": "Der Eingang muss vorhanden sein. Die Dateiliste wird vor dem Schreiben vollständig gelesen und nach Windows-Textvergleich sortiert. Unterordner und deren Dateien werden nicht einbezogen.",
+                      "pinned": false,
+                      "width": 320,
+                      "height": 130
                     }
                   }
                 }

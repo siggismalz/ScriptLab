@@ -248,11 +248,11 @@ test('Gestaltung: gespeicherte Workflows, Entwurf und Vorlagenkopie behalten ihr
     const vorlagendatei = resolve('beispiele/01-Begruessung.scriptlab');
     const vorlagenoriginal = await readFile(vorlagendatei);
     const vorlagenprojekt = projektPruefen(JSON.parse(vorlagenoriginal.toString('utf8')));
-    await s.seite
+    const vorlage = s.seite
       .getByTestId('beispiele')
-      .getByRole('article', { name: 'Eine Nachricht anzeigen – VBScript (VBS)', exact: true })
-      .getByRole('button', { name: 'Als Vorlage öffnen', exact: true })
-      .click();
+      .getByRole('article', { name: 'Eine Nachricht anzeigen – VBScript (VBS)', exact: true });
+    await vorlage.getByRole('button', { name: 'Eine Nachricht anzeigen', exact: true }).click();
+    await vorlage.getByRole('button', { name: 'Als Vorlage öffnen', exact: true }).click();
     await editorBereit(s);
     const kopie = await dokument(s);
     expect(kopie.projekt.projektKennung).not.toBe(vorlagenprojekt.projektKennung);

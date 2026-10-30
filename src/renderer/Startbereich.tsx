@@ -8,6 +8,7 @@ import { Statusanzeige } from './komponenten/Statusanzeige';
 import './startbereich.css';
 import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
 import { Marke } from './komponenten/Marke';
+import { VorlagenBereich, type VorlagenFilter } from './VorlagenBereich';
 
 type Seite = 'start' | 'projekte' | 'entwuerfe' | 'beispiele' | 'hilfe';
 type Sortierung = 'zuletzt' | 'name';
@@ -184,7 +185,6 @@ function markieren(text: string, suche: string): ReactNode {
 export function Startbereich(props: StartbereichEigenschaften) {
   const [seite, setSeite] = useState<Seite>(props.ziel ?? 'start');
   const [ausgewaehltesProjekt, setAusgewaehltesProjekt] = useState<string | null>(null);
-  const [vorlagenbereich, setVorlagenbereich] = useState<'beispiele' | 'dokumente'>('beispiele');
   const [listenseite, setListenseite] = useState(0);
   const [projektSuche, setProjektSuche] = useState('');
   const [projektSortierung, setProjektSortierung] = useState<Sortierung>('zuletzt');
@@ -192,7 +192,13 @@ export function Startbereich(props: StartbereichEigenschaften) {
   const [entwurfSuche, setEntwurfSuche] = useState('');
   const [entwurfSortierung, setEntwurfSortierung] = useState<Sortierung>('zuletzt');
   const [entwurfSprache, setEntwurfSprache] = useState<Sprachfilter>('alle');
-  const [beispielSprache, setBeispielSprache] = useState<Sprachfilter>('alle');
+  const [vorlagenFilter, setVorlagenFilter] = useState<VorlagenFilter>({
+    suche: '',
+    sprache: 'alle',
+    aufgabe: 'alle',
+    bereich: 'beispiele',
+  });
+  const [vorlagenAuswahl, setVorlagenAuswahl] = useState<BeispielKennung | null>(null);
   const [hilfeSuche, setHilfeSuche] = useState('');
   const [artikelId, setArtikelId] = useState<string | null>(null);
   const [sprungziel, setSprungziel] = useState<string | null>(null);
@@ -964,124 +970,15 @@ export function Startbereich(props: StartbereichEigenschaften) {
           )}
 
           {seite === 'beispiele' && (
-            <section data-testid="beispiele" aria-label="Lokale Beispielworkflows">
-              <nav className="start-unterbereiche" aria-label="Vorlagenbereiche">
-                <button
-                  type="button"
-                  aria-current={vorlagenbereich === 'beispiele' ? 'page' : undefined}
-                  onClick={() => setVorlagenbereich('beispiele')}
-                >
-                  Beispielworkflows
-                </button>
-                <button
-                  type="button"
-                  aria-current={vorlagenbereich === 'dokumente' ? 'page' : undefined}
-                  onClick={() => setVorlagenbereich('dokumente')}
-                >
-                  Dokumentvorlagen
-                </button>
-              </nav>
-              {vorlagenbereich === 'dokumente' && (
-                <section className="start-dokumentvorlagen">
-                  <h2>Dokumentvorlagen im Workflow</h2>
-                  <p>
-                    Dokumentvorlagen gehören zu ihrem jeweiligen Business-Workflow. Die Beispiele enthalten
-                    bearbeitbare Word-Vorlagen und passende Testdaten. Beim Verwenden entsteht eine
-                    unabhängige Kopie einschließlich der mitgelieferten Ressourcen.
-                  </p>
-                  <div className="start-liste">
-                    {(
-                      [
-                        {
-                          id: 'business-bestellvorschlag',
-                          name: 'Bestellung.docx',
-                          beschreibung: 'Bestellungen aus Lagerdaten erstellen',
-                        },
-                      ] as const
-                    ).map((vorlage) => (
-                      <article key={vorlage.id} className="start-listeneintrag">
-                        <h3>{vorlage.name}</h3>
-                        <p>{vorlage.beschreibung}</p>
-                        <p className="start-hilfetext">
-                          Die Vorlage behält ihre eigenen Farben und Absenderangaben.
-                        </p>
-                        <Knopf
-                          symbol="neu"
-                          disabled={gesperrt}
-                          grundId="start-verarbeitung"
-                          onClick={() => props.beispielOeffnen(vorlage.id)}
-                        >
-                          Workflow mit Vorlage verwenden
-                        </Knopf>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-              <div hidden={vorlagenbereich !== 'beispiele'}>
-                <div className="start-vorlagenwerkzeuge">
-                  <Auswahlfeld
-                    beschriftung="Beispiele nach Sprache filtern"
-                    value={beispielSprache}
-                    onChange={(e) => setBeispielSprache(e.target.value as Sprachfilter)}
-                  >
-                    <option value="alle">Alle Sprachen</option>
-                    <option value="python">Python</option>
-                    <option value="vbs">VBScript (VBS)</option>
-                  </Auswahlfeld>
-                  <details className="start-vorlagenhilfe">
-                    <summary>Vorlagen verwenden</summary>
-                    <p>
-                      Öffne ein Beispiel als eigene bearbeitbare Kopie. Das Original bleibt erhalten. Öffnen
-                      und Exportieren lösen keine beschriebenen Dateiaktionen aus.
-                    </p>
-                  </details>
-                </div>
-                <div className="start-liste">
-                  {beispiele
-                    .filter(
-                      (beispiel) => beispielSprache === 'alle' || beispiel.skriptsprache === beispielSprache,
-                    )
-                    .map((beispiel) => (
-                      <article
-                        className="start-listeneintrag start-beispiel"
-                        key={beispiel.id}
-                        aria-label={`${beispiel.name} – ${sprachdaten[beispiel.skriptsprache].bezeichnung}`}
-                      >
-                        <div className="start-vorlageninhalt">
-                          <h2>{beispiel.name}</h2>
-                          <p>{beispiel.beschreibung}</p>
-                        </div>
-                        <span className="skriptsprache-kennzeichen">
-                          {sprachdaten[beispiel.skriptsprache].bezeichnung}
-                        </span>
-                        <details className="start-vorlagendetails">
-                          <summary>Inhalt und Voraussetzungen</summary>
-                          <div>
-                            <ul>
-                              {beispiel.lernziele.map((ziel) => (
-                                <li key={ziel}>{ziel}</li>
-                              ))}
-                            </ul>
-                            <p className="start-hilfetext">{beispiel.vorbereitung}</p>
-                            <p className="start-metadaten">Vorlage: {beispiel.dateiname}</p>
-                          </div>
-                        </details>
-                        <div className="start-vorlagenaktion">
-                          <Knopf
-                            symbol="neu"
-                            onClick={() => props.beispielOeffnen(beispiel.id)}
-                            disabled={gesperrt}
-                            grundId="start-verarbeitung"
-                          >
-                            Als Vorlage öffnen
-                          </Knopf>
-                        </div>
-                      </article>
-                    ))}
-                </div>
-              </div>
-            </section>
+            <VorlagenBereich
+              vorlagen={beispiele}
+              filter={vorlagenFilter}
+              aendern={setVorlagenFilter}
+              auswahl={vorlagenAuswahl}
+              auswaehlen={setVorlagenAuswahl}
+              gesperrt={gesperrt}
+              oeffnen={props.beispielOeffnen}
+            />
           )}
 
           {seite === 'hilfe' && (

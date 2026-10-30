@@ -293,9 +293,11 @@ test('Python-Sprachfilter öffnet eine echte Vorlage als unabhängige Projektkop
     await expect(liste.getByRole('article')).toHaveCount(8);
     await expect(liste.getByRole('article', { name: /VBScript/ })).toHaveCount(0);
     const karte = liste.getByRole('article', {
-      name: 'Dateinamen in eine Textdatei schreiben – Python',
+      name: 'Dateinamen als Textliste speichern – Python',
       exact: true,
     });
+    await karte.getByRole('button', { name: 'Dateinamen als Textliste speichern', exact: true }).click();
+    await karte.getByText('Enthaltene Dateien und Sprache', { exact: true }).click();
     await expect(karte).toContainText('06-Python-Dateinamenliste.scriptlab');
     await karte.getByRole('button', { name: 'Als Vorlage öffnen', exact: true }).click();
     await editorBereit(s);

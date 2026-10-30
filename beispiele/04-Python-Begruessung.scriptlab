@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
   "appVersion": "0.1.0",
-  "name": "Eine Begrüßung",
-  "beschreibung": "Ein erstes Beispiel: Nach dem selbstständigen Start außerhalb von ScriptLab erscheint eine Nachricht. Öffnen, Bearbeiten und Exportieren führen diese Nachricht nicht aus.",
+  "name": "Eine Nachricht anzeigen",
+  "beschreibung": "Erster Workflow ohne Dateiänderungen: Erst „Ausführen“ im Editor oder der bewusste Start des exportierten Skripts öffnet eine Nachricht. Schließe den Dialog mit OK, damit der Lauf endet. Öffnen, Bearbeiten, Codevorschau und Export führen den Workflow nicht aus.",
   "editor": {
     "blocks": {
       "languageVersion": 0,
@@ -14,15 +14,32 @@
           "y": 65,
           "next": {
             "block": {
-              "type": "sl_message",
-              "id": "beispiel_2",
-              "inputs": {
-                "TEXT": {
-                  "block": {
-                    "type": "sl_text",
-                    "id": "beispiel_1",
-                    "fields": {
-                      "TEXT": "Hallo! Schön, dass du ScriptLab ausprobierst."
+              "type": "sl_comment",
+              "id": "vorlage_hinweis",
+              "fields": {
+                "TEXT": "Nachricht mit OK schließen, damit der Lauf endet."
+              },
+              "next": {
+                "block": {
+                  "type": "sl_message",
+                  "id": "beispiel_2",
+                  "inputs": {
+                    "TEXT": {
+                      "block": {
+                        "type": "sl_text",
+                        "id": "beispiel_1",
+                        "fields": {
+                          "TEXT": "Hallo! Schön, dass du ScriptLab ausprobierst."
+                        }
+                      }
+                    }
+                  },
+                  "icons": {
+                    "comment": {
+                      "text": "Diese Vorlage zeigt absichtlich einen Dialog. Der Lauf wartet auf OK. Die Nachricht kann im Textbaustein geändert werden.",
+                      "pinned": false,
+                      "width": 320,
+                      "height": 130
                     }
                   }
                 }

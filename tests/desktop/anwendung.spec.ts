@@ -419,18 +419,20 @@ test('sucht mit und ohne Treffer und öffnet ein lokales Beispiel über die Vorl
     .getByTestId('start-karten')
     .getByRole('button', { name: 'Beispielworkflows', exact: true })
     .click();
-  await seite
+  const vorlagenzeile = seite
     .getByTestId('beispiele')
-    .getByRole('article', { name: 'Eine Nachricht anzeigen – VBScript (VBS)', exact: true })
-    .getByRole('button', { name: 'Als Vorlage öffnen', exact: true })
-    .click();
+    .getByRole('article', { name: 'Eine Nachricht anzeigen – VBScript (VBS)', exact: true });
+  await vorlagenzeile.getByRole('button', { name: 'Eine Nachricht anzeigen', exact: true }).click();
+  await vorlagenzeile.getByRole('button', { name: 'Als Vorlage öffnen', exact: true }).click();
   const beispiel = JSON.parse(
     await readFile(resolve('beispiele/01-Begruessung.scriptlab'), 'utf8'),
   ) as Projekt;
   await expect.poll(async () => (await projektLesen()).name).toBe(`${beispiel.name} (Kopie)`);
   await editorBereit();
   expect((await projektLesen()).projektKennung).toMatch(/^[a-f0-9-]{36}$/i);
-  expect((await projektLesen()).editor.blocks!.blocks[0].next!.block.type).toBe('sl_message');
+  const kopie = (await projektLesen()).editor.blocks!.blocks[0].next!.block;
+  expect(kopie.type).toBe('sl_comment');
+  expect(kopie.next!.block.type).toBe('sl_message');
 });
 
 test('prüft Credits, Zertifikatsauflistung und die gesperrten Entwicklerupdates', async () => {

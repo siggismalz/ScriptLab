@@ -288,6 +288,7 @@ test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Exportab
       .filter({
         has: s.seite.getByRole('heading', { name: 'Bestellvorschlag als Word-Dokument', exact: true }),
       });
+    await beispiel.getByRole('button', { name: 'Bestellvorschlag als Word-Dokument', exact: true }).click();
     await beispiel.getByRole('button', { name: 'Als Vorlage öffnen', exact: true }).click();
     await editorBereit(s);
     const kopie = await dokument(s);

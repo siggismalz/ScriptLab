@@ -12,6 +12,9 @@ export interface BeispielInfo {
   beschreibung: string;
   lernziele: readonly string[];
   vorbereitung: string;
+  aufgabe: 'Einstieg' | 'Dateien' | 'Daten' | 'Dokumente';
+  ergebnis: string;
+  dokumentvorlagen?: readonly string[];
 }
 
 /** Metadaten der drei VBS-Vorlagen; die Python-Fassungen verweisen unten auf eigene Projektdateien. */
@@ -21,6 +24,8 @@ const vbsBeispiele: readonly BeispielInfo[] = [
     skriptsprache: 'vbs',
     name: 'Eine Nachricht anzeigen',
     dateiname: '01-Begruessung.scriptlab',
+    aufgabe: 'Einstieg',
+    ergebnis: 'Ein ausdrücklich gestarteter Lauf zeigt eine Nachricht an. Es werden keine Dateien geändert.',
     beschreibung: 'Ein Startbaustein und eine Nachricht bilden einen ersten vollständigen Ablauf.',
     lernziele: ['Anweisungen verbinden', 'Nachrichtentext bearbeiten', 'VBS-Vorschau und Export verstehen'],
     vorbereitung: 'Für dieses Beispiel sind keine Testdateien nötig.',
@@ -28,19 +33,24 @@ const vbsBeispiele: readonly BeispielInfo[] = [
   {
     id: 'backup',
     skriptsprache: 'vbs',
-    name: 'Dateien in einen Sicherungsordner kopieren',
+    name: 'Eine Testdatei sichern',
     dateiname: '02-Datei-Backup.scriptlab',
+    aufgabe: 'Dateien',
+    ergebnis:
+      'Eine unveränderte Quelldatei und eine inhaltsgleiche Sicherung; vorhandene Sicherungen werden erhalten.',
     beschreibung:
       'Prüft eine einzelne Testdatei, legt einen Sicherungsordner an und kopiert die Datei dorthin.',
     lernziele: ['Dateipfade festlegen', 'Eine Bedingung verwenden', 'Vorhandene Zieldateien beachten'],
     vorbereitung:
-      'Für einen bewusst gestarteten Test die Datei ScriptLab-Testdaten\\Backup\\Quelle\\beispiel.txt im ScriptLab-Arbeitsordner des Workflows selbst anlegen; für einen eigenständigen Start neben der exportierten VBS-Datei. Den Arbeitsordner kannst du unter „Läufe → Vorbereitung“ im Explorer öffnen. Die Sicherung entsteht unter ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt. Eine vorhandene Sicherung wird nicht überschrieben. Öffnen und Exportieren starten das Beispiel nicht.',
+      'Beim Verwenden der Vorlage wird eine kleine synthetische Quelldatei in den eigenen Arbeitsordner kopiert. Erst der bewusste Lauf erzeugt ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt; vorhandene Sicherungen werden nicht überschrieben. Für einen eigenständigen Export den Ordner ScriptLab-Testdaten mit der Quelldatei neben die VBS-Datei kopieren. Den Arbeitsordner findest du unter „Läufe → Vorbereitung“.',
   },
   {
     id: 'dateiliste',
     skriptsprache: 'vbs',
-    name: 'Dateinamen in eine Textdatei schreiben',
+    name: 'Dateinamen als Textliste speichern',
     dateiname: '03-Dateinamenliste.scriptlab',
+    aufgabe: 'Dateien',
+    ergebnis: 'Drei mitgelieferte Dateinamen in einer UTF-8-Textdatei; Unterordner bleiben unberücksichtigt.',
     beschreibung:
       'Sammelt die Dateinamen eines Testordners und schreibt sie zeilenweise in eine UTF-8-Textdatei.',
     lernziele: [
@@ -49,7 +59,7 @@ const vbsBeispiele: readonly BeispielInfo[] = [
       'Text mit Zeilenumbrüchen schreiben',
     ],
     vorbereitung:
-      'Für einen bewusst gestarteten Test den Ordner ScriptLab-Testdaten\\Dateiliste\\Eingang mit entbehrlichen Testdateien im ScriptLab-Arbeitsordner des Workflows anlegen; für einen eigenständigen Start neben der exportierten VBS-Datei. ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt wird bei der Ausführung erstellt oder ersetzt. Unterordner werden nicht durchsucht. Öffnen und Exportieren starten das Beispiel nicht.',
+      'Beim Verwenden der Vorlage werden synthetische Eingangsdateien in den eigenen Arbeitsordner kopiert. Erst der bewusste Lauf erstellt oder ersetzt ScriptLab-Testdaten\\Dateiliste\\Dateinamen.txt. Unterordner werden nicht durchsucht. Für einen eigenständigen Export den Ordner ScriptLab-Testdaten mit den Eingangsdateien neben die VBS-Datei kopieren. Öffnen und Exportieren führen den Workflow nicht aus.',
   },
 ];
 const pythonDateien: Record<string, string> = {
@@ -63,10 +73,17 @@ export const beispiele: readonly BeispielInfo[] = [
     skriptsprache: 'python' as const,
     name: b.name,
     dateiname: `business/${b.ordner}/workflow.scriptlab`,
+    aufgabe: (['business-monat', 'business-bestellungen'] as readonly string[]).includes(b.id)
+      ? ('Daten' as const)
+      : b.id === 'business-stapel'
+        ? ('Dateien' as const)
+        : ('Dokumente' as const),
+    ergebnis: b.erwartung,
+    ...(b.id === 'business-bestellvorschlag' ? { dokumentvorlagen: ['Bestellung.docx'] } : {}),
     beschreibung: b.beschreibung,
-    lernziele: [b.erwartung, 'Parameter, Strukturprüfung, Vorschau und echte Ausführung unterscheiden'],
+    lernziele: ['Parameter, Strukturprüfung, Vorschau und echte Ausführung unterscheiden'],
     vorbereitung:
-      'Verwendet die mitgelieferten Business-Komponenten. „Als Vorlage verwenden“ kopiert die synthetischen Testdateien in den Arbeitsordner eines eigenen Workflows. Der Bezug bleibt beim Speichern und Wiederherstellen erhalten. Für eigene Geschäftsdaten die Quellen bewusst ändern und Ausgabeziele prüfen. PDF-Berichte können die mitgelieferte Vera-Schrift verwenden. Öffnen startet keine Verarbeitung.',
+      'Verwendet die mitgelieferten Business-Komponenten. Beim Verwenden der Vorlage werden synthetische Testdateien in den Arbeitsordner eines eigenen Workflows kopiert. Der Bezug bleibt beim Speichern und Wiederherstellen erhalten. Für eigene Geschäftsdaten die Quellen bewusst ändern und Ausgabeziele prüfen. PDF-Berichte können die mitgelieferte Vera-Schrift verwenden. Öffnen startet keine Verarbeitung.',
   })),
   ...vbsBeispiele,
   ...vbsBeispiele.map((beispiel): BeispielInfo => ({
