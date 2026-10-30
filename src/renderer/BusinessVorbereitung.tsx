@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Projekt } from '../kern/projekt';
 import type { TestOptionen } from '../gemeinsam/testlauf';
 import { businessSchritte } from '../kern/business';
@@ -27,12 +27,19 @@ export const businessVorgaben: NonNullable<TestOptionen['business']> = {
   tempGB: 4,
   fortsetzen: false,
 };
+
+/** Ein neuer Business-Kontext beginnt mit einem Prüflauf; eine bewusste Wahl bleibt erhalten. */
+export function businessOptionenVorbereiten(optionen: TestOptionen): TestOptionen {
+  return optionen.business
+    ? optionen
+    : { ...optionen, business: structuredClone(businessVorgaben), zeitlimitSekunden: 7200 };
+}
 /** Ein Startversuch blendet echte Parameterfehler in der bestehenden Vorbereitung ein. */
 export const VorbereitungsPruefung = createContext(0);
 
 export function BusinessVorbereitung({
   projekt,
-  optionen,
+  optionen: gelieferteOptionen,
   aendern,
   gesperrt,
   merken,
@@ -43,12 +50,13 @@ export function BusinessVorbereitung({
   gesperrt: boolean;
   merken: (p: Projekt) => void;
 }) {
-  const b = optionen.business ?? businessVorgaben;
+  const optionen = businessOptionenVorbereiten(gelieferteOptionen);
+  const b = optionen.business!;
   const setzen = (neu: Partial<typeof b>) => aendern({ ...optionen, business: { ...b, ...neu } });
-  useEffect(() => {
-    if (!optionen.business)
-      aendern({ ...optionen, business: structuredClone(businessVorgaben), zeitlimitSekunden: 7200 });
-  }, []);
+  useLayoutEffect(() => {
+    const vorbereitet = businessOptionenVorbereiten(gelieferteOptionen);
+    if (vorbereitet !== gelieferteOptionen) aendern(vorbereitet);
+  }, [gelieferteOptionen, aendern]);
   const parameter = {
     ...Object.fromEntries(projekt.business.parameter.map((p) => [p.name, p.standard])),
     ...projekt.business.parametersaetze[b.parametersatz],

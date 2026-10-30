@@ -9,7 +9,12 @@ import {
   parameterTypWechseln,
   parameterWertAusText,
 } from '../src/renderer/ParameterDialog';
-import { BusinessVorbereitung, businessVorgaben, laufprofilWert } from '../src/renderer/BusinessVorbereitung';
+import {
+  BusinessVorbereitung,
+  businessOptionenVorbereiten,
+  businessVorgaben,
+  laufprofilWert,
+} from '../src/renderer/BusinessVorbereitung';
 import {
   BusinessEigenschaften,
   KonfigEingabe,
@@ -76,6 +81,21 @@ function formular(
 }
 
 describe('Verständliche, typisierte Business-Formulare', () => {
+  it('ergänzt einen zurückgesetzten Business-Kontext mit Prüflauf und erhält bewusste Optionen', () => {
+    const zurueckgesetzt = { basisVerzeichnis: 'C:\\Synthetisch', zeitlimitSekunden: 120 };
+    const ersterKontext = businessOptionenVorbereiten(zurueckgesetzt);
+    expect(ersterKontext.business?.modus).toBe('prueflauf');
+    expect(zurueckgesetzt).not.toHaveProperty('business');
+    ersterKontext.business!.parameter.Monat = '2026-10';
+    expect(businessOptionenVorbereiten({ ...zurueckgesetzt }).business?.parameter).toEqual({});
+    const bewusst = {
+      ...ersterKontext,
+      zeitlimitSekunden: 47,
+      business: { ...ersterKontext.business!, modus: 'ausfuehren' as const },
+    };
+    expect(businessOptionenVorbereiten(bewusst)).toBe(bewusst);
+  });
+
   it('wechselt UND und ODER direkt und erhält Kinder sowie bestehende Angaben unverändert', () => {
     const kinder = [
       {

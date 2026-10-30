@@ -67,8 +67,35 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
     );
     expect(kopf).toContain('Alle Läufe');
     expect(kopf).toContain('Ansichten des Laufs');
-    expect(kopf).toContain('Workflow ausführen');
+    expect(kopf).toContain('Prüflauf starten');
     expect(darstellung()).not.toContain('class="lauf-kopfnavigation"');
+  });
+
+  it('zeigt bei zurückgesetzten Business-Optionen bereits vor der Initialisierung einen Prüflauf', () => {
+    const html = darstellung(testBereit(), {
+      businessVorbereitung: createElement('div', {}, 'Modus und Parameter'),
+    });
+    expect(knopf(html, 'Prüflauf starten')).toContain('sl-knopf--primaer');
+    expect(html).toMatch(/class="testbereich-wirkung"[^>]*data-modus="prueflauf"[^>]*hidden=""/);
+    const ohneBusiness = darstellung();
+    expect(knopf(ohneBusiness, 'Workflow ausführen')).toContain('sl-knopf--primaer');
+    const bewusst = darstellung(testBereit(), {
+      businessVorbereitung: createElement('div', {}, 'Modus und Parameter'),
+      optionen: {
+        basisVerzeichnis: 'C:\\Synthetisch',
+        zeitlimitSekunden: 47,
+        business: {
+          modus: 'ausfuehren',
+          parametersatz: 'echt',
+          parameter: {},
+          speicherMB: 512,
+          tempGB: 4,
+          fortsetzen: false,
+        },
+      },
+    });
+    expect(knopf(bewusst, 'Workflow ausführen')).toContain('sl-knopf--primaer');
+    expect(bewusst).toMatch(/class="testbereich-wirkung"[^>]*data-modus="ausfuehren"/);
   });
 
   it('ordnet einen historischen Lauf in der Kopfleiste mit Datum, Modus und Stand ein', () => {

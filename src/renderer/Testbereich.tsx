@@ -8,7 +8,7 @@ import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
 import type { PythonStatus } from '../gemeinsam/python';
 import type { ReactNode } from 'react';
 import { BusinessErgebnis } from './BusinessErgebnis';
-import { VorbereitungsPruefung } from './BusinessVorbereitung';
+import { businessOptionenVorbereiten, VorbereitungsPruefung } from './BusinessVorbereitung';
 
 export interface TestbereichEigenschaften {
   workflowInfo?: { name: string; geaendert: boolean };
@@ -111,7 +111,8 @@ function startName(optionen: TestOptionen): string {
 
 /** Der Hauptprozess besitzt den Lauf; ein Ansichtswechsel ändert ausschließlich die Darstellung. */
 export function Testbereich(props: TestbereichEigenschaften) {
-  const { zustand, optionen, veraltet, gesperrt = false } = props;
+  const { zustand, veraltet, gesperrt = false } = props;
+  const optionen = props.businessVorbereitung ? businessOptionenVorbereiten(props.optionen) : props.optionen;
   const aktiv = testAktiv(zustand.phase);
   const hatLauf = Boolean(zustand.laufId || zustand.phase !== 'bereit');
   const sprache = sprachdaten[zustand.skriptsprache ?? props.sprache ?? 'vbs'];
