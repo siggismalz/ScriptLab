@@ -11,11 +11,13 @@ Im Projektordner:
 ```powershell
 npm ci
 npm run check
-npm test
 npm run build
+npm test
 npm run test:e2e
 npm run dev
 ```
+
+`npm run build` bereitet auch das Python-Bündel und den nativen Testhost vor. Diese Artefakte werden bereits von Modulprüfungen benötigt; deshalb bei einem frischen Checkout vor `npm test` bauen. Für die vollständige Desktopprüfung sind zusätzlich die unten beschriebenen Laufzeitprüfungen beziehungsweise die Testvorbereitung des [Windows-CI-Workflows](../.github/workflows/windows-pruefung.yml) erforderlich.
 
 `npm run dev` baut die Anwendung und öffnet das lokale Electron-Fenster. Dabei wird kein Webserver gestartet. Nach Codeänderungen erneut bauen und starten.
 

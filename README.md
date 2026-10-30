@@ -2,40 +2,151 @@
 
 **Eigene Abläufe bauen. Wiederkehrende Arbeit abgeben.**
 
-ScriptLab ist ein visueller Automatisierungsbaukasten für Windows. Du verbindest Bausteine, wählst deine Daten und legst fest, was passieren soll. So entstehen eigene Abläufe für die tägliche Arbeit – ohne selbst Code zu schreiben.
+ScriptLab ist ein visueller Automatisierungsbaukasten für **Windows 11 x64**. Du verbindest Bausteine, konfigurierst Datenquellen und legst fest, was passieren soll – ohne selbst Code zu schreiben. Workflows werden lokal bearbeitet, bewusst getestet und ausgeführt. Erzeugte Scripts und Business-Pakete lassen sich auch ohne geöffnete ScriptLab-Anwendung verwenden.
 
-**Nutzung:** Privat und nichtkommerziell kostenlos. Für kommerzielle Nutzung ist eine separat zu vereinbarende kostenpflichtige Lizenz von Leon Stolz erforderlich. Preise und Umfang werden individuell vereinbart. Maßgeblich ist [LICENSE.txt](LICENSE.txt); eigene Inhalte, eigenständige Exporte und Drittanbieterrechte sind dort getrennt geregelt.
+**Nutzung:** Privat und nichtkommerziell kostenlos. Kommerzielle Nutzung erfordert eine zuvor erworbene kostenpflichtige Lizenz von **Leon Stolz**. Preis und Umfang werden gesondert vereinbart. Maßgeblich ist [LICENSE.txt](LICENSE.txt).
 
-![Ein Workflow wertet Umsätze aus und erstellt daraus Berichte. Rechts werden die Einstellungen des ausgewählten Bausteins bearbeitet.](docs/produkt/editor.png)
+## Was ScriptLab kann
 
-## Was du damit erledigen kannst
+| Aufgabe                   | Vorhandene Funktionen                                                                                                                   |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Tabellen verarbeiten      | CSV und Excel einlesen, Datentypen festlegen, filtern, sortieren, berechnen, zusammenfassen und mit Stammdaten verbinden.               |
+| Dokumente erstellen       | Werte und Tabellen in Word-Vorlagen einsetzen, XLSX-Dateien und PDF-Berichte erzeugen, Text aus PDFs auslesen.                          |
+| Dateien bearbeiten        | Dateien suchen, kopieren und verschieben; Dateien und Ordner prüfen, Ordner anlegen und Abläufe mit Bedingungen oder Schleifen steuern. |
+| Abläufe steuern           | Variablen, Listen, Eingaben, Bedingungen, Schleifen und Workflowparameter verwenden.                                                    |
+| Ergebnisse nachvollziehen | Begrenzte Datenvorschau, Laufhistorie, bestätigte Ausgaben, Hinweise, Fehler und vollständige Laufberichte ansehen.                     |
 
-- **Tabellen auswerten:** CSV- und Excel-Dateien einlesen, Daten filtern, zusammenfassen und mit Stammdaten verbinden.
-- **Dokumente erstellen:** Werte und Tabellen in Word-Vorlagen einsetzen oder als Excel- und PDF-Berichte ausgeben.
-- **Dateien verarbeiten:** Dateien suchen, Inhalte prüfen und wiederkehrende Schritte mit Bedingungen und Schleifen verbinden.
+**Python** ist die Hauptsprache für Geschäftsprozesse, Tabellen, Dokumente und größere Aufgaben. Die Anwendung enthält CPython einschließlich Tcl/Tk und die festgelegten Business-Pakete. Dafür müssen Anwender weder Python noch zusätzliche Pakete installieren.
 
-## Vom Beispiel zum eigenen Ablauf
+**VBScript (VBS)** bleibt für kleinere Windows-Automatisierungen und vorhandene Projekte erhalten. Die Ausführung benötigt die verfügbare Windows-VBScript-Komponente und passende Richtlinien. Die gemeinsamen Grundbausteine sind für beide Sprachen vorhanden; die zusätzlichen Business-Funktionen gehören zu Python. Ein bestehender Workflow behält seine Sprache.
 
-1. Unter **Beispielworkflows** einen passenden Ablauf als eigene Kopie öffnen.
-2. Die Bausteine und ihre Eingaben anpassen. Eine Datenvorschau zeigt dir das Ergebnis unterstützter Tabellenschritte.
-3. Einen **Prüflauf ohne Zieländerungen** starten. Wenn die Angaben stimmen, den Workflow bewusst ausführen.
+## Oberfläche und Arbeitsbereiche
 
-![Kurzer Einblick in ScriptLab: ein Beispiel übernehmen, die Einstellungen öffnen und die Datenvorschau ansehen.](docs/produkt/einstieg.gif)
+![Aktuelle Startseite mit zuletzt geöffneten Workflows und vier Einstiegskarten.](docs/qualitaet/karten-ansichten/start-hell.png)
 
-[Lieber ein Standbild ansehen](docs/produkt/daten.png)
+**Start**, **Workflows**, **Vorlagen**, **Hilfe** und **Einstellungen** bilden die globale Navigation. Auf der Startseite führen Karten zu gespeicherten Workflows, Entwürfen, Beispielen und Anleitungen. **Weiterbearbeiten** kehrt zum vorhandenen Arbeitsstand zurück.
 
-Mit Parametern verwendest du denselben Ablauf für andere Dateien oder Zeiträume. Unter **Läufe** findest du die zugehörigen Ergebnisse und Hinweise wieder.
+Im geöffneten Workflow stehen drei Arbeitsbereiche zur Verfügung:
 
-![Die Ergebnisse eines abgeschlossenen Laufs mit den erzeugten Dateien und dem zugehörigen Workflowstand.](docs/produkt/ergebnisse.png)
+| Bereich                 | Zweck                                                                                                                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ablauf**              | Im Blockly-Bausteineditor Verbindungen und Reihenfolge bearbeiten. Bausteine per Ziehen oder über Plus und eine Einfügestelle ergänzen; Eigenschaften und Codevorschau bei Bedarf öffnen. |
+| **Daten und Parameter** | Bausteinangaben, Workflowparameter und unterstützte Tabellenvorschauen bearbeiten beziehungsweise prüfen.                                                                                 |
+| **Läufe**               | Einen Lauf vorbereiten, starten und stoppen oder Übersicht, Ergebnisse und Protokoll eines früheren Laufs ansehen.                                                                        |
 
-## Ohne Einrichtung loslegen
+Die Vorlagen verwenden ein anpassbares Kartenraster. Laufvorbereitung, bestätigte Zusammenfassung und Ausgabedateien sind als zusammengehörige Flächen gruppiert. **Hell**, **Dunkel** und **System** sowie die Textgröße lassen sich unter **Einstellungen → Darstellung** wählen. Die Textgröße der Oberfläche ist vom Canvaszoom getrennt.
 
-ScriptLab läuft lokal unter **Windows 11 x64**. Python und die Komponenten für Tabellen und Dokumente sind enthalten. Workflows und Laufausgaben bleiben in der ScriptLab-Ablage; erst beim Export wählst du einen Speicherort.
+[Bausteineditor ansehen](docs/qualitaet/vorlagen-ansichten/editor-hell.png) · [Karten und weitere Ansichten](docs/qualitaet/KARTEN.md)
 
-Du kannst deine Abläufe als bearbeitbare Projektdatei, Script oder Business-Paket weitergeben. Exportierte Python-Scripts benötigen auf dem Zielrechner eine eigene Python-Umgebung. Bestehende VBS-Workflows werden ebenfalls unterstützt.
+## Mit einer Vorlage anfangen
 
-**Aktueller Stand:** ScriptLab wird noch entwickelt. Ein öffentliches Installationspaket ist bisher nicht veröffentlicht.
+Die folgenden Schritte zeigen den Einstieg mit einer Python-Business-Vorlage, zum Beispiel **Monatliche Auswertung**.
 
-[Bedienung](docs/NEUE-BEDIENUNG.md) · [Beispiele und Geschäftsabläufe](docs/BUSINESS-BEDIENUNG.md) · [Entwicklung](docs/ENTWICKLUNG.md) · [Nutzung und Lizenzen](docs/ENTWICKLUNG.md#nutzung-und-lizenzen)
+1. **Vorlagen** oder auf der Startseite **Beispielworkflows** öffnen. Suche, Aufgabe und Sprache helfen bei der Auswahl.
+2. Eine Karte auswählen und Ergebnis, Vorbereitung sowie enthaltene Dateien prüfen. Die Auswahl startet keinen Lauf.
+3. **Als Vorlage öffnen** wählen. ScriptLab erstellt eine eigene bearbeitbare Kopie und übernimmt die mitgelieferten Testdaten in deren Arbeitsordner. Die Vorlage bleibt erhalten.
+4. Bausteine, Quellen und Parameter anpassen. **Speichern** sichert den Workflow intern; für eine weiterzugebende Projektdatei dient **Exportieren**.
+5. Bei einem unterstützten Business-Tabellenschritt die **Datenvorschau laden**. Anschließend unter **Läufe → Vorbereitung** Modus, Parametersatz, Quellen und Ausgabeziele prüfen.
+6. Bei unterstützten Python-Business-Workflows einen **Prüflauf ohne Zieländerungen** starten und seine Hinweise ansehen. Erst danach bewusst **Ausführen · echte Dateiänderungen** wählen und **Workflow ausführen** betätigen. Der Moduswechsel allein startet nichts. Grundbausteine und VBS werden ausdrücklich mit einem echten Lauf getestet.
+
+![Vorlagenkarten zeigen Aufgabe, Sprache und erwartetes Ergebnis vor dem Öffnen einer eigenen Kopie.](docs/qualitaet/karten-ansichten/vorlagen-hell.png)
+
+Es gibt **elf Beispielworkflows**: fünf Python-Business-Vorlagen sowie drei Einstiegsabläufe jeweils für Python und VBS. Die Einstiege zeigen eine Nachricht, sichern eine Testdatei oder schreiben Dateinamen in eine Textliste.
+
+| Business-Vorlage                                                                      | Beispielergebnis mit den mitgelieferten Testdaten                                                        |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| [Monatliche Auswertung](beispiele/business/A-Monatsauswertung/README.md)              | Umsätze nach Region zusammenfassen und als XLSX/PDF ausgeben: Nord 150, Süd 80, insgesamt 230.           |
+| [Bestellungen mit Stammdaten ergänzen](beispiele/business/B-Bestellungen/README.md)   | Drei Bestellungen zuordnen; K9 bleibt als Fehlerhinweis sichtbar. Zugeordneter Betrag: 85.               |
+| [Bestellvorschlag als Word-Dokument](beispiele/business/C-Bestellvorschlag/README.md) | Zwei Positionen für einen Lieferanten in eine DOCX-Vorlage einsetzen: 15 und 12, insgesamt 27 Einheiten. |
+| [Dokumenteingang geordnet ablegen](beispiele/business/D-Dokumenteingang/README.md)    | Zwei Textbelege als Kopien ablegen; ein Scan erhält einen Hinweis. Originale bleiben erhalten.           |
+| [Dateistapel verarbeiten und fortsetzen](beispiele/business/E-Dateistapel/README.md)  | Gültige CSVs verarbeiten und nach bestätigtem Ergebnis archivieren; fehlerhafte Quellen erhalten.        |
+
+Unter **Dokumentvorlagen** ist die vorhandene `Bestellung.docx` dem zugehörigen Workflow zugeordnet. Sie wird mit dessen eigener Kopie verwendet. Die Beispiele enthalten synthetische Daten; ein Bestellvorschlag versendet keine Bestellung.
+
+## Vorschau, Prüfung und echte Ausführung
+
+| Aktion                                    | Was passiert?                                                                                                                                                                           |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Codevorschau / Strukturprüfung**        | Zeigt erzeugten Quelltext beziehungsweise prüft den Workflow. Startet keine Verarbeitung.                                                                                               |
+| **Business-Datenvorschau**                | Liest bewusst die benötigten unterstützten Tabellenschritte und zeigt höchstens 200 Zeilen beziehungsweise 256 KiB. Filter oder Gruppierungen können trotzdem die gesamte Quelle lesen. |
+| **Business-Prüflauf ohne Zieländerungen** | Prüft unterstützte Schritte und geplante Ausgaben. Technische Zwischenfassungen können entstehen; fachliche Quellen und Ziele bleiben unverändert.                                      |
+| **Echte Ausführung / Grundbaustein-Test** | Führt den aktuellen Workflow tatsächlich aus. Dateiänderungen und Dialoge sind echt.                                                                                                    |
+
+Grundbausteine und VBS erhalten keinen vorgetäuschten Business-Prüflauf. Die Parametersätze **Testdaten** und **Echte Daten** sind keine Sicherheitsbereiche. **Stoppen** macht bereits erfolgte Dateiänderungen nicht rückgängig. Öffnen, Ansichtswechsel, Speichern und Export starten keinen Workflow.
+
+Unter **Läufe** gehören Ergebnisse und Protokolle zum tatsächlich ausgeführten Workflowstand samt Parametern und Arbeitsordner. Ein früherer Stand wird kenntlich gemacht; die Historie hält keine zusätzliche Kopie jeder Ausgabedatei vor.
+
+![Bestätigte Ausgabedateien und ihre Speicherzustände im Ergebnisbereich eines ausdrücklich gestarteten Laufs.](docs/qualitaet/karten-ansichten/lauf-hell.png)
+
+## Speichern, Ablage und Export
+
+Workflows, Entwürfe, Arbeitsdateien und Laufhistorie liegen außerhalb der Installation im ScriptLab-Nutzerverzeichnis, gewöhnlich unter `%APPDATA%\ScriptLab`. Relative Pfade verwenden in der Anwendung den Arbeitsordner des jeweiligen Workflows. Externe Quellen bleiben lesbar; Schreibziele innerhalb der App müssen in der ScriptLab-Nutzerablage liegen. **Speichern** überschreibt eine extern geöffnete Projektdatei nicht. Die automatische Entwurfssicherung ersetzt das bewusste Speichern nicht.
+
+| Export                        | Verwendung außerhalb von ScriptLab                                                                                                                                                        |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Projektdatei `.scriptlab`** | Bearbeitbaren Workflow in ScriptLab weiterverwenden; enthält Sprache, Bausteine, Verbindungen, Ansicht und Parameter. Ältere unterstützte Projektversionen werden beim Laden übernommen.  |
+| **Python-Script `.py`**       | Gewöhnlichen Python-Workflow mit einer passenden eigenen Python-Umgebung ausführen. Dialogbausteine benötigen dort zusätzlich Tcl/Tk.                                                     |
+| **VBS-Script `.vbs`**         | Mit Windows Script Host und verfügbarer VBScript-Komponente ausführen; optionale VBS-Signaturen bleiben unterstützt.                                                                      |
+| **Business-Paket `.zip`**     | Python-Script, Business-Module, feste Requirements, Parametervorlage und Anleitung unabhängig nutzen. Benötigt eine eigene passende Python-Umgebung; ein Interpreter ist nicht enthalten. |
+
+Vorlagen, Bilder und Schriften werden einem Business-Paket nur nach ausdrücklicher Ressourcenauswahl beigefügt. Geschäftsdaten, Berichte und Journale werden nicht automatisch mitgenommen. Beim eigenständigen Script beziehen sich relative Pfade standardmäßig auf den Scriptordner; absolute Pfade müssen zum Zielrechner passen. Der Scriptstart installiert keine Pakete. `.py`, `.vbs` und Business-ZIPs lassen sich nicht als bearbeitbare Projekte zurückimportieren.
+
+## Installation und Entwicklung
+
+ScriptLab befindet sich im Entwicklungsstand **0.2.0**. Ein öffentliches Installationspaket ist bisher nicht veröffentlicht; spätere Downloads gehören auf die [GitHub-Releases-Seite](https://github.com/siggismalz/ScriptLab/releases). Lokale Testinstaller sind keine produktive Freigabe.
+
+### Aus dem Repository starten
+
+Voraussetzungen: **Windows 11 x64**, **Node.js 24** und npm. Der Build verwendet außerdem den vorhandenen C#-Compiler des Windows-.NET-Frameworks 4. Die fertige Anwendung benötigt beim Anwender weder Node.js noch einen Compiler.
+
+```powershell
+git clone https://github.com/siggismalz/ScriptLab.git
+cd ScriptLab
+npm ci
+npm run dev
+```
+
+`npm run dev` baut die Anwendung und öffnet Electron. Es startet keinen Webserver; nach Codeänderungen erneut bauen und starten. Bei der ersten Buildvorbereitung werden das festgelegte Python-Bündel und die Business-Pakete heruntergeladen und geprüft. Die installierte Anwendung bringt diese Komponenten mit und lädt bei einem Workflowstart nichts nach.
+
+### Prüfen und einen Testinstaller bauen
+
+```powershell
+npm run check
+npm run build
+npm test
+```
+
+`npm test` führt die Modulprüfungen aus. Zusätzliche Windows-/Laufzeitprüfungen benötigen die jeweilige Testfreigabe und vorbereitete Umgebung; übersprungene Fälle sind kein erfolgreicher Laufzeitnachweis. Auch `npm run test:e2e` benötigt den Build und die festen Testvoraussetzungen, unter anderem die Business-Testumgebung. Die vollständige Vorbereitung steht im [Windows-CI-Workflow](.github/workflows/windows-pruefung.yml); [Entwicklung](docs/ENTWICKLUNG.md) und [Prüfplan](docs/PRUEFPLAN.md) erläutern die getrennten Prüfungen.
+
+```powershell
+npm run package
+npm run verify:package
+```
+
+Der NSIS-Testinstaller entsteht unter `release/ScriptLab-0.2.0-Setup-x64.exe`; die Paketprüfung schreibt `release/pruefung.json`. `npm run package:dir` erzeugt alternativ ein entpacktes Programmpaket. Diese Buildbefehle veröffentlichen nichts. Signierte Releases und Updates haben einen eigenen [Veröffentlichungsablauf](docs/RELEASES.md).
+
+## Entwicklungsstand und Grenzen
+
+- Der Editor hat Schutzgrenzen für Projektgröße und Verschachtelung. Das erneute Laden einer linearen 1000er-Blockkette ist noch nicht zuverlässig nachgewiesen; außerdem ist eine sporadische Farbschema-Abweichung aus der Windows-CI offen. Details stehen im [aktuellen Kartenbericht](docs/qualitaet/KARTEN.md) und dessen [unabhängigem Review](docs/qualitaet/KARTEN-REVIEW.md).
+- Excel-Formeln werden von openpyxl nicht berechnet. PDF-Textextraktion enthält keine OCR für Scans. Beliebige Word-/Excel-Funktionen oder Office-Konvertierungen werden nicht nachgebildet.
+- Es gibt keine automatische Zeitplanung, Cloud-Ausführung, Konten-, Mandanten- oder Abrechnungsverwaltung. Die Anwendung ist lokal; die spätere SaaS-Ausrichtung ist ein Architekturziel.
+- Prüfberichte gelten für ihren genannten Quell- und Paketstand. Erfolgreiche Modul- oder Desktoptests ersetzen keine vollständige Installer-, Update- oder Anwenderabnahme. Dokumentierte Lastmessungen sind keine Zusage unbegrenzter Skalierbarkeit.
+
+## Weiterführende Dokumentation
+
+| Thema                          | Einstieg                                                                                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bedienung und Geschäftsabläufe | [Aktuelle Bedienung](docs/NEUE-BEDIENUNG.md), [Business-Workflows](docs/BUSINESS-BEDIENUNG.md)                                                                |
+| Daten, Dokumente und Dateien   | [Tabellenverarbeitung](docs/BUSINESS-DATEN.md), [Dokumente und Dateisicherheit](docs/BUSINESS-DOKUMENTE.md)                                                   |
+| Ablage und Laufhistorie        | [Automatische Ablage und gespeicherte Läufe](docs/WEITERENTWICKLUNG.md)                                                                                       |
+| Oberfläche und Karten          | [Designsystem](docs/gestaltung/DESIGNSYSTEM.md), [Kartenansichten und Prüfungen](docs/qualitaet/KARTEN.md)                                                    |
+| Entwicklung und Architektur    | [Entwicklungsanleitung](docs/ENTWICKLUNG.md), [Architektur](docs/ARCHITEKTUR.md), [Versionen und Quellen](docs/VERSIONEN.md)                                  |
+| Qualität und Lastmessungen     | [Qualitätsdurchgang](docs/qualitaet/ABSCHLUSS.md), [Business-Abnahme](docs/BUSINESS-ABNAHME.md), [Datenumfang und Messungen](docs/BUSINESS-LEISTUNG-DATEN.md) |
+
+## Lizenz und Entwickler
+
+ScriptLab ist **keine Open-Source-Software**. Die [ScriptLab-Nutzungslizenz](LICENSE.txt) erlaubt private, nichtkommerzielle Nutzung kostenlos, einschließlich persönlichen Lernens und eigener Studienaufgaben. Betriebliche, berufliche oder selbstständige Nutzung erfordert eine gesonderte kostenpflichtige Vereinbarung mit **Leon Stolz**; auch interner geschäftlicher Einsatz ist kommerziell. Eine öffentliche Quellcodeablage ersetzt diese Vereinbarung nicht.
+
+Eigene Daten, Workflowdefinitionen und fachliche Ergebnisse bleiben eigene Inhalte. Rechtmäßig erzeugte Exporte dürfen nach den Lizenzbedingungen unabhängig ausgeführt, angepasst und weitergegeben werden; beim Empfänger ist dafür keine zusätzliche ScriptLab-Lizenz erforderlich. Enthaltene Komponenten behalten ihre Lizenzhinweise: [Drittanbieter](THIRD_PARTY_NOTICES.md), [Business-Pakete](laufzeit/business-notices.md) und [Python-Herkunft](laufzeit/python-herkunft.md).
 
 Entwickelt von **Leon Stolz**.
