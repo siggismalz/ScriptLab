@@ -6,6 +6,7 @@ import { businessDefinitionen } from '../kern/business-katalog';
 import { parameterWertePruefen } from '../kern/business-modell';
 import { Auswahlfeld, Feld } from './komponenten/Feld';
 import { Knopf } from './komponenten/Knopf';
+import { Karte } from './komponenten/Karte';
 import { ParameterWertEingabe } from './ParameterDialog';
 import { laufPfadangaben, laufPfadZusammenfassung } from './laufpfade';
 
@@ -112,7 +113,7 @@ export function BusinessVorbereitung({
   const pfadZusammenfassung = laufPfadZusammenfassung(pfadschritte.flatMap((s) => s.angaben));
   return (
     <section className="business-parameter">
-      <div className="lauf-kernauswahl">
+      <Karte as="section" className="lauf-kernauswahl" aria-label="Modus und Parametersatz">
         <Auswahlfeld
           beschriftung="Modus"
           value={b.modus}
@@ -139,7 +140,7 @@ export function BusinessVorbereitung({
           <option value="test">Testdaten</option>
           <option value="echt">Echte Daten</option>
         </Auswahlfeld>
-      </div>
+      </Karte>
       {projekt.business.parameter.length > 0 && (
         <details
           className="lauf-parameterwerte"

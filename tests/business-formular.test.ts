@@ -209,6 +209,34 @@ describe('Verständliche, typisierte Business-Formulare', () => {
     );
     expect(gesperrt).toMatch(/<button[^>]*disabled/);
   });
+  it('fasst Modus und Parametersatz in einem benannten Abschnitt zusammen und erhält die Sperre', () => {
+    const html = render(
+      createElement(BusinessVorbereitung, {
+        projekt: neuesProjekt('python'),
+        optionen: {
+          basisVerzeichnis: 'C:\\Synthetisch',
+          zeitlimitSekunden: 60,
+          business: structuredClone(businessVorgaben),
+        },
+        aendern: nichts,
+        gesperrt: true,
+        merken: nichts,
+      }),
+    );
+    const laufauswahl = html.match(
+      /<section\b[^>]*aria-label="Modus und Parametersatz"[^>]*>([\s\S]*?)<\/section>/,
+    )?.[1];
+    expect(laufauswahl).toBeDefined();
+    expect(laufauswahl).toContain('Modus');
+    expect(laufauswahl).toContain('Parametersatz');
+    expect(laufauswahl).toContain('<option value="prueflauf" selected="">');
+    expect(laufauswahl).toContain('<option value="test" selected="">');
+    expect(laufauswahl!.match(/<select\b[^>]*disabled/g)).toHaveLength(2);
+    expect(laufauswahl).not.toContain('Laufprofil');
+    expect(html).toContain('Quellen und Ausgabeziele');
+    expect(html).toContain('Weitere Einstellungen');
+    expect(html).toContain('Laufprofil');
+  });
   it('zeigt die tatsächlich gesetzten 15/60/eigenen Sekunden ohne falsches Zweistundenprofil', () => {
     const projekt = neuesProjekt('python');
     projekt.business.parameter = [

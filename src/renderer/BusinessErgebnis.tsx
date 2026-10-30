@@ -2,6 +2,7 @@ import { useId, useRef, useState } from 'react';
 import type { TestOptionen, TestZustand } from '../gemeinsam/testlauf';
 import { businessDefinitionen } from '../kern/business-katalog';
 import { Knopf } from './komponenten/Knopf';
+import { Karte } from './komponenten/Karte';
 import './business.css';
 
 export interface BusinessErgebnisEigenschaften {
@@ -101,6 +102,11 @@ export function BusinessErgebnis({
   const hatBlockaktionen = Boolean(
     blockAnzeigen && letzteMeldungen.some((m) => m.art === 'Fehler' && m.blockId),
   );
+  const hatZusammenfassung =
+    kontextZeigen ||
+    Boolean(fortschritt) ||
+    dateizaehler.length > 0 ||
+    (anzahl(summen?.fehlerhaft) && summen.fehlerhaft > 0);
 
   async function dateiImExplorerAnzeigen(art: 'ausgabe' | 'bericht', name: string, index?: number) {
     if (!dateiAnzeigen || dateiAuftrag.current) return;
@@ -130,67 +136,77 @@ export function BusinessErgebnis({
           Laufergebnisse
         </h3>
       )}
-      {kontextZeigen && (
-        <>
-          <h3 id={titelId}>Business-Ablauf</h3>
-          <dl className="business-ergebnis-angaben">
+      {hatZusammenfassung && (
+        <Karte
+          as="section"
+          className="business-ergebnis-zusammenfassung"
+          aria-label="Zusammenfassung des Laufs"
+        >
+          {kontextZeigen && (
             <div>
-              <dt>Modus</dt>
-              <dd>{modus ? (modi[modus] ?? 'Nicht bekannt') : 'Noch nicht gemeldet'}</dd>
-            </div>
-            <div>
-              <dt>Parametersatz</dt>
-              <dd>
-                {optionen.business?.parametersatz === 'test'
-                  ? 'Testdaten'
-                  : optionen.business?.parametersatz === 'echt'
-                    ? 'Echte Daten'
-                    : 'Nicht bekannt'}
-              </dd>
-            </div>
-            <div>
-              <dt>{aktiv ? 'Aktueller Schritt' : 'Letzter Schritt'}</dt>
-              <dd>
-                {schrittname ?? (business.schritt ? 'Business-Baustein' : 'Noch kein Schritt gemeldet')}
-              </dd>
-            </div>
-          </dl>
-        </>
-      )}
-      {fortschritt && (
-        <div className="business-ergebnis-fortschritt">
-          <p>
-            Zuletzt gemeldeter Dateifortschritt: {fortschritt.erledigt as number}
-            {anzahl(fortschritt.gesamt) ? ` von ${fortschritt.gesamt}` : ''} Dateien
-          </p>
-          {anzahl(fortschritt.gesamt) &&
-            fortschritt.gesamt > 0 &&
-            (fortschritt.erledigt as number) <= fortschritt.gesamt && (
-              <progress
-                aria-label="Gemeldeter Dateifortschritt"
-                value={fortschritt.erledigt as number}
-                max={fortschritt.gesamt}
-              />
-            )}
-        </div>
-      )}
-      {(dateizaehler.length > 0 || anzahl(summen?.fehlerhaft)) && (
-        <div>
-          {dateizaehler.length > 0 && (
-            <>
-              <h4>Ausgabedateien</h4>
+              <h3 id={titelId}>Business-Ablauf</h3>
               <dl className="business-ergebnis-angaben">
-                {dateizaehler.map(([feld, titel]) => (
-                  <div key={feld}>
-                    <dt>{titel}</dt>
-                    <dd>{summen![feld] as number}</dd>
-                  </div>
-                ))}
+                <div>
+                  <dt>Modus</dt>
+                  <dd>{modus ? (modi[modus] ?? 'Nicht bekannt') : 'Noch nicht gemeldet'}</dd>
+                </div>
+                <div>
+                  <dt>Parametersatz</dt>
+                  <dd>
+                    {optionen.business?.parametersatz === 'test'
+                      ? 'Testdaten'
+                      : optionen.business?.parametersatz === 'echt'
+                        ? 'Echte Daten'
+                        : 'Nicht bekannt'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>{aktiv ? 'Aktueller Schritt' : 'Letzter Schritt'}</dt>
+                  <dd>
+                    {schrittname ?? (business.schritt ? 'Business-Baustein' : 'Noch kein Schritt gemeldet')}
+                  </dd>
+                </div>
               </dl>
-            </>
+            </div>
           )}
-          {anzahl(summen?.fehlerhaft) && summen.fehlerhaft > 0 && <p>Fehlermeldungen: {summen.fehlerhaft}</p>}
-        </div>
+          {fortschritt && (
+            <div className="business-ergebnis-fortschritt">
+              <p>
+                Zuletzt gemeldeter Dateifortschritt: {fortschritt.erledigt as number}
+                {anzahl(fortschritt.gesamt) ? ` von ${fortschritt.gesamt}` : ''} Dateien
+              </p>
+              {anzahl(fortschritt.gesamt) &&
+                fortschritt.gesamt > 0 &&
+                (fortschritt.erledigt as number) <= fortschritt.gesamt && (
+                  <progress
+                    aria-label="Gemeldeter Dateifortschritt"
+                    value={fortschritt.erledigt as number}
+                    max={fortschritt.gesamt}
+                  />
+                )}
+            </div>
+          )}
+          {(dateizaehler.length > 0 || anzahl(summen?.fehlerhaft)) && (
+            <div>
+              {dateizaehler.length > 0 && (
+                <>
+                  <h4>Ausgabedateien</h4>
+                  <dl className="business-ergebnis-angaben">
+                    {dateizaehler.map(([feld, titel]) => (
+                      <div key={feld}>
+                        <dt>{titel}</dt>
+                        <dd>{summen![feld] as number}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </>
+              )}
+              {anzahl(summen?.fehlerhaft) && summen.fehlerhaft > 0 && (
+                <p>Fehlermeldungen: {summen.fehlerhaft}</p>
+              )}
+            </div>
+          )}
+        </Karte>
       )}
       {letzteMeldungen.length > 0 && (
         <div>
@@ -225,7 +241,7 @@ export function BusinessErgebnis({
         </div>
       )}
       {ausgaben.length > 0 && (
-        <div>
+        <Karte as="section" className="business-ergebnis-dateikarte" aria-label="Dateien und Ausgabeziele">
           <h4>Dateien und Ausgabeziele</h4>
           <ul className="business-ergebnis-ausgaben">
             {ausgaben.slice(0, 5).map(({ daten: a, index }) => {
@@ -263,7 +279,7 @@ export function BusinessErgebnis({
             })}
           </ul>
           {ausgaben.length > 5 && <p>Weitere Ausgabeziele stehen im vollständigen Laufbericht.</p>}
-        </div>
+        </Karte>
       )}
       {(berichtPfad || bericht) && (
         <details className="business-ergebnis-bericht">

@@ -274,6 +274,22 @@
   color: var(--farbe-fehler);
 }
 
+/* Karten gruppieren den Laufkontext; Datenzeilen und Meldungen bleiben Listen. */
+.business-ergebnis > .sl-karte h3,
+.business-ergebnis > .sl-karte h4 {
+  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+}
+.business-ergebnis > .business-ergebnis-zusammenfassung {
+  display: grid;
+  gap: var(--abstand-16);
+}
+.business-ergebnis-zusammenfassung > div > p {
+  margin: var(--abstand-8) 0 0;
+}
+.business-ergebnis-zusammenfassung > .business-ergebnis-fortschritt > p {
+  margin: 0 0 var(--abstand-8);
+}
+
 .business-bindungswert {
   display: flex;
   flex-wrap: wrap;

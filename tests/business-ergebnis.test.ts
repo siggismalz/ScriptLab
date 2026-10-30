@@ -17,17 +17,61 @@ const optionen: TestOptionen = {
     fortsetzen: false,
   },
 };
-function zeigen(werte: Partial<Business> = {}, aktiv = false) {
+function zeigen(werte: Partial<Business> = {}, aktiv = false, kontextZeigen = true) {
   return renderToStaticMarkup(
     createElement(BusinessErgebnis, {
       business: { schritt: null, ereignisse: [], vorschau: null, bericht: null, ...werte },
       optionen,
       aktiv,
+      kontextZeigen,
     }),
   );
 }
 
 describe('Verständliche Business-Ergebnisse aus tatsächlichen Laufdaten', () => {
+  it('gruppiert die Laufzusammenfassung und vorhandene Dateiergebnisse als benannte Abschnitte', () => {
+    const html = zeigen({
+      ereignisse: [
+        { art: 'fortschritt', einheit: 'Dateien', erledigt: 2, gesamt: 3 },
+        { art: 'hinweis', meldung: 'Ein Ziel wurde übersprungen.' },
+      ],
+      bericht: {
+        summen: { verarbeitet: 2, uebersprungen: 1 },
+        ausgaben: [
+          { pfad: 'C:\\Synthetisch\\Bericht.csv', status: 'publiziert' },
+          { pfad: 'C:\\Synthetisch\\Original.csv', status: 'uebersprungen' },
+        ],
+      },
+    });
+    const zusammenfassung = html.match(
+      /<section\b[^>]*aria-label="Zusammenfassung des Laufs"[^>]*>([\s\S]*?)<\/section>/,
+    )?.[1];
+    expect(zusammenfassung).toBeDefined();
+    expect(zusammenfassung).toContain('Echte Ausführung');
+    expect(zusammenfassung).toContain('2 von 3 Dateien');
+    expect(zusammenfassung).toContain('<dt>Fertig</dt><dd>2</dd>');
+    expect(zusammenfassung).not.toContain('Ein Ziel wurde übersprungen.');
+    const dateien = html.match(
+      /<section\b[^>]*aria-label="Dateien und Ausgabeziele"[^>]*>([\s\S]*?)<\/section>/,
+    )?.[1];
+    expect(dateien).toBeDefined();
+    expect(dateien).toContain('Bericht.csv');
+    expect(dateien).toContain('Gespeichert');
+    expect(dateien).toContain('Original.csv');
+    expect(dateien).toContain('Übersprungen');
+    expect(dateien!.match(/<li\b/g)).toHaveLength(2);
+    expect(dateien).not.toMatch(/<(article|section)\b/);
+    expect(html).toContain('Ein Ziel wurde übersprungen.');
+    expect(html).toContain('Vollständiger Laufbericht');
+  });
+  it('erzeugt ohne vorhandenen Kontext oder Dateiergebnisse keine leeren Ergebnisgruppen', () => {
+    const html = zeigen({ bericht: { summen: { fehlerhaft: 0 }, ausgaben: [] } }, false, false);
+    expect(html).toContain('Laufergebnisse');
+    expect(html).not.toContain('aria-label="Zusammenfassung des Laufs"');
+    expect(html).not.toContain('aria-label="Dateien und Ausgabeziele"');
+    expect(html).not.toContain('Ausgabedateien');
+    expect(html).toContain('Vollständiger Laufbericht');
+  });
   it('zeigt Modus und Parametersatz ohne erfundene Dateizähler', () => {
     const html = zeigen();
     expect(html).toContain('Echte Ausführung');
