@@ -333,14 +333,15 @@ await pruefen('Beispiele und Windows-Helfer', async () => {
     'D-Dokumenteingang',
     'E-Dateistapel',
   ];
+  const mlOrdner = ['F-ML-Klassifikation', 'G-ML-Regression'];
   const erwarteteProjekte = [
     ...basisProjekte,
-    ...businessOrdner.map((name) => `business/${name}/workflow.scriptlab`),
+    ...[...businessOrdner, ...mlOrdner].map((name) => `business/${name}/workflow.scriptlab`),
   ].sort();
   verlangen(
     JSON.stringify(dateien.filter((pfad) => pfad.endsWith('.scriptlab'))) ===
       JSON.stringify(erwarteteProjekte),
-    'Es müssen genau die sechs Basisprojekte und fünf Business-Beispielprojekte vorhanden sein.',
+    'Es müssen genau sechs Basisprojekte, fünf allgemeine Businessprojekte und zwei ML-Projekte vorhanden sein.',
   );
   for (const name of businessOrdner) {
     for (const beilage of ['README.md', 'parameter.json', 'plan.json'])
@@ -353,6 +354,9 @@ await pruefen('Beispiele und Windows-Helfer', async () => {
       `Die synthetischen Eingabedateien für ${name} fehlen.`,
     );
   }
+  for (const name of mlOrdner)
+    for (const beilage of ['README.md', 'training.csv', 'neue-daten.csv'])
+      verlangen(dateien.includes(`business/${name}/${beilage}`), `ML-Beilage fehlt: ${name}/${beilage}`);
   verlangen(
     JSON.stringify(dateien) === JSON.stringify(await dateienSammeln(join(ressourcen, 'beispiele'))),
     'Die vollständige Dateiliste der gepackten Beispiele samt Testdaten und Vorlagen stimmt nicht.',
@@ -370,6 +374,7 @@ await pruefen('Beispiele und Windows-Helfer', async () => {
   return {
     basisProjekte: basisProjekte.length,
     businessProjekte: businessOrdner.length,
+    mlProjekte: mlOrdner.length,
     beispielDateien: dateien.length,
     alleBytegleich: true,
   };
@@ -391,6 +396,16 @@ await pruefen('Business-Laufzeit, Schrift und Lizenzbeilagen', async () => {
     'scriptlab_business/dokumente.py',
     'scriptlab_business/kontext.py',
     'scriptlab_business/typen.py',
+    'scriptlab_ml/__init__.py',
+    'scriptlab_ml/baumpruefung.py',
+    'scriptlab_ml/format.py',
+    'scriptlab_ml/profil.py',
+    'scriptlab_ml/verarbeitung.py',
+    'scriptlab_ml/vorbereitung.py',
+    'requirements-ml.lock',
+    'requirements-ml.in',
+    'ml-profil.json',
+    'ml-notices.md',
     'scriptlab_business/schriften/Vera.ttf',
     'scriptlab_business/schriften/bitstream-vera-license.txt',
     'scriptlab_business/schriften/HERKUNFT.md',

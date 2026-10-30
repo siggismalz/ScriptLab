@@ -93,7 +93,14 @@ try {
   bericht.mlStatusOhneEinrichtung = ml.wert.status.zustand;
   const geladen = await seite.evaluate(() => window.scriptlab.laden());
   if (!geladen.ok) throw new Error(geladen.meldung);
-  const neu = await seite.evaluate((p) => window.scriptlab.neu(p, 'python'), geladen.wert.dokument.projekt);
+  const mlNeu = await seite.evaluate(
+    (p) => window.scriptlab.neu(p, 'python', 'ml'),
+    geladen.wert.dokument.projekt,
+  );
+  if (!mlNeu.ok || mlNeu.wert?.projekt.workflowArt !== 'ml')
+    throw new Error('Die spezialisierte ML-Neuanlage funktioniert im Paket nicht.');
+  bericht.mlNeuanlageOhneEinrichtung = true;
+  const neu = await seite.evaluate((p) => window.scriptlab.neu(p, 'python'), mlNeu.wert.projekt);
   if (!neu.ok || !neu.wert) throw new Error('Der synthetische Python-Workflow konnte nicht angelegt werden.');
   const projekt = neu.wert.projekt;
   const soll = 'ScriptLab-Paketprüfung: Grüße äöü';
@@ -135,15 +142,6 @@ try {
     pythonVersion: zustand.pythonVersion,
     dateiinhalt: inhalt,
   };
-  const vorher = await seite.evaluate(() => window.scriptlab.laden());
-  if (!vorher.ok) throw new Error(vorher.meldung);
-  const mlNeu = await seite.evaluate(
-    (p) => window.scriptlab.neu(p, 'python', 'ml'),
-    vorher.wert.dokument.projekt,
-  );
-  if (!mlNeu.ok || mlNeu.wert?.projekt.workflowArt !== 'ml')
-    throw new Error('Die spezialisierte ML-Neuanlage funktioniert im Paket nicht.');
-  bericht.mlNeuanlageOhneEinrichtung = true;
   bericht.bestanden = true;
 } catch (fehler) {
   bericht.fehler = String(fehler.stack ?? fehler);
