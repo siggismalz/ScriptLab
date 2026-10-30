@@ -213,6 +213,58 @@ describe('Verständliche, typisierte Business-Formulare', () => {
     expect(businessAuswahlText('ERSETZEN', 'konflikt')).toContain('Datei');
     expect(businessAuswahlText('ERSETZEN', 'leere')).toBe('Ersatzwert verwenden');
   });
+  it('lässt feste gültige Auswahlen weg und hält unbekannte gespeicherte Werte korrigierbar', () => {
+    const feld: KonfigFeld = {
+      name: 'aktion',
+      titel: 'Aktion',
+      art: 'auswahl',
+      standard: 'AUSWAEHLEN',
+      optionen: ['AUSWAEHLEN'],
+    };
+    let aenderungen = 0;
+    const aendern = () => {
+      aenderungen++;
+    };
+    expect(render(createElement(KonfigEingabe, { feld, wert: 'AUSWAEHLEN', aendern }))).toBe('');
+    const html = render(createElement(KonfigEingabe, { feld, wert: 'ALTE_AKTION', aendern }));
+    expect(html).toContain('<option value="ALTE_AKTION" selected="">ALTE_AKTION · nicht verfügbar</option>');
+    expect(html).toContain('<option value="AUSWAEHLEN">Spalten auswählen</option>');
+    expect(aenderungen).toBe(0);
+  });
+  it('zeigt häufige Importangaben direkt und seltene Optionen in weiteren Einstellungen', () => {
+    const csv = formular('sl_biz_lesen_csv', { pfad: 'testdaten/umsatz.csv' });
+    const csvDirekt = csv.slice(0, csv.indexOf('<details class="business-weitere"'));
+    expect(csvDirekt).toContain('Dateipfad');
+    expect(csvDirekt).toContain('Trennzeichen');
+    expect(csvDirekt).not.toContain('Dateiformat');
+    expect(csvDirekt).not.toContain('Zeichenkodierung');
+    expect(csv).toContain('<summary>Weitere Einstellungen</summary>');
+    expect(csv).toContain('Zeichenkodierung');
+    const xlsx = formular('sl_biz_lesen_xlsx', { pfad: 'testdaten/umsatz.xlsx' });
+    const xlsxDirekt = xlsx.slice(0, xlsx.indexOf('<details class="business-weitere"'));
+    expect(xlsxDirekt).toContain('Arbeitsblatt');
+    expect(xlsxDirekt).toContain('Zellbereich');
+    expect(xlsxDirekt).not.toContain('Vorhandene Formeln');
+    const parquet = formular('sl_biz_lesen_parquet', { pfad: 'testdaten/umsatz.parquet' });
+    expect(parquet).not.toContain('Importeinstellungen');
+    expect(parquet).not.toContain('Weitere Einstellungen');
+  });
+  it('erklärt bei fehlenden Quellen den nächsten Schritt statt eines allein leeren Auswahlfelds', () => {
+    const html = formular('sl_biz_spalten', { spalten: ['Kundennummer'] });
+    expect(html).toContain('Füge vorher eine Datenquelle hinzu und verbinde sie mit dem Ablauf.');
+    expect(html).toMatch(/<select[^>]+aria-describedby="[^"]+-hilfe"/);
+    expect(html).not.toContain('>Aktion</label>');
+  });
+  it('zeigt die Standardschrift verständlich und erhält eigene TTF-Pfade als Eingabe', () => {
+    const standard = formular('sl_biz_pdf_bericht', { schrift: 'INTERN:VERA' });
+    expect(standard).toContain('<option value="mitgeliefert" selected="">Mitgelieferte Schrift</option>');
+    expect(standard).not.toContain('INTERN:VERA');
+    expect(standard).not.toContain('Pfad zur Schriftdatei');
+    const eigene = formular('sl_biz_pdf_bericht', { schrift: 'testdaten/Firmenschrift.ttf' });
+    expect(eigene).toContain('<option value="eigene" selected="">Eigene Schriftdatei</option>');
+    expect(eigene).toContain('Pfad zur Schriftdatei (TTF)');
+    expect(eigene).toContain('value="testdaten/Firmenschrift.ttf"');
+  });
   it('zeigt gespeicherte Kurzformbedingungen und ihre Parameter mit denselben tatsächlichen Werten', () => {
     const bedingung = {
       art: 'vergleich',

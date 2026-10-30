@@ -4,6 +4,18 @@
   gap: var(--abstand-16);
   min-width: 0;
 }
+.business-weitere > summary {
+  cursor: pointer;
+  min-height: 32px;
+  padding-block: var(--abstand-4);
+  color: var(--farbe-text-sekundaer);
+}
+.business-weitere > summary:hover {
+  color: var(--farbe-text);
+}
+.business-weitere > .business-formular {
+  padding-top: var(--abstand-12);
+}
 .business-formular fieldset,
 .business-parameter fieldset {
   min-width: 0;

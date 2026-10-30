@@ -1,6 +1,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useRef,
   useState,
   useId,
@@ -726,6 +727,13 @@ export function KonfigEingabe(eigenschaften: KonfigEingabeEigenschaften) {
   const fehler = pfad
     ? formular.feldFehler.filter((f) => JSON.stringify(f.feldPfad) === JSON.stringify(pfad))
     : [];
+  if (
+    eigenschaften.feld.art === 'auswahl' &&
+    eigenschaften.feld.optionen?.length === 1 &&
+    eigenschaften.wert === eigenschaften.feld.optionen[0] &&
+    !fehler.length
+  )
+    return null;
   return (
     <div
       data-konfig-pfad={pfad ? JSON.stringify(pfad) : undefined}
@@ -985,12 +993,15 @@ function KonfigEingabeInhalt({
     return (
       <Auswahlfeld
         beschriftung={feld.titel}
-        aria-invalid={feldUngueltig || undefined}
+        aria-invalid={feldUngueltig || !feld.optionen!.includes(String(wert)) || undefined}
         aria-describedby={feldFehlerId}
         value={String(wert)}
         disabled={gesperrt}
         onChange={(e) => aendern(e.target.value)}
       >
+        {!feld.optionen!.includes(String(wert)) && (
+          <option value={String(wert)}>{String(wert) || 'Keine Auswahl'} · nicht verfügbar</option>
+        )}
         {feld.optionen!.map((v) => (
           <option key={v} value={v}>
             {feld.name === 'nullen'
@@ -1014,16 +1025,42 @@ function KonfigEingabeInhalt({
       variablen={feld.art === 'text' || typeof w.variable === 'string' ? formular.variablen : []}
       eingabe={
         <>
-          <Feld
-            beschriftung={feld.titel}
-            aria-invalid={feldUngueltig || undefined}
-            aria-describedby={feldFehlerId}
-            list={['spalte', 'links', 'rechts'].includes(feld.name) ? spaltenListe : undefined}
-            value={typeof wert === 'object' ? '' : String(wert ?? '')}
-            disabled={gesperrt}
-            type={feld.art === 'zahl' ? 'number' : 'text'}
-            onChange={(e) => aendern(feld.art === 'zahl' ? Number(e.target.value) : e.target.value)}
-          />
+          {formular.blockTyp === 'sl_biz_pdf_bericht' && feld.name === 'schrift' ? (
+            <>
+              <Auswahlfeld
+                beschriftung="Schrift"
+                aria-invalid={feldUngueltig || undefined}
+                aria-describedby={feldFehlerId}
+                value={wert === 'INTERN:VERA' ? 'mitgeliefert' : 'eigene'}
+                disabled={gesperrt}
+                onChange={(e) => aendern(e.target.value === 'mitgeliefert' ? 'INTERN:VERA' : '')}
+              >
+                <option value="mitgeliefert">Mitgelieferte Schrift</option>
+                <option value="eigene">Eigene Schriftdatei</option>
+              </Auswahlfeld>
+              {wert !== 'INTERN:VERA' && (
+                <Feld
+                  beschriftung="Pfad zur Schriftdatei (TTF)"
+                  value={typeof wert === 'string' ? wert : ''}
+                  disabled={gesperrt}
+                  aria-invalid={feldUngueltig || undefined}
+                  aria-describedby={feldFehlerId}
+                  onChange={(e) => aendern(e.target.value)}
+                />
+              )}
+            </>
+          ) : (
+            <Feld
+              beschriftung={feld.titel}
+              aria-invalid={feldUngueltig || undefined}
+              aria-describedby={feldFehlerId}
+              list={['spalte', 'links', 'rechts'].includes(feld.name) ? spaltenListe : undefined}
+              value={typeof wert === 'object' ? '' : String(wert ?? '')}
+              disabled={gesperrt}
+              type={feld.art === 'zahl' ? 'number' : 'text'}
+              onChange={(e) => aendern(feld.art === 'zahl' ? Number(e.target.value) : e.target.value)}
+            />
+          )}
           {formular.quelleWaehlen &&
             formular.blockId &&
             formular.blockTyp &&
@@ -1066,6 +1103,21 @@ function KonfigEingabeInhalt({
     />
   );
 }
+
+/** Ein neuer Fehler macht auch seltene Einstellungen sofort erreichbar. */
+function WeitereEinstellungen({ fehlerKennung, children }: { fehlerKennung: string; children: ReactNode }) {
+  const bereich = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (fehlerKennung && bereich.current) bereich.current.open = true;
+  }, [fehlerKennung]);
+  return (
+    <details className="business-weitere" ref={bereich} open={Boolean(fehlerKennung) || undefined}>
+      <summary>Weitere Einstellungen</summary>
+      <div className="business-formular">{children}</div>
+    </details>
+  );
+}
+
 export function BusinessEigenschaften({
   ws,
   block,
@@ -1106,7 +1158,6 @@ export function BusinessEigenschaften({
     aktualisieren((n) => n + 1);
     geaendert();
   };
-  const csvEinstellungen = ['sl_biz_lesen_csv', 'sl_biz_schreiben_csv'].includes(def.typ);
   const spaltenNachEingabe = spaltenNachQuelle
     ? Object.fromEntries(
         Object.entries(def.eingaben).map(([name, typ]) => {
@@ -1121,15 +1172,54 @@ export function BusinessEigenschaften({
   const passendeSpalten = spaltenNachQuelle
     ? [...new Set(Object.values(spaltenNachEingabe).flat())]
     : spalten;
-  const feldAnzeigen = (f: KonfigFeld) => (
+  const felder = def.felder.flatMap((feld) => {
+    const wert = daten.konfiguration[feld.name] ?? feld.standard;
+    if (
+      feld.darstellung === 'flach' &&
+      feld.art === 'objekt' &&
+      wert &&
+      typeof wert === 'object' &&
+      !Array.isArray(wert)
+    ) {
+      return feld.felder!.map((unterfeld) => ({
+        feld: unterfeld,
+        feldPfad: [feld.name, unterfeld.name],
+        wert: wert[unterfeld.name] ?? unterfeld.standard,
+        aendern: (neu: JsonWert) =>
+          setzen({
+            ...daten,
+            konfiguration: { ...daten.konfiguration, [feld.name]: { ...wert, [unterfeld.name]: neu } },
+          }),
+      }));
+    }
+    return [
+      {
+        feld,
+        feldPfad: [feld.name],
+        wert,
+        aendern: (neu: JsonWert) =>
+          setzen({ ...daten, konfiguration: { ...daten.konfiguration, [feld.name]: neu } }),
+      },
+    ];
+  });
+  const weitereFelder = felder.filter((f) => f.feld.darstellung === 'weitere');
+  const weitereFehler = feldFehler.filter((fehler) =>
+    weitereFelder.some(({ feldPfad }) => {
+      const pfad = ['konfiguration', ...feldPfad];
+      return fehler.feldPfad
+        .slice(0, Math.min(pfad.length, fehler.feldPfad.length))
+        .every((teil, i) => teil === pfad[i]);
+    }),
+  );
+  const feldAnzeigen = (f: (typeof felder)[number]) => (
     <KonfigEingabe
-      key={f.name}
-      feld={f}
-      wert={daten.konfiguration[f.name] ?? f.standard}
-      aendern={(wert) => setzen({ ...daten, konfiguration: { ...daten.konfiguration, [f.name]: wert } })}
+      key={JSON.stringify(f.feldPfad)}
+      feld={f.feld}
+      wert={f.wert}
+      aendern={f.aendern}
       parameter={parameter}
       gesperrt={gesperrt}
-      feldPfad={[f.name]}
+      feldPfad={f.feldPfad}
     />
   );
   return (
@@ -1182,6 +1272,13 @@ export function BusinessEigenschaften({
           const zuordnungsFehler = feldFehler.find(
             (f) => JSON.stringify(f.feldPfad) === JSON.stringify(['eingaben', name]),
           );
+          const quellenHinweis = quellen.length
+            ? undefined
+            : typ === 'Tabelle'
+              ? 'Füge vorher eine Datenquelle hinzu und verbinde sie mit dem Ablauf.'
+              : typ === 'Dateiliste'
+                ? 'Füge vorher „Dateien auflisten und filtern“ hinzu und verbinde den Baustein mit dem Ablauf.'
+                : 'Verbinde zuerst einen passenden vorherigen Schritt mit dem Ablauf.';
           return (
             <div
               key={name}
@@ -1194,6 +1291,7 @@ export function BusinessEigenschaften({
                 beschriftung={titel}
                 value={referenz}
                 disabled={gesperrt}
+                hilfe={quellenHinweis}
                 fehler={
                   zuordnungsFehler?.text ??
                   (ungueltig ? 'Wähle einen passenden vorherigen Schritt im selben Ablauf.' : undefined)
@@ -1220,48 +1318,14 @@ export function BusinessEigenschaften({
             </div>
           );
         })}
-        {def.felder
-          .filter((f) => !csvEinstellungen || !['format', 'optionen'].includes(f.name))
-          .map(feldAnzeigen)}
-        {csvEinstellungen && (
-          <details>
-            <summary>
-              {def.typ === 'sl_biz_lesen_csv' ? 'Importeinstellungen' : 'Ausgabeeinstellungen'}
-            </summary>
-            <div
-              className="business-formular"
-              style={{ paddingInlineStart: 'var(--abstand-16)', paddingBlockStart: 'var(--abstand-8)' }}
-            >
-              {def.felder
-                .filter((f) => ['format', 'optionen'].includes(f.name))
-                .map((f) =>
-                  f.name === 'optionen'
-                    ? f.felder!.map((unterfeld) => {
-                        const optionen = objekt(daten.konfiguration[f.name] ?? f.standard);
-                        return (
-                          <KonfigEingabe
-                            key={`${f.name}-${unterfeld.name}`}
-                            feld={unterfeld}
-                            wert={optionen[unterfeld.name] ?? unterfeld.standard}
-                            aendern={(wert) =>
-                              setzen({
-                                ...daten,
-                                konfiguration: {
-                                  ...daten.konfiguration,
-                                  [f.name]: { ...optionen, [unterfeld.name]: wert },
-                                },
-                              })
-                            }
-                            parameter={parameter}
-                            gesperrt={gesperrt}
-                            feldPfad={[f.name, unterfeld.name]}
-                          />
-                        );
-                      })
-                    : feldAnzeigen(f),
-                )}
-            </div>
-          </details>
+        {felder.filter((f) => f.feld.darstellung !== 'weitere').map(feldAnzeigen)}
+        {weitereFelder.length > 0 && (
+          <WeitereEinstellungen
+            key={block.id}
+            fehlerKennung={weitereFehler.length ? JSON.stringify(weitereFehler) : ''}
+          >
+            {weitereFelder.map(feldAnzeigen)}
+          </WeitereEinstellungen>
         )}
         {passendeSpalten.length > 0 && (
           <details>

@@ -21,6 +21,8 @@ export interface KonfigFeld {
   optionen?: string[];
   felder?: KonfigFeld[];
   hilfe?: string;
+  /** Gliederung des Formulars; gehört nicht zum gespeicherten Workflow. */
+  darstellung?: 'weitere' | 'flach';
 }
 export interface BusinessDefinition {
   steuerung?: 'stapel' | 'fehler';
@@ -65,6 +67,7 @@ const bool = (name: string, titel: string, standard = false): KonfigFeld => ({
   art: 'wahrheit',
   standard,
 });
+const weitere = (feld: KonfigFeld): KonfigFeld => ({ ...feld, darstellung: 'weitere' });
 const obj = (name: string, titel: string, felder: KonfigFeld[]): KonfigFeld => ({
   name,
   titel,
@@ -147,20 +150,20 @@ for (const format of ['CSV', 'XLSX', 'JSON', 'PARQUET']) {
     format === 'CSV'
       ? [
           text('trennzeichen', 'Trennzeichen', ';'),
-          wahl('kodierung', 'Zeichenkodierung', ['UTF8', 'UTF8_BOM', 'UTF16', 'CP1252']),
-          bool('kopfzeile', 'Erste Zeile enthält Spaltennamen', true),
-          text('nullwert', 'Kennzeichen für leere Werte'),
-          wahl('fehlzeilen', 'Fehlerhafte Zeilen', ['STOPP', 'AUSLASSEN_MIT_BERICHT']),
+          weitere(wahl('kodierung', 'Zeichenkodierung', ['UTF8', 'UTF8_BOM', 'UTF16', 'CP1252'])),
+          weitere(bool('kopfzeile', 'Erste Zeile enthält Spaltennamen', true)),
+          weitere(text('nullwert', 'Kennzeichen für leere Werte')),
+          weitere(wahl('fehlzeilen', 'Fehlerhafte Zeilen', ['STOPP', 'AUSLASSEN_MIT_BERICHT'])),
         ]
       : format === 'XLSX'
         ? [
             text('blatt', 'Arbeitsblatt (leer: erstes Blatt)'),
             text('bereich', 'Zellbereich (leer: gesamtes Blatt)'),
-            bool('kopfzeile', 'Erste Zeile enthält Spaltennamen', true),
-            wahl('formeln', 'Vorhandene Formeln', ['STOPP', 'WERTE']),
+            weitere(bool('kopfzeile', 'Erste Zeile enthält Spaltennamen', true)),
+            weitere(wahl('formeln', 'Vorhandene Formeln', ['STOPP', 'WERTE'])),
           ]
         : format === 'JSON'
-          ? [bool('zeilenformat', 'Ein JSON-Datensatz pro Zeile')]
+          ? [weitere(bool('zeilenformat', 'Ein JSON-Datensatz pro Zeile'))]
           : [];
   block(
     `lesen_${format.toLowerCase()}`,
@@ -169,7 +172,11 @@ for (const format of ['CSV', 'XLSX', 'JSON', 'PARQUET']) {
     'daten.importieren',
     'Tabelle',
     {},
-    [wahl('format', 'Dateiformat', [format]), pfad, obj('optionen', 'Importeinstellungen', optionen)],
+    [
+      wahl('format', 'Dateiformat', [format]),
+      pfad,
+      { ...obj('optionen', 'Importeinstellungen', optionen), darstellung: 'flach' },
+    ],
     'Liest eine ausdrücklich gewählte Quelle. CSV bleibt zunächst Text; Datentypen werden anschließend bewusst festgelegt. Quellenänderungen werden geprüft.',
     false,
     format === 'XLSX' ? ['duckdb', 'openpyxl'] : ['duckdb'],
@@ -185,15 +192,18 @@ for (const format of ['CSV', 'XLSX', 'JSON', 'PARQUET']) {
       wahl('format', 'Dateiformat', [format]),
       pfad,
       konflikt,
-      obj(
-        'optionen',
-        'Ausgabeeinstellungen',
-        format === 'CSV'
-          ? [text('trennzeichen', 'Trennzeichen', ';')]
-          : format === 'XLSX'
-            ? [text('blatt', 'Arbeitsblatt', 'Auswertung')]
-            : [],
-      ),
+      {
+        ...obj(
+          'optionen',
+          'Ausgabeeinstellungen',
+          format === 'CSV'
+            ? [text('trennzeichen', 'Trennzeichen', ';')]
+            : format === 'XLSX'
+              ? [text('blatt', 'Arbeitsblatt', 'Auswertung')]
+              : [],
+        ),
+        darstellung: 'flach',
+      },
     ],
     'Schreibt eine vollständige Tabelle über eine eigene Zwischendatei. Bestehende Ziele werden standardmäßig nicht überschrieben. XLSX berechnet keine Formeln.',
     true,
@@ -235,8 +245,8 @@ block(
     text('spalte', 'Spalte'),
     typ,
     wahl('datumsformat', 'Datumsformat', ['ISO', 'DMY', 'MDY']),
-    wahl('dezimaltrennzeichen', 'Dezimaltrennzeichen', ['.', ',']),
-    wahl('tausendertrennzeichen', 'Tausendertrennzeichen', ['', '.', ',', ' ']),
+    weitere(wahl('dezimaltrennzeichen', 'Dezimaltrennzeichen', ['.', ','])),
+    weitere(wahl('tausendertrennzeichen', 'Tausendertrennzeichen', ['', '.', ',', ' '])),
     wahl('fehlwerte', 'Ungültige Werte', ['STOPP', 'AUSLASSEN_MIT_BERICHT']),
   ],
   'Wandelt ausdrücklich um. Dezimalbeträge erhalten eine feste Genauigkeit und Skala. Fehlende Werte werden nicht zu null Euro.',
@@ -485,7 +495,7 @@ block(
     text('zielordner', 'Ausgabeordner'),
     text('archivordner', 'Archivordner'),
     text('muster', 'Dateimuster', '*.csv'),
-    text('trennzeichen', 'Trennzeichen', ';'),
+    weitere(text('trennzeichen', 'Trennzeichen', ';')),
     konflikt,
     wahl('bei_fehler', 'Bei einer fehlerhaften Datei', ['STOPP', 'BERICHT']),
   ],
@@ -532,14 +542,16 @@ block(
     text('ziel', 'Neue XLSX-Datei'),
     text('blatt', 'Arbeitsblatt'),
     zuordnung('zellen', 'Zelladressen und Werte'),
-    zuordnung('formeln', 'Bewusst geschriebene Excel-Formeln'),
-    liste('formate', 'Zellen formatieren', [
-      text('adresse', 'Zelladresse'),
-      text('zahlformat', 'Zahlenformat', '0.00'),
-      bool('fett', 'Fettschrift'),
-      text('fuellung', 'Füllfarbe (sechs Hexzeichen)', 'E8EBEF'),
-      wahl('ausrichtung', 'Ausrichtung', ['links', 'mitte', 'rechts']),
-    ]),
+    weitere(zuordnung('formeln', 'Bewusst geschriebene Excel-Formeln')),
+    weitere(
+      liste('formate', 'Zellen formatieren', [
+        text('adresse', 'Zelladresse'),
+        text('zahlformat', 'Zahlenformat', '0.00'),
+        bool('fett', 'Fettschrift'),
+        text('fuellung', 'Füllfarbe (sechs Hexzeichen)', 'E8EBEF'),
+        wahl('ausrichtung', 'Ausrichtung', ['links', 'mitte', 'rechts']),
+      ]),
+    ),
     konflikt,
   ],
   'Füllt definierte Zellen und schreibt bewusst gewählte Formeln. Formeln werden nicht berechnet; bestehende Vorlagen werden als neue Datei gespeichert.',
@@ -668,11 +680,11 @@ block(
   [
     text('ziel', 'Neue PDF-Datei'),
     text('titel', 'Berichtstitel'),
-    text('schrift', 'Schrift: INTERN:VERA oder lokale TTF-Datei', 'INTERN:VERA'),
+    weitere(text('schrift', 'Schrift', 'INTERN:VERA')),
     spalten('spalten', 'Angezeigte Spalten'),
-    wahl('seitenformat', 'Seitenformat', ['A4', 'A3', 'LETTER']),
-    bool('querformat', 'Querformat'),
-    zahl('rand_mm', 'Seitenrand in mm', 12.7),
+    weitere(wahl('seitenformat', 'Seitenformat', ['A4', 'A3', 'LETTER'])),
+    weitere(bool('querformat', 'Querformat')),
+    weitere(zahl('rand_mm', 'Seitenrand in mm', 12.7)),
     konflikt,
   ],
   'Erstellt einen mehrseitigen Bericht mit wiederholtem Tabellenkopf und Seitenzahlen. Die mitgelieferte Schrift unterstützt deutsche Texte. Fehlende Zeichen werden vor der Ausgabe gemeldet; eine andere lokale TTF-Schrift kann gewählt werden.',

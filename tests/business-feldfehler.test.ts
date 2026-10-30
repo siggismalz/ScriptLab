@@ -148,4 +148,32 @@ describe('Belegte Feldbezüge für Quelle und Zuordnung', () => {
       ws.dispose();
     }
   });
+
+  it('öffnet weitere Einstellungen für einen präzisen Importfehler und erhält dessen Feldpfad', () => {
+    const ws = new Blockly.Workspace();
+    try {
+      const block = ws.newBlock('sl_biz_lesen_csv');
+      const vorher = block.data;
+      const text = 'Wähle für die Kopfzeile Ja oder Nein.';
+      const html = renderToStaticMarkup(
+        createElement(BusinessEigenschaften, {
+          ws: ws as Blockly.WorkspaceSvg,
+          block,
+          parameter: [],
+          gesperrt: false,
+          geaendert: () => {},
+          feldFehler: [{ feldPfad: ['konfiguration', 'optionen', 'kopfzeile'], text }],
+        }),
+      );
+      expect(html).toContain('<details class="business-weitere" open="">');
+      expect(html).toContain(
+        'data-konfig-pfad="[&quot;konfiguration&quot;,&quot;optionen&quot;,&quot;kopfzeile&quot;]"',
+      );
+      expect(html).toMatch(/<input[^>]+type="checkbox"[^>]+aria-invalid="true"/);
+      expect(html.split(text)).toHaveLength(2);
+      expect(block.data).toBe(vorher);
+    } finally {
+      ws.dispose();
+    }
+  });
 });
