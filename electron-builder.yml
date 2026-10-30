@@ -39,6 +39,7 @@ extraResources:
     filter:
       - '**/*.md'
       - '**/*.png'
+      - '**/*.gif'
       - '**/*.json'
 win:
   icon: assets/scriptlab.ico

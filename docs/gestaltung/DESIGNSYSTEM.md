@@ -72,7 +72,7 @@ Die Übersichten verwenden eine 184-px-Navigation: Start, Workflows und Vorlagen
 
 Die konkrete Offenlegung weiterer Informationen beschreibt [INFORMATIONSEBENEN.md](INFORMATIONSEBENEN.md).
 
-Im Workflow ersetzt eine beschriftete Bereichsauswahl die breite Navigation. Der Projektkopf zeigt Name, Sprache und Speicherzustand; darunter liegen Dateibefehle sowie die Arbeitsbereiche Ablauf/Daten und Parameter/Läufe. Export ist ein Dialog. Der bearbeitete Workflow und sein Blockly-Workspace bleiben bei allen Ansichtswechseln dieselben.
+Im Workflow ersetzt eine beschriftete Bereichsauswahl die breite Navigation. Die erste Kopfzeile zeigt Name, Sprache und Speicherzustand sowie Speichern, die konkrete Startaktion und Exportieren. Die zweite Zeile bündelt Ablauf/Daten und Parameter/Läufe mit den Bearbeitungswerkzeugen. Bei enger Fläche dürfen die Zeilen umbrechen. Export ist ein Dialog. Der bearbeitete Workflow und sein Blockly-Workspace bleiben bei allen Ansichtswechseln dieselben.
 
 Die Palette benötigt standardmäßig 272 px, Eigenschaften 320 px. Bei 1280 × 720 werden Eigenschaften gezielt überlagert. Anheften erfordert mindestens 1440 px Fensterbreite und ein zusätzlich geprüftes Canvasbudget von 600 px, gewichtet mit der UI-Textskalierung. Code öffnet sich nur bewusst. Daten, Ergebnisse und umfangreiche Protokolle belegen eigene Hauptansichten. „Ansicht zurücksetzen“ setzt nur persönliche Paletten-/Panelpräferenzen zurück.
 
@@ -96,6 +96,12 @@ Der Projektkopf ist der dauerhafte Ort des Speicherzustands, auch bei 200 Prozen
 Die Palette ordnet vorhandene Kategorien in fünf fachliche Einstiege (Python) beziehungsweise drei verfügbare Einstiege (VBS). Suche bleibt über alle verfügbaren Bausteine möglich.
 
 Die vorhandene Einfügestellenliste bietet eine Zeigeralternative ohne Ziehen und bleibt neben Drag-and-drop und Blockly-Tastaturbedienung erhalten.
+
+### Weniger Einrichtung beim Bearbeiten
+
+Neue Business-Bausteine mit genau einer Ergebniseingabe erhalten den passenden direkten Vorgänger oder die einzige eindeutige Quelle. Mehrdeutige Quellen und zwei Eingaberollen bleiben eine ausdrückliche Auswahl. Vorhandene Bindungen werden beim Verschieben, Kopieren oder Laden nicht neu gesetzt. Einfügen und Quellenübernahme bilden einen gemeinsamen Rückgängig-Schritt, unabhängig von Klick oder Ziehen.
+
+Häufige Felder bleiben unmittelbar sichtbar; seltene Optionen stehen unter „Weitere Einstellungen“. Feldfehler öffnen den betroffenen Abschnitt. Die Eigenschaften unterstützen „Datenvorschau“ als kontextbezogenen Ansichtswechsel. Erst „Datenvorschau laden“ liest Daten. „Zum Baustein“ kehrt zur Bearbeitung zurück und erhält beim direkten Rückweg Canvasposition und Zoom. Diese Navigation erzeugt weder eine fachliche Änderung noch einen Lauf.
 
 ## Bewusste Grenzen
 

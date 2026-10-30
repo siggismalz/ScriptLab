@@ -1,0 +1,47 @@
+{
+  "datum": "2026-10-30T17:47:54.547Z",
+  "profil": "C:\\Users\\leons\\AppData\\Local\\Temp\\ScriptLab-Produkt-I7Aj6k\\Profil",
+  "geometrie": {
+    "kopf": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 60
+    },
+    "navigation": {
+      "x": 0,
+      "y": 60,
+      "width": 1280,
+      "height": 45
+    },
+    "arbeitsflaeche": {
+      "x": 0,
+      "y": 105,
+      "width": 1280,
+      "height": 582
+    }
+  },
+  "pruefungen": [
+    "Direkte Schrittvorschau und Rückweg erhalten Inhalt, Canvas und Speicherstatus; Ansicht startet keinen Lauf; Fokus auch beim Rückweg zu anderem Schritt sichtbar.",
+    "1280×720 hell/dunkel, 960×680 und 200 Prozent UI-Text mit sichtbarem Speicherstatus und Hauptaktionen; Palette nach Eigenschaften wieder erreichbar.",
+    "Tatsächlicher Prüflauf und echte Ausführung beendet; XLSX und PDF in der Appablage vorhanden, keine Ausgabeziele außerhalb gewählt."
+  ],
+  "rendererfehler": [],
+  "ausgaben": [
+    {
+      "name": "Monatsbericht.xlsx",
+      "bytes": 4927,
+      "sha256": "d38964799749afed326a59b98d16c3c9d5bb61c8cea451802a05a9332c485ddb"
+    },
+    {
+      "name": "Monatsbericht.pdf",
+      "bytes": 22482,
+      "sha256": "fa23517b22c39ecc9bd7434de547ed33b4c0d48e8ee01202b97ebe1ba83a9cfc"
+    }
+  ],
+  "laufId": "4fe88dfc-3c43-41b9-8f4e-5b94a9782f07",
+  "grenzen": [
+    "Eigene Windows-Sichtprüfung mit synthetischen Daten, kein Nutzertest.",
+    "Keine vollständige neue Windows-DPI-Matrix oder gesamte Python-/VBS-Regression."
+  ]
+}

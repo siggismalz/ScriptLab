@@ -6,9 +6,13 @@
 
 Die Palette bietet fachliche Einstiege und eine Suche über alle verfügbaren Bausteine. Plus und anschließender Klick auf eine Einfügestelle funktionieren ohne Ziehen. Die Business-Bausteine zeigen neben ihrem Namen eine kurze Zusammenfassung ihrer vorhandenen Konfiguration. Fünf Fachfarben ordnen die Aufgaben; Status und Auswahl besitzen eigene Kennzeichnungen.
 
+Der Workflowkopf bündelt Name, Speicherzustand und Sprache mit **Speichern**, der konkreten Startaktion und **Exportieren**. Darunter wechseln **Ablauf**, **Daten und Parameter** und **Läufe** den Arbeitsbereich; daneben liegen die Bearbeitungswerkzeuge. So bleibt die gewählte Aufgabe erkennbar, während wichtige Aktionen erreichbar sind.
+
+Fügst du einen neuen Business-Baustein ein, der genau ein vorheriges Ergebnis benötigt, übernimmt ScriptLab einen passenden direkt vorausgehenden Schritt oder die einzige eindeutige Quelle. Bei mehreren möglichen Quellen ohne passenden direkten Vorgänger und bei Bausteinen mit zwei Eingaben wählst du selbst. Verschieben, Kopieren und erneutes Öffnen ändern vorhandene Zuordnungen nicht. **Rückgängig** nimmt das Einfügen samt übernommener Quelle gemeinsam zurück; das gilt beim Einfügen per Klick und beim Ziehen aus der Palette.
+
 ## Quellen und Eingaben konfigurieren
 
-Im ausgewählten Baustein zeigen **Eigenschaften** die häufigen Felder. Importoptionen und technische Angaben bleiben gezielt aufklappbar. Quellen, Dokumentvorlagen und unterstützte Eingangsordner lassen sich über eine native Auswahl setzen. Ausgabeziele bleiben in der von ScriptLab verwalteten Ablage.
+Im ausgewählten Baustein zeigen **Eigenschaften** die häufigen Felder. Selten benötigte Optionen stehen unter **Weitere Einstellungen**; ein dort erkannter Feldfehler öffnet den Abschnitt. Quellen, Dokumentvorlagen und unterstützte Eingangsordner lassen sich über eine native Auswahl setzen. Ausgabeziele bleiben in der von ScriptLab verwalteten Ablage.
 
 Ein Feld kann einen festen Wert, einen Workflowparameter oder eine Variable verwenden. Eine gewählte Bindung bleibt sichtbar; der Parameterkontext benennt den verwendeten Satz. Die Auswahl einer Eingabetabelle bietet passende vorherige Ergebnisse. Eine ungültig gewordene bestehende Zuordnung bleibt erkennbar, bis sie korrigiert wird.
 
@@ -17,6 +21,8 @@ Ein Feld kann einen festen Wert, einen Workflowparameter oder eine Variable verw
 Auf der Startseite steht der aktive Workflow einmal unter **Zuletzt geöffnet**. **Weiterbearbeiten** kehrt zu seinem vorhandenen Stand zurück. Feldfehler führen über kurze Verweise zur Eingabe; ihre vollständige Erklärung steht dort. **Alle Läufe** bleibt direkt im gemeinsamen Laufkopf erreichbar. Die [aktuelle Straffung](UEBERSICHTLICHKEIT.md) dokumentiert diese Details mit Vorher-/Nachher-Ansichten.
 
 ## Ein Tabellenergebnis prüfen
+
+Bei unterstützten Tabellenschritten führt **Datenvorschau** in den Eigenschaften direkt zur passenden Vorschauansicht. Dieser Wechsel liest noch keine Daten. **Zum Baustein** führt zur Bearbeitung zurück; beim direkten Rückweg bleiben Canvasposition und Zoom erhalten. Keiner dieser Ansichtswechsel startet einen Lauf.
 
 Unter **Datenvorschau** wählst du **Ergebnis bis zu diesem Schritt** und startest bewusst **Datenvorschau laden**. Die Vorschau verarbeitet die notwendigen unterstützten Vorgänger bis einschließlich des gewählten Tabellenschritts. Unfertige Nachfolger werden dafür nicht benötigt; sie werden im bearbeiteten Workflow nicht gelöscht oder geändert.
 
@@ -40,4 +46,4 @@ Beim **Exportieren** werden Projektdatei, Script und Business-Paket unterschiede
 
 ## Nachweisgrenze dieses Stands
 
-Die tatsächlichen Arbeitswege, aktuellen Windows-Ansichten und verbleibenden Grenzen dokumentiert [OFFICE-UMSETZUNG.md](OFFICE-UMSETZUNG.md). Frühere Ansichten, Laufberichte oder Installerprüfungen bleiben ihrem damaligen Stand zugeordnet.
+Die tatsächlichen Arbeitswege, aktuellen Windows-Ansichten und verbleibenden Grenzen dokumentiert [PRODUKT-VERBESSERUNG.md](PRODUKT-VERBESSERUNG.md). Frühere Ansichten, Laufberichte oder Installerprüfungen bleiben ihrem damaligen Stand zugeordnet.
