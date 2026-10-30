@@ -64,7 +64,7 @@ Schriftfamilie: `"Segoe UI Variable", "Segoe UI", system-ui, sans-serif`. Es wer
 
 Die Bedientext-Zeilenhöhe von 21 statt 20 px übernimmt die vorhandene Faktor-1,5-Konvention und schafft Platz für deutsche Beschriftungen. UI-Textgröße skaliert Texte und lässt Formulare wachsen; Canvaszoom bleibt getrennt. Numerische Tabellen verwenden gleich breite Ziffern. Normale Texte sind linksbündig, numerische Datenspalten rechtsbündig.
 
-Abstände: 4, 8, 12, 16, 24, 32 logische Pixel. Normale Felder/Buttons sind mindestens 36 px hoch; kompakte Zeilenaktionen und häufige Symbolziele mindestens 32 px. Icons 16/20 px; Eingaberadius 6 px, Overlayradius 8 px, kompakte Einstiegskarten 4 px. Eine gemeinsame SVG-Strichsymbolfamilie liegt in `komponenten/Icon.tsx`. Normale Tabellenzeilen ergeben aus Zeilenhöhe und Innenabstand mindestens etwa 36 px. Übergänge 150 ms; reduzierte Bewegung deaktiviert sie.
+Abstände: 4, 8, 12, 16, 24, 32 logische Pixel. Normale Felder/Buttons sind mindestens 36 px hoch; kompakte Zeilenaktionen und häufige Symbolziele mindestens 32 px. Icons 16/20 px; Eingaberadius 6 px, Overlay- und Kartenradius 8 px. Eine gemeinsame SVG-Strichsymbolfamilie liegt in `komponenten/Icon.tsx`. Normale Tabellenzeilen ergeben aus Zeilenhöhe und Innenabstand mindestens etwa 36 px. Übergänge 150 ms; reduzierte Bewegung deaktiviert sie.
 
 ## Navigation und Flächenbudget
 
@@ -78,11 +78,12 @@ Die Palette benötigt standardmäßig 272 px, Eigenschaften 320 px. Bei 1280 × 
 
 ## Komponenten und Zustände
 
-Die behutsame Straffung vom 28. Oktober 2026 erhält alle direkten Aktionen. Die Startseite führt den aktiven Workflow anhand seiner Kennung einmal in höchstens fünf letzten Zeilen. Einstiegskarten besitzen mindestens 56 px Höhe und wachsen für umbrechenden Text. In Datenlisten trägt die Auswahl Semibold, normale Schritte Regular. Feldfehler stehen einmal vollständig am Feld; die Abschnittszusammenfassung verwendet kurze Ansprunglinks. Historie und Lauftabs teilen sich eine Kopfleiste.
+Die behutsame Straffung vom 28. Oktober 2026 erhält alle direkten Aktionen. Die Startseite führt den aktiven Workflow anhand seiner Kennung einmal in höchstens fünf letzten Zeilen. Seit dem ausdrücklichen Kartenwunsch vom 30. Oktober 2026 besitzen die vier Einstiegskarten mindestens 136 px Höhe und zeigen ihre Beschreibung direkt. Sie wachsen für umbrechenden Text. In Datenlisten trägt die Auswahl Semibold, normale Schritte Regular. Feldfehler stehen einmal vollständig am Feld; die Abschnittszusammenfassung verwendet kurze Ansprunglinks. Historie und Lauftabs teilen sich eine Kopfleiste.
 
 Der Projektkopf ist der dauerhafte Ort des Speicherzustands, auch bei 200 Prozent UI-Text. Entwurfssicherung und Projektdatei bleiben sprachlich unterschieden. Erfolgsbestätigungen bleiben vier Sekunden sichtbar und enden bei einem Kontextwechsel; handlungsbedürftige Fehler verschwinden nicht durch diesen Timer. Bilder und Prüfgrenzen dieser Straffung vom 28. Oktober 2026 stehen in [UEBERSICHTLICHKEIT.md](../UEBERSICHTLICHKEIT.md).
 
 - `Knopf`: Standard, leise, Primäraktion, Gefahr; Hover, gedrückt, sichtbar fokussiert, deaktiviert und beschäftigt. Wichtige Aktionen besitzen Text. Deaktivierungsgründe bleiben zugänglich.
+- `Karte`: gemeinsame Inhaltsfläche aus `komponenten/Karte.tsx` mit Grundfläche, dezenter Kontur, 8-px-Radius und 16-px-Innenabstand. Die Hülle besitzt keine eigene Aktion oder Tabposition. Startkarten enthalten einen nativen Navigationsknopf. Vorlagenkarten zeigen Aufgabe, Sprache, Titel und Ergebnis; nur eine ausgewählte Karte öffnet ihre Vorbereitung über die Rasterbreite. Modus/Parametersatz, bestätigte Laufzusammenfassung und vorhandene Ausgaben sind weitere Gruppen. Tabellen, Protokolle und einzelne Parameter bleiben Arbeitsinhalte. Auswahl und Tastaturfokus bleiben unterscheidbar. Die [Kartenprüfung](../qualitaet/KARTEN-REVIEW.md) beschreibt die geschützten Bedienungsverträge.
 - `Feld`, `Textfeld`, `Auswahlfeld`: dauerhafte Beschriftung, eigener Hilfetext, Fehler unmittelbar am Feld, Eingaben bleiben nach Fehlern erhalten.
 - `Dialog`: nativer HTML-Dialog, sichtbarer Titel, Escape/Abbruch und Fokuswiederherstellung; keine Routineparameter in verschachtelten Dialogen.
 - `Menue`: Pfeil-/Home-/End-/Escape-Bedienung und Rückkehr zum Auslöser. Bereichsmenüs liegen oberhalb der Befehlsleiste.
