@@ -1,10 +1,10 @@
 # Marke und bearbeitbare Assets
 
-Stand und Prüfung: 28. Oktober 2026.
+Farbstand: 30. Oktober 2026. Historische Einzelprüfungen sind unten datiert.
 
 ## Richtung
 
-Die Schreibweise lautet **ScriptLab**. Die bestehende Idee eines S-Signets wurde als verbundene Folge aus drei Bausteinen weiterentwickelt. Die einfache Geometrie verbindet den visuellen Baukasten mit einem nachvollziehbaren Ablauf. Sie funktioniert ohne Farbe, Verläufe, Schatten oder Glanz. Mit der Office-Farbwelt wurde Petrol durch Blau ersetzt; Form und Systemtypografie bleiben erhalten. Kundenunterlagen behalten ihre eigenen Vorlagen und Absenderangaben.
+Die Schreibweise lautet **ScriptLab**. Die bestehende Idee eines S-Signets wurde als verbundene Folge aus drei Bausteinen weiterentwickelt. Die einfache Geometrie verbindet den visuellen Baukasten mit einem nachvollziehbaren Ablauf. Sie funktioniert ohne Farbe, Verläufe, Schatten oder Glanz. Gedämpfte Petrolakzente und neutrale Grün-/Grauflächen prägen den aktuellen Stand; Form und Systemtypografie bleiben erhalten. Kundenunterlagen behalten ihre eigenen Vorlagen und Absenderangaben.
 
 Die Wortmarke verwendet Semibold und bleibt in den SVG-Dateien als echter, bearbeitbarer Text erhalten. Der Schriftstapel lautet `Segoe UI Variable, Segoe UI, system-ui, sans-serif`. Es werden keine Windows-Schriftdateien eingebettet, kopiert oder im Anwendungspaket ergänzt. Auf Systemen mit anderen Schriften kann die Laufweite abweichen. Die Anwendung soll die Wortmarke deshalb als Text und das Signet als Vektor darstellen. Die Entwicklercredits **Leon Stolz** stehen in den Produktinformationen.
 
@@ -12,7 +12,7 @@ Die Wortmarke verwendet Semibold und bleibt in den SVG-Dateien als echter, bearb
 
 | Datei | Verwendung |
 | --- | --- |
-| [scriptlab.svg](../../assets/scriptlab.svg) | Bearbeitbare Vektorquelle für das Windows-Anwendungsicon; Blau auf abgerundeter dunkelblauer Neutralfläche. |
+| [scriptlab.svg](../../assets/scriptlab.svg) | Bearbeitbare Vektorquelle für das Windows-Anwendungsicon; helles Petrol auf abgerundeter dunkler Neutralfläche. |
 | [scriptlab-signet.svg](../../assets/scriptlab-signet.svg) | Einfarbiges Signet mit `currentColor`, transparentem Hintergrund und identischer Geometrie. |
 | [scriptlab-wortmarke.svg](../../assets/scriptlab-wortmarke.svg) | Wortmarke mit Signet für helle Flächen. |
 | [scriptlab-wortmarke-dunkel.svg](../../assets/scriptlab-wortmarke-dunkel.svg) | Wortmarke mit Signet für dunkle Flächen. |
@@ -23,7 +23,7 @@ Die Wortmarke verwendet Semibold und bleibt in den SVG-Dateien als echter, bearb
 | [Wortmarken-Prüftafel](../../assets/scriptlab-marke-pruefung.png) | Beide Wortmarken sowie einfarbiges Signet, im installierten Chrome gerendert. |
 | [Technischer Prüfdatensatz](../../assets/scriptlab-icon-pruefung.json) | Tatsächlich gelesene ICO-Einträge und Prüfungen. |
 
-Das einfarbige Signet benötigt eine explizite Vordergrundfarbe. Ein externes SVG in einem HTML-`img` erbt `currentColor` nicht aus dem umgebenden Dokument. Für die Oberfläche daher ein Inline-SVG oder eine CSS-Maske mit der jeweiligen Akzentrolle verwenden. Auf dunklen Flächen ist `#86B9EF`, auf hellen Flächen `#0F6CBD` vorgesehen. Das Windows-Icon verwendet `#86B9EF` auf `#101720` und bleibt unabhängig vom Anwendungsthema gleich.
+Das einfarbige Signet benötigt eine explizite Vordergrundfarbe. Ein externes SVG in einem HTML-`img` erbt `currentColor` nicht aus dem umgebenden Dokument. Für die Oberfläche daher ein Inline-SVG oder eine CSS-Maske mit der jeweiligen Akzentrolle verwenden. Auf dunklen Flächen ist `#9DCBC0`, auf hellen Flächen `#286C63` vorgesehen. Das Windows-Icon verwendet `#9DCBC0` auf `#121D19` und bleibt unabhängig vom Anwendungsthema gleich. Die verlinkten Prüftafeln dokumentieren den historischen blauen Stand vom 28. Oktober und sind kein aktueller Farbnachweis.
 
 ## Reproduzierbare Erzeugung
 

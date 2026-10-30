@@ -43,6 +43,7 @@ import { Variablendialoge } from './Variablendialoge';
 import { beispiele, type BeispielKennung } from './hilfe';
 import { Menue } from './komponenten/Menue';
 import { Startbereich } from './Startbereich';
+import { EditorNavigation } from './EditorNavigation';
 import { Laufverwaltung } from './Laufverwaltung';
 import { Datenbereich } from './Datenbereich';
 import { ExportDialog } from './ExportDialog';
@@ -1259,22 +1260,12 @@ export function Anwendung() {
         </p>
       )}
       <div className="editor-ansicht" hidden={ansicht !== 'editor'} inert={!!verarbeitung}>
+        <EditorNavigation
+          navigieren={(ziel) => void startseiteZeigen(ziel)}
+          einstellungen={() => setDialog('einstellungen')}
+          ueber={() => setDialog('ueber')}
+        />
         <header className="workflow-kopf">
-          <div className="workflow-bereichsauswahl">
-            <Marke kompakt />
-            <Menue
-              beschriftung="Bereiche"
-              symbol="unten"
-              eintraege={[
-                { text: 'Start', aktion: () => void startseiteZeigen() },
-                { text: 'Workflows', symbol: 'oeffnen', aktion: () => void startseiteZeigen('projekte') },
-                { text: 'Vorlagen', symbol: 'bausteine', aktion: () => void startseiteZeigen('beispiele') },
-                { text: 'Hilfe', symbol: 'buch', aktion: () => void startseiteZeigen('hilfe') },
-                { text: 'Einstellungen', symbol: 'einstellungen', aktion: () => setDialog('einstellungen') },
-                { text: 'Über ScriptLab', symbol: 'info', aktion: () => setDialog('ueber') },
-              ]}
-            />
-          </div>
           <div className="workflow-identitaet">
             <h1 title={projekt.name}>{projekt.name}</h1>
             <p aria-label="Projektstatus" role="status">

@@ -566,6 +566,7 @@
 .workflow-kopf {
   min-height: 60px;
   padding: 8px 12px;
+  background: var(--farbe-fenster);
 }
 .workflow-aktionen {
   display: flex;

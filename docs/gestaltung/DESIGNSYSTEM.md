@@ -8,29 +8,29 @@ Signet und Wortmarken sind bearbeitbare SVGs unter `assets/`; Windows-Icon und G
 
 ## Farbrollen
 
-Verbindliche Quelle ist `src/gestaltung/tokens.ts`. Die Office-Farbwelt verbindet leicht blaue Neutralflächen mit einer blauen Markenaktion. `farbenNachThema` erzeugt über `cssVariablenFuer` die Rollen für HTML; `scriptlabThemaFuer` verwendet dieselben Grundlagen für Blockly. Komponenten erhalten keine eigene Akzentpalette.
+Verbindliche Quelle ist `src/gestaltung/tokens.ts`. Die Farbwelt verbindet ruhige Grau-/Grünflächen mit gedämpften Petrolakzenten. `farbenNachThema` erzeugt über `cssVariablenFuer` die Rollen für HTML; `scriptlabThemaFuer` verwendet dieselben Grundlagen für Blockly. Komponenten erhalten keine eigene Akzentpalette. Die Farben wurden am 30. Oktober 2026 zusammen mit den Vorlagenansichten überarbeitet; die fachlichen Blockly-Kategoriefarben bleiben erhalten.
 
 | Rolle                              | Dunkel  | Hell    |
 | ---------------------------------- | ------- | ------- |
-| Fenster                            | #141B24 | #F5F6F8 |
-| Navigation                         | #101720 | #EDF0F4 |
-| Inhalt                             | #1C2633 | #FFFFFF |
-| Erhöhte Fläche                     | #243244 | #F8FAFC |
-| Arbeitsfläche                      | #151F2C | #F1F4F8 |
-| Dezente Trennung                   | #3E4E63 | #D8DEE8 |
-| Bedienelementkontur                | #8A9AB0 | #6B778C |
-| Text                               | #F3F5F8 | #1F2937 |
-| Sekundärtext                       | #B8C4D4 | #536176 |
-| Primäraktion und aktive Navigation | #86B9EF | #0F6CBD |
-| Text auf Primäraktion              | #12263E | #FFFFFF |
-| Auswahlfläche                      | #243E5A | #E8F1FB |
+| Fenster                            | #17231F | #F3F6F4 |
+| Navigation                         | #121D19 | #EAF0EC |
+| Inhalt                             | #1D2B25 | #FFFFFF |
+| Erhöhte Fläche                     | #27382F | #F7FAF8 |
+| Arbeitsfläche                      | #17231F | #EEF3F0 |
+| Dezente Trennung                   | #40574A | #D3DFD8 |
+| Bedienelementkontur                | #91A79B | #667A70 |
+| Text                               | #F3F5F8 | #24332C |
+| Sekundärtext                       | #BCCDC4 | #52675D |
+| Primäraktion und aktive Navigation | #9DCBC0 | #286C63 |
+| Text auf Primäraktion              | #14241F | #FFFFFF |
+| Auswahlfläche                      | #294A40 | #E1EEE8 |
 | Erfolg                             | #92C7A1 | #2E6545 |
 | Warnung                            | #E2BD79 | #805C14 |
 | Fehler                             | #E9A5A3 | #A2403F |
 
 Hell ist der Erststart. Eine bereits gespeicherte Wahl bleibt erhalten. Hell/Dunkel/System ist eine lokale Einstellung außerhalb der Workflowdatei. System folgt Änderungen der Farbschemameldung. Native Windows-Titelleiste und Fensterhintergrund folgen der Wahl ebenfalls. Die normale Windows-Fenstersteuerung bleibt erhalten.
 
-Primäraktionen verwenden bei Hover `#A1CAF4`/`#0D5EA6`, beim Drücken `#70A6DF`/`#0A4E8A` (Dunkel/Hell). Text auf der Aktion bleibt an die jeweilige Rolle gebunden. Deaktivierte Elemente verwenden erhöhte Fläche, Sekundärtext und Bedienelementkontur ihres Themas; sie werden nicht durch globale Transparenz unlesbar. Tastaturfokus erhält eine blaue 2-px-Kontur mit Abstand. Eine ausgewählte Karte ergänzt die Auswahlfläche um Kontur beziehungsweise eine seitliche Markierung.
+Primäraktionen verwenden bei Hover `#B0D8CF`/`#235D56`, beim Drücken `#8AB8AE`/`#1C4F49` (Dunkel/Hell). Text auf der Aktion bleibt an die jeweilige Rolle gebunden. Deaktivierte Elemente verwenden erhöhte Fläche, Sekundärtext und Bedienelementkontur ihres Themas; sie werden nicht durch globale Transparenz unlesbar. Tastaturfokus erhält eine 2-px-Kontur in der jeweiligen Akzentfarbe mit Abstand. Eine ausgewählte Karte ergänzt die Auswahlfläche um Kontur beziehungsweise eine seitliche Markierung.
 
 Farbe trennt vier Aufgaben: Grundflächen, Markenaktion/Navigation, tatsächlicher Status und fachliche Bausteinkategorie. Auswahl besitzt zusätzlich eine Kontur beziehungsweise eine textliche Auswahlkennung. Eine grüne Kategorie bestätigt keinen erfolgreichen Lauf.
 

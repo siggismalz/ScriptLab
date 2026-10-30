@@ -1,0 +1,81 @@
+.editor-navigation {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: var(--abstand-16);
+  min-width: 0;
+  min-height: 48px;
+  padding: var(--abstand-4) var(--abstand-16);
+  border-block-end: 1px solid var(--farbe-trennung);
+  background: var(--farbe-navigation);
+  position: relative;
+  z-index: 70;
+}
+.editor-navigation-ziele {
+  display: flex;
+  align-items: center;
+  gap: var(--abstand-4);
+  flex: 1;
+  min-width: 0;
+}
+.editor-navlink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--abstand-8);
+  min-height: 36px;
+  padding: var(--abstand-4) var(--abstand-8);
+  color: var(--farbe-text-sekundaer);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-normal);
+  cursor: pointer;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.editor-navlink:hover {
+  background: var(--farbe-erhoeht);
+  color: var(--farbe-text);
+}
+.editor-navlink[aria-current] {
+  color: var(--farbe-text);
+  background: var(--farbe-auswahl-flaeche);
+  border-color: var(--farbe-kontur);
+}
+.editor-navlink--hilfe {
+  margin-inline-start: auto;
+}
+.editor-navigation .sl-menue-liste {
+  inset-inline-end: 0;
+  inset-inline-start: auto;
+}
+@media (max-width: 1000px) {
+  .editor-navlink--hilfe,
+  .editor-navlink--unterstuetzung {
+    display: none;
+  }
+}
+.anwendung[style*='--text-skala: 2'] .editor-navlink--hilfe,
+.anwendung[style*='--text-skala: 2'] .editor-navlink--unterstuetzung {
+  display: none;
+}
+@media (max-width: 760px) {
+  .editor-navigation {
+    gap: var(--abstand-8);
+    flex-wrap: wrap;
+  }
+  .editor-navigation > .sl-marke {
+    margin-inline-end: auto;
+  }
+  .editor-navigation-ziele {
+    flex: 1 0 100%;
+    order: 1;
+    flex-wrap: wrap;
+  }
+}
+@media (forced-colors: active) {
+  .editor-navlink[aria-current] {
+    color: Highlight;
+    border-color: Highlight;
+  }
+}
