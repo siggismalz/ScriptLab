@@ -40,7 +40,7 @@ def daten_hash(wert: Any) -> str:
     return hashlib.sha256(daten.encode("utf-8")).hexdigest()
 
 
-def runtime_hash_berechnen() -> str:
+def runtime_hash_berechnen(ml: bool = False) -> str:
     """Inhalte und tatsächliche Versionen binden; Installationspfade bleiben außen vor."""
     paket = Path(__file__).resolve().parent
     quellen = []
@@ -52,18 +52,28 @@ def runtime_hash_berechnen() -> str:
             if (vorher.st_size, vorher.st_mtime_ns) != (nachher.st_size, nachher.st_mtime_ns):
                 raise BusinessFehler("Die Business-Laufzeit wurde während der Prüfung verändert. Starte den Lauf erneut.")
             quellen.append({"name": quelle.relative_to(paket).as_posix(), "sha256": hashlib.sha256(inhalt).hexdigest()})
+        ml_paket = paket.parent / "scriptlab_ml"
+        if ml and ml_paket.is_dir():
+            for quelle in sorted(ml_paket.rglob("*.py")):
+                quellen.append({"name": "scriptlab_ml/" + quelle.relative_to(ml_paket).as_posix(),
+                                "sha256": hashlib.sha256(quelle.read_bytes()).hexdigest()})
         vera = paket / "schriften" / "Vera.ttf"
         vera_hash = hashlib.sha256(vera.read_bytes()).hexdigest() if vera.is_file() else None
     except OSError as fehler:
         raise BusinessFehler("Die installierte Business-Laufzeit konnte nicht vollständig geprüft werden.") from fehler
     pakete = {}
-    for name in sorted(("duckdb", "openpyxl", "python-docx", "pypdf", "reportlab", "defusedxml",
-                        "lxml", "pillow", "typing_extensions", "et-xmlfile", "charset-normalizer")):
+    namen = ["duckdb", "openpyxl", "python-docx", "pypdf", "reportlab", "defusedxml",
+             "lxml", "pillow", "typing_extensions", "et-xmlfile", "charset-normalizer"]
+    for name in sorted(namen):
         try:
             pakete[name] = version(name)
         except PackageNotFoundError:
             pakete[name] = None
-    return daten_hash({"quellen": quellen, "python": sys.version, "pakete": pakete, "vera_sha256": vera_hash})
+    identitaet = {"quellen": quellen, "python": sys.version, "pakete": pakete, "vera_sha256": vera_hash}
+    if ml:
+        from scriptlab_ml.profil import identitaet as ml_identitaet
+        identitaet["ml_profil"] = ml_identitaet(streng=False)
+    return daten_hash(identitaet)
 
 
 @dataclass(frozen=True)
@@ -175,7 +185,8 @@ class Kontext:
                  grenzen: Grenzen | dict | None = None, journal_pfad: str | Path | None = None,
                  fortsetzen: bool = False, workflow_hash: str = "", ereignis_callback: Callable | None = None,
                  lauf_id: str | None = None, technischer_ordner: str | Path | None = None,
-                 abbruch_datei: str | Path | None = None, ausgabe_wurzel: str | Path | None = None):
+                 abbruch_datei: str | Path | None = None, ausgabe_wurzel: str | Path | None = None,
+                 ml_aktiv: bool = False):
         if modus not in {"vorschau", "prueflauf", "ausfuehren"}:
             raise BusinessFehler("Der Business-Laufmodus ist ungültig.")
         self.basis = Path(basis).resolve()
@@ -192,7 +203,10 @@ class Kontext:
         self.journal_pfad = Path(journal_pfad).resolve() if journal_pfad else None
         self.fortsetzen = bool(fortsetzen)
         self.workflow_hash = workflow_hash
-        self.runtime_hash = runtime_hash_berechnen()
+        if type(ml_aktiv) is not bool:
+            raise BusinessFehler("Die ML-Profilzuordnung ist ungültig.")
+        self.ml_aktiv = ml_aktiv
+        self.runtime_hash = runtime_hash_berechnen(ml_aktiv)
         try:
             self.lauf_id = str(UUID(lauf_id)) if lauf_id else str(uuid4())
         except (ValueError, TypeError) as fehler:
@@ -205,6 +219,8 @@ class Kontext:
         self.metadaten: dict[str, Any] = {}
         self.quellen: dict[str, dict] = {}
         self._tabellen_herkunft: dict[str, str] = {}
+        self._ml_herkunft: dict[str, str] = {}
+        self.ml_training: list[dict] = []
         self.fehler: list[dict] = []
         self.hinweise: list[dict] = []
         self.geplante_schritte: list[dict] = []
@@ -238,7 +254,7 @@ class Kontext:
         daten = json.loads(quelle.read_text(encoding="utf-8"))
         if not isinstance(daten, dict) or daten.pop("version", None) != 1:
             raise BusinessFehler("Die Business-Kontextdatei hat ein unbekanntes Format.")
-        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei", "ausgabe_wurzel"}
+        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei", "ausgabe_wurzel", "ml_aktiv"}
         if set(daten) - erlaubt or "basis" not in daten:
             raise BusinessFehler("Die Business-Kontextdatei enthält ungültige Angaben.")
         return cls(**daten)
@@ -308,7 +324,9 @@ class Kontext:
 
     def _fachliche_eingaben(self, wert):
         if isinstance(wert, dict):
-            return {name: {"herkunft": self._tabellen_herkunft[inhalt]}
+            return {name: {"herkunft": self._ml_herkunft[inhalt]}
+                    if name == "ml_modell" and isinstance(inhalt, str) and inhalt in self._ml_herkunft
+                    else {"herkunft": self._tabellen_herkunft[inhalt]}
                     if name == "tabelle" and isinstance(inhalt, str) and inhalt in self._tabellen_herkunft
                     else self._fachliche_eingaben(inhalt) for name, inhalt in wert.items()}
         if isinstance(wert, list):

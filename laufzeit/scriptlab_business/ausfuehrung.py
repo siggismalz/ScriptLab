@@ -20,6 +20,7 @@ REINE_OPERATIONEN = {
     "daten.importieren", "daten.spalten", "daten.werte", "daten.filtern", "daten.sortieren",
     "daten.dubletten", "daten.vereinigen", "daten.verknuepfen", "daten.gruppieren",
     "daten.pruefen", "daten.vorschau", "dateien.stapel", "dokument.pdf_text",
+    "ml.laden", "ml.vorhersagen",
 }
 
 
@@ -30,7 +31,23 @@ def _handler():
         from .dokumente import HANDLER as dokumente
     except ImportError:
         dokumente = {}
-    return {**daten, **dateien, **dokumente}
+    def ml(operation):
+        def aufrufen(kontext, konfiguration, eingaben):
+            try:
+                from scriptlab_ml.verarbeitung import HANDLER
+                return HANDLER[operation](kontext, konfiguration, eingaben)
+            except ImportError as fehler:
+                raise BusinessFehler("Das optionale ML-Profil fehlt oder ist unvollständig. Richte es in den Einstellungen bewusst ein.") from fehler
+        return aufrufen
+    return {**daten, **dateien, **dokumente,
+            **{op: ml(op) for op in ("ml.trainieren", "ml.speichern", "ml.laden", "ml.vorhersagen")}}
+
+
+def _geplante_eingabe(wert):
+    if isinstance(wert, dict):
+        ml = wert.get("ml_geplant") is True or str(wert.get("operation", "")).startswith("ml.")
+        return (wert.get("status") == "geplant" and ml) or any(_geplante_eingabe(v) for v in wert.values())
+    return isinstance(wert, list) and any(_geplante_eingabe(v) for v in wert)
 
 
 def _io_meldung(fehler: OSError) -> str:
@@ -79,12 +96,16 @@ def schritt(kontext: Kontext, id: str, operation: str, konfiguration: dict, eing
     kontext.beginn_schritt(id, k, e, operation)
     kontext.ereignis("schritt", operation=operation, status="begonnen")
     try:
-        if kontext.modus == "vorschau" and operation not in REINE_OPERATIONEN:
+        if ((kontext.modus == "vorschau" and operation not in REINE_OPERATIONEN)
+                or (kontext.modus != "ausfuehren" and (_geplante_eingabe(e)
+                    or operation in {"ml.trainieren", "ml.speichern"}))):
             ergebnis = {"status": "geplant", "operation": operation}
+            if operation.startswith("ml.") or _geplante_eingabe(e):
+                ergebnis["ml_geplant"] = True
             kontext.geplante_schritte.append({"id": id, "operation": operation})
         else:
             ergebnis = handler[operation](kontext, k, e)
-        if operation.startswith("daten."):
+        if operation.startswith(("daten.", "ml.")):
             kontext.tabellenherkunft_merke(ergebnis)
         kontext.ergebnisse[id] = ergebnis
         if isinstance(ergebnis, dict) and ergebnis.get("gueltig") is False:
@@ -163,7 +184,7 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
         daten = json.loads(pfad.read_text(encoding="utf-8"))
         if not isinstance(daten, dict) or daten.pop("version", None) != 1:
             raise BusinessFehler("Die technische Business-Kontextdatei ist ungültig.")
-        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei", "ausgabe_wurzel"}
+        erlaubt = {"basis", "modus", "parameter", "grenzen", "journal_pfad", "fortsetzen", "workflow_hash", "lauf_id", "technischer_ordner", "abbruch_datei", "ausgabe_wurzel", "ml_aktiv"}
         if set(daten) - erlaubt:
             raise BusinessFehler("Die technische Kontextdatei enthält unbekannte Angaben.")
         kontext = Kontext(**daten)
@@ -192,7 +213,7 @@ def kontext_laden(scriptdatei, metadaten: dict, token=None):
         grenzen = {"zeitlimit_sekunden": optionen.zeitlimit, "duckdb_speicher": f"{optionen.speicher_mb}MB",
                    "max_temp_bytes": optionen.temp_gb * 1024 ** 3, "max_datei_bytes": optionen.max_datei_mib * 1024 ** 2,
                    "max_ausgaben": 100000, "max_zeilen": 1048575}
-        kontext = Kontext(optionen.basis, optionen.modus, parameter, grenzen, optionen.journal, optionen.fortsetzen, metadaten.get("workflow_hash", ""))
+        kontext = Kontext(optionen.basis, optionen.modus, parameter, grenzen, optionen.journal, optionen.fortsetzen, metadaten.get("workflow_hash", ""), ml_aktiv=metadaten.get("workflow_art") == "ml")
     _parameter_pruefen(metadaten.get("parameter", []), kontext.parameter)
     # Export-Wiederaufnahme ist an die tatsächlich gestartete Scriptfassung gebunden.
     if token is None or not kontext.workflow_hash:
@@ -253,6 +274,7 @@ def _bericht_speichern(kontext, status, fehler):
                "beendet_am": datetime.now(timezone.utc).isoformat(), "status": status,
                "runtime": {"python": sys.version.split()[0], "business": __version__, "pakete": pakete}, "parameter": parameter,
                "grenzen": vars(kontext.grenzen), "fehler": kontext.fehler, "hinweise": kontext.hinweise, "meldung": str(fehler) if fehler else None,
+               "ml_training": kontext.ml_training,
                "ausgaben": kontext.ausgaben, "geplant": kontext.geplante_schritte, "unklare_schritte": unklar,
                "quellen": sorted(kontext.quellen.values(), key=lambda f: f["pfad"]), "summen": summen,
                "abbruchgrund": fehler.grund if isinstance(fehler, AbbruchFehler) else None}

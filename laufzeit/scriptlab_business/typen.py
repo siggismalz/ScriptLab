@@ -28,6 +28,22 @@ class Tabelle:
         return {"tabelle": self.id, "spalten": [{"name": s.name, "typ": s.typ} for s in self.spalten]}
 
 
+@dataclass(frozen=True)
+class MLModell:
+    """Lauflokaler Verweis; Schätzer, Gewichte und Trainingsdaten verlassen die Laufzeit nicht."""
+
+    id: str
+    aufgabe: str
+    verfahren: str
+    merkmale: tuple[str, ...]
+    zielspalte: str
+    metriken: dict
+
+    def json(self) -> dict[str, Any]:
+        return {"ml_modell": self.id, "aufgabe": self.aufgabe, "verfahren": self.verfahren,
+                "merkmale": list(self.merkmale), "zielspalte": self.zielspalte, "metriken": self.metriken}
+
+
 # Diese Bezeichnungen sind zugleich der feste Vertrag mit dem Blockly-Katalog.
 FORMATE = ("CSV", "XLSX", "JSON", "PARQUET")
 KONFLIKTE = ("FEHLER", "ERSETZEN", "UEBERSPRINGEN", "NEUER_NAME")
