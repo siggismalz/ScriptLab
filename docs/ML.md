@@ -129,6 +129,8 @@ Der Scriptstart installiert nichts und benötigt keine geöffnete ScriptLab-Anwe
 
 ## Nachweise und offene Grenzen
 
+Der [Integrationsabschluss](qualitaet/ML-ABSCHLUSS.md) bündelt die tatsächlichen Modul-, Desktop-, Export- und Paketnachweise mit den offenen Befunden. Einzelne erfolgreiche Nachtests ersetzen keinen grünen Gesamtlauf oder eine produktive Updateabnahme.
+
 Für diesen Implementierungsstand wurden vier eigenständige Exporte geprüft: Random Forest und PyTorch jeweils für Klassifikation und Regression. Zusätzlich wurden die ausdrückliche Offlineeinrichtung in Electron mit RF-Training auf 160/40 Zeilen und 20 Vorhersagen sowie zwei native Torchfälle für Stoppen und ein Ein-Sekunden-Zeitlimit nachgewiesen. Die [Bedienung](qualitaet/ML-BEDIENUNG.md), [Laufzeit](qualitaet/ML-LAUFZEIT.md), [Verarbeitung](qualitaet/ML-VERARBEITUNG.md) und der [Integrationsreview](qualitaet/ML-REVIEW-INTEGRATION.md) trennen die jeweiligen Prüfbereiche. Das ist keine Gesamtfreigabe der laufenden Testsuite, des Installers oder der Updatekette und kein Nachweis allgemeiner Modellqualität.
 
 Ein harter OS-Abbruch während der Einrichtung kann eine Sperrdatei hinterlassen; eine automatische Wiederherstellung verwaister Einrichtungszustände ist noch nicht umgesetzt. Ein vollständiger Online-Einrichtungsnachweis im Endnutzer-UI ist von den geprüften Downloads und der Offlineeinrichtung zu unterscheiden. Es gibt keine GPU-, Cloud- oder verteilte Ausführung und keine unbegrenzte Skalierbarkeit.

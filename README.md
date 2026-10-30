@@ -80,6 +80,8 @@ Die eigene `.slmodell`-Datei enthält Modell, Spaltenschema und Qualitätsangabe
 
 ![Bestätigte ML-Ergebnisse der synthetischen Klassifikationsvorlage mit getrennten Trainings- und Testzeilen.](docs/qualitaet/ml-ansichten/ergebnisse-hell.png)
 
+Der [ML-Prüfbericht](docs/qualitaet/ML-ABSCHLUSS.md) nennt ausgeführte Tests, Paketstand, Agentenaufträge und offene Grenzen einschließlich des noch ausstehenden CI-Gesamtergebnisses.
+
 ## Vorschau, Prüfung und echte Ausführung
 
 | Aktion                                    | Was passiert?                                                                                                                                                                           |
