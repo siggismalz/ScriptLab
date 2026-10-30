@@ -1,7 +1,14 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as Blockly from 'blockly/core';
 import { registriereBausteine } from '../src/editor/bausteine';
-import { bausteinEinfuegen, bausteinVerschieben, einfuegestellenLesen } from '../src/editor/bedienung';
+import {
+  bausteinEinfuegen,
+  bausteinVerschieben,
+  einfuegestellenLesen,
+  paletteZiehenStarten,
+} from '../src/editor/bedienung';
+import { businessQuelleVorbelegen } from '../src/editor/businessQuellen';
+import { businessDatenLesen } from '../src/kern/business-katalog';
 import { eigenschaftenLesen, eigenschaftSetzen } from '../src/editor/eigenschaften';
 import { bausteinBeispiele } from '../src/editor/beispieleHilfe';
 import { bausteinDefinitionen } from '../src/kern/katalog';
@@ -28,8 +35,158 @@ const stelle = (
   return ziel!;
 };
 afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   for (const ws of workspaces.splice(0)) ws.dispose();
   Blockly.Events.setGroup(false);
+});
+
+describe('Passende Quellen beim neuen Einfügen', () => {
+  const verbunden = (ws: Blockly.Workspace, vorher: Blockly.Block, typ: string) =>
+    bausteinEinfuegen(ws, typ, stelle(ws, typ, vorher.id));
+  const eingaben = (block: Blockly.Block) => businessDatenLesen(block.type, block.data ?? undefined).eingaben;
+
+  it('verwendet das unmittelbar vorherige Tabellenergebnis und erhält Einfügen samt Zuordnung beim Rückgängig', async () => {
+    const ws = arbeitsbereich();
+    const start = ws.newBlock('sl_start');
+    const quelle = verbunden(ws, start, 'sl_biz_lesen_csv');
+    const filtern = verbunden(ws, quelle, 'sl_biz_filtern');
+    expect(eingaben(filtern)).toEqual({ tabelle: { referenz: quelle.id } });
+    await tick();
+    ws.clearUndo();
+    const gruppieren = verbunden(ws, filtern, 'sl_biz_gruppieren');
+    const id = gruppieren.id;
+    expect(eingaben(gruppieren)).toEqual({ tabelle: { referenz: filtern.id } });
+    await tick();
+    ws.undo(false);
+    await tick();
+    expect(ws.getBlockById(id)).toBeNull();
+    expect(filtern.getNextBlock()).toBeNull();
+    ws.undo(true);
+    await tick();
+    expect(filtern.getNextBlock()?.id).toBe(id);
+    expect(eingaben(ws.getBlockById(id)!)).toEqual({ tabelle: { referenz: filtern.id } });
+  });
+
+  it('verwendet hinter einem anderen Baustein nur eine eindeutige sichere Quelle', () => {
+    const ws = arbeitsbereich();
+    const start = ws.newBlock('sl_start');
+    const quelle = verbunden(ws, start, 'sl_biz_lesen_csv');
+    const kommentar = verbunden(ws, quelle, 'sl_comment');
+    const filtern = verbunden(ws, kommentar, 'sl_biz_filtern');
+    expect(eingaben(filtern)).toEqual({ tabelle: { referenz: quelle.id } });
+    const zweite = verbunden(ws, filtern, 'sl_biz_lesen_csv');
+    const weitererKommentar = verbunden(ws, zweite, 'sl_comment');
+    const mehrdeutig = verbunden(ws, weitererKommentar, 'sl_biz_gruppieren');
+    expect(eingaben(mehrdeutig)).toEqual({});
+  });
+
+  it('ordnet Quellen innerhalb eines Zweigs zu und übernimmt sie nicht hinter dem Zweig', () => {
+    const ws = arbeitsbereich();
+    const start = ws.newBlock('sl_start');
+    const wenn = verbunden(ws, start, 'sl_if');
+    const quelle = bausteinEinfuegen(
+      ws,
+      'sl_biz_lesen_csv',
+      stelle(ws, 'sl_biz_lesen_csv', wenn.id, 'eingang', 'DANN'),
+    );
+    const innen = verbunden(ws, quelle, 'sl_biz_filtern');
+    const danach = verbunden(ws, wenn, 'sl_biz_gruppieren');
+    expect(eingaben(innen)).toEqual({ tabelle: { referenz: quelle.id } });
+    expect(eingaben(danach)).toEqual({});
+  });
+
+  it('trifft keine Wahl für zwei Eingabetabellen oder unverbundene neue Bausteine', () => {
+    const ws = arbeitsbereich();
+    const start = ws.newBlock('sl_start');
+    const quelle = verbunden(ws, start, 'sl_biz_lesen_csv');
+    const join = verbunden(ws, quelle, 'sl_biz_verknuepfen');
+    const frei = bausteinEinfuegen(ws, 'sl_biz_filtern', { id: 'frei', art: 'frei', text: '' });
+    expect(eingaben(join)).toEqual({});
+    expect(eingaben(frei)).toEqual({});
+  });
+
+  it('lässt bestehende Zuordnungen, Laden und Verschieben unverändert', () => {
+    const ws = arbeitsbereich();
+    const start = ws.newBlock('sl_start');
+    const quelle = verbunden(ws, start, 'sl_biz_lesen_csv');
+    const leer = bausteinEinfuegen(ws, 'sl_biz_filtern', { id: 'frei', art: 'frei', text: '' });
+    bausteinVerschieben(ws, leer.id, stelle(ws, leer.id, quelle.id));
+    expect(eingaben(leer)).toEqual({});
+    const kopie = arbeitsbereich();
+    Blockly.serialization.workspaces.load(Blockly.serialization.workspaces.save(ws), kopie);
+    expect(eingaben(kopie.getBlockById(leer.id)!)).toEqual({});
+    leer.data = JSON.stringify({
+      konfiguration: {},
+      eingaben: { tabelle: { referenz: 'bewusst-gewaehlt' } },
+    });
+    const vorher = leer.data;
+    businessQuelleVorbelegen(leer);
+    expect(leer.data).toBe(vorher);
+  });
+
+  it('hält die Quellenwahl beim neuen Ziehen in derselben Gruppe, auch wenn Blockly sie beim Loslassen beendet', async () => {
+    const ws = arbeitsbereich();
+    const start = ws.newBlock('sl_start');
+    const quelle = verbunden(ws, start, 'sl_biz_lesen_csv');
+    const dokument = new EventTarget();
+    vi.stubGlobal('document', dokument);
+    vi.stubGlobal('window', new EventTarget());
+    class Zeiger extends Event {
+      button = 0;
+      pointerId = 1;
+      constructor(
+        typ: string,
+        readonly clientX: number,
+        readonly clientY: number,
+      ) {
+        super(typ, { cancelable: true });
+      }
+    }
+    vi.stubGlobal('PointerEvent', Zeiger);
+    const svgWorkspace = Object.assign(ws, {
+      scrollX: 0,
+      scrollY: 0,
+      setResizesEnabled: vi.fn(),
+      getParentSvg: () => ({ getBoundingClientRect: () => ({ left: 0, top: 0, right: 500, bottom: 500 }) }),
+    }) as unknown as Blockly.WorkspaceSvg;
+    vi.spyOn(Blockly.utils.svgMath, 'screenToWsCoordinates').mockReturnValue(
+      new Blockly.utils.Coordinate(0, 0),
+    );
+    vi.spyOn(Blockly.dragging.Dragger.prototype, 'onDragStart').mockImplementation(function (
+      this: Blockly.dragging.Dragger,
+    ) {
+      return this['draggable'];
+    });
+    vi.spyOn(Blockly.dragging.Dragger.prototype, 'onDrag').mockImplementation(() => {});
+    let eingefuegt: Blockly.Block | undefined;
+    vi.spyOn(Blockly.dragging.Dragger.prototype, 'onDragEnd').mockImplementation(function (
+      this: Blockly.dragging.Dragger,
+    ) {
+        eingefuegt = this['draggable'] as unknown as Blockly.Block;
+      quelle.nextConnection!.connect(eingefuegt.previousConnection!);
+      Blockly.Events.setGroup(false);
+    });
+    await tick();
+    ws.clearUndo();
+    paletteZiehenStarten(
+      svgWorkspace,
+      'sl_biz_gruppieren',
+      new Zeiger('pointerdown', 10, 10) as PointerEvent,
+    );
+    dokument.dispatchEvent(new Zeiger('pointermove', 30, 30));
+    dokument.dispatchEvent(new Zeiger('pointerup', 30, 30));
+    expect(eingaben(eingefuegt!)).toEqual({ tabelle: { referenz: quelle.id } });
+    expect(Blockly.Events.getGroup()).toBe('');
+    const id = eingefuegt!.id;
+    await tick();
+    ws.undo(false);
+    await tick();
+    expect(ws.getBlockById(id)).toBeNull();
+    ws.undo(true);
+    await tick();
+    expect(eingaben(ws.getBlockById(id)!)).toEqual({ tabelle: { referenz: quelle.id } });
+  });
 });
 
 describe('Klickalternative zum Ziehen', () => {

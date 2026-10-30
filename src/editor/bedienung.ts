@@ -1,6 +1,7 @@
 import * as Blockly from 'blockly/core';
 import { definitionNachTyp } from '../kern/katalog';
 import { werkzeugkasten } from './bausteine';
+import { businessQuelleVorbelegen } from './businessQuellen';
 
 export interface Einfuegestelle {
   id: string;
@@ -242,6 +243,7 @@ export function bausteinEinfuegen(
     const block = Blockly.serialization.blocks.append(vorlage, workspace, { recordUndo: true });
     try {
       verbinden(workspace, block, gueltigesZiel);
+      businessQuelleVorbelegen(block);
       return block;
     } catch (fehler) {
       block.dispose(false);
@@ -316,7 +318,13 @@ export function paletteZiehenStarten(
           Blockly.getFocusManager().focusNode(workspace);
           workspace.scroll(sichtVorher.x, sichtVorher.y);
         } else {
+          const ziehGruppe = Blockly.Events.getGroup();
           zieher.onDragEnd(event);
+          // Blockly beendet beim Loslassen seine Gruppe. Die neue Quellenwahl
+          // gehört weiterhin zum selben Einfügen und dessen Rückgängig-Schritt.
+          Blockly.Events.setGroup(ziehGruppe);
+          if (!block.isDeadOrDying() && block.previousConnection?.isConnected())
+            businessQuelleVorbelegen(block);
           optionen.ausgewaehlt?.(block.id);
         }
       }

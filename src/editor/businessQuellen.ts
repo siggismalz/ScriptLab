@@ -1,7 +1,8 @@
 import * as Blockly from 'blockly/core';
-import { businessNachTyp } from '../kern/business-katalog';
+import { businessDatenLesen, businessNachTyp } from '../kern/business-katalog';
 import { definitionNachTyp } from '../kern/katalog';
 import type { FachlicherTyp } from '../kern/business-modell';
+import { BlockDatenEreignis } from './parameterEreignis';
 
 /** Nur Ergebnisse, die an dieser Stelle unabhängig vom gewählten Zweig sicher vorliegen. */
 export function businessQuellenVorBlock(
@@ -44,4 +45,37 @@ export function businessQuellenVorBlock(
       const definition = block && businessNachTyp.get(block.type);
       return Boolean(block && definition?.ausgabe === typ && !definition.steuerung);
     });
+}
+
+/** Nur beim neuen Einfügen aufrufen: vorhandene Zuordnungen bleiben eine bewusste Nutzerwahl. */
+export function businessQuelleVorbelegen(block: Blockly.Block): void {
+  const definition = businessNachTyp.get(block.type);
+  if (!definition || !block.isEnabled()) return;
+  const eingaben = Object.entries(definition.eingaben);
+  // Bei zwei Tabellen ist die Rolle der Quellen fachlich zu entscheiden.
+  if (eingaben.length !== 1) return;
+  const [name, typ] = eingaben[0];
+  const daten = businessDatenLesen(block.type, block.data ?? undefined);
+  const eingabe = daten.eingaben[name];
+  if (
+    eingabe !== undefined &&
+    eingabe !== null &&
+    !(
+      typeof eingabe === 'object' &&
+      !Array.isArray(eingabe) &&
+      Object.keys(eingabe).length === 1 &&
+      eingabe.referenz === ''
+    )
+  )
+    return;
+  const quellen = businessQuellenVorBlock(block.workspace, block.id, typ);
+  const vorgaenger = block.getPreviousBlock();
+  const quelle = quellen.find((q) => q.id === vorgaenger?.id) ?? (quellen.length === 1 ? quellen[0] : null);
+  if (!quelle) return;
+  const vorher = block.data ?? null;
+  block.data = JSON.stringify({
+    ...daten,
+    eingaben: { ...daten.eingaben, [name]: { referenz: quelle.id } },
+  });
+  Blockly.Events.fire(new BlockDatenEreignis(block, vorher, block.data));
 }
