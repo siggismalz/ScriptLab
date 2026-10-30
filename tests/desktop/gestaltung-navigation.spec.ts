@@ -8,7 +8,7 @@ import { neuesProjekt, projektPruefen, type Projekt } from '../../src/kern/proje
 import { Projektindex, Entwurfspeicher, dateistandLesen } from '../../src/main/projektablage';
 import type { Dokument, Einstellungen } from '../../src/gemeinsam/bruecke';
 
-const nachweise = resolve('docs/gestaltung/nachher');
+const nachweise = resolve('artifacts/qualitaet-desktop/gestaltung-navigation');
 const monatName = 'Testdaten · Monatsauswertung Vertrieb und Kundenservice Oktober 2026';
 const vbsName = 'Testdaten · Eingangsbelege im Archiv ablegen (VBS)';
 const entwurfName = 'Testdaten · Entwurf für Lieferantenabgleich mit fehlenden Zuordnungen';
@@ -155,7 +155,7 @@ test('Gestaltung: gespeicherte Workflows, Entwurf und Vorlagenkopie behalten ihr
     for (const farbe of ['dunkel', 'hell'] as const) {
       await thema(s, farbe);
       await bereich(s, 'Start');
-      await expect(s.seite.getByTestId('zuletzt-geoeffnet').locator('[data-projekt-id]')).toHaveCount(2);
+      await expect(s.seite.getByTestId('zuletzt-geoeffnet').getByRole('article')).toHaveCount(2);
       await bild(s, `start-mit-workflows-entwurf-${farbe}-1280`);
       await s.seite.getByTestId('zuletzt-geoeffnet').scrollIntoViewIfNeeded();
       await bild(s, `start-zuletzt-geoeffnet-${farbe}-1280`);
@@ -193,7 +193,7 @@ test('Gestaltung: gespeicherte Workflows, Entwurf und Vorlagenkopie behalten ihr
       await s.seite.getByLabel('Angezeigte Parameterwerte', { exact: true }).selectOption('echt');
       await datenansichten.getByRole('tab', { name: 'Datenvorschau', exact: true }).click();
       await expect(s.seite.getByRole('tabpanel', { name: 'Datenvorschau', exact: true })).toContainText(
-        'Noch keine Datenvorschau',
+        'Für diesen Schritt ist noch keine Datenvorschau geladen.',
       );
       await datenansichten.getByRole('tab', { name: 'Parameterwerte', exact: true }).click();
       await expect(s.seite.getByLabel('Angezeigte Parameterwerte', { exact: true })).toHaveValue('echt');
@@ -397,6 +397,7 @@ test('Gestaltung: größere lokale Workflowliste erhält Suche, Auswahl und Scro
     );
     const ausgewaehlt = await zeile.getAttribute('data-projekt-id');
     const scrollVorher = await s.seite.getByTestId('start-inhalt').evaluate((e) => e.scrollTop);
+    const zeileVorher = await zeile.boundingBox();
     expect(scrollVorher).toBeGreaterThan(200);
     await zeile.getByRole('button', { name: 'Öffnen', exact: true }).click();
     await editorBereit(s);
@@ -404,8 +405,9 @@ test('Gestaltung: größere lokale Workflowliste erhält Suche, Auswahl und Scro
     await expect(liste.locator('[data-projekt-id]')).toHaveCount(30);
     await expect(seiten).toContainText('Seite 2 von 2');
     await expect(liste.locator(`[data-projekt-id="${ausgewaehlt}"]`)).toHaveClass(/ist-ausgewaehlt/);
-    const scrollDanach = await s.seite.getByTestId('start-inhalt').evaluate((e) => e.scrollTop);
-    expect(Math.abs(scrollDanach - scrollVorher)).toBeLessThan(8);
+    await expect.poll(async () => Math.abs((await s.seite.getByTestId('start-inhalt').evaluate((e) => e.scrollTop)) - scrollVorher)).toBeLessThan(8);
+    const zeileDanach = await liste.locator(`[data-projekt-id="${ausgewaehlt}"]`).boundingBox();
+    expect(Math.abs(zeileDanach!.y - zeileVorher!.y)).toBeLessThan(8);
     await liste.getByLabel('Gespeicherte Workflows durchsuchen', { exact: true }).fill('Workflow 078');
     await expect(liste.locator('[data-projekt-id]')).toHaveCount(1);
     const r = await s.seite.evaluate(async () => {

@@ -200,6 +200,8 @@ export function Startbereich(props: StartbereichEigenschaften) {
   const seitentitelRef = useRef<HTMLHeadingElement>(null);
   const ansicht = artikelId && seite === 'hilfe' ? `hilfe/${artikelId}` : seite;
   const letzteAnsicht = useRef(ansicht);
+  const letzteScrollAnfrage = useRef<number | undefined>(undefined);
+  const positionWiederherstellen = useRef(false);
   const positionen = useRef<Record<string, number>>({});
   const zielVorher = useRef(props.ziel);
   const zielAnfrageVorher = useRef(props.zielAnfrage);
@@ -233,15 +235,27 @@ export function Startbereich(props: StartbereichEigenschaften) {
         ziel.scrollIntoView({ block: 'start' });
         ziel.focus({ preventScroll: true });
       }
-    } else if (letzteAnsicht.current !== ansicht || props.zielAnfrage !== undefined) {
+    } else {
+      const wechselt = letzteAnsicht.current !== ansicht || letzteScrollAnfrage.current !== props.zielAnfrage;
+      // Der Ladehinweis verändert vorübergehend die Höhe des Listeninhalts.
+      // Erst danach wiederherstellen; Zwischenpositionen sind kein Nutzerscroll.
+      if (props.laden) {
+        positionWiederherstellen.current = true;
+        return;
+      }
+      if (!wechselt && !positionWiederherstellen.current) return;
       const vorherigePosition = positionen.current[ansicht] ?? 0;
       panel.scrollTop = vorherigePosition;
-      // Bei wiederhergestelltem Ausschnitt bleibt der Fokus im sichtbaren Scrollbereich.
-      if (vorherigePosition > 0) panel.focus({ preventScroll: true });
-      else seitentitelRef.current?.focus({ preventScroll: true });
+      positionWiederherstellen.current = false;
+      if (wechselt) {
+        // Eine reine Bestandsaktualisierung darf keinen Eingabefokus verschieben.
+        if (vorherigePosition > 0) panel.focus({ preventScroll: true });
+        else seitentitelRef.current?.focus({ preventScroll: true });
+      }
     }
     letzteAnsicht.current = ansicht;
-  }, [ansicht, sprungziel, props.zielAnfrage]);
+    letzteScrollAnfrage.current = props.zielAnfrage;
+  }, [ansicht, sprungziel, props.zielAnfrage, props.laden]);
 
   const gesperrt = Boolean(props.verarbeitung);
   const artikel = hilfeArtikel.find((a) => a.id === artikelId);
@@ -537,6 +551,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
         onScroll={(event) => {
           if (
             !props.verarbeitung &&
+            !props.laden &&
             event.currentTarget.clientHeight > 0 &&
             !event.currentTarget.closest('[hidden]')
           )
