@@ -141,8 +141,14 @@ export interface ScriptLabBruecke {
   pythonHilfeOeffnen(): Promise<Antwort<void>>;
 }
 
+/** Nur der Transport über Electrons Weltgrenze ist JSON; fachliche Aufrufe bleiben typisiert. */
+export type ScriptLabTransport = {
+  [K in Exclude<keyof ScriptLabBruecke, 'beiStandAnfrage'>]: (argumente: string) => Promise<string>;
+} & { beiStandAnfrage(lesen: () => string): () => void };
+
 declare global {
   interface Window {
     scriptlab: ScriptLabBruecke;
+    scriptlabTransport: ScriptLabTransport;
   }
 }

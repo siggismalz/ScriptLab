@@ -1,8 +1,9 @@
+import { jsonSchreiben } from '../gemeinsam/json';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import * as Blockly from 'blockly/core';
 import { registriereBausteine } from '../editor/bausteine';
 import { bausteinDefinitionen } from '../kern/katalog';
-import { neuesProjekt, type Projekt } from '../kern/projekt';
+import { maximaleBausteinzahl, neuesProjekt, projektPruefen, type Projekt } from '../kern/projekt';
 import { skriptErzeugen } from '../kern/skript';
 import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
 import { scriptlabThema, scriptlabThemaFuer } from '../gestaltung/blocklyThema';
@@ -10,6 +11,7 @@ import { blockAuswahlKennzeichnen } from '../gestaltung/blockAuswahl';
 import { farben, masse, designTokensAnwenden, farbschemaAufloesen } from '../gestaltung/tokens';
 import {
   bausteinEinfuegen,
+  ablaufverbindungenVorLadenTrennen,
   bausteinVerschieben,
   einfuegestellenLesen,
   editorNavigationEinrichten,
@@ -119,7 +121,7 @@ export function Anwendung() {
   const arbeitsbereichGeladen = useRef(false);
   const [workspace, setWorkspace] = useState<Blockly.WorkspaceSvg | null>(null);
   const projektRef = useRef(neuesProjekt());
-  const gespeichertRef = useRef(JSON.stringify(projektRef.current));
+  const gespeichertRef = useRef(jsonSchreiben(projektRef.current));
   const laedt = useRef(false),
     busy = useRef(false);
   const auswahlRef = useRef<string | null>(null),
@@ -273,7 +275,7 @@ export function Anwendung() {
     dokumentStatusUebernehmen(aktuell);
     const kontext = antwort(await window.scriptlab.testLesen());
     setTestOptionen((alt) => ({ ...alt, basisVerzeichnis: kontext.optionen.basisVerzeichnis }));
-    if (!aktuell.geaendert) gespeichertRef.current = JSON.stringify(aktuell.projekt);
+    if (!aktuell.geaendert) gespeichertRef.current = jsonSchreiben(aktuell.projekt);
   }
 
   async function bibliotheksProjektOeffnen(
@@ -432,8 +434,8 @@ export function Anwendung() {
       melden('Stoppe den Test vor Änderungen am Workflow.', 'hinweis');
       return;
     }
-    const json = JSON.stringify(neu);
-    if (json === JSON.stringify(projektRef.current)) return;
+    const json = jsonSchreiben(neu);
+    if (json === jsonSchreiben(projektRef.current)) return;
     projektRef.current = neu;
     setProjekt(neu);
     setRevision((n) => n + 1);
@@ -472,7 +474,7 @@ export function Anwendung() {
         // Auf der Startseite existiert noch kein sichtbarer Canvas. Erst im Editor rendern,
         // damit Blockly die gespeicherte Ansicht nicht gegen einen Null-Pixel-Bereich klemmt.
         projektRef.current = neu.projekt;
-        gespeichertRef.current = JSON.stringify(neu.projekt);
+        gespeichertRef.current = jsonSchreiben(neu.projekt);
         setProjekt(neu.projekt);
         setDatei(neu.dateiname);
         setGeaendert(neu.geaendert);
@@ -482,6 +484,7 @@ export function Anwendung() {
       editorZeigen();
       await new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig())));
       Blockly.svgResize(ws);
+      ablaufverbindungenVorLadenTrennen(ws);
       Blockly.serialization.workspaces.load(neu.projekt.editor, ws);
       await Blockly.renderManagement.finishQueuedRenders();
       Blockly.svgResize(ws);
@@ -495,7 +498,7 @@ export function Anwendung() {
         ansicht: { zoom: ws.scale, x: ws.scrollX, y: ws.scrollY },
       } as Projekt;
       projektRef.current = stand;
-      gespeichertRef.current = neu.geaendert ? '' : JSON.stringify(stand);
+      gespeichertRef.current = neu.geaendert ? '' : jsonSchreiben(stand);
       setProjekt(stand);
       setDatei(neu.dateiname);
       setGeaendert(neu.geaendert);
@@ -546,7 +549,7 @@ export function Anwendung() {
               projektKennung: kennung,
             };
             setProjekt(projektRef.current);
-            gespeichertRef.current = JSON.stringify(gespeichertStand);
+            gespeichertRef.current = jsonSchreiben(gespeichertStand);
             setDatei(neu.dateiname);
             setGeaendert(testInhaltsText(projektRef.current) !== testInhaltsText(gespeichertStand));
             dokumentStatusUebernehmen(neu);
@@ -623,20 +626,20 @@ export function Anwendung() {
   }
   function testInhaltsText(p: Projekt): string {
     const { ansicht: _ansicht, ...inhalt } = p;
-    return JSON.stringify(inhalt);
+    return jsonSchreiben(inhalt);
   }
   function testKontextKennung(optionen = testOptionen): string {
-    return `${projektRef.current.projektKennung}:${JSON.stringify(optionen)}`;
+    return `${projektRef.current.projektKennung}:${jsonSchreiben(optionen)}`;
   }
   function vorschauParameterKennung() {
-    return JSON.stringify({
+    return jsonSchreiben({
       satz: testOptionen.business?.parametersatz ?? 'test',
       werte: testOptionen.business?.parameter ?? {},
     });
   }
   async function datenvorschauLaden(blockId: string) {
     if (testAnfrage.current || testSperre.current || busy.current) return;
-    const stand = structuredClone(standLesen());
+    const stand = projektPruefen(standLesen());
     testAnfrage.current = true;
     testInhalt.current = testInhaltsText(stand);
     vorschauAnfrage.current = {
@@ -714,7 +717,7 @@ export function Anwendung() {
     setVorschauOffen(false);
     setExportiert(null);
     fehlerSchliessen();
-    const stand = structuredClone(standLesen());
+    const stand = projektPruefen(standLesen());
     const pruefung = skriptErzeugen(stand);
     if (!pruefung.code) {
       setPruefungAngefordert(true);
@@ -984,7 +987,7 @@ export function Anwendung() {
       move: { scrollbars: true, drag: true, wheel: true },
       trashcan: false,
       sounds: false,
-      maxBlocks: 2000,
+      maxBlocks: maximaleBausteinzahl,
       plugins: { blockDragger: ScriptLabBlockDragger },
     });
     wsRef.current = ws;
@@ -1033,6 +1036,7 @@ export function Anwendung() {
       parameterAbmelden();
       navigation();
       groesse.disconnect();
+      ablaufverbindungenVorLadenTrennen(ws);
       ws.dispose();
     };
   }, []);

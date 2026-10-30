@@ -22,4 +22,10 @@ Wichtige Entscheidungen:
 - Die VBS-Datei wird in UTF-16LE mit BOM und CRLF geschrieben; der Windows-Parser hat dieses Format ohne Ausführung akzeptiert.
 - Gewöhnliche Commits erzeugen Testartefakte. Ein produktives Release benötigt einen bewussten Versionstag und erfolgreiche Prüfungen einschließlich Signaturinfrastruktur und vollständiger Lizenzbeilagen.
 
-Der aktuelle praktische Stand und offene externe Einrichtungsschritte stehen ausschließlich in [ABNAHME.md](ABNAHME.md).
+Aktuelle Qualitätsarbeit und ihre Grenzen stehen in [qualitaet/ARBEITSPLAN.md](qualitaet/ARBEITSPLAN.md); frühere Abnahmen behalten ihren jeweils angegebenen Stand.
+
+## Anschlussaufgabe: besonders lange Editorfolgen
+
+Lineare und verzweigte 2.000-Blockbestände blockierten in wiederholten Windows-Electron-Proben beim erneuten Laden den Renderer, einschließlich CDP-Profilabschluss; der Hauptprozess blieb ansprechbar. Die gespeicherte verzweigte Datei war unabhängig gültig. Die genaue native Ursache ist nicht belegt. Einzelne rekursive Blockly-Lade-/Renderpfade sind nachgewiesen, erklären den beobachteten vollständigen Stillstand aber nicht abschließend. Eine zusätzliche Pfadtiefengrenze reichte nicht. Der aktuelle Durchgang schützt deshalb einheitlich vor mehr als 1.000 Gesamtblöcken; die fachliche Verschachtelungsgrenze bleibt 150. Dies ist eine offengelegte technische Einschränkung gegenüber dem bisher theoretisch angebotenen 2.000er Maximum, keine erreichte 2.000-Block-Abnahme.
+
+Vor einem Anheben dieser technischen Grenze: nativen Trace beziehungsweise reproduzierbares reduziertes Blockly-Beispiel ermitteln, Layout-/Renderstrategie prüfen und vollständigen Öffnen–Ändern–Speichern–Neuladen–Ausführen-Weg nachweisen. Keine Bibliotheksinternas global überschreiben und kein neues Unterprozess- oder Cloudsystem als Umgehung bauen. Neue produktive Funktionen werden in diesem Durchgang nicht umgesetzt.

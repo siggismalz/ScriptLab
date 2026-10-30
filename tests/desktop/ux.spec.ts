@@ -553,14 +553,16 @@ test('UX: Signatur-Erfolgsdarstellung aus ausdrücklich gesteuerter Testantwort'
     await oeffnen(s, '01-Alltagsworkflow.scriptlab');
     await s.app.evaluate(({ ipcMain }) => {
       ipcMain.removeHandler('scriptlab:exportieren');
-      ipcMain.handle('scriptlab:exportieren', () => ({
-        ok: true,
-        wert: {
-          dateiname: 'Gesteuerte Testantwort.vbs',
-          skriptsprache: 'vbs',
-          signatur: { status: 'gueltig', meldung: 'Signatur gültig', zeitstempel: true },
-        },
-      }));
+      ipcMain.handle('scriptlab:exportieren', () =>
+        JSON.stringify({
+          ok: true,
+          wert: {
+            dateiname: 'Gesteuerte Testantwort.vbs',
+            skriptsprache: 'vbs',
+            signatur: { status: 'gueltig', meldung: 'Signatur gültig', zeitstempel: true },
+          },
+        }),
+      );
     });
     await scriptExportieren(s.seite);
     await expect(s.seite.getByRole('status', { name: 'Export abgeschlossen', exact: true })).toContainText(
@@ -586,22 +588,24 @@ for (const zustand of ['verfuegbar', 'laedt', 'fehler'] as const) {
     try {
       await s.app.evaluate(({ ipcMain }, phase) => {
         ipcMain.removeHandler('scriptlab:update');
-        ipcMain.handle('scriptlab:update', () => ({
-          ok: true,
-          wert: {
-            phase,
-            installierteVersion: '0.1.0',
-            verfuegbareVersion: '0.2.0',
-            fortschritt: phase === 'laedt' ? 43 : 0,
-            aenderungen: 'Ausdrücklich gesteuerte UI-Testdaten: verständliche Änderungsübersicht.',
-            meldung:
-              phase === 'verfuegbar'
-                ? 'Version 0.2.0 ist verfügbar.'
-                : phase === 'laedt'
-                  ? 'Das Update wird heruntergeladen und geprüft.'
-                  : 'Der Test-Download konnte nicht abgeschlossen werden.',
-          },
-        }));
+        ipcMain.handle('scriptlab:update', () =>
+          JSON.stringify({
+            ok: true,
+            wert: {
+              phase,
+              installierteVersion: '0.1.0',
+              verfuegbareVersion: '0.2.0',
+              fortschritt: phase === 'laedt' ? 43 : 0,
+              aenderungen: 'Ausdrücklich gesteuerte UI-Testdaten: verständliche Änderungsübersicht.',
+              meldung:
+                phase === 'verfuegbar'
+                  ? 'Version 0.2.0 ist verfügbar.'
+                  : phase === 'laedt'
+                    ? 'Das Update wird heruntergeladen und geprüft.'
+                    : 'Der Test-Download konnte nicht abgeschlossen werden.',
+            },
+          }),
+        );
       }, zustand);
       await einstellungenOeffnen(s.seite);
       const dialog = s.seite.getByRole('dialog', { name: 'Einstellungen', exact: true });

@@ -1,3 +1,4 @@
+import { jsonSchreiben } from '../gemeinsam/json';
 import { definitionNachTyp } from './katalog';
 import { sprachePruefen, type Skriptsprache } from './sprachen';
 import { businessProjektPruefen, leeresBusinessProjekt, type BusinessProjekt } from './business-modell';
@@ -60,6 +61,12 @@ const kennung = (wert: unknown): wert is string =>
   text(wert, 160) &&
   !!wert &&
   !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u.test(wert);
+
+// 2.000-Blockbestände blockierten den aktuellen Renderer beim erneuten Laden.
+// Eine geprüfte Gesamtgrenze schützt auch verzweigte Abläufe, nicht nur Ketten.
+export const maximaleBausteinzahl = 1000;
+export const bausteingrenzeMeldung =
+  'Der aktuelle Editor unterstützt höchstens 1000 Bausteine pro Workflow. Größere Abläufe können die Oberfläche blockieren. Verkürze den Ablauf oder verwende Schleifen für wiederkehrende Schritte. Die Projektdatei bleibt unverändert.';
 
 export function projektPruefen(wert: unknown): Projekt {
   const fehler = (meldung: string): never => {
@@ -154,9 +161,10 @@ export function projektPruefen(wert: unknown): Projekt {
     return fehler('Der gespeicherte Editorzustand ist ungültig.');
   const ids = new Set<string>();
   let anzahl = 0;
+  const wartendeBloecke: { block: unknown; tiefe: number }[] = [];
   const blockPruefen = (block: unknown, tiefe: number): void => {
-    if (++anzahl > 2000 || tiefe > 150)
-      return fehler('Das Projekt enthält zu viele oder zu tief verschachtelte Bausteine.');
+    if (++anzahl > maximaleBausteinzahl) return fehler(bausteingrenzeMeldung);
+    if (tiefe > 150) return fehler('Die Bausteine sind mehr als 150 Ebenen ineinander verschachtelt.');
     if (!objekt(block) || !text(block.type, 80) || !/^sl_[a-z_]+$/.test(block.type) || !kennung(block.id))
       return fehler('Ein Baustein hat einen ungültigen Typ oder keine stabile Kennung.');
     if (!definitionNachTyp.has(block.type))
@@ -243,14 +251,24 @@ export function projektPruefen(wert: unknown): Projekt {
           Object.keys(eingang).some((k) => !['block', 'shadow'].includes(k))
         )
           return fehler('Eine Bausteinverbindung ist ungültig.');
-        if (eingang.block !== undefined) blockPruefen(eingang.block, tiefe + 1);
-        if (eingang.shadow !== undefined) blockPruefen(eingang.shadow, tiefe + 1);
+        if (eingang.block !== undefined)
+          wartendeBloecke.push({
+            block: eingang.block,
+            tiefe: tiefe + 1,
+          });
+        if (eingang.shadow !== undefined)
+          wartendeBloecke.push({
+            block: eingang.shadow,
+            tiefe: tiefe + 1,
+          });
       }
     }
     if (block.next !== undefined) {
       if (!objekt(block.next) || Object.keys(block.next).some((k) => k !== 'block') || !block.next.block)
         return fehler('Die Verbindung zum nächsten Baustein ist ungültig.');
-      blockPruefen(block.next.block, tiefe + 1);
+      // Der nächste Schritt liegt auf derselben fachlichen Ebene. Eine lange
+      // Kette ist keine Verschachtelung; die Gesamtzahl begrenzt sie weiterhin.
+      wartendeBloecke.push({ block: block.next.block, tiefe });
     }
   };
   if (wert.editor.blocks !== undefined) {
@@ -261,7 +279,11 @@ export function projektPruefen(wert: unknown): Projekt {
       Object.keys(wert.editor.blocks).some((k) => !['languageVersion', 'blocks'].includes(k))
     )
       return fehler('Die Bausteinliste ist ungültig.');
-    for (const block of wert.editor.blocks.blocks) blockPruefen(block, 0);
+    for (const block of wert.editor.blocks.blocks) wartendeBloecke.push({ block, tiefe: 0 });
+    while (wartendeBloecke.length) {
+      const { block, tiefe } = wartendeBloecke.pop()!;
+      blockPruefen(block, tiefe);
+    }
   }
   if (
     wert.editor.variables !== undefined &&
@@ -319,7 +341,7 @@ export function projektPruefen(wert: unknown): Projekt {
   // Kopieren entfernt geteilte Referenzen und verhindert spätere Änderungen am geprüften Objekt.
   const business = wert.schemaVersion === 3 ? businessProjektPruefen(wert.business) : leeresBusinessProjekt();
   const projekt = {
-    ...JSON.parse(JSON.stringify(wert)),
+    ...JSON.parse(jsonSchreiben(wert)),
     schemaVersion: 3,
     skriptsprache,
     business,

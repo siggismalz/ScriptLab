@@ -13,6 +13,7 @@ import { pythonDateipfadPruefen } from './python';
 import { businessSchritte, businessModusPruefen } from '../kern/business';
 import { parameterWertePruefen } from '../kern/business-modell';
 import { datenvorschauProjekt } from '../kern/datenvorschau';
+import { jsonSchreiben } from '../gemeinsam/json';
 
 export const testOptionenSchema = z
   .object({
@@ -42,7 +43,7 @@ export const testOptionenSchema = z
 
 export function testStandHash(projekt: Projekt): string {
   const { ansicht: _ansicht, ...inhalt } = projekt;
-  return createHash('sha256').update(JSON.stringify(inhalt)).digest('hex');
+  return createHash('sha256').update(jsonSchreiben(inhalt)).digest('hex');
 }
 interface Lauf {
   projekt: Projekt;
@@ -116,7 +117,7 @@ export class TestlaufDienst {
   }
   starten(daten: unknown, optionen: TestOptionen): TestZustand {
     if (this.aktiv()) throw new Error('Es läuft bereits ein Test. Stoppe ihn vor einem neuen Start.');
-    const original = projektPruefen(structuredClone(daten));
+    const original = projektPruefen(daten);
     const kontext = testOptionenSchema.parse(optionen);
     if (kontext.business?.vorschauBlockId && kontext.business.modus !== 'vorschau')
       throw new Error('Ein Vorschauziel ist ausschließlich für eine Datenvorschau vorgesehen.');

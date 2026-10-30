@@ -17,7 +17,7 @@ const lesendeTabellenschritte = new Set([
 
 /** Eine ausdrücklich angeforderte Vorschau endet am gewählten Schritt, unabhängig von unfertigen Nachfolgern. */
 export function datenvorschauProjekt(daten: Projekt, blockId: string): Projekt {
-  const projekt = projektPruefen(structuredClone(daten));
+  const projekt = projektPruefen(daten);
   if (projekt.skriptsprache !== 'python')
     throw new Error('Die schrittweise Datenvorschau ist für Python-Tabellenschritte verfügbar.');
   const starts = projekt.editor.blocks?.blocks.filter((b) => b.type === 'sl_start') ?? [];

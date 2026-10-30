@@ -1,3 +1,4 @@
+import { jsonSchreiben } from '../gemeinsam/json';
 import { open, rename, unlink, readFile, stat } from 'node:fs/promises';
 import { dirname, basename, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -49,7 +50,9 @@ export async function projektLesen(dateipfad: string): Promise<Projekt> {
 
 export async function projektSchreiben(dateipfad: string, projekt: Projekt): Promise<void> {
   const geprueft = projektPruefen(projekt);
-  const inhalt = `${JSON.stringify(geprueft, null, 2)}\n`;
+  // Blockly speichert Folgeblöcke geschachtelt. Einrückung würde den Platzbedarf
+  // langer flacher Abläufe quadratisch erhöhen und das Dateibudget aufbrauchen.
+  const inhalt = `${jsonSchreiben(geprueft)}\n`;
   if (Buffer.byteLength(inhalt, 'utf8') > MAX_PROJEKT_BYTES)
     throw new Error(
       'Das Projekt ist zu groß zum Speichern. Bitte reduziere die Zahl der Bausteine oder die Textmenge.',

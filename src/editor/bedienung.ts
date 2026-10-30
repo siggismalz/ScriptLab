@@ -2,6 +2,22 @@ import * as Blockly from 'blockly/core';
 import { definitionNachTyp } from '../kern/katalog';
 import { werkzeugkasten } from './bausteine';
 import { businessQuelleVorbelegen } from './businessQuellen';
+import { bausteingrenzeMeldung, maximaleBausteinzahl } from '../kern/projekt';
+
+/** Beim vollständigen Projektwechsel räumt Blockly Folgeblöcke rekursiv ab.
+ * Von unten getrennte Ketten vermeiden dessen Aufrufstackgrenze. Dies ist kein
+ * Bearbeitungsschritt und erzeugt deshalb keine Rückgängig-Ereignisse.
+ */
+export function ablaufverbindungenVorLadenTrennen(workspace: Blockly.Workspace): void {
+  Blockly.Events.disable();
+  try {
+    for (const block of workspace.getAllBlocks(false).reverse()) {
+      if (block.nextConnection?.isConnected()) block.nextConnection.disconnect();
+    }
+  } finally {
+    Blockly.Events.enable();
+  }
+}
 
 export interface Einfuegestelle {
   id: string;
@@ -237,8 +253,8 @@ export function bausteinEinfuegen(
   );
   if (!gueltigesZiel) throw new Error('Dieser Baustein passt nicht an die gewählte Stelle.');
   const vorlage = bausteinVorlage(typ);
-  if (workspace.getAllBlocks(false).length + vorlagenGroesse(vorlage) > 2000)
-    throw new Error('Der Arbeitsbereich enthält bereits die maximale Zahl an Bausteinen.');
+  if (workspace.getAllBlocks(false).length + vorlagenGroesse(vorlage) > maximaleBausteinzahl)
+    throw new Error(bausteingrenzeMeldung);
   return gruppe(() => {
     const block = Blockly.serialization.blocks.append(vorlage, workspace, { recordUndo: true });
     try {
@@ -342,8 +358,8 @@ export function paletteZiehenStarten(
     try {
       if (!block) {
         const vorlage = bausteinVorlage(typ);
-        if (workspace.getAllBlocks(false).length + vorlagenGroesse(vorlage) > 2000)
-          throw new Error('Der Arbeitsbereich enthält bereits die maximale Zahl an Bausteinen.');
+        if (workspace.getAllBlocks(false).length + vorlagenGroesse(vorlage) > maximaleBausteinzahl)
+          throw new Error(bausteingrenzeMeldung);
         vorherigeGruppe = Blockly.Events.getGroup();
         gruppeBegonnen = true;
         if (!vorherigeGruppe) Blockly.Events.setGroup(true);

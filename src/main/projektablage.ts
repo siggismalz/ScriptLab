@@ -1,3 +1,4 @@
+import { jsonSchreiben } from '../gemeinsam/json';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile, readdir, stat, mkdir, unlink } from 'node:fs/promises';
 import { join, win32 } from 'node:path';
@@ -52,7 +53,7 @@ export function windowsPfadSchluessel(dateipfad: string): string {
 }
 export function projektHash(projekt: Projekt): string {
   const { ansicht: _ansicht, ...inhalt } = projekt;
-  return createHash('sha256').update(JSON.stringify(inhalt)).digest('hex');
+  return createHash('sha256').update(jsonSchreiben(inhalt)).digest('hex');
 }
 export function leererEntwurf(projekt: Projekt): boolean {
   const bloecke = projekt.editor.blocks?.blocks ?? [];
@@ -425,7 +426,7 @@ export class Entwurfspeicher extends SerielleAblage {
           gesichertAm: new Date().toISOString(),
           ...stand,
         });
-        const text = `${JSON.stringify(entwurf, null, 2)}\n`;
+        const text = `${jsonSchreiben(entwurf)}\n`;
         if (Buffer.byteLength(text, 'utf8') > MAX_PROJEKT_BYTES + 65536)
           throw new Error('Der Entwurf ist zu groß für die lokale Sicherung.');
         await atomarSchreiben(this.datei(id), text);

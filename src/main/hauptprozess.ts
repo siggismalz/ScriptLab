@@ -1,3 +1,4 @@
+import { jsonSchreiben } from '../gemeinsam/json';
 import {
   app,
   BrowserWindow,
@@ -77,7 +78,7 @@ const businessPaketwurzel = () =>
   app.isPackaged ? join(process.resourcesPath, 'laufzeit') : join(app.getAppPath(), 'laufzeit');
 let projekt = neuesProjekt();
 let projektPfad: string | null = null;
-let gespeichert = JSON.stringify(projekt);
+let gespeichert = jsonSchreiben(projekt);
 let gespeichertInhalt = projektHash(projekt);
 let baselineHash: string | null = null;
 let wiederhergestellt = false;
@@ -277,13 +278,18 @@ async function aktuellenStandAnfordern(): Promise<void> {
 }
 
 function registrieren(kanal: string, funktion: (daten: unknown) => unknown | Promise<unknown>): void {
-  ipcMain.handle(`scriptlab:${kanal}`, async (event, daten): Promise<Antwort<unknown>> => {
+  ipcMain.handle(`scriptlab:${kanal}`, async (event, transport): Promise<string> => {
     try {
       absenderPruefen(event);
-      // JSON-Daten sind klein begrenzt; Binär- und Fremdobjekte erreichen keine Dateidienste.
-      if (daten !== undefined && Buffer.byteLength(JSON.stringify(daten), 'utf8') > 5 * 1024 * 1024)
+      // Schon den Transport vor dem Parsen begrenzen. Tiefe Blockly-Ketten
+      // passieren IPC als Text; die fachlichen Prüfungen folgen unverändert.
+      if (
+        transport !== undefined &&
+        (typeof transport !== 'string' || Buffer.byteLength(transport, 'utf8') > 5 * 1024 * 1024)
+      )
         throw new Error('Die Anfrage ist zu groß.');
-      return { ok: true, wert: await funktion(daten) };
+      const daten: unknown = transport === undefined ? undefined : JSON.parse(transport);
+      return jsonSchreiben({ ok: true, wert: await funktion(daten) });
     } catch (error) {
       const bekannteMeldung =
         error instanceof Error &&
@@ -292,7 +298,7 @@ function registrieren(kanal: string, funktion: (daten: unknown) => unknown | Pro
         !(error instanceof TypeError) &&
         !(error instanceof RangeError) &&
         !(error instanceof SyntaxError);
-      return { ok: false, meldung: bekannteMeldung ? error.message : dateiFehler(error) };
+      return jsonSchreiben({ ok: false, meldung: bekannteMeldung ? error.message : dateiFehler(error) });
     }
   });
 }
@@ -388,7 +394,7 @@ function projektAktivieren(
     basisVerzeichnis: arbeitsordnerFuer(),
   };
   baselineHash = hash;
-  gespeichert = JSON.stringify(projekt);
+  gespeichert = jsonSchreiben(projekt);
   gespeichertInhalt = ungespeichert ? '' : projektHash(projekt);
   wiederhergestellt = ungespeichert;
   konflikt = false;
@@ -533,7 +539,7 @@ function ipcEinrichten(): void {
       })
       .strict()
       .parse(daten);
-    const stand = structuredClone(uebernehmen(w.projekt));
+    const stand = projektPruefen(uebernehmen(w.projekt));
     const bisher = w.optionen.business && typeof w.optionen.business === 'object' ? w.optionen.business : {};
     const optionen = testOptionenSchema.parse({
       ...w.optionen,
@@ -618,7 +624,7 @@ function ipcEinrichten(): void {
       .object({ projekt: z.unknown(), optionen: z.record(z.string(), z.unknown()) })
       .strict()
       .parse(daten);
-    const stand = structuredClone(uebernehmen(auswahl.projekt));
+    const stand = projektPruefen(uebernehmen(auswahl.projekt));
     const basis = arbeitsordnerFuer();
     testOptionen = testOptionenSchema.parse({ ...auswahl.optionen, basisVerzeichnis: basis });
     await mkdir(basis, { recursive: true });
@@ -654,7 +660,11 @@ function ipcEinrichten(): void {
   ipcMain.on('scriptlab:stand-antwort', (event, daten: unknown) => {
     try {
       absenderPruefen(event);
-      const antwort = z.object({ kennung: z.string().uuid(), projekt: z.unknown() }).strict().parse(daten);
+      if (typeof daten !== 'string' || Buffer.byteLength(daten, 'utf8') > 5 * 1024 * 1024) return;
+      const antwort = z
+        .object({ kennung: z.string().uuid(), projekt: z.unknown() })
+        .strict()
+        .parse(JSON.parse(daten));
       if (standAnfrage?.kennung === antwort.kennung) standAnfrage.uebernehmen(antwort.projekt);
     } catch {
       /* Ungültige Antworten erfüllen keine offene Speicheranfrage. */
@@ -665,7 +675,7 @@ function ipcEinrichten(): void {
     if (!wartetAufDarstellung) throw new Error('Der Editor wurde bereits geladen.');
     uebernehmen(daten, false);
     if (!wiederhergestellt) {
-      gespeichert = JSON.stringify(projekt);
+      gespeichert = jsonSchreiben(projekt);
       gespeichertInhalt = projektHash(projekt);
     } else if (!leererEntwurf(projekt)) entwuerfe.planen(projekt, projektPfad, baselineHash);
     wartetAufDarstellung = false;
@@ -921,7 +931,7 @@ function ipcEinrichten(): void {
   );
   registrieren('projekt-exportieren', (daten) =>
     mitDialog(async () => {
-      const stand = projektPruefen(structuredClone(daten));
+      const stand = projektPruefen(daten);
       if (stand.projektKennung !== projekt.projektKennung || stand.skriptsprache !== projekt.skriptsprache)
         throw new Error('Exportiere den aktuell geöffneten Workflow.');
       const ziel = await dialog.showSaveDialog(fenster, {
@@ -941,7 +951,7 @@ function ipcEinrichten(): void {
   );
   registrieren('exportieren', (daten) =>
     mitDialog(async () => {
-      const stand = structuredClone(uebernehmen(daten));
+      const stand = projektPruefen(uebernehmen(daten));
       const ergebnis = skriptErzeugen(stand);
       if (!ergebnis.code || ergebnis.meldungen.some((m) => m.stufe === 'fehler'))
         throw new Error('Der Export ist noch nicht möglich. Bitte korrigiere die markierten Bausteine.');
