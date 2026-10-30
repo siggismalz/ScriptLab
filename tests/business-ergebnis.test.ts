@@ -110,8 +110,13 @@ describe('Verständliche Business-Ergebnisse aus tatsächlichen Laufdaten', () =
     });
     expect(html).not.toContain('Hinweis-0');
     expect(html).toContain('Hinweis-7');
-    expect(html).toContain('Ausgabe-4.csv');
-    expect(html).not.toContain('Ausgabe-5.csv');
+    const ausgabeliste = html.match(/<ul class="business-ergebnis-ausgaben">([\s\S]*?)<\/ul>/)?.[1];
+    expect(ausgabeliste).toBeDefined();
+    expect(ausgabeliste!.match(/<li\b/g)).toHaveLength(5);
+    expect(ausgabeliste).toContain('Ausgabe-4.csv');
+    expect(ausgabeliste).not.toContain('Ausgabe-5.csv');
+    // Die vollständigen technischen Details behalten auch die übrigen Ziele.
+    expect(html).toContain('Ausgabe-7.csv');
     expect(html).toMatch(/readonly=/i);
     expect(html).toContain('Weitere Ausgabeziele');
   });
