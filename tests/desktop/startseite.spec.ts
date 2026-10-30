@@ -139,10 +139,11 @@ async function editorBereit(s: Sitzung): Promise<void> {
   );
 }
 
-async function projektSpeichern(s: Sitzung, pfad: string): Promise<Buffer> {
+async function externeProjektdateiAnlegen(s: Sitzung, pfad: string): Promise<Buffer> {
+  // Diese Fälle benötigen eine externe Quelldatei für Index-/Originalschutz.
+  // Speichern ist inzwischen intern; eine externe Quelle entsteht über Export.
   await speicherziel(s, pfad);
-  await s.seite.getByRole('button', { name: 'Speichern', exact: true }).click();
-  await expect(s.seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Projekt gespeichert');
+  await projektdateiExportieren(s);
   await expect
     .poll(async () =>
       stat(pfad)
@@ -150,7 +151,16 @@ async function projektSpeichern(s: Sitzung, pfad: string): Promise<Buffer> {
         .catch(() => false),
     )
     .toBe(true);
+  await dialogAntwort(s, 2);
+  await dateiOeffnen(s, pfad);
+  await expect(s.seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
   return readFile(pfad);
+}
+async function projektdateiExportieren(s: Sitzung) {
+  await s.seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
+  const dialog = s.seite.getByRole('dialog', { name: 'Exportieren', exact: true });
+  await dialog.getByRole('combobox', { name: 'Inhalt', exact: true }).selectOption('projekt');
+  await dialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
 }
 
 async function entwurfAbwarten(s: Sitzung): Promise<string> {
@@ -185,11 +195,11 @@ async function neustarten(s: Sitzung, absturz = false): Promise<void> {
 }
 
 async function bild(s: Sitzung, name: string): Promise<void> {
-  await mkdir('artifacts/startseite', { recursive: true });
+  await mkdir('artifacts/qualitaet-desktop/agent-ux-startbilder', { recursive: true });
   await s.seite.evaluate(
     () => new Promise<void>((fertig) => requestAnimationFrame(() => requestAnimationFrame(() => fertig()))),
   );
-  await s.seite.screenshot({ path: `artifacts/startseite/${name}.png` });
+  await s.seite.screenshot({ path: `artifacts/qualitaet-desktop/agent-ux-startbilder/${name}.png` });
 }
 
 async function eigeneProjekte(s: Sitzung) {
@@ -229,10 +239,10 @@ test('Startseite: neuer Ablauf und Weiterbearbeiten erhalten Kennung, Auswahl un
         renderer: { breite: innerWidth, hoehe: innerHeight, devicePixelRatio },
       };
     });
-    await mkdir('artifacts/startseite', { recursive: true });
+    await mkdir('artifacts/qualitaet-desktop/agent-ux-startbilder', { recursive: true });
     const anfangsprojekt = (await dokumentLesen(s)).projekt;
     await writeFile(
-      'artifacts/startseite/neuer-editor-geometrie.json',
+      'artifacts/qualitaet-desktop/agent-ux-startbilder/neuer-editor-geometrie.json',
       JSON.stringify({ ...startansicht, projekt: anfangsprojekt }, null, 2),
     );
     await bild(s, 'neuer-editor-stabil');
@@ -284,10 +294,8 @@ test('Startseite: Erststart zeigt vier Bereiche ohne erfundene eigene Projekte',
     await expect(karten.getByRole('button')).toHaveCount(4);
     await expect(
       karten.getByRole('button', { name: 'Meine gespeicherten Workflows', exact: true }),
-    ).toContainText('0 Workflows bekannt');
-    await expect(karten.getByRole('button', { name: 'Entwürfe', exact: true })).toContainText(
-      '0 Entwürfe gesichert',
-    );
+    ).toContainText('0 Workflows');
+    await expect(karten.getByRole('button', { name: 'Entwürfe', exact: true })).toContainText('0 Entwürfe');
     await expect(s.seite.getByRole('button', { name: /^Weiterbearbeiten/ })).toHaveCount(0);
     expect((await bibliothekLesen(s)).projekte).toEqual([]);
     expect((await bibliothekLesen(s)).entwuerfe).toEqual([]);
@@ -306,7 +314,7 @@ test('Startseite: gespeicherter Index und echte zuletzt geöffnete Projekte blei
   try {
     const zulu = join(s.ordner, 'Zulu.scriptlab');
     await neuerAblauf(s, 'Zulu Testworkflow');
-    await projektSpeichern(s, zulu);
+    await externeProjektdateiAnlegen(s, zulu);
     await zurStartseite(s);
     await dateiOeffnen(s, zulu);
     await expect(s.seite.getByTestId('palette')).toBeVisible();
@@ -331,6 +339,12 @@ test('Startseite: gespeicherter Index und echte zuletzt geöffnete Projekte blei
     const suche = liste.getByRole('searchbox', { name: 'Gespeicherte Workflows durchsuchen', exact: true });
     await suche.fill('Zulu');
     await expect(liste.getByRole('article')).toHaveCount(1);
+    const aktualisieren = liste.getByRole('button', { name: 'Aktualisieren', exact: true });
+    await aktualisieren.click();
+    await expect(aktualisieren).toBeEnabled();
+    await expect(aktualisieren).toBeFocused();
+    await expect(suche).toHaveValue('Zulu');
+    await expect(liste.getByRole('article')).toHaveCount(1);
     await suche.fill('Dieser Name existiert nicht');
     await expect(liste).toContainText(
       'Keine passenden Workflows gefunden. Ändere die Suche oder den Sprachfilter.',
@@ -352,7 +366,7 @@ test('Startseite: fehlende Datei wird neu zugeordnet und ein kaputtes Projekt er
     const alt = join(s.ordner, 'Original.scriptlab');
     const neu = join(s.ordner, 'Verschoben.scriptlab');
     await neuerAblauf(s, 'Zuordnungstest');
-    await projektSpeichern(s, alt);
+    await externeProjektdateiAnlegen(s, alt);
     const id = (await dokumentLesen(s)).projektKennung;
     await rename(alt, neu);
     await zurStartseite(s);
@@ -390,13 +404,13 @@ test('Startseite: verzögerter Entwurf überlebt einen echten Prozessabbruch und
   try {
     const originalDatei = join(s.ordner, 'Ausgangsprojekt.scriptlab');
     await neuerAblauf(s, 'Gespeicherter Ausgangsstand');
-    const original = await projektSpeichern(s, originalDatei);
+    const original = await externeProjektdateiAnlegen(s, originalDatei);
     await projektBenennen(s, 'Nicht gespeicherte Wiederherstellung');
     const id = await entwurfAbwarten(s);
     const vorher = (await dokumentLesen(s)).projekt;
     expect(await readFile(originalDatei)).toEqual(original);
     await neustarten(s, true);
-    await expect(s.seite.getByTestId('entwuerfe-hinweis')).toContainText('1 Entwurf gesichert');
+    await expect(s.seite.getByTestId('entwuerfe-hinweis')).toContainText('1 Entwurf');
     expect((await dokumentLesen(s)).projektKennung).not.toBe(vorher.projektKennung);
     await expect(s.seite.getByRole('button', { name: /^Weiterbearbeiten/ })).toHaveCount(0);
     await s.seite.getByTestId('start-karten').getByRole('button', { name: 'Entwürfe', exact: true }).click();
@@ -440,27 +454,28 @@ for (const zustand of ['ausstehend', 'gesichert'] as const) {
   });
 }
 
-test('Startseite: Speichern-Abbruch und echter Schreibfehler erhalten Arbeitsstand und Entwurf', async () => {
+test('Startseite: Projekt-Exportabbruch und interner Schreibfehler erhalten Arbeitsstand und Entwurf', async () => {
   const s = await starten();
   try {
     await neuerAblauf(s, 'Unverlorener Arbeitsstand');
     const id = await entwurfAbwarten(s);
     const vorher = (await dokumentLesen(s)).projekt;
-    await dialogAntwort(s, 0);
     await speicherziel(s, null);
-    await workflowBefehl(s.seite, 'neu');
-    await sprachwahlBestaetigen(s.seite);
+    await projektdateiExportieren(s);
     await nativenDialogAbwarten(s, 'speichern');
     await editorBereit(s);
     expect((await dokumentLesen(s)).projekt).toEqual(vorher);
     await expect(s.seite.getByTestId('palette')).toBeVisible();
     expect((await bibliothekLesen(s)).entwuerfe.map((e) => e.id)).toContain(id);
-    const zielOrdner = join(s.ordner, 'KeineDatei.scriptlab');
-    await mkdir(zielOrdner);
+    const zielOrdner = join(s.profil, 'Workflows');
+    await writeFile(zielOrdner, 'Kontrollierte Schreibblockade statt eines Verzeichnisses');
     await speicherziel(s, zielOrdner);
     await s.seite.getByRole('button', { name: 'Speichern', exact: true }).click();
     await expect(s.seite.getByRole('alert').filter({ visible: true })).toContainText(/Zugriff|Dateivorgang/);
-    expect((await stat(zielOrdner)).isDirectory()).toBe(true);
+    expect((await stat(zielOrdner)).isFile()).toBe(true);
+    expect(await readFile(zielOrdner, 'utf8')).toBe(
+      'Kontrollierte Schreibblockade statt eines Verzeichnisses',
+    );
     expect((await dokumentLesen(s)).projekt).toEqual(vorher);
     expect((await bibliothekLesen(s)).entwuerfe.map((e) => e.id)).toContain(id);
     await neustarten(s, true);
@@ -471,7 +486,7 @@ test('Startseite: Speichern-Abbruch und echter Schreibfehler erhalten Arbeitssta
   }
 });
 
-test('Startseite: Entwurf als neue Projektkopie speichern und lokalen Entwurf bewusst löschen', async () => {
+test('Startseite: Entwurf als interne Projektkopie speichern und lokalen Entwurf bewusst löschen', async () => {
   const s = await starten();
   try {
     await neuerAblauf(s, 'Entwurf als Projektkopie');
@@ -482,18 +497,11 @@ test('Startseite: Entwurf als neue Projektkopie speichern und lokalen Entwurf be
     const zeile = s.seite
       .getByTestId('entwuerfe')
       .getByRole('article', { name: 'Entwurf als Projektkopie', exact: true });
-    await dialogAntwort(s, 1);
     await speicherziel(s, null);
     await zeile.getByRole('button', { name: 'Als Projekt speichern', exact: true }).click();
-    await nativenDialogAbwarten(s, 'speichern');
-    await expect(zeile.getByRole('button', { name: 'Als Projekt speichern', exact: true })).toBeEnabled();
-    await expect(zeile).toBeVisible();
-    expect((await bibliothekLesen(s)).projekte).toHaveLength(0);
-    const pfad = join(s.ordner, 'Entwurfskopie.scriptlab');
-    await speicherziel(s, pfad);
-    await zeile.getByRole('button', { name: 'Als Projekt speichern', exact: true }).click();
-    await nativenDialogAbwarten(s, 'speichern');
     await editorBereit(s);
+    expect(await s.app.evaluate(() => (globalThis as DialogTestdaten).startseiteSpeicherGefragt)).toBe(false);
+    const pfad = join(s.profil, 'Workflows', (await dokumentLesen(s)).dateiname!);
     const kopie = JSON.parse(await readFile(pfad, 'utf8')) as Projekt;
     expect(kopie.projektKennung).not.toBe(projektKennung);
     expect(kopie.projektKennung).toBe((await dokumentLesen(s)).projektKennung);
@@ -626,9 +634,9 @@ for (const breite of [1280, 850]) {
         hoehe: innerHeight,
         devicePixelRatio,
       }));
-      await mkdir('artifacts/startseite', { recursive: true });
+      await mkdir('artifacts/qualitaet-desktop/agent-ux-startbilder', { recursive: true });
       await writeFile(
-        `artifacts/startseite/fenster-${breite}.json`,
+        `artifacts/qualitaet-desktop/agent-ux-startbilder/fenster-${breite}.json`,
         JSON.stringify({ angefordert: { breite, hoehe: 720 }, tatsaechlich: masse }, null, 2),
       );
       test.info().annotations.push({
@@ -734,9 +742,9 @@ for (const faktor of [1, 1.25, 1.5, 2]) {
         };
       });
       expect(fenster.displayScaleFactor).toBe(faktor);
-      await mkdir('artifacts/startseite', { recursive: true });
+      await mkdir('artifacts/qualitaet-desktop/agent-ux-startbilder', { recursive: true });
       await writeFile(
-        `artifacts/startseite/prozess-dpi-${faktor * 100}.json`,
+        `artifacts/qualitaet-desktop/agent-ux-startbilder/prozess-dpi-${faktor * 100}.json`,
         JSON.stringify(
           {
             typ: 'Prozessweise DPI-Darstellung; keine Änderung der Windows-Anzeigeeinstellungen',

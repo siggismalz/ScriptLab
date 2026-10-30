@@ -202,6 +202,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
   const letzteAnsicht = useRef(ansicht);
   const letzteScrollAnfrage = useRef<number | undefined>(undefined);
   const positionWiederherstellen = useRef(false);
+  const aktualisierungsFokus = useRef<HTMLButtonElement | null>(null);
   const positionen = useRef<Record<string, number>>({});
   const zielVorher = useRef(props.ziel);
   const zielAnfrageVorher = useRef(props.zielAnfrage);
@@ -229,6 +230,14 @@ export function Startbereich(props: StartbereichEigenschaften) {
   useLayoutEffect(() => {
     const panel = inhalt.current;
     if (!panel) return;
+    if (!props.laden && aktualisierungsFokus.current) {
+      const knopf = aktualisierungsFokus.current;
+      aktualisierungsFokus.current = null;
+      // Natives Deaktivieren verliert den Fokus. Nur den ausdrücklich betätigten
+      // Auslöser wiederherstellen, solange der Nutzer nicht woanders weiterarbeitet.
+      if (knopf.isConnected && knopf.getClientRects().length && document.activeElement === document.body)
+        knopf.focus({ preventScroll: true });
+    }
     if (sprungziel) {
       const ziel = panel.querySelector<HTMLElement>(`#hilfe-${sprungziel}`);
       if (ziel) {
@@ -744,7 +753,10 @@ export function Startbereich(props: StartbereichEigenschaften) {
                 </Auswahlfeld>
                 <Knopf
                   symbol="wiederholen"
-                  onClick={props.aktualisieren}
+                  onClick={(event) => {
+                    aktualisierungsFokus.current = event.currentTarget;
+                    props.aktualisieren();
+                  }}
                   disabled={gesperrt || props.laden}
                   grundId={gesperrt ? 'start-verarbeitung' : 'start-bibliothek-status'}
                 >
@@ -854,7 +866,10 @@ export function Startbereich(props: StartbereichEigenschaften) {
                 </Auswahlfeld>
                 <Knopf
                   symbol="wiederholen"
-                  onClick={props.aktualisieren}
+                  onClick={(event) => {
+                    aktualisierungsFokus.current = event.currentTarget;
+                    props.aktualisieren();
+                  }}
                   disabled={gesperrt || props.laden}
                   grundId={gesperrt ? 'start-verarbeitung' : 'start-bibliothek-status'}
                 >

@@ -1,5 +1,26 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
+export async function workflowMenueAktion(seite: Page, name: string) {
+  await seite.getByRole('button', { name: 'Workflow', exact: true }).click();
+  await seite.getByRole('menuitem', { name, exact: true }).click();
+}
+
+export async function ansichtsMenueAktion(seite: Page, name: string) {
+  await seite.getByRole('button', { name: 'Ansicht', exact: true }).click();
+  await seite.getByRole('menuitem', { name, exact: true }).click();
+}
+
+export async function einstellungenOeffnen(seite: Page) {
+  const bereiche = seite.getByRole('button', { name: 'Bereiche', exact: true });
+  if (await bereiche.isVisible()) {
+    await bereiche.click();
+    await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+  } else await seite.getByRole('button', { name: 'Einstellungen', exact: true }).click();
+  const dialog = seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
 /** Ausschließlich echte Navigation; Ansichtswechsel dürfen keinen Lauf auslösen. */
 export async function arbeitsbereichWaehlen(seite: Page, name: 'Ablauf' | 'Daten und Parameter' | 'Läufe') {
   await seite
