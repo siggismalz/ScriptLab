@@ -699,12 +699,12 @@ End Function`,
   SL_Anhaengen = liste
 End Function`,
   SL_Eintrag: `Function SL_Eintrag(wert, index)
-  Dim liste, nummer
-  liste = SL_Liste(wert)
+  Dim nummer
+  If Not IsArray(wert) Then SL_Fehler "Hier wird eine Liste benötigt. Lege die Variable zuerst mit einer Liste an."
   If Not IsNumeric(index) Then SL_Fehler "Die Nummer eines Listeneintrags muss eine ganze Zahl sein."
   nummer = CDbl(index)
-  If nummer <> Fix(nummer) Or nummer < 1 Or nummer > UBound(liste) + 1 Then SL_Fehler "Der angeforderte Listeneintrag ist nicht vorhanden. Die Nummerierung beginnt bei 1."
-  SL_Eintrag = liste(CLng(nummer) - 1)
+  If nummer <> Fix(nummer) Or nummer < 1 Or nummer > UBound(wert) + 1 Then SL_Fehler "Der angeforderte Listeneintrag ist nicht vorhanden. Die Nummerierung beginnt bei 1."
+  SL_Eintrag = wert(CLng(nummer) - 1)
 End Function`,
   SL_Anzahl: `Function SL_Anzahl(wert)
   Dim anzahl

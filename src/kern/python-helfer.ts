@@ -161,11 +161,13 @@ def sl_anhaengen(wert, eintrag):
   eintrag: {
     braucht: ['liste', 'zahl'],
     code: `def sl_eintrag(wert, index):
-    liste = sl_liste(wert)
+    if not isinstance(wert, list):
+        raise ValueError("Hier wird eine Liste benötigt. Lege die Variable zuerst mit einer Liste an.")
     nummer = sl_zahl(index)
-    if not nummer.is_integer() or nummer < 1 or nummer > len(liste):
+    if not nummer.is_integer() or nummer < 1 or nummer > len(wert):
         raise ValueError("Der angeforderte Listeneintrag ist nicht vorhanden. Die Nummerierung beginnt bei 1.")
-    return sl_kopie(liste[int(nummer) - 1])`,
+    # Nur das Ergebnis kopieren; andere Einträge bleiben beim Lesen unberührt.
+    return sl_kopie(wert[int(nummer) - 1])`,
   },
   anzahl: {
     braucht: ['zahl'],
