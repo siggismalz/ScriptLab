@@ -1,4 +1,11 @@
-import { arbeitsbereichWaehlen, startseiteWaehlen } from './ansichten';
+import {
+  arbeitsbereichWaehlen,
+  startseiteWaehlen,
+  workflowBefehl,
+  workflowMenueAktion,
+  einstellungenOeffnen,
+  feldEinblenden,
+} from './ansichten';
 import { test, expect, type Locator } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, mkdir, readFile, writeFile, readdir, rm, stat } from 'node:fs/promises';
@@ -128,7 +135,7 @@ async function bibliothek(s: Sitzung): Promise<ProjektBibliothek> {
 async function editorBereit(s: Sitzung): Promise<void> {
   await arbeitsbereichWaehlen(s.seite, 'Ablauf');
   await expect(s.seite.getByTestId('palette')).toBeVisible();
-  await expect(s.seite.getByRole('button', { name: 'Neu', exact: true })).toBeEnabled();
+  await expect(s.seite.getByRole('button', { name: 'Workflow', exact: true })).toBeEnabled();
   await expect.poll(async () => (await dokument(s)).darstellungNoetig).toBe(false);
   await frames(s.seite);
 }
@@ -188,6 +195,13 @@ async function speichernDialog(s: Sitzung, pfad: string | null): Promise<void> {
   }, pfad);
 }
 
+async function projektdateiExportieren(s: Sitzung): Promise<void> {
+  await s.seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
+  const dialog = s.seite.getByRole('dialog', { name: 'Exportieren', exact: true });
+  await dialog.getByLabel('Inhalt', { exact: true }).selectOption('projekt');
+  await dialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
+}
+
 async function dateivorgangFertig(s: Sitzung, art: 'speichern' | 'oeffnen'): Promise<void> {
   await expect
     .poll(() =>
@@ -208,16 +222,30 @@ async function home(s: Sitzung): Promise<void> {
 }
 
 async function screenshot(s: Sitzung, name: string, daten: Record<string, unknown> = {}): Promise<void> {
-  await mkdir(resolve('artifacts/BizStates'), { recursive: true });
+  await mkdir(resolve('artifacts/qualitaet-desktop/BizStates'), { recursive: true });
   await frames(s.seite);
-  await s.seite.screenshot({ path: resolve(`artifacts/BizStates/${name}.png`) });
-  const renderer = await s.seite.evaluate(() => ({
-    breite: innerWidth,
-    hoehe: innerHeight,
-    dpr: devicePixelRatio,
-    bodyScrollBreite: document.body.scrollWidth,
-    dokumentScrollBreite: document.documentElement.scrollWidth,
-  }));
+  await s.seite.screenshot({ path: resolve(`artifacts/qualitaet-desktop/BizStates/${name}.png`) });
+  const renderer = await s.seite.evaluate(() => {
+    const knopf = document.querySelector<HTMLElement>(
+      '[data-testid="eigenschaften-panel"] .schritt-vorschau',
+    );
+    return {
+      breite: innerWidth,
+      hoehe: innerHeight,
+      dpr: devicePixelRatio,
+      bodyScrollBreite: document.body.scrollWidth,
+      dokumentScrollBreite: document.documentElement.scrollWidth,
+      vorschauKnopf: knopf
+        ? {
+            hoehe: knopf.getBoundingClientRect().height,
+            clientHoehe: knopf.clientHeight,
+            scrollHoehe: knopf.scrollHeight,
+            lineHeight: getComputedStyle(knopf).lineHeight,
+            flexShrink: getComputedStyle(knopf).flexShrink,
+          }
+        : null,
+    };
+  });
   const fenster = await s.app.evaluate(({ BrowserWindow, screen }) => {
     const fenster = BrowserWindow.getAllWindows()[0];
     return {
@@ -227,7 +255,7 @@ async function screenshot(s: Sitzung, name: string, daten: Record<string, unknow
     };
   });
   await writeFile(
-    resolve(`artifacts/BizStates/${name}.json`),
+    resolve(`artifacts/qualitaet-desktop/BizStates/${name}.json`),
     JSON.stringify(
       {
         prozessFaktor: s.faktor,
@@ -244,7 +272,7 @@ async function screenshot(s: Sitzung, name: string, daten: Record<string, unknow
   );
 }
 
-test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Speicherabbruch, Wiederöffnen, Home und Entwurfswiederaufnahme', async () => {
+test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Exportabbruch, internem Speichern, Wiederöffnen, Home und Entwurfswiederaufnahme', async () => {
   test.setTimeout(75000);
   const s = await starten();
   const quelle = resolve('beispiele/business/C-Bestellvorschlag');
@@ -265,7 +293,7 @@ test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Speicher
     const kopie = await dokument(s);
     const pfade = pfadwerte(kopie.projekt);
     const klon = dirname(dirname(pfade.Lagerdatei));
-    expect(dirname(klon)).toBe(join(s.profil, 'beispieldaten'));
+    expect(dirname(klon)).toBe(join(s.profil, 'Arbeitsdateien'));
     expect(basename(klon)).toMatch(/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i);
     expect(pfade).toEqual({
       Lagerdatei: join(klon, 'eingaben/Lager.xlsx'),
@@ -280,7 +308,7 @@ test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Speicher
     expect(kopie.geaendert).toBe(true);
 
     await speichernDialog(s, null);
-    await s.seite.getByRole('button', { name: 'Speichern', exact: true }).click();
+    await projektdateiExportieren(s);
     await dateivorgangFertig(s, 'speichern');
     const nachAbbruch = await dokument(s);
     expect(nachAbbruch.dateiname).toBeNull();
@@ -292,16 +320,24 @@ test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Speicher
     const andererOrdner = join(s.ordner, 'Anderer Projektordner');
     await mkdir(andererOrdner);
     const projektdatei = join(andererOrdner, 'Bestellvorschlag.scriptlab');
-    await speichernDialog(s, projektdatei);
+    const intern = join(s.profil, 'Workflows', `${kopie.projektKennung}.scriptlab`);
+    await speichernDialog(s, null);
     await s.seite.getByRole('button', { name: 'Speichern', exact: true }).click();
-    await dateivorgangFertig(s, 'speichern');
-    await expect.poll(async () => (await dokument(s)).dateiname).toBe(basename(projektdatei));
+    await expect.poll(async () => (await dokument(s)).geaendert).toBe(false);
+    await expect.poll(async () => (await dokument(s)).dateiname).toBe(basename(intern));
+    expect(await s.app.evaluate(() => (globalThis as NativeTestdaten).bizSpeicheranfragen)).toBe(0);
     await expect
       .poll(
         async () =>
           (await bibliothek(s)).projekte.find((p) => p.projektKennung === kopie.projektKennung)?.pfad,
       )
-      .toBe(projektdatei);
+      .toBe(intern);
+    const interneDatei = await readFile(intern);
+    await speichernDialog(s, projektdatei);
+    await projektdateiExportieren(s);
+    await dateivorgangFertig(s, 'speichern');
+    expect((await dokument(s)).dateiname).toBe(basename(intern));
+    expect((await dokument(s)).geaendert).toBe(false);
     const datei = await readFile(projektdatei);
     const gespeichert = JSON.parse(datei.toString('utf8')) as Projekt;
     expect(gespeichert.projektKennung).toBe(kopie.projektKennung);
@@ -314,8 +350,8 @@ test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Speicher
         daten.bizOeffnenanfragen!++;
         return { canceled: false, filePaths: [ziel] };
       };
-    }, projektdatei);
-    await s.seite.getByRole('button', { name: 'Öffnen', exact: true }).click();
+    }, intern);
+    await workflowBefehl(s.seite, 'oeffnen');
     await dateivorgangFertig(s, 'oeffnen');
     expect(pfadwerte((await dokument(s)).projekt)).toEqual(pfade);
     expect(blockIds((await dokument(s)).projekt)).toEqual(blockIds(gespeichert));
@@ -326,8 +362,7 @@ test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Speicher
     expect((await dokument(s)).projektKennung).toBe(kopie.projektKennung);
     expect(pfadwerte((await dokument(s)).projekt)).toEqual(pfade);
 
-    await s.seite.getByRole('button', { name: 'Projektmenü', exact: true }).click();
-    await s.seite.getByRole('menuitem', { name: 'Projektangaben', exact: true }).click();
+    await workflowMenueAktion(s.seite, 'Projektangaben');
     const angaben = s.seite.getByRole('dialog', { name: 'Projektangaben', exact: true });
     await angaben
       .getByLabel('Projektbeschreibung', { exact: true })
@@ -367,6 +402,7 @@ test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Speicher
     expect(pfadwerte(wiederhergestellt.projekt)).toEqual(pfade);
     expect(blockIds(wiederhergestellt.projekt)).toEqual(blockIds(gespeichert));
     expect(await readFile(projektdatei)).toEqual(datei);
+    expect(await readFile(intern)).toEqual(interneDatei);
     expect(await readFile(join(quelle, 'workflow.scriptlab'))).toEqual(original);
     expect(await readFile(join(quelle, 'eingaben/Lager.xlsx'))).toEqual(originalLager);
     expect(await readFile(join(quelle, 'vorlagen/Bestellung.docx'))).toEqual(originalVorlage);
@@ -379,11 +415,11 @@ test('Businesszustände: C-Vorlagenkopie behält absolute Klonpfade bei Speicher
 });
 
 async function sprachwahl(s: Sitzung): Promise<Locator> {
-  await s.seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
-  const dialog = s.seite.getByRole('dialog', { name: 'Welche Sprache möchtest du verwenden?', exact: true });
+  await workflowBefehl(s.seite, 'neu');
+  const dialog = s.seite.getByRole('dialog', { name: 'Neuer Workflow', exact: true });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('Python – empfohlen für Geschäftsprozesse');
-  await expect(dialog).toContainText('VBS – für kleine Windows-Automatisierungen');
+  await expect(dialog).toContainText('Für Geschäftsprozesse mit Daten, Excel und Dokumenten.');
+  await expect(dialog).toContainText('Für kleine Windows-Aufgaben und bestehende VBScript-Abläufe.');
   return dialog;
 }
 
@@ -425,6 +461,7 @@ test('Businesszustände: Sprachwahl per Tastatur und Abbrechen behalten den bish
 async function darstellungPruefen(s: Sitzung): Promise<Record<string, unknown>> {
   const messung = await s.seite.evaluate(() => {
     const probleme: string[] = [];
+    const details: Record<string, unknown>[] = [];
     const elemente = document.querySelectorAll<HTMLElement>(
       'button, .sl-feld > label, .sprachwahl-name, .panel-kopf h2',
     );
@@ -436,6 +473,23 @@ async function darstellungPruefen(s: Sitzung): Promise<Record<string, unknown>> 
         probleme.push((element.getAttribute('aria-label') || element.textContent || '').trim());
       if (element.scrollHeight > element.clientHeight + 2)
         probleme.push((element.getAttribute('aria-label') || element.textContent || '').trim() + ' (Höhe)');
+      if (element.scrollWidth > element.clientWidth + 2 || element.scrollHeight > element.clientHeight + 2)
+        details.push({
+          text: element.textContent?.trim(),
+          klasse: element.className,
+          hoehe: r.height,
+          clientHoehe: element.clientHeight,
+          scrollHoehe: element.scrollHeight,
+          breite: r.width,
+          clientBreite: element.clientWidth,
+          scrollBreite: element.scrollWidth,
+          css: {
+            overflow: getComputedStyle(element).overflow,
+            fontSize: getComputedStyle(element).fontSize,
+            lineHeight: getComputedStyle(element).lineHeight,
+            flexShrink: getComputedStyle(element).flexShrink,
+          },
+        });
     }
     return {
       breite: innerWidth,
@@ -444,8 +498,11 @@ async function darstellungPruefen(s: Sitzung): Promise<Record<string, unknown>> 
       bodyUeberbreite: document.body.scrollWidth - innerWidth,
       dokumentUeberbreite: document.documentElement.scrollWidth - innerWidth,
       abgeschnitteneLabels: probleme,
+      layoutdetails: details,
     };
   });
+  if (messung.abgeschnitteneLabels.length)
+    await screenshot(s, `layoutbefund-${messung.breite}x${messung.hoehe}`, { pruefung: messung });
   expect(messung.bodyUeberbreite).toBeLessThanOrEqual(2);
   expect(messung.dokumentUeberbreite).toBeLessThanOrEqual(2);
   expect(messung.abgeschnitteneLabels).toEqual([]);
@@ -453,10 +510,7 @@ async function darstellungPruefen(s: Sitzung): Promise<Record<string, unknown>> 
 }
 
 async function wichtigeAktionen(s: Sitzung): Promise<void> {
-  for (const name of ['Neu', 'Öffnen', 'Speichern', 'Exportieren']) {
-    const knopf = s.seite
-      .getByRole('navigation', { name: 'Projektaktionen' })
-      .getByRole('button', { name, exact: true });
+  const pruefen = async (knopf: Locator) => {
     await expect(knopf).toBeVisible();
     const r = await knopf.boundingBox();
     const fenster = await s.seite.evaluate(() => ({ breite: innerWidth, hoehe: innerHeight }));
@@ -466,23 +520,34 @@ async function wichtigeAktionen(s: Sitzung): Promise<void> {
     expect(r!.x).toBeGreaterThanOrEqual(0);
     expect(r!.x + r!.width).toBeLessThanOrEqual(fenster.breite + 1);
     expect(r!.y + r!.height).toBeLessThanOrEqual(fenster.hoehe);
-  }
+  };
+  for (const name of ['Workflow', 'Speichern', 'Exportieren'])
+    await pruefen(s.seite.getByRole('button', { name, exact: true }));
+  await s.seite.getByRole('button', { name: 'Workflow', exact: true }).click();
+  for (const name of ['Neuer Workflow', 'Workflow öffnen'])
+    await pruefen(s.seite.getByRole('menuitem', { name, exact: true }));
+  await s.seite.keyboard.press('Escape');
 }
 
 async function datenblockEinrichten(s: Sitzung): Promise<void> {
-  await s.seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+  await workflowBefehl(s.seite, 'neu');
   await sprachwahlBestaetigen(s.seite, 'python');
   await editorBereit(s);
   const palette = s.seite.getByTestId('palette');
   await palette.getByLabel('Bausteine suchen').fill('CSV-Tabelle lesen');
   await palette.getByRole('button', { name: 'Baustein einfügen: CSV-Tabelle lesen', exact: true }).click();
   await palette.getByRole('button', { name: 'Nach „Workflow starten“', exact: true }).click();
-  await s.seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
   const eig = s.seite.getByTestId('eigenschaften-panel');
   await eig
-    .getByLabel('Dateipfad', { exact: true })
+    .getByRole('textbox', { name: 'Dateipfad', exact: true })
     .fill('C:\\ScriptLab-Testdaten\\Monatsabrechnung und Rückfragen\\Oktober 2026\\Ausgangsdaten.csv');
-  await eig.getByLabel('Fehlerhafte Zeilen', { exact: true }).selectOption('AUSLASSEN_MIT_BERICHT');
+  const fehlzeilen = eig.getByRole('combobox', {
+    name: 'Fehlerhafte Zeilen',
+    exact: true,
+    includeHidden: true,
+  });
+  await feldEinblenden(fehlzeilen);
+  await fehlzeilen.selectOption('AUSLASSEN_MIT_BERICHT');
   await s.seite.getByRole('button', { name: 'Zoom auf 100 Prozent zurücksetzen', exact: true }).click();
   expect((await dokument(s)).projekt.ansicht.zoom).toBe(1);
   await wichtigeAktionen(s);
@@ -531,8 +596,7 @@ for (const [breite, hoehe] of [
     const s = await starten();
     try {
       await groesse(s, breite, hoehe);
-      await s.seite.getByRole('button', { name: 'Einstellungen', exact: true }).click();
-      const einstellungen = s.seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
+      const einstellungen = await einstellungenOeffnen(s.seite);
       await einstellungen.getByLabel('Textgröße der Oberfläche', { exact: true }).selectOption('2');
       await einstellungen.getByRole('button', { name: 'Dialog schließen', exact: true }).click();
       const wahl = await sprachwahl(s);
@@ -543,6 +607,10 @@ for (const [breite, hoehe] of [
       const geladen = await s.seite.evaluate(() => window.scriptlab.laden());
       expect(geladen.ok && geladen.wert.einstellungen.textSkalierung).toBe(2);
       expect((await dokument(s)).projekt.ansicht.zoom).toBe(1);
+      await s.seite
+        .getByTestId('eigenschaften-panel')
+        .locator('.panel-inhalt')
+        .evaluate((e) => (e.scrollTop = 0));
       const messung = await darstellungPruefen(s);
       await screenshot(s, `ui-text-200-${breite}x${hoehe}`, {
         pruefung: messung,

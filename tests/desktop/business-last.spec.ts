@@ -8,7 +8,7 @@ import {
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { createReadStream } from 'node:fs';
-import { mkdir, mkdtemp, open, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, open, readFile, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -30,6 +30,7 @@ interface Sitzung {
   ordner: string;
   basis: string;
   projektdatei: string;
+  quellOriginal: string;
   quellhash: string;
 }
 const nachExport = 'MILLION_ERGEBNIS_BESTAETIGT';
@@ -217,15 +218,29 @@ async function vorbereiten(langePause: boolean): Promise<Sitzung> {
       env: { ...process.env, SCRIPTLAB_TESTDATEN: profil },
     });
     const seite = await app.firstWindow();
-    const s = { app, seite, ordner, basis, projektdatei, quellhash };
+    const s = {
+      app,
+      seite,
+      ordner,
+      basis,
+      projektdatei,
+      quellhash,
+      quellOriginal: join(basis, 'million.csv'),
+    };
     await app.evaluate(({ BrowserWindow, dialog }, pfad) => {
       BrowserWindow.getAllWindows()[0].setContentSize(1280, 720);
       dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
     }, projektdatei);
-    await seite.getByRole('button', { name: 'Workflow öffnen', exact: true }).click();
+    await workflowBefehl(seite, 'oeffnen');
     await expect(seite.getByTestId('palette')).toBeVisible();
     await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
     await expect.poll(async () => (await dokument(s)).darstellungNoetig).toBe(false);
+    const kontext = await seite.evaluate(() => window.scriptlab.testLesen());
+    if (!kontext.ok || !kontext.wert.optionen.basisVerzeichnis)
+      throw new Error('Der verwaltete Workflow-Arbeitsordner fehlt.');
+    s.basis = kontext.wert.optionen.basisVerzeichnis;
+    await mkdir(s.basis, { recursive: true });
+    await copyFile(s.quellOriginal, join(s.basis, 'million.csv'));
     await frames(seite);
     // Ein echter ungespeicherter Editorwert ist erforderlich: die gespeicherte
     // Fixture verweist absichtlich auf eine nicht vorhandene andere Quelle.
@@ -233,7 +248,7 @@ async function vorbereiten(langePause: boolean): Promise<Sitzung> {
     await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
     await seite
       .getByTestId('eigenschaften-panel')
-      .getByLabel('Dateipfad', { exact: true })
+      .getByRole('textbox', { name: 'Dateipfad', exact: true })
       .fill('million.csv');
     await seite.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
     await expect
@@ -250,9 +265,9 @@ async function vorbereiten(langePause: boolean): Promise<Sitzung> {
     const laufprofil = panel.getByLabel('Laufprofil', { exact: true });
     await feldEinblenden(laufprofil);
     await laufprofil.selectOption('kurz');
-    await expect(
-      panel.getByRole('textbox', { name: 'Basisordner für den nächsten Lauf', exact: true }),
-    ).toHaveValue(basis);
+    const arbeitsordner = panel.locator('.lauf-ordnerpfad');
+    await feldEinblenden(arbeitsordner);
+    await expect(arbeitsordner).toHaveText(s.basis);
     await expect(panel.getByLabel('Laufprofil', { exact: true })).toHaveValue('kurz');
     return s;
   } catch (fehler) {
@@ -345,6 +360,7 @@ async function ergebnisPruefen(s: Sitzung): Promise<string> {
     ['Nord', '500000', '1000000'],
   ]);
   expect(await dateiHash(join(s.basis, 'million.csv'))).toBe(s.quellhash);
+  expect(await dateiHash(s.quellOriginal)).toBe(s.quellhash);
   const gespeichert = JSON.parse(await readFile(s.projektdatei, 'utf8')) as Projekt;
   expect(JSON.parse(gespeichert.editor.blocks!.blocks[0].next!.block.data!).konfiguration.pfad).toBe(
     'noch-nicht-konfiguriert.csv',
@@ -353,10 +369,10 @@ async function ergebnisPruefen(s: Sitzung): Promise<string> {
 }
 
 async function nachweis(s: Sitzung, name: string, daten: Record<string, unknown>): Promise<void> {
-  await mkdir(resolve('artifacts/business-last'), { recursive: true });
-  await s.seite.screenshot({ path: resolve(`artifacts/business-last/${name}.png`) });
+  await mkdir(resolve('artifacts/qualitaet-desktop/business-last'), { recursive: true });
+  await s.seite.screenshot({ path: resolve(`artifacts/qualitaet-desktop/business-last/${name}.png`) });
   await writeFile(
-    resolve(`artifacts/business-last/${name}.json`),
+    resolve(`artifacts/qualitaet-desktop/business-last/${name}.json`),
     JSON.stringify(
       {
         version: 1,
@@ -397,7 +413,10 @@ test('Business-Last: Millionenzeilenlauf verwendet den aktuellen Editorstand und
     expect(zoomAntwortMs).toBeLessThan(2000);
     const verschiebenStart = performance.now();
     const vorAnsicht = (await dokument(s)).projekt.ansicht;
-    await s.seite.getByRole('button', { name: 'Ansicht nach rechts', exact: true }).click({ timeout: 2000 });
+    await s.seite
+      .getByRole('button', { name: 'Arbeitsbereich verschieben', exact: true })
+      .click({ timeout: 2000 });
+    await s.seite.getByRole('menuitem', { name: 'Nach rechts', exact: true }).click({ timeout: 2000 });
     await expect
       .poll(async () => (await dokument(s)).projekt.ansicht.x, { timeout: 2000, intervals: [20] })
       .not.toBe(vorAnsicht.x);
@@ -464,7 +483,9 @@ test('Business-Last: stoppt nach Millionenverarbeitung den Warteblock und erhäl
     await arbeitsbereichWaehlen(s.seite, 'Ablauf');
     await s.seite.locator('g[data-id="last-lesen"]').click({ position: { x: 60, y: 18 } });
     await s.seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
-    const feld = s.seite.getByTestId('eigenschaften-panel').getByLabel('Dateipfad', { exact: true });
+    const feld = s.seite
+      .getByTestId('eigenschaften-panel')
+      .getByRole('textbox', { name: 'Dateipfad', exact: true });
     await expect(feld).toBeEditable();
     await feld.fill('nach-stopp-nur-bearbeitet.csv');
     await feld.blur();

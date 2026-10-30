@@ -1,10 +1,4 @@
-import {
-  workflowBefehl,
-  arbeitsbereichWaehlen,
-  laufansichtWaehlen,
-  laufStarten,
-  startseiteWaehlen,
-} from './ansichten';
+import { workflowBefehl, laufansichtWaehlen, laufStarten } from './ansichten';
 import { test, expect } from '@playwright/test';
 import { _electron as electron } from 'playwright';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
@@ -41,34 +35,37 @@ test('Business: CSV über Palette konfigurieren, speichern, Vorschau und echten 
   const seite = await app.firstWindow();
   try {
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
-    await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
+    await workflowBefehl(seite, 'neu');
     await sprachwahlBestaetigen(seite, 'python');
     await expect(seite.getByTestId('editor-sprache')).toHaveText('Python');
     await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
+    const laufkontext = await seite.evaluate(() => window.scriptlab.testLesen());
+    if (!laufkontext.ok || !laufkontext.wert.optionen.basisVerzeichnis)
+      throw new Error('Der verwaltete Workflow-Arbeitsordner fehlt.');
+    const basis = laufkontext.wert.optionen.basisVerzeichnis;
+    await mkdir(basis, { recursive: true });
+    await writeFile(join(basis, 'quelle.csv'), await readFile(join(ordner, 'quelle.csv')));
     const palette = seite.getByTestId('palette');
     await palette.getByLabel('Bausteine suchen').fill('CSV-Tabelle lesen');
     await palette.getByRole('button', { name: 'Baustein einfügen: CSV-Tabelle lesen', exact: true }).click();
     await palette.getByRole('button', { name: 'Nach „Workflow starten“', exact: true }).click();
-    await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
     const eig = seite.getByTestId('eigenschaften-panel');
-    await eig.getByLabel('Dateipfad', { exact: true }).fill('quelle.csv');
+    await eig.getByRole('textbox', { name: 'Dateipfad', exact: true }).fill('quelle.csv');
     await eig.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
     await palette.getByLabel('Bausteine suchen').fill('Tabelle als CSV');
     await palette
       .getByRole('button', { name: 'Baustein einfügen: Tabelle als CSV speichern', exact: true })
       .click();
     await palette.getByRole('button', { name: 'Nach „CSV-Tabelle lesen“', exact: true }).click();
-    await seite.getByRole('button', { name: 'Eigenschaften', exact: true }).click();
-    await eig.getByLabel('Dateipfad', { exact: true }).fill('ausgabe.csv');
-    const tabellenwahl = eig.getByLabel('tabelle: Ergebnis vom Typ Tabelle');
+    await eig.getByRole('textbox', { name: 'Dateipfad', exact: true }).fill('ausgabe.csv');
+    const tabellenwahl = eig.getByRole('combobox', { name: 'Tabelle', exact: true });
     await tabellenwahl.selectOption(
       (await tabellenwahl.locator('option').filter({ hasText: 'CSV-Tabelle lesen' }).getAttribute('value'))!,
     );
     await eig.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
-    const projektdatei = join(ordner, 'CSV.scriptlab');
-    await app.evaluate(({ dialog }, datei) => {
-      dialog.showSaveDialog = async () => ({ canceled: false, filePath: datei });
-    }, projektdatei);
+    const dokument = await seite.evaluate(() => window.scriptlab.laden());
+    if (!dokument.ok) throw new Error(dokument.meldung);
+    const projektdatei = join(profil, 'Workflows', `${dokument.wert.dokument.projektKennung}.scriptlab`);
     await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
     await expect
       .poll(async () =>
@@ -80,10 +77,6 @@ test('Business: CSV über Palette konfigurieren, speichern, Vorschau und echten 
       .toBe(3);
     await laufansichtWaehlen(seite, 'Vorbereitung');
     const panel = seite.getByTestId('test-panel');
-    await app.evaluate(({ dialog }, ordner) => {
-      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [ordner] });
-    }, ordner);
-    await panel.getByRole('button', { name: 'Ordner auswählen', exact: true }).click();
     await panel.getByLabel('Modus', { exact: true }).selectOption('vorschau');
     await expect(panel.locator('.lauf-zeitlimit > summary')).toContainText('15 s');
     await laufStarten(seite);
@@ -99,10 +92,10 @@ test('Business: CSV über Palette konfigurieren, speichern, Vorschau und echten 
     await laufansichtWaehlen(seite, 'Ergebnisse');
     await expect(panel.getByRole('table').first()).toBeVisible({ timeout: 20000 });
     await expect(panel.getByRole('cell', { name: '001', exact: true })).toBeVisible();
-    await expect(readFile(join(ordner, 'ausgabe.csv'))).rejects.toThrow();
+    await expect(readFile(join(basis, 'ausgabe.csv'))).rejects.toThrow();
     await expect(panel.getByText('Lauf beendet', { exact: true })).toBeVisible();
     await panel.locator('.testbereich-inhalt').evaluate((e) => (e.scrollTop = 0));
-    await seite.screenshot({ path: resolve('artifacts/business-ui-1280.png') });
+    await seite.screenshot({ path: resolve('artifacts/qualitaet-desktop/business-ui-1280.png') });
     await laufansichtWaehlen(seite, 'Vorbereitung');
     await panel.getByLabel('Modus', { exact: true }).selectOption('prueflauf');
     await expect(panel.locator('.lauf-zeitlimit > summary')).toContainText('60 s');
@@ -121,13 +114,13 @@ test('Business: CSV über Palette konfigurieren, speichern, Vorschau und echten 
       zeitlimitSekunden: 60,
       business: { modus: 'prueflauf' },
     });
-    await expect(readFile(join(ordner, 'ausgabe.csv'))).rejects.toThrow();
+    await expect(readFile(join(basis, 'ausgabe.csv'))).rejects.toThrow();
     await laufansichtWaehlen(seite, 'Vorbereitung');
     await panel.getByLabel('Modus', { exact: true }).selectOption('ausfuehren');
     await expect(panel.locator('.lauf-zeitlimit > summary')).toContainText('7200 s');
     await laufStarten(seite);
     await expect
-      .poll(async () => await readFile(join(ordner, 'ausgabe.csv'), 'utf8').catch(() => ''), {
+      .poll(async () => await readFile(join(basis, 'ausgabe.csv'), 'utf8').catch(() => ''), {
         timeout: 20000,
       })
       .toContain('001');
@@ -140,6 +133,13 @@ test('Business: CSV über Palette konfigurieren, speichern, Vorschau und echten 
         { timeout: 20000 },
       )
       .toBe('beendet');
+    expect(
+      (await readFile(join(basis, 'ausgabe.csv'), 'utf8'))
+        .replace(/^\uFEFF/, '')
+        .trim()
+        .split(/\r?\n/),
+    ).toEqual(['Nummer;Region;Betrag', '001;Nord;100', '002;Süd;80']);
+    expect(await readFile(join(basis, 'quelle.csv'))).toEqual(await readFile(join(ordner, 'quelle.csv')));
     const paket = join(ordner, 'CSV-Testdaten-Business.zip');
     await app.evaluate(({ dialog }, ziel) => {
       dialog.showMessageBox = async () => ({ response: 0, checkboxChecked: false });
@@ -148,7 +148,9 @@ test('Business: CSV über Palette konfigurieren, speichern, Vorschau und echten 
     await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
     const exportdialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
     await expect(exportdialog.getByRole('combobox', { name: 'Inhalt', exact: true })).toHaveValue('paket');
-    await expect(exportdialog).toContainText('Business-Laufzeit');
+    await expect(exportdialog).toContainText(
+      'Python-Script, Business-Module, Parameter und Anleitung als ZIP.',
+    );
     await exportdialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
     await expect
       .poll(async () => (await readFile(paket).catch(() => Buffer.alloc(0))).subarray(0, 4).toString('hex'), {
