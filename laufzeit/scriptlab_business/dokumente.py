@@ -87,6 +87,8 @@ def xlsx_vorlage(kontext: Kontext, k: dict, e: dict):
                 for adresse, wert in [*zellen.items(), *formeln.items()]:
                     kontext.pruefen()
                     zelle = zelle_lesen(adresse)
+                    if isinstance(wert, str) and len(wert) > 32767:
+                        raise BusinessFehler(f"Der Inhalt für Excel-Zelle {adresse} überschreitet die Zellgrenze von 32767 Zeichen. Kürze den Wert vor der Ausgabe.")
                     if adresse in formeln:
                         if not isinstance(wert, str) or not wert.startswith("="):
                             raise BusinessFehler("Eine ausdrücklich gesetzte Excel-Formel muss mit = beginnen.")
@@ -181,17 +183,22 @@ def _absatzliste(teil):
                     yield from _absatzliste(zelle)
 
 
-def _word_ersetzen(dokument, werte):
-    for absatz in _absatzliste(dokument):
-        _absatz_ersetzen(absatz, werte)
+def _word_ersetzen(dokument, werte, bearbeitet):
+    def ersetzen(teil):
+        for absatz in _absatzliste(teil):
+            # Verknüpfte Kopf-/Fußzeilen gehören mehreren Abschnitten. Bereits
+            # eingesetzte Daten dürfen dabei nicht erneut zu Platzhaltern werden.
+            if absatz._p not in bearbeitet:
+                _absatz_ersetzen(absatz, werte)
+                bearbeitet.add(absatz._p)
+    ersetzen(dokument)
     for abschnitt in dokument.sections:
         for teil in (abschnitt.header, abschnitt.footer, abschnitt.first_page_header,
                      abschnitt.first_page_footer, abschnitt.even_page_header, abschnitt.even_page_footer):
-            for absatz in _absatzliste(teil):
-                _absatz_ersetzen(absatz, werte)
+            ersetzen(teil)
 
 
-def _positionen(kontext, dokument, konfiguration, zeilen, gemeinsame_werte):
+def _positionen(kontext, dokument, konfiguration, zeilen, gemeinsame_werte, bearbeitet):
     from docx.table import _Row
     index_tabelle, index_zeile = konfiguration.get("tabelle", 0), konfiguration.get("zeile", 1)
     if type(index_tabelle) is not int or type(index_zeile) is not int or index_tabelle < 0 or index_zeile < 0:
@@ -212,7 +219,10 @@ def _positionen(kontext, dokument, konfiguration, zeilen, gemeinsame_werte):
         werte = {**gemeinsame_werte, **{f"{praefix}.{name}": wert for name, wert in datensatz.items()}}
         for zelle in zeile.cells:
             for absatz in _absatzliste(zelle):
-                _absatz_ersetzen(absatz, werte)
+                # Verbundene Zellen können denselben Absatz mehrfach liefern.
+                if absatz._p not in bearbeitet:
+                    _absatz_ersetzen(absatz, werte)
+                    bearbeitet.add(absatz._p)
     anker.getparent().remove(anker)
 
 
@@ -227,12 +237,13 @@ def docx_vorlage(kontext: Kontext, k: dict, e: dict):
     def schreiben(temp):
         with quellkopie(kontext, quelle, office=True) as kopie:
             dokument = Document(kopie)
+            bearbeitet = set()
             if "positionen" in k:
                 zeilen = _zeilen(kontext, dienst, tabelle) if dienst else e.get("positions_zeilen", [])
                 if not dienst and (not isinstance(zeilen, list) or len(zeilen) > kontext.grenzen.max_zeilen or any(not isinstance(z, dict) for z in zeilen)):
                     raise BusinessFehler("Die Word-Positionsdaten sind ungültig oder zu groß.")
-                _positionen(kontext, dokument, k["positionen"], zeilen, k.get("werte", {}))
-            _word_ersetzen(dokument, k.get("werte", {}))
+                _positionen(kontext, dokument, k["positionen"], zeilen, k.get("werte", {}), bearbeitet)
+            _word_ersetzen(dokument, k.get("werte", {}), bearbeitet)
             dokument.save(temp)
     return {**publizieren(kontext, ziel, schreiben, k.get("konflikt", "FEHLER"), quellen, _office_pruefer(kontext)), "dokumenttyp": "DOCX"}
 
