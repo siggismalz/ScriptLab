@@ -180,10 +180,6 @@ def _zip_fest(pfad):
 
 def fixtures_erstellen(beispiele_wurzel=BEISPIELE):
     """Nur die hier bezeichneten neuen Testdateien werden deterministisch erzeugt."""
-    from docx import Document
-    from docx.shared import Inches, Pt, RGBColor
-    from docx.oxml import OxmlElement
-    from docx.oxml.ns import qn
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill
     from PIL import Image, ImageDraw, ImageFont
@@ -214,64 +210,11 @@ def fixtures_erstellen(beispiele_wurzel=BEISPIELE):
     buch.close()
     _zip_fest(pfad)
 
-    dokument = Document()
-    abschnitt = dokument.sections[0]
-    abschnitt.page_width, abschnitt.page_height = Inches(8.5), Inches(11)
-    abschnitt.top_margin = abschnitt.bottom_margin = Inches(1)
-    abschnitt.left_margin = abschnitt.right_margin = Inches(1)
-    normal = dokument.styles["Normal"]
-    normal.font.name, normal.font.size = "Segoe UI", Pt(11)
-    normal.paragraph_format.space_after = Pt(8)
-    titel = dokument.styles["Title"]
-    # Die mitgelieferte python-docx-Vorlage hat einen blauen Titel-Unterrand.
-    # Auch geerbte/verkettete Stile ausdrücklich bereinigen, nicht mit Weiß verdecken.
-    for stilname in ("Title", "Title Char", "Normal"):
-        stil = dokument.styles[stilname]
-        while stil is not None:
-            for rand in list(stil.element.xpath("./w:pPr/w:pBdr")):
-                rand.getparent().remove(rand)
-            stil.font.underline = False
-            stil = stil.base_style
-    titel.font.name, titel.font.size, titel.font.color.rgb = "Segoe UI", Pt(22), RGBColor(0, 0, 0)
-    titel_absatz = dokument.add_paragraph("Bestellvorschlag", "Title")
-    for rand in list(titel_absatz._p.xpath("./w:pPr/w:pBdr")):
-        rand.getparent().remove(rand)
-    for run in titel_absatz.runs:
-        run.underline = False
-        run.font.color.rgb = RGBColor(0, 0, 0)
-    dokument.add_paragraph("Synthetisches Beispiel · keine Bestellung an einen echten Lieferanten")
-    dokument.add_paragraph("Lieferant: {{Lieferant}}")
-    dokument.add_paragraph("Bestelldatum: {{Datum}}")
-    tabelle = dokument.add_table(rows=2, cols=4)
-    tabelle.autofit = False
-    for spalte, breite in zip(tabelle.columns, (2.6, 1.0, 1.4, 1.5)):
-        spalte.width = Inches(breite)
-    for zelle, text in zip(tabelle.rows[0].cells, ("Artikel", "Bestand", "Zielbestand", "Bestellmenge")):
-        zelle.text = text
-        farbe = OxmlElement("w:shd")
-        farbe.set(qn("w:fill"), "243F59")
-        zelle._tc.get_or_add_tcPr().append(farbe)
-        for run in zelle.paragraphs[0].runs:
-            run.font.bold, run.font.color.rgb = True, RGBColor(255, 255, 255)
-    for zelle, text in zip(tabelle.rows[1].cells,
-                          ("{{Position.Artikel}}", "{{Position.Bestand}}", "{{Position.Zielbestand}}", "{{Position.Bestellmenge}}")):
-        zelle.text = text
-    for zeile in tabelle.rows:
-        for zelle in zeile.cells:
-            rand = OxmlElement("w:tcBorders")
-            for seite in ("top", "left", "bottom", "right"):
-                linie = OxmlElement("w:" + seite)
-                for attribut, wert in (("val", "single"), ("sz", "4"), ("color", "D9D9D9")):
-                    linie.set(qn("w:" + attribut), wert)
-                rand.append(linie)
-            zelle._tc.get_or_add_tcPr().append(rand)
-    dokument.add_paragraph("Gesamtbestellmenge: {{Gesamtbestellmenge}}")
-    dokument.add_paragraph("Bitte den Vorschlag fachlich prüfen. Dieses Beispiel sendet keine Nachricht und löst keine Bestellung aus.")
-    dokument.core_properties.author = "ScriptLab"
-    dokument.core_properties.created = dokument.core_properties.modified = datetime(2026, 10, 26, 12)
-    pfad = c / "vorlagen" / "Bestellung.docx"
-    dokument.save(pfad)
-    _zip_fest(pfad)
+    # Derselbe Generator wie bei einer gezielten Vorlagenüberarbeitung. Ein
+    # Fixture-Neuaufbau darf die aktuelle Gestaltung nicht zurücksetzen.
+    from runpy import run_path
+    vorlage = run_path(str(WURZEL / "scripts" / "vorlage-bestellung-erstellen.py"))
+    vorlage["erstellen"](c / "vorlagen" / "Bestellung.docx")
 
     d = Path(beispiele_wurzel) / NAMEN["D"] / "eingaben"
     d.mkdir(parents=True, exist_ok=True)
