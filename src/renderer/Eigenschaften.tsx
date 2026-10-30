@@ -22,6 +22,8 @@ export function Eigenschaften({
   parameterKontext,
   quelleWaehlen,
   feldFehler,
+  vorschauOeffnen,
+  vorschauHinweis,
   ws,
   blockId,
   angeheftet,
@@ -39,6 +41,8 @@ export function Eigenschaften({
   parameterKontext?: ParameterKontext;
   quelleWaehlen?: QuelleWaehlen;
   feldFehler?: KonfigFeldFehler[];
+  vorschauOeffnen?: (blockId: string) => void;
+  vorschauHinweis?: string | null;
   ws: Blockly.WorkspaceSvg | null;
   blockId: string | null;
   angeheftet: boolean;
@@ -143,6 +147,17 @@ export function Eigenschaften({
         )}
         {definition && block ? (
           <>
+            {businessNachTyp.get(block.type)?.ausgabe === 'Tabelle' && vorschauOeffnen && (
+              <Knopf
+                className="schritt-vorschau"
+                symbol="tabelle"
+                disabled={Boolean(vorschauHinweis)}
+                grund={vorschauHinweis ?? undefined}
+                onClick={() => vorschauOeffnen(block.id)}
+              >
+                Datenvorschau
+              </Knopf>
+            )}
             {businessNachTyp.has(block.type) && ws && (
               <BusinessEigenschaften
                 ws={ws}

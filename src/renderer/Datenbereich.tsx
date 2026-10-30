@@ -38,6 +38,8 @@ export interface DatenbereichEigenschaften {
   parametersatzWaehlen?: (satz: 'test' | 'echt') => void;
   parameterZiel?: { name: string; anfrage: number } | null;
   feldZiel?: { blockId: string; pfad: string[]; anfrage: number } | null;
+  vorschauZiel?: { blockId: string; anfrage: number } | null;
+  vorschauBausteinAnzeigen?: (blockId: string) => void;
 }
 
 type Spalte = { name: string; typ: string };
@@ -184,6 +186,16 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
     (feld.querySelector<HTMLElement>('input,select,textarea,button') ?? feld).focus();
   }
   const vorschauGrund = datenvorschauHinweis(projekt, auswahl);
+  useEffect(() => {
+    if (!props.vorschauZiel) return;
+    setAuswahl(props.vorschauZiel.blockId);
+    setDatenansicht('vorschau');
+    requestAnimationFrame(() =>
+      scrollbereich.current
+        ?.querySelector<HTMLElement>('.daten-vorschauwahl select')
+        ?.focus({ preventScroll: true }),
+    );
+  }, [props.vorschauZiel]);
   useEffect(() => {
     if (!props.feldZiel) return;
     setAuswahl(props.feldZiel.blockId);
@@ -576,6 +588,16 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
           hidden={datenansicht !== 'vorschau'}
         >
           <h2 className="sl-nur-vorlesen">Datenvorschau</h2>
+          {auswahl && props.vorschauBausteinAnzeigen && (
+            <Knopf
+              className="daten-vorschau-rueckweg"
+              variante="leise"
+              symbol="links"
+              onClick={() => props.vorschauBausteinAnzeigen!(auswahl)}
+            >
+              Zum Baustein
+            </Knopf>
+          )}
           <div className="daten-vorschauwahl">
             <Auswahlfeld
               beschriftung="Ergebnis bis zu diesem Schritt"

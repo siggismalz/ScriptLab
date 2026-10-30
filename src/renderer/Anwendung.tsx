@@ -48,6 +48,7 @@ import { Arbeitsbereiche, type Arbeitsbereich } from './komponenten/Arbeitsberei
 import { Marke } from './komponenten/Marke';
 import { BusinessVorbereitung } from './BusinessVorbereitung';
 import { businessSchritte } from '../kern/business';
+import { datenvorschauHinweis } from '../kern/datenvorschau';
 import { parameterVerweiseUmbenennen } from '../kern/parameterAendern';
 import {
   BlockDatenEreignis,
@@ -83,6 +84,8 @@ export function Anwendung() {
   const vorschauGemerkt = useRef<string | null>(null);
   const [parameterZiel, setParameterZiel] = useState<{ name: string; anfrage: number } | null>(null);
   const [feldZiel, setFeldZiel] = useState<{ blockId: string; pfad: string[]; anfrage: number } | null>(null);
+  const [vorschauZiel, setVorschauZiel] = useState<{ blockId: string; anfrage: number } | null>(null);
+  const vorschauAusloeser = useRef<HTMLElement | null>(null);
   const [testOptionen, setTestOptionen] = useState<TestOptionen>({
     basisVerzeichnis: null,
     zeitlimitSekunden: 120,
@@ -658,6 +661,22 @@ export function Anwendung() {
     setArbeitsbereich('daten');
     setParameterZiel({ name, anfrage: Date.now() });
   }
+  function schrittVorschauOeffnen(blockId: string) {
+    vorschauAusloeser.current = document.activeElement as HTMLElement;
+    auswaehlen(blockId);
+    setVorschauZiel((alt) => ({ blockId, anfrage: (alt?.anfrage ?? 0) + 1 }));
+    setArbeitsbereich('daten');
+  }
+  function vorschauBausteinAnzeigen(blockId: string) {
+    if (blockId !== vorschauZiel?.blockId) {
+      blockAnzeigen(blockId);
+      return;
+    }
+    // Zurück zur Bearbeitung, ohne den bisherigen Canvas auf den Block zu zentrieren.
+    auswaehlen(blockId);
+    setArbeitsbereich('ablauf');
+    requestAnimationFrame(() => vorschauAusloeser.current?.focus({ preventScroll: true }));
+  }
   async function quelleWaehlen(blockId: string, feldPfad: string[]) {
     return antwort(await window.scriptlab.quelleWaehlen(blockId, feldPfad));
   }
@@ -756,6 +775,8 @@ export function Anwendung() {
   }, [editorBegonnen]);
   useEffect(() => {
     setVorschauen({});
+    setVorschauZiel(null);
+    vorschauAusloeser.current = null;
     vorschauAnfrage.current = null;
     vorschauGemerkt.current = null;
   }, [projekt.projektKennung]);
@@ -1713,6 +1734,8 @@ export function Anwendung() {
             </section>
             {eigenschaftenOffen && (
               <Eigenschaften
+                vorschauOeffnen={schrittVorschauOeffnen}
+                vorschauHinweis={datenvorschauHinweis(projekt, auswahl)}
                 spaltenNachQuelle={spaltenNachQuelle}
                 parameterKontext={parameterKontext}
                 quelleWaehlen={quelleWaehlen}
@@ -1793,6 +1816,8 @@ export function Anwendung() {
             quelleWaehlen={quelleWaehlen}
             parameterZiel={parameterZiel}
             feldZiel={feldZiel}
+            vorschauZiel={vorschauZiel}
+            vorschauBausteinAnzeigen={vorschauBausteinAnzeigen}
             parametersatzWaehlen={(satz) =>
               setTestOptionen((alt) => ({
                 ...alt,

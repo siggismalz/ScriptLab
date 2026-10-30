@@ -687,6 +687,9 @@
   padding: 16px;
   gap: 12px;
 }
+.schritt-vorschau {
+  margin-bottom: var(--abstand-16);
+}
 .eigenschaften-panel .panel-inhalt > h3 {
   font-size: calc(16px * var(--text-skala, 1));
 }

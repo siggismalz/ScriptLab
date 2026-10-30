@@ -279,6 +279,9 @@
 .daten-vorschau {
   min-width: 0;
 }
+.daten-vorschau-rueckweg {
+  margin-bottom: var(--abstand-12);
+}
 .daten-parameterfelder {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
