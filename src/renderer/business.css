@@ -50,6 +50,39 @@
   height: 20px;
   accent-color: var(--farbe-akzent);
 }
+.business-ausdruck,
+.business-vergleich,
+.business-bedingungsgruppe {
+  display: grid;
+  gap: var(--abstand-12);
+  min-width: 0;
+}
+.business-ausdruckdetails > summary {
+  color: var(--farbe-text-sekundaer);
+  min-height: 32px;
+  padding-block: var(--abstand-4);
+}
+.business-ausdruckdetails > .business-formular {
+  padding-top: var(--abstand-8);
+}
+.business-bedingung {
+  padding-block: var(--abstand-12);
+  border-top: 1px solid var(--farbe-trennung);
+}
+.business-bedingung > .business-bedingungsgruppe {
+  border-left: 2px solid var(--farbe-kontur);
+  padding-left: var(--abstand-12);
+}
+.business-regelaktionen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--abstand-4) var(--abstand-8);
+}
+.business-regelaktionen .sl-knopf {
+  min-height: 32px;
+  padding: var(--abstand-4) var(--abstand-8);
+}
 .business-vorschau {
   max-height: 280px;
   overflow: auto;

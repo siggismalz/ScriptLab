@@ -20,7 +20,12 @@ import {
 import { businessDefinitionen, type KonfigFeld } from '../src/kern/business-katalog';
 import { leeresBusinessProjekt, type JsonWert, type WorkflowParameter } from '../src/kern/business-modell';
 import { neuesProjekt } from '../src/kern/projekt';
-import { bedingungsGruppeSetzen } from '../src/renderer/business-regeln';
+import {
+  ausdruckArtSetzen,
+  bedingungsGruppeSetzen,
+  bedingungAufloesen,
+  literalTypSetzen,
+} from '../src/renderer/business-regeln';
 
 const nichts = () => {};
 const parameter = (
@@ -310,13 +315,71 @@ describe('Verständliche, typisierte Business-Formulare', () => {
     });
     expect(bedingung).toEqual(vorher);
   });
-  it('erhält bestehende Funktionsausdrücke und zeigt die noch fehlende Bearbeitung ausdrücklich an', () => {
+  it('bearbeitet gespeicherte Datumsfunktionen und erhält Argumente sowie Suchmuster unverändert', () => {
     const ausdruck = { art: 'funktion', funktion: 'JAHR', argument: { art: 'spalte', name: 'Datum' } };
+    const vorher = structuredClone(ausdruck);
     const html = formular('sl_biz_berechnen', { aktion: 'BERECHNEN', spalte: 'Jahr', ausdruck });
-    expect(html).toContain('Gespeicherte Funktion');
-    expect(html).toContain('kann hier noch nicht bearbeitet werden');
-    expect(html).toContain('Ausdruck bleibt unverändert erhalten');
+    expect(html).toContain('<option value="JAHR" selected="">Jahreszahl aus einem Datum</option>');
+    expect(html).toContain('value="Datum"');
+    expect(html).not.toContain('kann hier noch nicht bearbeitet werden');
     expect(html).not.toContain('textarea');
+    expect(ausdruck).toEqual(vorher);
+    const regex = formular('sl_biz_berechnen', {
+      ausdruck: { ...ausdruck, funktion: 'REGEX', muster: '(RE-[0-9]+)', gruppe: 1 },
+    });
+    expect(regex).toContain('value="(RE-[0-9]+)"');
+    expect(regex).toContain('Ergebnisgruppe');
+    expect(regex).toContain('value="1"');
+  });
+  it('zeigt einen einfachen Filter direkt als Spalte, Vergleich und Wert ohne vorgeschaltete Gruppenauswahl', () => {
+    const html = formular(
+      'sl_biz_filtern',
+      {
+        bedingung: {
+          art: 'vergleich',
+          spalte: 'Region',
+          operator: 'EQ',
+          wert: { art: 'wert', typ: 'TEXT', wert: 'Nord' },
+        },
+      },
+      ['Region'],
+    );
+    expect(html).toContain('value="Region"');
+    expect(html).toContain('value="Nord"');
+    expect(html).toContain('<summary>Bedingung erweitern</summary>');
+    expect(html).not.toContain('Bedingungen verbinden');
+    expect(html).not.toContain('Ein Vergleich');
+  });
+  it('löst nur verlustfrei auf und ergänzt Berechnungen um vorhandene Ausdrücke', () => {
+    const wert = { art: 'spalte', name: 'Datum' };
+    expect(ausdruckArtSetzen(wert, 'funktion')).toEqual({
+      art: 'funktion',
+      funktion: 'JAHR',
+      argument: wert,
+    });
+    expect(ausdruckArtSetzen({ art: 'funktion', funktion: 'JAHR', argument: wert }, 'spalte')).toEqual(wert);
+    const gruppe = { art: 'UND', kinder: [{ art: 'vergleich', spalte: 'Region', operator: 'IST_LEER' }] };
+    expect(bedingungAufloesen(gruppe)).toEqual(gruppe.kinder[0]);
+    const mehrere = { art: 'UND', kinder: [...gruppe.kinder, ...gruppe.kinder] };
+    expect(bedingungAufloesen(mehrere)).toEqual(mehrere);
+    expect(bedingungAufloesen({ art: 'NICHT', kind: gruppe })).toEqual(gruppe);
+  });
+  it('erhält feste Werte und Bindungen beim Datentypwechsel statt sie auf 0 oder leer zurückzusetzen', () => {
+    expect(literalTypSetzen({ art: 'wert', typ: 'TEXT', wert: '12,5' }, 'ZAHL')).toEqual({
+      art: 'wert',
+      typ: 'ZAHL',
+      wert: 12.5,
+    });
+    expect(literalTypSetzen({ art: 'wert', typ: 'TEXT', wert: 'keine Zahl' }, 'ZAHL')).toEqual({
+      art: 'wert',
+      typ: 'ZAHL',
+      wert: 'keine Zahl',
+    });
+    expect(literalTypSetzen({ art: 'wert', typ: 'TEXT', wert: { parameter: 'Monat' } }, 'DATUM')).toEqual({
+      art: 'wert',
+      typ: 'DATUM',
+      wert: { parameter: 'Monat' },
+    });
   });
   it('zeigt Literalobjekte aus Qualitätsregeln als Werte statt als objectObject oder leeres Feld', () => {
     const feld: KonfigFeld = { name: 'minimum', titel: 'Minimum', art: 'text', standard: '' };
