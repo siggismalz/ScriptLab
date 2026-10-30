@@ -170,10 +170,19 @@ function testWerkzeugPfad(): string {
     : join(app.getAppPath(), 'artifacts/native/ScriptLab.Testhost.exe');
 }
 
-async function lokaleEinstellungenSpeichern(neu: Einstellungen): Promise<void> {
-  await atomarSchreiben(einstellungsPfad(), `${JSON.stringify(neu, null, 2)}\n`);
-  einstellungen = neu;
-  darstellungUebernehmen();
+let einstellungsSchreibfolge: Promise<void> = Promise.resolve();
+function lokaleEinstellungenSpeichern(
+  aenderung: Einstellungen | ((aktuell: Einstellungen) => Einstellungen),
+): Promise<void> {
+  const schreiben = einstellungsSchreibfolge.then(async () => {
+    const neu = typeof aenderung === 'function' ? aenderung(einstellungen) : aenderung;
+    await atomarSchreiben(einstellungsPfad(), `${JSON.stringify(neu, null, 2)}\n`);
+    einstellungen = neu;
+    darstellungUebernehmen();
+  });
+  // Der einzelne Aufrufer erhält den Fehler; spätere Änderungen bleiben möglich.
+  einstellungsSchreibfolge = schreiben.catch(() => {});
+  return schreiben;
 }
 
 function darstellungUebernehmen(): void {
@@ -693,7 +702,7 @@ function ipcEinrichten(): void {
         .parse(daten);
       uebernehmen(auswahl.projekt);
       if (!(await aenderungenSichern())) return null;
-      await lokaleEinstellungenSpeichern({ ...einstellungen, letzteSkriptsprache: auswahl.sprache });
+      await lokaleEinstellungenSpeichern((aktuell) => ({ ...aktuell, letzteSkriptsprache: auswahl.sprache }));
       await verworfenenEntwurfBereinigen();
       projektAktivieren(neuesProjekt(auswahl.sprache), null, null);
       return dokument();
