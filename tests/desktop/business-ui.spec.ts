@@ -51,7 +51,8 @@ for (const [darstellung, textSkalierung] of [
       );
       await workflowBefehl(seite, 'neu');
       await sprachwahlBestaetigen(seite, 'python');
-      await expect(seite.getByTestId('editor-sprache')).toHaveText('Python');
+      const modell = await seite.evaluate(() => window.scriptlab.laden());
+      expect(modell.ok && modell.wert.dokument.projekt.skriptsprache).toBe('python');
       await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
       const laufkontext = await seite.evaluate(() => window.scriptlab.testLesen());
       if (!laufkontext.ok || !laufkontext.wert.optionen.basisVerzeichnis)

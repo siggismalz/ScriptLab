@@ -1,8 +1,9 @@
-import { test, expect, type Locator } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { basename, join, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
+import { once } from 'node:events';
 import { sprachwahlBestaetigen } from './sprache';
 import { laufansichtWaehlen, laufStarten, workflowBefehl, feldEinblenden } from './ansichten';
 
@@ -49,7 +50,11 @@ async function beenden(s: Sitzung) {
         await window.scriptlab.testStoppen(r.wert.zustand.laufId);
     })
     .catch(() => {});
+  const prozess = s.app.process();
+  const ende =
+    prozess.exitCode === null && prozess.signalCode === null ? once(prozess, 'exit') : Promise.resolve();
   await s.app.evaluate(({ app }) => app.exit(0)).catch(() => {});
+  await ende;
   const ziel = resolve(s.ordner);
   if (!ziel.startsWith(resolve(tmpdir()) + sep) || !basename(ziel).startsWith('ScriptLab-Python-UI-'))
     throw new Error('Unsicherer temporärer Testpfad.');
@@ -88,7 +93,7 @@ function unterschiedeLesen(
   }
   return [{ pfad, datei: a, hauptprozess: b }];
 }
-async function speicherDiagnose(s: Sitzung, dateipfad: string, vorschau: Locator, art: string) {
+async function speicherDiagnose(s: Sitzung, dateipfad: string, art: string) {
   const datei = await readFile(dateipfad, 'utf8').then(
     (inhalt) => {
       try {
@@ -111,13 +116,11 @@ async function speicherDiagnose(s: Sitzung, dateipfad: string, vorschau: Locator
           ? JSON.stringify(dateiprojekt) === JSON.stringify(aktuell.dokument.projekt)
           : null,
         renderer: {
-          vorschau: await vorschau.textContent(),
           geometrie: await s.seite.evaluate(() => ({
             breite: innerWidth,
             hoehe: innerHeight,
             dpr: devicePixelRatio,
             canvas: document.querySelector('.blockly-editor')?.getBoundingClientRect().toJSON(),
-            vorschau: document.querySelector('.code-panel')?.getBoundingClientRect().toJSON(),
             canvasTransform: document.querySelector('.blocklyBlockCanvas')?.getAttribute('transform'),
           })),
           bloecke: await s.seite.locator('.blocklyBlockCanvas g[data-id]').evaluateAll((bloecke) =>
@@ -147,13 +150,13 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
     const wahl = seite.getByRole('dialog', { name: 'Neuer Workflow', exact: true });
     await expect(
-      wahl.getByRole('radiogroup', { name: 'Workflowart und Skriptsprache', exact: true }),
+      wahl.getByRole('radiogroup', { name: 'Art der Automatisierung', exact: true }),
     ).toBeVisible();
-    await expect(wahl.getByRole('radio', { name: 'Python', exact: true })).not.toBeChecked();
-    await expect(wahl.getByRole('radio', { name: 'VBScript (VBS)', exact: true })).not.toBeChecked();
+    await expect(wahl.getByRole('radio', { name: 'Automatisierung', exact: true })).not.toBeChecked();
+    await expect(wahl.getByRole('radio', { name: 'Windows-Automatisierung', exact: true })).not.toBeChecked();
     await expect(wahl.getByRole('radio', { name: 'Machine Learning', exact: true })).not.toBeChecked();
     await expect(wahl.getByRole('button', { name: 'Workflow erstellen', exact: true })).toBeDisabled();
-    await expect(wahl.getByText('Wähle zuerst Python, VBScript (VBS) oder Machine Learning.')).toBeVisible();
+    await expect(wahl.getByText('Wähle eine der drei Aufgabenarten.')).toBeVisible();
     await wahl.getByRole('button', { name: 'Abbrechen', exact: true }).click();
     expect((await dokument(seite)).dokument).toEqual(vorher);
     expect((await dokument(seite)).einstellungen.letzteSkriptsprache).toBeNull();
@@ -161,7 +164,7 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
     await sprachwahlBestaetigen(seite, 'python');
     await editorBereit(seite);
-    await expect(seite.getByTestId('editor-sprache')).toHaveText('Python');
+    expect((await dokument(seite)).dokument.projekt.skriptsprache).toBe('python');
     await expect(seite.getByRole('button', { name: 'Exportieren', exact: true })).toBeVisible();
     expect((await dokument(seite)).dokument.projekt.skriptsprache).toBe('python');
     expect((await dokument(seite)).einstellungen.letzteSkriptsprache).toBe('python');
@@ -177,11 +180,14 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
       .fill('Klare Python-Testausgabe ä');
     await eigenschaften.getByRole('textbox', { name: 'Text', exact: true }).press('Tab');
     await eigenschaften.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
-    await seite.getByRole('button', { name: 'Ansicht', exact: true }).click();
-    await seite.getByRole('menuitem', { name: 'Codevorschau öffnen', exact: true }).click();
-    await expect(seite.getByRole('heading', { name: 'Python-Code', exact: true })).toBeVisible();
-    const vorschau = seite.getByLabel('Schreibgeschützter Python-Code', { exact: true });
-    await expect(vorschau).toContainText('Klare Python-Testausgabe');
+    const konfigurierterStand = (await dokument(seite)).dokument.projekt;
+    const ausgabe = konfigurierterStand.editor.blocks!.blocks[0].next!.block;
+    expect(ausgabe.type).toBe('sl_output');
+    const eingabe = ausgabe.inputs!.TEXT;
+    expect(eingabe.block ?? eingabe.shadow).toMatchObject({
+      type: 'sl_text',
+      fields: { TEXT: 'Klare Python-Testausgabe ä' },
+    });
 
     await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
     const kennung = (await dokument(seite)).dokument.projektKennung;
@@ -189,12 +195,12 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     try {
       await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Gespeichert');
     } catch (fehler) {
-      await speicherDiagnose(s, projektdatei, vorschau, 'fehler');
+      await speicherDiagnose(s, projektdatei, 'fehler');
       throw fehler;
     }
     const intern = (await dokument(seite)).dokument;
     expect(intern.dateiname).toBe(`${intern.projektKennung}.scriptlab`);
-    await speicherDiagnose(s, projektdatei, vorschau, 'erfolg');
+    await speicherDiagnose(s, projektdatei, 'erfolg');
     const gespeichert = JSON.parse(await readFile(projektdatei, 'utf8'));
     expect(gespeichert).toMatchObject({ schemaVersion: 4, skriptsprache: 'python' });
     const exportdatei = join(s.ordner, 'Python-Export.py');
@@ -207,18 +213,28 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     await expect(exportdialog.locator('option:checked')).toContainText('Python-Script (.py)');
     await exportdialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
     await expect(seite.getByRole('status', { name: 'Export abgeschlossen', exact: true })).toBeVisible();
-    expect(await readFile(exportdatei, 'utf8')).toBe(await vorschau.textContent());
+    const exportcode = await readFile(exportdatei, 'utf8');
+    expect(exportcode).toContain('Klare Python-Testausgabe ä');
+    expect(exportcode).toContain('sys.stdout.write');
+    expect(exportcode).not.toContain('Option Explicit');
+    expect(gespeichert.editor).toEqual(konfigurierterStand.editor);
 
     const pythonKonfiguration = await einstellungen(seite);
     await expect(
       pythonKonfiguration.getByRole('heading', { name: 'Signatur für dieses Projekt', exact: true }),
     ).toHaveCount(0);
-    await pythonKonfiguration.getByRole('tab', { name: 'Laufzeit', exact: true }).click();
-    await expect(pythonKonfiguration.getByText('Python', { exact: true }).first()).toBeVisible();
-    await pythonKonfiguration.getByRole('button', { name: 'Erneut prüfen', exact: true }).click();
+    await pythonKonfiguration.getByRole('tab', { name: 'Automatisierungen', exact: true }).click();
+    const verfuegbarkeit = pythonKonfiguration.getByRole('region', {
+      name: 'Workflows und Dokumente',
+      exact: true,
+    });
+    await expect(
+      verfuegbarkeit.getByRole('heading', { name: 'Allgemeine Automatisierungen', exact: true }),
+    ).toBeVisible();
+    await verfuegbarkeit.getByRole('button', { name: 'Verfügbarkeit prüfen', exact: true }).click();
     await expect(pythonKonfiguration.locator('#einstellungen-vorgang')).toHaveCount(0, { timeout: 20_000 });
     await expect(
-      pythonKonfiguration.getByRole('button', { name: 'Erneut prüfen', exact: true }),
+      verfuegbarkeit.getByRole('button', { name: 'Verfügbarkeit prüfen', exact: true }),
     ).toBeEnabled();
     await expect
       .poll(async () => {
@@ -235,32 +251,24 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
     );
     if (process.env.SCRIPTLAB_TEST_PYTHON_VERSION)
       expect(runtime.installation!.version).toBe(process.env.SCRIPTLAB_TEST_PYTHON_VERSION);
-    await expect(pythonKonfiguration.getByText(runtime.meldung, { exact: true })).toBeVisible();
-    if (runtime.zustand === 'bereit') {
-      expect(runtime.installation).not.toBeNull();
-      await pythonKonfiguration
-        .locator('summary')
-        .filter({ hasText: 'Versionen und technische Angaben' })
-        .click();
-      await expect(
-        pythonKonfiguration.getByText(`CPython ${runtime.installation!.version} · x64`, { exact: true }),
-      ).toBeVisible();
-    }
+    expect(runtime.installation).not.toBeNull();
+    await expect(verfuegbarkeit.getByText('Bereit zum Ausführen.', { exact: true })).toBeVisible();
+    await expect(pythonKonfiguration.getByText(runtime.installation!.pfad, { exact: true })).toHaveCount(0);
     await pythonKonfiguration.getByRole('button', { name: 'Dialog schließen', exact: true }).click();
 
     // Ein Neuversuch verändert die Sprache des bestehenden Projekts nicht beim bloßen Öffnen/Abbrechen.
     await workflowBefehl(seite, 'neu');
-    await expect(wahl.getByRole('radio', { name: 'Python', exact: true })).toBeChecked();
+    await expect(wahl.getByRole('radio', { name: 'Automatisierung', exact: true })).toBeChecked();
     await wahl.getByRole('button', { name: 'Abbrechen', exact: true }).click();
     expect((await dokument(seite)).dokument.projekt.projektKennung).toBe(gespeichert.projektKennung);
-    await expect(seite.getByTestId('editor-sprache')).toHaveText('Python');
+    expect((await dokument(seite)).dokument.projekt.skriptsprache).toBe('python');
     await workflowBefehl(seite, 'neu');
     await sprachwahlBestaetigen(seite, 'vbs');
     await editorBereit(seite);
-    await expect(seite.getByTestId('editor-sprache')).toHaveText('VBScript (VBS)');
+    expect((await dokument(seite)).dokument.projekt.skriptsprache).toBe('vbs');
     await expect(seite.getByRole('button', { name: 'Exportieren', exact: true })).toBeVisible();
     const vbsKonfiguration = await einstellungen(seite);
-    await vbsKonfiguration.getByRole('tab', { name: 'VBS-Signatur', exact: true }).click();
+    await vbsKonfiguration.getByRole('tab', { name: 'Automatisierungen', exact: true }).click();
     await expect(
       vbsKonfiguration.getByRole('heading', { name: 'Signatur für dieses Projekt', exact: true }),
     ).toBeVisible();
@@ -293,8 +301,7 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
         if (!r.ok) throw Error(r.meldung);
         return r.wert.optionen.basisVerzeichnis!;
       });
-      await panel.getByText('ScriptLab-Arbeitsordner', { exact: true }).click();
-      await expect(panel.locator('.lauf-ordnerpfad')).toHaveText(basis);
+      expect(basis).toBe(join(s.ordner, 'Profil', 'Arbeitsdateien', gespeichert.projektKennung));
       await feldEinblenden(panel.getByLabel('Zeitlimit in Sekunden', { exact: true }));
       await panel.getByLabel('Zeitlimit in Sekunden', { exact: true }).fill('10');
       await panel.getByLabel('Zeitlimit in Sekunden', { exact: true }).press('Tab');
@@ -326,11 +333,12 @@ test('Python: ausdrückliche Sprachwahl, stabiler Projekt-Rundlauf, Export und t
         throw fehler;
       }
       await laufansichtWaehlen(seite, 'Protokoll');
-      await expect(panel.getByRole('log', { name: 'Laufprotokoll', exact: true })).toContainText(
+      await expect(panel.getByRole('log', { name: 'Laufausgabe', exact: true })).toContainText(
         'Klare Python-Testausgabe ä',
       );
       const r = await seite.evaluate(() => window.scriptlab.testLesen());
       expect(r.ok && r.wert.zustand.skriptsprache).toBe('python');
+      expect(r.ok && r.wert.zustand.optionen.basisVerzeichnis).toBe(basis);
       expect(r.ok && r.wert.zustand.pythonVersion).toBe(runtime.installation!.version);
     } else
       test.info().annotations.push({
@@ -361,8 +369,8 @@ test('Sprachwahl: gleichgewichtige Radiokarten, Tastatur und große UI-Schrift o
       );
       await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).click();
       const wahl = seite.getByRole('dialog', { name: 'Neuer Workflow', exact: true });
-      const python = wahl.getByRole('radio', { name: 'Python', exact: true });
-      const vbs = wahl.getByRole('radio', { name: 'VBScript (VBS)', exact: true });
+      const python = wahl.getByRole('radio', { name: 'Automatisierung', exact: true });
+      const vbs = wahl.getByRole('radio', { name: 'Windows-Automatisierung', exact: true });
       await expect(python).not.toBeChecked();
       await expect(vbs).not.toBeChecked();
       await python.focus();

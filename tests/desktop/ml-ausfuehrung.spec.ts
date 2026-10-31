@@ -43,9 +43,11 @@ test('ML: Offlinepaket bewusst einrichten, konkurrierende Starts binden und echt
   try {
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
     const dialog = await einstellungenOeffnen(seite);
-    await dialog.getByRole('tab', { name: 'Laufzeit', exact: true }).click();
-    const ml = dialog.getByRole('region', { name: 'Machine-Learning-Komponenten', exact: true });
-    await expect(ml).toContainText('Bearbeiten, Speichern und Exportieren möglich');
+    await dialog.getByRole('tab', { name: 'Automatisierungen', exact: true }).click();
+    const ml = dialog.getByRole('region', { name: 'Machine Learning', exact: true });
+    await expect(ml).toContainText(
+      'Bearbeiten, Speichern und Exportieren sind auch ohne Einrichtung möglich',
+    );
     expect((await zustand()).laufId).toBeNull();
     await app.evaluate(({ dialog }, pfad) => {
       dialog.showOpenDialog = async () => {
@@ -57,7 +59,7 @@ test('ML: Offlinepaket bewusst einrichten, konkurrierende Starts binden und echt
         return { canceled: false, filePaths: [pfad] };
       };
     }, resolve('artifacts/ml/wheels'));
-    await ml.getByRole('button', { name: 'Offline-Paketordner verwenden', exact: true }).click();
+    await ml.getByRole('button', { name: 'Aus Ordner einrichten', exact: true }).click();
     await expect
       .poll(() =>
         app.evaluate(() =>

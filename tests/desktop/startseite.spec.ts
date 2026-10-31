@@ -369,6 +369,34 @@ test('Startseite: gespeicherter Index und echte zuletzt geöffnete Projekte blei
   }
 });
 
+test('Startseite: sichtbares Entfernen räumt nur die Liste auf und erhält Datei und offenen Workflow', async () => {
+  const s = await starten();
+  try {
+    const datei = join(s.ordner, 'Bleibt auf dem Datentraeger.scriptlab');
+    await neuerAblauf(s, 'Nur aus Liste entfernen');
+    const original = await externeProjektdateiAnlegen(s, datei);
+    const vorher = await dokumentLesen(s);
+    await zurStartseite(s);
+    const liste = await eigeneProjekte(s);
+    const zeile = liste.getByRole('article', { name: /^Nur aus Liste entfernen/ });
+    const entfernen = zeile.getByRole('button', { name: 'Aus Liste entfernen', exact: true });
+    await expect(entfernen).toBeVisible();
+    await expect(zeile.locator('details')).not.toHaveAttribute('open');
+    await expect(liste).toContainText('Die gespeicherte Datei bleibt erhalten');
+    await entfernen.click();
+    await expect(zeile).toHaveCount(0);
+    await expect
+      .poll(async () => (await bibliothekLesen(s)).projekte.some((p) => p.pfad === datei))
+      .toBe(false);
+    expect(await readFile(datei)).toEqual(original);
+    expect((await dokumentLesen(s)).projekt).toEqual(vorher.projekt);
+    const lauf = await s.seite.evaluate(() => window.scriptlab.testLesen());
+    expect(lauf.ok && lauf.wert.zustand.laufId).toBeNull();
+  } finally {
+    await beenden(s);
+  }
+});
+
 test('Startseite: fehlende Datei wird neu zugeordnet und ein kaputtes Projekt ersetzt keinen Arbeitsstand', async () => {
   const s = await starten();
   try {
@@ -605,7 +633,7 @@ test('Startseite: lokale Hilfethemen, Suche und Vorlagenlink funktionieren ohne 
     await s.seite.context().setOffline(true);
     await s.seite.getByRole('button', { name: 'Dokumentation und Anleitungen', exact: true }).click();
     const hilfe = s.seite.getByTestId('hilfe');
-    expect(hilfeArtikel).toHaveLength(10);
+    expect(hilfeArtikel).toHaveLength(4);
     for (const thema of hilfeArtikel) {
       await hilfe.getByRole('button', { name: thema.titel, exact: true }).click();
       await expect(s.seite.getByRole('heading', { name: thema.titel, level: 1, exact: true })).toBeVisible();
@@ -615,10 +643,10 @@ test('Startseite: lokale Hilfethemen, Suche und Vorlagenlink funktionieren ohne 
     const suche = hilfe.getByRole('searchbox', { name: 'Hilfe durchsuchen', exact: true });
     await suche.fill('NichtvorhandenesHilfewort981');
     await expect(hilfe).toContainText('Keine Hilfe gefunden');
-    await suche.fill('Zertifikat');
+    await suche.fill('Trennzeichen');
     await expect(hilfe.locator('.start-hilfe-treffer').getByRole('button')).not.toHaveCount(0);
     await hilfe.getByRole('button', { name: 'Suche leeren', exact: true }).click();
-    await hilfe.getByRole('button', { name: 'Erste Schritte', exact: true }).click();
+    await hilfe.getByRole('button', { name: 'Workflow bauen', exact: true }).click();
     await bild(s, 'offline-hilfe');
     await hilfe
       .getByRole('button', {

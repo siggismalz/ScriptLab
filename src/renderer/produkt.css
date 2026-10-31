@@ -376,6 +376,13 @@ h3[tabindex='-1']:focus-visible {
 .arbeitszeile:has(> .eigenschaften-panel.ist-ueberlagert) .canvas-werkzeuge {
   right: var(--breite-overlay);
 }
+/* Die Exportmeldung bleibt neben den Eigenschaften einschließlich Schließen bedienbar. */
+.arbeitszeile:has(> .eigenschaften-panel.ist-ueberlagert) .export-rueckmeldung {
+  right: calc(var(--breite-overlay) + var(--abstand-16));
+}
+.export-rueckmeldung > .sl-knopf {
+  flex-shrink: 0;
+}
 .canvas-werkzeuge {
   container-type: inline-size;
   overflow: visible;

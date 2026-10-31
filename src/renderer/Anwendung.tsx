@@ -149,15 +149,12 @@ export function Anwendung() {
   const [einstellungen, setEinstellungen] = useState(vorgaben);
   const einstellungenRef = useRef(vorgaben);
   const [eigenschaftenOffen, setEigenschaftenOffen] = useState(false);
-  const [vorschauOffen, setVorschauOffen] = useState(false);
   const [hinweiseOffen, setHinweiseOffen] = useState(false);
   const [pruefungAngefordert, setPruefungAngefordert] = useState(false);
   const [beruehrt, setBeruehrt] = useState<Set<string>>(new Set());
   const [platzierung, setPlatzierung] = useState<PlatzierungsAuftrag | null>(null);
   const [ziele, setZiele] = useState<Einfuegestelle[]>([]);
   const [breite, setBreite] = useState(window.innerWidth);
-  const [codeHoehe, setCodeHoehe] = useState(240);
-  const [codeUmbruch, setCodeUmbruch] = useState(false);
   const [status, setStatus] = useState('Füge links einen Baustein hinzu.');
   const [statusArt, setStatusArt] = useState<'neutral' | 'erfolg' | 'hinweis' | 'fehler'>('neutral');
   const [meldungsNummer, setMeldungsNummer] = useState(0);
@@ -765,7 +762,6 @@ export function Anwendung() {
   }, [test.phase]);
   async function testStarten(direkt = false) {
     if (testAnfrage.current || testSperre.current || busy.current) return;
-    setVorschauOffen(false);
     setExportiert(null);
     fehlerSchliessen();
     let stand: Projekt;
@@ -1027,7 +1023,14 @@ export function Anwendung() {
       return;
     }
     if (art === 'loeschen') {
-      b.dispose(true);
+      if (!b.isDeletable()) return;
+      const gruppe = Blockly.Events.getGroup();
+      if (!gruppe) Blockly.Events.setGroup(true);
+      try {
+        b.dispose(true);
+      } finally {
+        Blockly.Events.setGroup(gruppe);
+      }
       auswaehlen(null);
       melden('Baustein gelöscht. Rückgängig stellt ihn wieder her.', 'erfolg');
       return;
@@ -1080,14 +1083,23 @@ export function Anwendung() {
       }
     };
     ws.addChangeListener(aenderung);
-    const groesse = new ResizeObserver(() => {
+    let groessenAbgleich = 0;
+    const groesseAbgleichen = () => {
+      cancelAnimationFrame(groessenAbgleich);
       if (!editorSichtbar.current || arbeitsbereichRef.current !== 'ablauf') return;
+      // Palettenblöcke liegen während des Ziehens vorübergehend außerhalb des Canvas.
+      // svgResize würde daraus neue Scrollgrenzen bilden und den Ablauf verschieben.
+      if (ws.getTopBlocks(false).some((block) => block.isDragging())) {
+        groessenAbgleich = requestAnimationFrame(groesseAbgleichen);
+        return;
+      }
       const x = ws.scrollX,
         y = ws.scrollY;
       Blockly.svgResize(ws);
       // Ein Layoutabgleich ist keine Navigation und darf ein offenes Eingabefeld nicht schließen.
       ws.scroll(x, y, false);
-    });
+    };
+    const groesse = new ResizeObserver(groesseAbgleichen);
     groesse.observe(element.current!);
     const navigation = editorNavigationEinrichten(ws, {
       paletteFokussieren: () => document.querySelector<HTMLElement>('[data-testid="palette"] input')?.focus(),
@@ -1105,6 +1117,7 @@ export function Anwendung() {
       parameterAbmelden();
       navigation();
       groesse.disconnect();
+      cancelAnimationFrame(groessenAbgleich);
       ablaufverbindungenVorLadenTrennen(ws);
       ws.dispose();
     };
@@ -1290,18 +1303,6 @@ export function Anwendung() {
     window.addEventListener('pointermove', bewegen);
     window.addEventListener('pointerup', ende, { once: true });
   }
-  function codeGroesseStarten(event: React.PointerEvent) {
-    const start = event.clientY,
-      anfang = codeHoehe;
-    const bewegen = (e: PointerEvent) =>
-      setCodeHoehe(Math.max(140, Math.min(window.innerHeight * 0.65, anfang + start - e.clientY)));
-    const ende = () => {
-      window.removeEventListener('pointermove', bewegen);
-      window.removeEventListener('pointerup', ende);
-    };
-    window.addEventListener('pointermove', bewegen);
-    window.addEventListener('pointerup', ende, { once: true });
-  }
   const verschieben = (dx: number, dy: number) => {
     const ws = wsRef.current;
     if (ws) ws.scroll(ws.scrollX + dx, ws.scrollY + dy);
@@ -1381,13 +1382,6 @@ export function Anwendung() {
                     : 'Noch nicht als Datei gespeichert'}
               </p>
             </div>
-            <span
-              className="skriptsprache-kennzeichen"
-              data-testid="editor-sprache"
-              aria-label="Skriptsprache des Workflows"
-            >
-              {sprache.bezeichnung}
-            </span>
             <nav ref={laufAktionen} tabIndex={-1} className="workflow-aktionen" aria-label="Projektaktionen">
               <Knopf
                 symbol="speichern"
@@ -1523,6 +1517,24 @@ export function Anwendung() {
                       onClick={() => wsRef.current && void verlaufAendern(wsRef.current, true)}
                     />
                   </div>
+                  <Knopf
+                    variante="leise"
+                    symbol="loeschen"
+                    aria-label="Baustein löschen"
+                    title="Ausgewählten Baustein löschen (Entf)"
+                    disabled={
+                      testAktiv(test.phase) ||
+                      !auswahl ||
+                      !wsRef.current?.getBlockById(auswahl)?.isDeletable()
+                    }
+                    grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'loeschen-auswahl-hinweis'}
+                    onClick={() => blockAktion('loeschen')}
+                  >
+                    Löschen
+                  </Knopf>
+                  <span id="loeschen-auswahl-hinweis" className="sl-nur-vorlesen">
+                    Wähle einen löschbaren Baustein aus. „Workflow starten“ bleibt erhalten.
+                  </span>
                   <div className="knopfgruppe ansichtknopfgruppe">
                     <Knopf
                       variante="leise"
@@ -1543,19 +1555,9 @@ export function Anwendung() {
                 symbol="unten"
                 eintraege={[
                   {
-                    text: vorschauOffen ? 'Codevorschau schließen' : 'Codevorschau öffnen',
-                    symbol: 'code',
-                    aktion: () => {
-                      setArbeitsbereich('ablauf');
-                      setVorschauOffen(!vorschauOffen);
-                    },
-                  },
-
-                  {
                     text: 'Ansicht zurücksetzen',
                     aktion: () => {
                       setEigenschaftenOffen(false);
-                      setVorschauOffen(false);
                       setHinweiseOffen(false);
                       void einstellungenSetzen({
                         ...einstellungenRef.current,
@@ -1787,76 +1789,6 @@ export function Anwendung() {
                     </section>
                   )}
                 </div>
-                {vorschauOffen && (
-                  <section
-                    className="code-panel"
-                    data-testid="code-panel"
-                    aria-label={sprache.vorschauTitel}
-                    style={{ height: codeHoehe }}
-                  >
-                    <div
-                      role="separator"
-                      className="code-trenner"
-                      tabIndex={0}
-                      aria-label="Höhe der Codevorschau"
-                      aria-orientation="horizontal"
-                      aria-valuemin={140}
-                      aria-valuemax={Math.floor(window.innerHeight * 0.65)}
-                      aria-valuenow={Math.round(codeHoehe)}
-                      onPointerDown={codeGroesseStarten}
-                      onKeyDown={(e) => {
-                        if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
-                          e.preventDefault();
-                          setCodeHoehe((h) =>
-                            Math.max(
-                              140,
-                              Math.min(window.innerHeight * 0.65, h + (e.key === 'ArrowUp' ? 24 : -24)),
-                            ),
-                          );
-                        }
-                      }}
-                    />
-                    <header className="panel-kopf">
-                      <h2>{sprache.vorschauTitel}</h2>
-                      <div className="knopfgruppe">
-                        <Knopf
-                          variante="leise"
-                          symbol="oben"
-                          aria-label="Codevorschau vergrößern"
-                          onClick={() => setCodeHoehe((h) => Math.min(window.innerHeight * 0.65, h + 48))}
-                        />
-                        <Knopf
-                          variante="leise"
-                          symbol="unten"
-                          aria-label="Codevorschau verkleinern"
-                          onClick={() => setCodeHoehe((h) => Math.max(140, h - 48))}
-                        />
-                        <Knopf
-                          variante="leise"
-                          aria-pressed={codeUmbruch}
-                          onClick={() => setCodeUmbruch(!codeUmbruch)}
-                        >
-                          Zeilen umbrechen
-                        </Knopf>
-                        <Knopf
-                          variante="leise"
-                          symbol="schliessen"
-                          aria-label="Codevorschau schließen"
-                          onClick={() => setVorschauOffen(false)}
-                        />
-                      </div>
-                    </header>
-                    <p className="code-hinweis">Schreibgeschützt. Diese Vorschau führt keine Aktionen aus.</p>
-                    <pre
-                      tabIndex={0}
-                      className={`code ${codeUmbruch ? 'mit-umbruch' : ''}`}
-                      aria-label={`Schreibgeschützter ${sprache.vorschauTitel}`}
-                    >
-                      {ergebnis.code ??
-                        "' Vervollständige den Entwurf. Die Hinweise erklären fehlende Verbindungen."}
-                    </pre>
-                  </section>
-                )}
                 {hinweiseOffen && (
                   <section
                     className="hinweise-panel"

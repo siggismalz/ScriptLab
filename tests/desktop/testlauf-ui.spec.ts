@@ -136,6 +136,7 @@ async function textgroesseSetzen(seite: Page, prozent: 100 | 200): Promise<void>
     .getByRole('button', { name: 'Einstellungen', exact: true })
     .click();
   const dialog = seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
+  await dialog.getByRole('tab', { name: 'Aussehen', exact: true }).click();
   await dialog
     .getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })
     .selectOption({ label: `${prozent} %` });
@@ -185,7 +186,7 @@ for (const textgroesse of [100, 200] as const) {
       const panelhoehe = await panel.evaluate((element) => element.getBoundingClientRect().height);
       expect(panelhoehe).toBeGreaterThanOrEqual(200);
 
-      await panel.getByText('ScriptLab-Arbeitsordner', { exact: true }).click();
+      await panel.getByText('Arbeitsordner', { exact: true }).click();
       await expect(panel.locator('.lauf-ordnerpfad')).toHaveText(s.basis);
       const zeitlimit = panel.getByLabel('Zeitlimit in Sekunden', { exact: true });
       await feldEinblenden(zeitlimit);
@@ -215,27 +216,22 @@ for (const textgroesse of [100, 200] as const) {
         });
         throw fehler;
       }
-      await expect(panel.getByRole('tab', { name: 'Übersicht', exact: true })).toHaveAttribute(
-        'aria-selected',
-        'true',
-      );
-      await expect(panel.getByRole('tabpanel', { name: 'Übersicht', exact: true })).toContainText(
-        'Standkennung',
-      );
-
-      // Tastatur ersetzt die alte geteilte Panelgeometrie: Haupt- und Detailansicht bleiben getrennt.
-      const uebersicht = panel.getByRole('tab', { name: 'Übersicht', exact: true });
-      await uebersicht.focus();
-      await uebersicht.press('End');
-      await expect(panel.getByRole('tab', { name: 'Protokoll', exact: true })).toBeFocused();
-      await expect(panel.getByRole('tab', { name: 'Protokoll', exact: true })).toHaveAttribute(
-        'aria-selected',
-        'true',
-      );
-      await expect(panel.getByRole('tabpanel', { name: 'Vorbereitung', exact: true })).not.toBeVisible();
-      const ausgabe = panel.getByRole('log', { name: 'Laufprotokoll', exact: true });
+      await expect(panel.getByRole('heading', { name: 'Ergebnis', exact: true })).toBeVisible();
+      await expect(panel.getByRole('tablist')).toHaveCount(0);
+      await expect(panel.getByRole('region', { name: 'Laufeinstellungen', exact: true })).not.toBeVisible();
+      await expect(panel.getByText('Standkennung', { exact: true })).toHaveCount(0);
+      // Ausgaben stehen direkt im Ergebnis; ihre Weitergabe bleibt per Tastatur erreichbar.
+      const ausgabe = panel.getByRole('log', { name: 'Laufausgabe', exact: true });
       await expect(ausgabe).toHaveText(`${testtext}\r\n`);
       await ausgabe.scrollIntoViewIfNeeded();
+      await ausgabe.focus();
+      await expect(ausgabe).toBeFocused();
+      await ausgabe.press('Tab');
+      const weitergeben = panel.locator('summary', { hasText: 'Ergebnis weitergeben' });
+      await expect(weitergeben).toBeFocused();
+      await weitergeben.press('Enter');
+      await expect(panel.getByRole('button', { name: 'Laufbericht speichern', exact: true })).toBeVisible();
+      await weitergeben.press('Enter');
       const innen = panel.locator('.testbereich-inhalt');
       const scrollen = await innen.evaluate((element) => ({
         hoehe: element.clientHeight,
@@ -267,7 +263,7 @@ for (const textgroesse of [100, 200] as const) {
         await expect.poll(() => innen.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
       }
       const vorbereitenKnopf = await knopfImFenster(
-        panel.getByRole('button', { name: 'Neuen Lauf vorbereiten', exact: true }),
+        panel.getByRole('button', { name: 'Laufeinstellungen', exact: true }),
       );
       const exportKnopf = await knopfImFenster(
         seite.getByRole('button', { name: 'Exportieren', exact: true }),

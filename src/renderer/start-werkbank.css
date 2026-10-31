@@ -1,4 +1,4 @@
-/* Zeilen für lokale Arbeit. Inhalts- und Kartenregeln: startbereich.css. */
+/* Namen und direkte Aktionen zuerst; Dateiangaben bleiben bei Bedarf erreichbar. */
 .start-liste {
   display: flex;
   flex-direction: column;
@@ -11,7 +11,7 @@
 .start-workflowzeile {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) 104px 176px 160px minmax(176px, max-content);
+  grid-template-columns: minmax(180px, 1fr) 160px minmax(300px, max-content);
   align-items: center;
   column-gap: var(--abstand-16);
   padding-inline: var(--abstand-12);
@@ -28,6 +28,9 @@
 .start-workflowname {
   padding-inline-start: var(--abstand-32);
 }
+.start-listenkopf > span:last-child {
+  text-align: end;
+}
 .start-workflowzeile {
   row-gap: var(--abstand-4);
   min-block-size: 64px;
@@ -43,6 +46,8 @@
 }
 .start-workflowname {
   min-inline-size: 0;
+  grid-column: 1;
+  grid-row: 1;
 }
 .start-workflowname h3 {
   margin: 0;
@@ -56,9 +61,9 @@
 .start-workflowzeile.ist-ausgewaehlt .start-workflowname h3 {
   font-weight: var(--gewicht-semibold);
 }
-.start-workflowsprache,
-.start-workflowdatum,
-.start-dateistatus {
+.start-workflowdatum {
+  grid-column: 2;
+  grid-row: 1 / 3;
   color: var(--farbe-text-sekundaer);
   overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
@@ -67,6 +72,12 @@
   display: inline-flex;
   align-items: center;
   gap: var(--abstand-8);
+  color: var(--farbe-text-sekundaer);
+}
+.start-workflowzeile > .start-dateistatus {
+  grid-column: 1;
+  grid-row: 2;
+  padding-inline-start: var(--abstand-32);
 }
 .start-dateistatus .sl-symbol {
   flex-shrink: 0;
@@ -79,6 +90,13 @@
   color: var(--farbe-hinweis);
 }
 .start-zeilen-hauptaktion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: end;
+  gap: var(--abstand-8);
+  grid-column: 3;
+  grid-row: 1 / 3;
   justify-self: end;
   max-inline-size: 100%;
 }
@@ -146,7 +164,7 @@
 }
 .start-entwurf-kopf {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px minmax(180px, 240px);
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
   align-items: start;
   gap: var(--abstand-8) var(--abstand-16);
 }
@@ -176,75 +194,65 @@
   gap: var(--abstand-12);
   padding-block: var(--abstand-8);
 }
-@container startinhalt (max-width:960px) {
-  .start-listenkopf,
-  .start-workflowzeile {
-    grid-template-columns: minmax(0, 1fr) 96px 160px minmax(176px, max-content);
-    gap: var(--abstand-8) var(--abstand-12);
-  }
-  .start-listenkopf > span:nth-child(4) {
-    display: none;
-  }
-  .start-workflowdatum {
-    grid-column: 1;
-    padding-inline-start: var(--abstand-32);
-    font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
-  }
-  .start-zeilen-hauptaktion {
-    grid-column: 4;
-    grid-row: 1 / 3;
-  }
-  .start-entwurf-kopf {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .start-entwurf-kopf > .start-metadaten {
-    grid-column: 1 / -1;
-  }
+.start-entwurfzeile .start-loeschhinweis {
+  margin: 0;
 }
-@container startinhalt (max-width:700px) {
+@container startinhalt (max-width:960px) {
   .start-listenkopf {
     display: none;
   }
   .start-workflowzeile {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(200px, max-content);
   }
-  .start-workflowname {
-    grid-column: 1 / -1;
-  }
-  .start-workflowsprache,
-  .start-workflowdatum,
-  .start-workflowzeile > .start-dateistatus {
+  .start-workflowdatum {
     grid-column: 1;
+    grid-row: 3;
     padding-inline-start: var(--abstand-32);
+    font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
   }
   .start-zeilen-hauptaktion {
     grid-column: 2;
-    grid-row: 2 / 5;
+    grid-row: 1 / 4;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+@container startinhalt (max-width:700px) {
+  .start-workflowzeile {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .start-zeilen-hauptaktion {
+    grid-column: 1;
+    grid-row: 4;
+    justify-self: start;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-inline-start: var(--abstand-32);
   }
   .start-entwurf-kopf {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-.anwendung[style*='--text-skala: 2'] .start-listenkopf {
+.anwendung[data-grosser-text='true'] .start-listenkopf {
   display: none;
 }
-.anwendung[style*='--text-skala: 2'] .start-workflowzeile {
-  grid-template-columns: minmax(0, 1fr) auto;
+.anwendung[data-grosser-text='true'] .start-workflowzeile {
+  grid-template-columns: minmax(0, 1fr);
 }
-.anwendung[style*='--text-skala: 2'] .start-workflowname {
-  grid-column: 1 / -1;
-}
-.anwendung[style*='--text-skala: 2'] .start-workflowsprache,
-.anwendung[style*='--text-skala: 2'] .start-workflowdatum,
-.anwendung[style*='--text-skala: 2'] .start-workflowzeile > .start-dateistatus {
+.anwendung[data-grosser-text='true'] .start-workflowdatum {
   grid-column: 1;
+  grid-row: 3;
   padding-inline-start: var(--abstand-32);
 }
-.anwendung[style*='--text-skala: 2'] .start-zeilen-hauptaktion {
-  grid-column: 2;
-  grid-row: 2 / 5;
+.anwendung[data-grosser-text='true'] .start-zeilen-hauptaktion {
+  grid-column: 1;
+  grid-row: 4;
+  justify-self: start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding-inline-start: var(--abstand-32);
 }
-.anwendung[style*='--text-skala: 2'] .start-entwurf-kopf {
+.anwendung[data-grosser-text='true'] .start-entwurf-kopf {
   grid-template-columns: minmax(0, 1fr);
 }
 @media (forced-colors: active) {
@@ -253,7 +261,6 @@
     border-color: Highlight;
   }
   .start-dateistatus,
-  .start-workflowsprache,
   .start-workflowdatum,
   .start-fehlertext {
     color: CanvasText;

@@ -305,13 +305,11 @@ for (const [darstellung, textSkalierung] of [
         prozess: vorNavigation.prozessId,
       });
       await suche.fill('');
-      const herkunft = panel.locator('details').filter({ hasText: 'Herkunft und Laufstand' });
-      await herkunft.locator('summary').click();
-      await expect(herkunft).toContainText(richtig.laufId!);
-      await expect(herkunft).toContainText(richtig.standHash!);
-      await expect(herkunft).toContainText(basis);
-      await expect(herkunft).toContainText('Höchstens 200 Zeilen und 256 KiB');
-      await expect(herkunft).toContainText('Gesamtzahl der Quelldaten unbekannt');
+      await expect(panel.getByText('Herkunft und Laufstand', { exact: true })).toHaveCount(0);
+      await expect(panel).not.toContainText(richtig.laufId!);
+      await expect(panel).not.toContainText(richtig.standHash!);
+      await expect(panel).toContainText('Vorschauzeilen geladen');
+      expect(richtig.standHash).toBeTruthy();
       expect(await readFile(quelle)).toEqual(originalquelle);
       expect(await readFile(ausgabe)).toEqual(originalausgabe);
       expect(await readFile(datei)).toEqual(originalprojekt);

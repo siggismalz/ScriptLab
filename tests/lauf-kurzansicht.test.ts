@@ -42,7 +42,7 @@ describe('Laufanzeige unmittelbar am Editor', () => {
     expect(html).toContain('aria-label="Aktueller Lauf"');
     expect(html).toContain(titel);
     expect(html).toContain('Eingang.csv wurde geprüft.');
-    expect(html).toContain('Laufdetails');
+    expect(html).toContain('Ergebnis ansehen');
     expect(html).not.toContain('Workflow ausführen');
     expect(html).not.toContain('>Stoppen<');
     expect(html).not.toContain('erfolgreich');
@@ -59,7 +59,7 @@ describe('Laufanzeige unmittelbar am Editor', () => {
     expect(html).toContain('role="alert"');
     expect(html).toContain('Wähle eine vorhandene Quelldatei.');
     expect(html).toContain('Baustein prüfen');
-    expect(html).toContain('Laufdetails');
+    expect(html).toContain('Ergebnis ansehen');
     expect(anzeigen({ phase: 'fehlgeschlagen' })).not.toContain('Baustein prüfen');
   });
 
@@ -69,7 +69,7 @@ describe('Laufanzeige unmittelbar am Editor', () => {
     expect(html).toContain('Die Bausteinzuordnung ist für den früheren Stand nicht verfügbar.');
     const knoepfe = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)!;
     expect(knoepfe.find((knopf) => knopf.includes('Baustein prüfen'))).toContain('disabled=""');
-    expect(knoepfe.find((knopf) => knopf.includes('Laufdetails'))).not.toContain('disabled=""');
+    expect(knoepfe.find((knopf) => knopf.includes('Ergebnis ansehen'))).not.toContain('disabled=""');
   });
 
   it.each([
@@ -149,7 +149,7 @@ describe('Laufanzeige unmittelbar am Editor', () => {
     expect(html).toContain('Die Ausgabe wurde begrenzt.');
     const begrenzt = anzeigen({ phase: 'beendet', ausgabe: 'Letzte Meldung', abgeschnitteneZeichen: 4000 });
     expect(begrenzt).toContain('Letzte Meldung');
-    expect(begrenzt).toContain('der verfügbare Verlauf');
+    expect(begrenzt).toContain('die gespeicherten Ausgaben');
     expect(begrenzt).not.toContain('vollständig');
     expect(anzeigen({ phase: 'laeuft', ausgabe: 'Kurze Ausgabe' })).not.toContain('Ausgabe wurde begrenzt');
   });

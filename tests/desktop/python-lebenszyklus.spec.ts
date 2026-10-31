@@ -173,7 +173,7 @@ async function runtimePruefen(s: Sitzung): Promise<PythonInstallation> {
 async function testVorbereiten(s: Sitzung, sekunden = 10): Promise<void> {
   await laufansichtWaehlen(s.seite, 'Vorbereitung');
   const panel = s.seite.getByTestId('test-panel');
-  await panel.getByText('ScriptLab-Arbeitsordner', { exact: true }).click();
+  await panel.getByText('Arbeitsordner', { exact: true }).click();
   await expect(panel.locator('.lauf-ordnerpfad')).toHaveText(s.basis);
   await zeitlimitSetzen(s, sekunden);
 }
@@ -272,7 +272,7 @@ test('Python-Entwurf überlebt den Appneustart und wird nur bewusst ohne automat
     expect(danach.entwurfStatus.id).toBe(vorher.entwurfStatus.id);
     expect(danach.geaendert).toBe(true);
     expect(await zustand(s)).toMatchObject({ phase: 'bereit', laufId: null, ausgabe: '' });
-    await expect(s.seite.getByTestId('editor-sprache')).toHaveText('Python');
+    expect((await dokument(s)).projekt.skriptsprache).toBe('python');
   } finally {
     await beenden(s);
   }
@@ -343,7 +343,7 @@ test('Python testet den aktuellen ungespeicherten Editorstand und erhält die ge
     expect((await dokument(s)).geaendert).toBe(true);
     await laufansichtWaehlen(s.seite, 'Protokoll');
     await expect(
-      s.seite.getByTestId('test-panel').getByRole('log', { name: 'Laufprotokoll', exact: true }),
+      s.seite.getByTestId('test-panel').getByRole('log', { name: 'Laufausgabe', exact: true }),
     ).toContainText('AKTUELLER UNGESPEICHERTER PYTHON-TEXT ä 😀');
     await expect(s.seite.getByLabel('Projektstatus', { exact: true })).toHaveText(
       'Ungespeicherte Änderungen',

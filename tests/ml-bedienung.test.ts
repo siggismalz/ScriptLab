@@ -43,11 +43,11 @@ describe('ML-Bedienung ohne unbeabsichtigte Einrichtung', () => {
       }),
     );
     expect(html.match(/type="radio"/g)).toHaveLength(3);
-    expect(html).toContain('aria-label="Python"');
-    expect(html).toContain('aria-label="VBScript (VBS)"');
+    expect(html).toContain('aria-label="Automatisierung"');
+    expect(html).toContain('aria-label="Windows-Automatisierung"');
     expect(html).toContain('aria-label="Machine Learning"');
-    expect(html).toContain('ohne eingerichtetes ML-Paket');
-    expect(html).toContain('Wähle zuerst Python, VBScript (VBS) oder Machine Learning.');
+    expect(html).toContain('Zusätzliche Komponenten lassen sich bei Bedarf in den Einstellungen einrichten.');
+    expect(html).toContain('Wähle eine der drei Aufgabenarten.');
     expect(html).not.toContain('checked=""');
     expect(aktion).not.toHaveBeenCalled();
   });
@@ -86,10 +86,10 @@ describe('ML-Bedienung ohne unbeabsichtigte Einrichtung', () => {
     const html = renderToStaticMarkup(
       createElement(MlLaufzeit, { status, aktiv: false, fortschritt: null, aktion }),
     );
-    expect(html).toContain('Das optionale CPU-Paket fehlt.');
-    expect(html).toContain('CPU-Paket online einrichten');
-    expect(html).toContain('Offline-Paketordner verwenden');
-    expect(html).toContain('Bearbeiten, Speichern und Exportieren möglich');
+    expect(html).toContain('Noch nicht eingerichtet.');
+    expect(html).toContain('Online einrichten');
+    expect(html).toContain('Aus Ordner einrichten');
+    expect(html).toContain('Bearbeiten, Speichern und Exportieren sind auch ohne Einrichtung möglich');
     expect(html).not.toContain('Vorgang abbrechen');
     expect(aktion).not.toHaveBeenCalled();
   });

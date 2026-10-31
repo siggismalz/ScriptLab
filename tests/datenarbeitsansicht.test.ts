@@ -156,14 +156,14 @@ describe('Datenansicht mit bestehender Ausführungsgrenze', () => {
     expect(aenderungen).toBe(0);
     expect(laeufe).toBe(0);
   });
-  it('behält Fehler, Begrenzung und Laufherkunft und behauptet bei veraltetem Ergebnis keinen CSV-Befund', () => {
+  it('behält Fehler und Begrenzung ohne technische Kennungen und behauptet bei veraltetem Ergebnis keinen CSV-Befund', () => {
     const { html } = ansicht({ veraltet: true, fehler: true, gekuerzt: true });
     expect(html).toContain('Workflow oder verwendete Parameter wurden seit dieser Vorschau geändert');
     expect(html).toContain('Die Quelle konnte nicht gelesen werden. Prüfe den Dateipfad.');
     expect(html).toContain('Der Ausschnitt wurde begrenzt');
-    expect(html).toContain('Höchstens 200 Zeilen und 256 KiB');
-    expect(html).toContain('lauf-datenansicht');
-    expect(html).toContain('C:\\Synthetische Daten\\Langer Arbeitsordner');
+    expect(html).not.toContain('256 KiB');
+    expect(html).not.toContain('lauf-datenansicht');
+    expect(html).not.toContain('C:\\Synthetische Daten\\Langer Arbeitsordner');
     expect(html).not.toContain('Trennzeichen prüfen');
   });
   it('ordnet Seitenwechsel nach den Daten ein und beschreibt deaktivierte Knöpfe ohne Zusatzabsatz', () => {

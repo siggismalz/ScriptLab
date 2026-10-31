@@ -1,90 +1,81 @@
 # Geschäftsabläufe mit ScriptLab
 
-ScriptLab unterstützt Windows 11 x64. Python ist die empfohlene Sprache für Tabellen, Dokumente und umfangreichere Dateiabläufe. Der aktuelle Katalog enthält 47 zusätzliche Python-Business-Bausteintypen. Die 48 gemeinsamen Grundbausteine bleiben in Python und VBS erhalten; ein bestehendes VBS-Projekt wird nicht automatisch umgestellt.
-
-## Mitgelieferte Komponenten
-
-ScriptLab liefert reguläres CPython 3.15.2 x64 einschließlich Tcl/Tk sowie die elf festgelegten Business-Pakete vollständig offline mit. Für Daten- und Dokumentabläufe innerhalb der Anwendung ist keine zusätzliche Python-Installation oder Paket-Einrichtung erforderlich. Der feste Satz umfasst DuckDB, openpyxl, python-docx, ReportLab, pypdf und deren festgelegte Abhängigkeiten.
-
-Unter **Einstellungen → Laufzeit** stehen nur der tatsächliche Komponentenstatus, **Erneut prüfen** und lesbare technische Angaben. Eine Interpreterwahl oder Online-/Offline-Installation gehört nicht mehr zur normalen Bedienung. Ein beschädigter oder fehlender Bestandteil wird als Fehler gemeldet. Ein Workflowstart lädt und installiert nichts.
-
-Herkunft und Beilagen beschreibt [python-herkunft.md](../laufzeit/python-herkunft.md). Die älteren Nachweise der manuellen Einrichtung in [BUSINESS-LAUFZEIT.md](BUSINESS-LAUFZEIT.md) gehören zu ihrem damaligen Stand. Exportierte Scripts und Business-Pakete benötigen beim Empfänger weiterhin eine eigene passende Python-Umgebung.
+Wähle **Neuer Workflow → Automatisierung** für Tabellen, Dokumente und Dateiabläufe. ScriptLab enthält die dafür benötigte Python-Umgebung und die festen Business-Komponenten. Vorhandene Windows-Automatisierungen verwenden weiterhin VBS; ihre Projektzuordnung wird nicht umgestellt. Entwickelt von Leon Stolz; maßgeblich ist [LICENSE.txt](../LICENSE.txt).
 
 ## Mit einem Beispiel beginnen
 
-Auf der Startseite **Beispielworkflows** öffnen und eine Python-Business-Vorlage mit **Als Vorlage verwenden** übernehmen. ScriptLab erzeugt eine neue Projektkennung und kopiert die mitgelieferten synthetischen Beispieldaten in den Arbeitsordner dieses Workflows. Die Pfadparameter bleiben daran gebunden, auch beim Speichern, erneuten Öffnen und Wiederherstellen eines Entwurfs. Das Öffnen startet keine Verarbeitung. **Speichern** sichert den Workflow intern ohne Zielauswahl.
+1. Öffne **Vorlagen** und wähle einen passenden Beispielworkflow.
+2. Prüfe Aufgabe und enthaltene Beispieldateien. **Als Vorlage öffnen** erstellt eine eigene bearbeitbare Kopie; die Originalvorlage bleibt erhalten.
+3. Bearbeite Bausteine und die Angaben unter **Daten und Parameter**. Die mitgelieferten synthetischen Daten liegen im eigenen Arbeitsordner.
+4. **Speichern** behält den Workflow intern. **Workflow ausführen** startet den aktuellen Stand; **Ergebnis ansehen** öffnet das zugehörige Ergebnis.
 
-| Beispiel                                                                                 | Ablauf und erwartetes Ergebnis                                                                                                                                   |
-| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Monatliche Auswertung](../beispiele/business/A-Monatsauswertung/README.md)              | Oktober auswählen, nach Region zusammenfassen und XLSX/PDF schreiben: Nord 150, Süd 80, insgesamt 230.                                                           |
-| [Bestellungen mit Stammdaten ergänzen](../beispiele/business/B-Bestellungen/README.md)   | Kundennummern zuordnen: drei gültige Zuordnungen, K9 als offener Fehler, zugeordnet insgesamt 85. Doppelte Stammschlüssel werden nicht zufällig aufgelöst.       |
-| [Bestellvorschlag als Word-Dokument](../beispiele/business/C-Bestellvorschlag/README.md) | Unterbestände aus XLSX ermitteln, zwei Positionen für Lieferant S1 in eine Vorlage einsetzen: 15 und 12, insgesamt 27. Es wird keine echte Bestellung versendet. |
-| [Dokumenteingang geordnet ablegen](../beispiele/business/D-Dokumenteingang/README.md)    | Zwei PDF-Textbelege als Kopien nach Monat ablegen; für den Raster-Scan einen Hinweis ausgeben. Alle Originale bleiben erhalten.                                  |
-| [Dateistapel verarbeiten und fortsetzen](../beispiele/business/E-Dateistapel/README.md)  | Gültige CSVs vollständig ausgeben und erst nach bestätigtem Ergebnis archivieren. Die fehlerhafte Quelle bleibt erhalten.                                        |
+Die vorhandenen [Monatsauswertung](../beispiele/business/A-Monatsauswertung/README.md), [Stammdatenzuordnung](../beispiele/business/B-Bestellungen/README.md), [Word-Bestellvorschlag](../beispiele/business/C-Bestellvorschlag/README.md), [Dokumentablage](../beispiele/business/D-Dokumenteingang/README.md) und [Dateistapelverarbeitung](../beispiele/business/E-Dateistapel/README.md) beschreiben ihre synthetischen Daten und Sollwerte. Ein Bestellvorschlag versendet keine Bestellung. Die zwei Modellvorlagen erläutert [ML.md](ML.md).
 
-Die Namen **Testdaten** und **Echte Daten** bezeichnen Parametersätze, keine Sicherheitsbereiche. Für produktive Dateien müssen Quellen und Konfliktregeln bewusst geprüft werden. Relative Pfade verwenden den ScriptLab-Arbeitsordner. Externe Quellen bleiben lesbar; Ausgaben innerhalb von ScriptLab müssen im ScriptLab-Nutzerverzeichnis liegen. Absolute Ziele außerhalb werden abgewiesen, nicht umgeschrieben. Ein eigenständiger Export behält dagegen seine ursprüngliche Pfadsemantik.
+## Quellen, Parameter und Verbindungen
 
-## Parameter und Bausteine bearbeiten
+**Daten und Parameter → Quellen** bearbeitet dieselben Angaben wie die Eigenschaften des ausgewählten Bausteins. Tabellen werden als Ergebnis eines früheren passenden Bausteins zugeordnet. Eine bestehende Zuordnung bleibt beim Verschieben oder Wiederöffnen erhalten; eine ungültige Verbindung muss bewusst korrigiert werden.
 
-**Workflow → Workflowparameter** definiert Namen, verständliche Beschriftungen, Wertarten, Pflichtangaben, Standardwerte und kurze Hilfen. Dort keine Kennwörter, Tokens oder privaten Schlüssel speichern. Die Definitionen und bewusst gemerkten Parametersätze gehören zur `.scriptlab`-Datei in Schema 3.
+Quellen lassen sich über eine Dateiauswahl oder ein unterstütztes Pfadfeld setzen. Das Ablegen einer lokalen Datei übernimmt nur den Pfad. Ein an einen Parameter oder eine Variable gebundenes Feld wird dadurch nicht ersetzt.
 
-In den Eigenschaften eines Business-Bausteins lässt sich ein Feld mit einem Workflowparameter verbinden. Tabellen und Dokumente werden als **Ergebnis eines früheren Bausteins** ausgewählt. So verwendet beispielsweise **Tabelle als XLSX speichern** genau die vorher gefilterte Tabelle. Ein Verweis auf einen späteren oder unpassenden Baustein ist ein Strukturfehler. Freies SQL, Python und Shellbefehle sind keine Eingabeformate.
+**Workflow → Workflowparameter** definiert Namen, Beschriftungen, Wertarten, Pflichtangaben, Standardwerte und Hilfen. **Parameter** zeigt die Werte der Sätze Testdaten und Echte Daten. Beide sind nur Wertauswahlen, keine Sicherheitsbereiche. Leere Pflichtangaben werden erklärt. Kennwörter und private Schlüssel gehören nicht in das Projekt.
 
-CSV-Werte werden zunächst als Text eingelesen; führende Nullen bleiben erhalten. Zahlen, Datum und Geldbeträge benötigen eine ausdrückliche Typfestlegung. Ein exakter Dezimalbetrag wird als Text mit Dezimalpunkt angegeben, etwa `12.50`; ein Datum als `2026-10-27`. Bei Tabellenverknüpfungen Schlüssel und erwartete Zuordnung festlegen. Fehlende oder doppelte Stammschlüssel dürfen nicht unbemerkt Daten vervielfachen.
+Unter **Läufe → Laufeinstellungen** können Werte für den nächsten Lauf abweichen. Erst **Werte im Parametersatz merken** übernimmt sie in den Workflow; anschließend speichern, wenn sie erhalten bleiben sollen.
 
-Unter **Läufe → Vorbereitung** wird der gewählte Parametersatz geladen. Änderungen im Formular gelten für den nächsten Lauf. Erst **Werte im Parametersatz merken** übernimmt sie in das Projekt; anschließend den Workflow speichern, wenn diese Werte erhalten bleiben sollen. Quellen lassen sich in unterstützten Feldern nativ auswählen. Eine Parameterbindung zeigt ihren Kontext, statt einen Dateipfad vorzutäuschen.
+CSV-Werte werden zunächst als Text eingelesen, damit etwa `001` erhalten bleibt. Lege Datentypen für Berechnungen bewusst fest. Dezimalbeträge verwenden einen Punkt, beispielsweise `12.50`. Bei Verknüpfungen müssen Schlüssel und erwartete Zuordnung zu den Daten passen.
 
-## Ergebnis bis zu einem Tabellenschritt prüfen
+## Eine Tabelle vorab ansehen
 
-Öffne **Daten und Parameter → Datenvorschau**, wähle **Ergebnis bis zu diesem Schritt** und die **Verwendeten Werte**. **Datenvorschau laden** startet direkt in dieser Ansicht; eine vorherige Laufvorbereitung ist nicht erforderlich. Der Vorschauplan endet am gewählten Tabellenschritt. Unfertige Nachfolger müssen dafür nicht konfiguriert sein und werden im bearbeiteten Workflow nicht verändert.
+Öffne **Daten und Parameter → Vorschau**, wähle **Ergebnis bis zu diesem Schritt** und **Verwendete Werte**. Erst **Datenvorschau laden** liest die erforderlichen unterstützten Vorgänger. Unfertige spätere Schritte werden für diese Einzelvorschau nicht benötigt und nicht verändert.
 
-Diese Schrittvorschau unterstützt verbundene lesende Business-Tabellenschritte im Hauptablauf. Schleifen, Verzweigungen sowie aktive Grundbausteine oder Dateiaktionen im benötigten Vorlauf werden nicht als reine Einzelvorschau ausgeführt. Ein Hinweis am deaktivierten Start erklärt die Grenze. Die Tabelle bleibt lesend, begrenzt auf 200 Zeilen und 256 KiB; Filter oder Gruppierungen können dennoch die ganze Quelle lesen. Spaltenvorschläge stammen aus der passenden Vorschau der gewählten Eingabetabelle.
+Die lesende Tabelle zeigt höchstens 200 Zeilen und 256 KiB. Suche, Sortierung und Seitenwechsel betreffen nur diesen Ausschnitt. Filter und Gruppierungen können trotzdem die gesamte Quelle lesen. Die Vorschau unterstützt die vorhandenen lesenden Tabellenschritte im Hauptablauf; unpassende Vorläufe wie Dateiaktionen oder Verzweigungen erhalten einen Hinweis. Ein geänderter Vorlauf oder andere Parameter können die Anzeige veralten lassen.
 
-## Drei Modi unterscheiden
+Erscheinen CSV-Überschriften zusammen in einer Spalte, führt **Trennzeichen prüfen** zum bestehenden Importfeld. Prüfe dort das Zeichen und lade die Vorschau bewusst erneut. Es gibt keine automatische Umdeutung. Ergebnisschritt, geladener Umfang und Begrenzungshinweise bleiben bei der Tabelle sichtbar; geänderte Stände werden gekennzeichnet.
 
-| Modus                                         | Wirkung                                                                                                                                                                                                        |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Datenvorschau · nur begrenzte Daten lesen** | Liefert höchstens 200 Zeilen und 256 KiB an die Oberfläche. Filter, Sortierung oder Gruppierung können trotzdem die gesamte Quelle lesen. Dokument- und Dateiausgaben werden nur geplant.                      |
-| **Prüflauf ohne Zieländerungen**              | Prüft unterstützte Schritte, erzeugt erforderliche technische Zwischenfassungen und prüft geplante Ausgaben. Fachliche Eingaben und Ziele werden nicht verändert. Er ersetzt keinen erfolgreichen echten Lauf. |
-| **Ausführen · echte Dateiänderungen**         | Führt den vollständigen aktuellen Ablauf mit den angezeigten Parametern tatsächlich aus. Dateiänderungen, Archivierung und Dialoge sind echt.                                                                  |
+## Speicherort für Tabellenausgaben
 
-Die schreibgeschützte **Codevorschau** ist davon getrennt: Sie zeigt ausschließlich erzeugten Quelltext und liest keine Quelldateien. Die Strukturprüfung prüft Verbindungen, Angaben und unterstützte Operationen. Normale Grundbausteine mit Aktionen werden nicht heimlich als Business-Vorschau ausgeführt; ein solcher gemischter Ablauf benötigt einen bewussten echten Test.
+Die vorhandenen CSV-, XLSX-, JSON- und Parquet-Schreibbausteine können ohne eigenen Zielpfad verwendet werden. Lass **Speicherort (optional)** dafür als festen Wert leer:
 
-Für vollständige Business-Läufe ist **Prüflauf ohne Zieländerungen** vorausgewählt. Vor dem Start unter **Läufe → Vorbereitung** **Quellen und Ausgabeziele** aufklappen und kontrollieren:
+| Eingabe und Situation                                  | Automatisches Ziel                                             |
+| ------------------------------------------------------ | -------------------------------------------------------------- |
+| Eine eindeutige Dateiquelle `Umsatz.csv`, Ausgabe XLSX | `Umsatz.xlsx` im Workflow-Arbeitsordner                        |
+| Mehrere oder keine eindeutig benannte Dateiquelle      | `Auswertung` mit der gewählten Endung im Arbeitsordner         |
+| Das Ziel träfe den Originalpfad einer Quelle           | Basisname mit `-Ausgabe`, beispielsweise `Umsatz-Ausgabe.csv`  |
+| Der Zielname ist bereits belegt                        | Ein freier nummerierter Name, beispielsweise `Umsatz (2).xlsx` |
 
-1. Stimmt der Parametersatz, und sind alle Pflichtfelder ausgefüllt?
-2. Zeigen Quelle, Vorlage, Ausgabe und Archiv auf die gewünschten eigenen Ordner?
-3. Was geschieht bei vorhandenen Zielen: Fehler, Überspringen, neuer Name oder ausdrücklich gewähltes Ersetzen?
-4. Passen Zeitlimit, Datenumfang und freier Platz? Dynamisch ermittelte Dateinamen werden erst im betreffenden Schritt vollständig bekannt.
+Automatisches Speichern überschreibt keine vorhandene Datei, auch wenn am Baustein eine andere Konfliktregel gewählt ist. Das neue Ziel wird durch dieselbe Quellenprüfung und Publikation wie eine explizite Ausgabe geschützt. Der tatsächliche Dateiname steht anschließend im Ergebnis.
 
-Die Profile bieten 15 Sekunden für eine Vorschau, eine Minute für den Prüflauf, zwei Minuten für eine Kurzprüfung, zwei Stunden für einen Geschäftsablauf und acht Stunden für einen großen Stapel. Ein eigenes Zeitlimit ist von 1 bis 28.800 Sekunden möglich. Profilnamen ändern nicht den Modus: Das Profil **Geschäftsablauf** macht aus einer Datenvorschau keine echte Ausführung.
+Ein **expliziter Speicherort** bleibt unverändert und verwendet weiterhin die eingestellte Konfliktregel: Fehler, Überspringen, neuer Name oder bewusstes Ersetzen. Eine **leere gebundene Variable oder ein leerer Parameter** ist ein Fehler; nur das leere feste Pfadfeld wählt das automatische Ziel.
 
-Während eines Laufs sind inhaltliche Änderungen gesperrt. Der Lauf hält Workflowstand, Parameter, Arbeitsordner und verwendete Laufzeit fest. **Stoppen** wartet auf das Ende des zugehörigen Prozesses. Bereits bestätigte Dateiänderungen werden nicht rückgängig gemacht. Die Pfadprüfung und der Windows-Job sind keine allgemeine Dateisystem-Sandbox.
+In ScriptLab verwenden relative Pfade den Workflow-Arbeitsordner. Externe Quellen bleiben lesbar; Ausgaben müssen innerhalb des ScriptLab-Nutzerverzeichnisses liegen. Ziele außerhalb dieser Grenze werden nicht still umgeschrieben. Beim eigenständigen Export gelten weiterhin dessen eigene Pfade und Laufoptionen.
 
-## Ergebnisse, Berichte und Wiederaufnahme
+## Ausführen und den richtigen Lauf beurteilen
 
-**Alle Läufe** zeigt die gespeicherten Läufe des geöffneten Workflows. **Anzeigen** öffnet Übersicht, Ergebnisse und Protokoll eines konkreten Laufs. Ein Abschluss mit Teilfehlern ist kein uneingeschränkter Erfolg. Der Laufbericht enthält Workflowidentität, verwendete Parameter, Quellenfingerabdrücke, Ergebnisse, Fehler, Summen und Abschlussgrund. **Protokoll kopieren** und **Protokoll exportieren** beziehen sich auf den ausgewählten Lauf. Berichte und Journale bleiben lokal und werden nicht automatisch mit einem Projekt oder Business-Paket weitergegeben.
+**Workflow ausführen** startet den vollständigen aktuellen Workflow einschließlich ungespeicherter Änderungen. **Ergebnis ansehen** führt zur gemeinsamen Ergebnisfläche unter **Läufe**. Status, Ausgabedateien, Hinweise, Bericht und Ausgabe gehören zu diesem Lauf. **Verlauf anzeigen** öffnet gespeicherte Läufe; deren Auswahl startet nichts. Die Historie enthält keine zusätzliche Kopie jeder erzeugten Datei.
 
-Eine Ausgabe wird zunächst in einer eigenen Zwischenfassung geschrieben und geprüft. Erst dann wird sie entsprechend der Konfliktregel veröffentlicht. Das Journal bestätigt einzelne Vorgänge. Bei **Passendes früheres Journal bewusst fortsetzen** werden Workflow, Parameter, Quellen, bestätigte Ergebnisse und Laufzeitidentität erneut geprüft. Dazu gehören eigene Python-Module, Python-/Paketversionen und Vera-Schriftbytes; eine geänderte Laufzeit oder ein älteres Journal ohne diese Identität wird nicht automatisch fortgesetzt.
+**Laufeinstellungen** öffnet bei Bedarf Modus, Parametersatz, Quellen, Ziele und Grenzen für den nächsten Start. Prüfe vor echten Läufen die verwendeten Quellen und die Behandlung vorhandener Ziele.
 
-Ein unvollständiger oder unklarer Publikationsstand verlangt eine bewusste Prüfung der tatsächlichen Dateien. Das Journal bietet weder eine allgemeine Genau-einmal-Garantie noch eine gemeinsame Transaktion über alle Dateien oder einen Rollback. Bestätigte Teilergebnisse bleiben nach Abbruch erhalten. Journale über 16 MiB werden beim erneuten Einlesen abgewiesen; die Anwendung verkleinert oder löscht sie nicht heimlich, um einen Wiederanlauf zu erzwingen.
+| Modus                        | Wirkung                                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Datenvorschau                | Bewusstes Lesen mit begrenztem Ergebnisausschnitt; keine fachliche Dokument- oder Exportpublikation. |
+| Prüflauf ohne Zieländerungen | Unterstützte Schritte und geplante Ausgaben prüfen; technische Zwischenfassungen können entstehen.   |
+| Echte Ausführung             | Dateiänderungen, Dialoge und gegebenenfalls Archivierung tatsächlich durchführen.                    |
 
-## Eigenständig als Business-Paket exportieren
+Der direkte Hauptknopf ist echte Ausführung, auch wenn zuvor eine Vorschau oder ein Prüflauf verwendet wurde. Grundbausteine und VBS werden nicht als sicherer Prüflauf ausgegeben. **Stoppen** fordert das tatsächliche Prozessende an; bereits bestätigte Änderungen bleiben bestehen. Prüfe Dateien und fachliche Inhalte, bevor du einen Geschäftsprozess als vollständig erledigt ansiehst.
 
-**Business-Paket exportieren** prüft denselben Workflow erneut und zeigt die geplanten Paketdateien. Das ZIP enthält `workflow.py`, `scriptlab_business`, die festen Requirements, `parameter-beispiel.json`, eine Anleitung sowie die unveränderte Vera-Schrift und Lizenzhinweise. Es enthält keine Python-Grundinstallation und keine bereits installierte virtuelle Umgebung.
+Die vorhandene bewusste Fortsetzung prüft passende Journale, Workflow, Parameter, Quellen, bestätigte Ausgaben und Laufzeitidentität. Unklare Zustände verlangen eine Prüfung der tatsächlichen Dateien. Es gibt keine allgemeine automatische Rückabwicklung oder Garantie einer genau einmal erfolgten Verarbeitung.
 
-**Ressourcen auswählen** fügt ausdrücklich gewählte DOCX-/XLSX-Vorlagen, PNG-/JPEG-Bilder oder TTF-Schriften hinzu. Die passenden Parameterverweise werden auf die Paketkopien bezogen. Geschäftsdaten, Eingangsordner, Arbeitsberichte und Journale werden nicht automatisch mitgenommen. Rechte und vertrauliche Inhalte jeder gewählten Ressource vor Weitergabe prüfen. Eine Ressource darf höchstens 16 MiB, das Paket höchstens 64 MiB groß sein.
+## Einstellungen, Aufräumen und eigenständiger Export
 
-Beim Empfänger das ganze Paket entpacken, eine geeignete eigene Python-Umgebung bewusst mit dem festen Paketsatz vorbereiten und `parameter-beispiel.json` prüfen. Die beigefügte Anleitung enthält Online- und IT-Offlinebefehle sowie Prüflauf und Ausführung. Der Scriptstart installiert nichts. Relative Pfade beziehen sich standardmäßig auf den Scriptordner; `--basis` setzt einen ausdrücklichen Bezug. Unveränderte absolute Pfade bleiben auf ihren bisherigen Ort gerichtet und müssen für eine Weitergabe bewusst angepasst werden.
+Unter **Einstellungen → Automatisierungen** stehen die vorhandenen Komponenten und die ausdrückliche Einrichtung des zusätzlichen ML-Pakets. Öffnen und Starten eines Workflows installiert nichts. Farbschema und Textgröße stehen unter **Aussehen**, Aktualisierungen unter **Updates**.
 
-Ein gewöhnlicher Python-Workflow ohne Business-Bausteine bleibt eine einzelne `.py`-Datei. VBS bleibt `.vbs`; die optionale Authenticode-Signatur gilt ausschließlich für VBS. Ein Business-ZIP oder eine `.py`-Datei erhält kein erfundenes Signaturergebnis.
+Der Löschknopf im Ablauf entfernt einen Baustein und lässt sich rückgängig machen. **Entwurf löschen** entfernt nach Bestätigung nur die lokale Sicherung; **Aus Liste entfernen** erhält die gespeicherte Projektdatei. Die [lokale Hilfe](BEDIENUNG.md#einstellungen-hilfe-und-tastatur) beschreibt die Aufgaben ohne technische Einrichtungstexte.
 
-## Grenzen und praktische Nachweise
+**Exportieren** bietet eine Projektdatei, ein Script oder das Business-Paket mit eigenen Modulen, festen Paketangaben, Parametervorlage und Anleitung. Ein Business-Paket enthält keinen Interpreter; der Empfänger richtet eine passende eigene Umgebung ausdrücklich ein. Ressourcen werden nur nach Auswahl beigefügt; Geschäftsdaten, Berichte und Journale werden nicht automatisch mitgegeben. Die Grenzen bleiben 16 MiB je Ressource und 64 MiB für das Paket. Große Modelle müssen gegebenenfalls getrennt übertragen werden.
 
-- Dokumenttabellen umfassen höchstens 20.000 Zellen. PDF-Textauszüge sind auf 256 KiB, PDFs auf 2.000 Seiten begrenzt. Große Tabellen werden nicht still vollständig in eine Word- oder PDF-Tabelle geladen.
-- Die Oberfläche empfängt nur begrenzte Ausschnitte. DuckDBs Speicherbudget ist kein hartes RAM-Limit für den gesamten Python-Prozess. Das Tempbudget begrenzt DuckDB-Zwischendaten, nicht sämtliche Bibliotheks- und Zieltempdateien.
-- Das dokumentierte breite Millionen-CSV-Profil scheiterte mit 64 MB DuckDB-Budget. Ein ausdrücklich schmaleres Ergebnisschema bestand. Daraus folgt keine allgemeine Zusage für beliebige Millionen-Workflows.
-- openpyxl berechnet keine Excel-Formeln. Ein vorhandener Formelwert kann veraltet sein; die gewählte Formelbehandlung beachten. CSV bleibt Textaustausch: Ein fremdes Tabellenprogramm kann führende Formelzeichen als Formeln auslegen.
-- DOCX arbeitet mit den unterstützten Text-/Tabellenplatzhaltern; beliebige Word-Funktionen werden nicht nachgebildet. PDF-Scans werden nicht per OCR gelesen. Office-Konvertierung, Office-COM, Cloud- und E-Mail-Anbindungen sind nicht enthalten.
+Relative Pfade beziehen sich beim eigenständigen Start standardmäßig auf den Scriptordner; die beigefügte Anleitung erklärt die ausdrückliche Basiswahl. Automatische Tabellennamen werden in dieser Basis erzeugt. Explizite Ziele behalten ihre Bedeutung; die App-interne Ausgabewurzel wird dem eigenständigen Export nicht als zusätzliche allgemeine Sandbox aufgeprägt. Der Scriptstart installiert nichts. Projektformate und bestehende Python-/VBS-Zuordnungen ändern sich durch diese Bedienungsüberarbeitung nicht.
 
-[Tabellenumfang und Lastmessungen](BUSINESS-LEISTUNG-DATEN.md), [Dokument-/Dateioperationen](BUSINESS-DOKUMENTE.md) und [C/D/E-Beispielprüfung](BUSINESS-BEISPIELE-PRUEFUNG.md) enthalten getrennte tatsächliche Nachweise. Modul-, Generator- und Dateitests ersetzen keinen UI-, Screenreader-, Installer- oder produktiven Updatetest. Der aktuelle Business-Gesamtstand und noch offene Abnahmen stehen in [BUSINESS-ABNAHME.md](BUSINESS-ABNAHME.md); [ABNAHME.md](ABNAHME.md) erhält die historischen 0.1.0-Ergebnisse.
+## Grenzen und frühere Nachweise
+
+Excel-Formeln werden nicht berechnet. PDF-Textextraktion enthält keine OCR für Scans. Dokumenttabellen sind auf 20.000 Zellen, PDF-Dateien auf 2.000 Seiten und PDF-Textauszüge auf 256 KiB begrenzt. Das DuckDB-Speicherbudget begrenzt nicht den gesamten Python-Prozess.
+
+[Tabellendaten](BUSINESS-DATEN.md), [Dateien und Dokumente](BUSINESS-DOKUMENTE.md) sowie [Export und Modelle](ML.md) erläutern die jeweiligen Verträge. [BUSINESS-ABNAHME.md](BUSINESS-ABNAHME.md), [BUSINESS-BEISPIELE-PRUEFUNG.md](BUSINESS-BEISPIELE-PRUEFUNG.md), [UI-NEUAUFBAU.md](qualitaet/UI-NEUAUFBAU.md) und die alten Einrichtungshinweise in [BUSINESS-LAUFZEIT.md](BUSINESS-LAUFZEIT.md) bleiben Nachweise ihres damaligen Stands. Diese aktualisierte Anleitung behauptet keine neue vollständige Test-, Installer- oder Unternehmensabnahme.

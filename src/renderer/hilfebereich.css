@@ -1,0 +1,150 @@
+.hilfebereich {
+  display: flex;
+  flex-direction: column;
+  gap: var(--abstand-24);
+  min-width: 0;
+}
+.hilfebereich h2 {
+  margin: 0;
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+  line-height: var(--zeilenhoehe);
+}
+.hilfe-suchzeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--abstand-12);
+  max-width: 52em;
+}
+.hilfe-suchzeile .sl-feld {
+  flex: 1 1 24em;
+}
+.hilfe-aufgaben {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--abstand-16);
+}
+.hilfe-aufgabenkarte.sl-karte {
+  padding: 0;
+}
+.hilfe-aufgabenkarte > button {
+  display: flex;
+  align-items: start;
+  gap: var(--abstand-16);
+  width: 100%;
+  height: 100%;
+  padding: var(--abstand-24);
+  border: 0;
+  border-radius: inherit;
+  text-align: left;
+  color: var(--farbe-text);
+  background: transparent;
+  cursor: pointer;
+  line-height: var(--zeilenhoehe);
+}
+.hilfe-aufgabenkarte > button:hover {
+  background: var(--farbe-erhoeht);
+}
+.hilfe-aufgabenkarte > button:active {
+  background: var(--farbe-auswahl-flaeche);
+}
+.hilfe-aufgabenkarte > button > .sl-symbol {
+  color: var(--farbe-akzent);
+  flex: 0 0 auto;
+  margin-top: var(--abstand-4);
+}
+.hilfe-aufgabenkarte > button > span {
+  display: grid;
+  gap: var(--abstand-8);
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.hilfe-aufgabenkarte strong {
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+}
+.hilfe-aufgabenkarte > button > span > span,
+.hilfe-hinweis,
+.hilfe-einleitung,
+.hilfe-fuss {
+  color: var(--farbe-text-sekundaer);
+}
+.hilfe-fuss {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--abstand-8) var(--abstand-16);
+  border-top: 1px solid var(--farbe-trennung);
+  padding-top: var(--abstand-16);
+}
+.hilfe-fuss p {
+  margin: 0;
+  flex: 1 1 28em;
+}
+.hilfe-anleitung {
+  max-width: 82ch;
+}
+.hilfe-einleitung {
+  margin: 0 0 var(--abstand-16);
+}
+.hilfe-inhalt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--abstand-8) var(--abstand-16);
+  padding-bottom: var(--abstand-16);
+  border-bottom: 1px solid var(--farbe-trennung);
+}
+.hilfe-inhalt button {
+  border: 0;
+  padding: var(--abstand-4) 0;
+  background: transparent;
+  color: var(--farbe-akzent);
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  line-height: var(--zeilenhoehe);
+}
+.hilfe-anleitung > section {
+  margin-top: var(--abstand-32);
+}
+.hilfe-anleitung h2 {
+  scroll-margin-top: var(--abstand-24);
+  margin-bottom: var(--abstand-12);
+}
+.hilfe-anleitung p {
+  margin: 0 0 var(--abstand-12);
+}
+.hilfe-anleitung ol {
+  margin: var(--abstand-16) 0;
+  padding-left: var(--abstand-24);
+}
+.hilfe-anleitung li {
+  padding-left: var(--abstand-4);
+}
+.hilfe-anleitung li + li {
+  margin-top: var(--abstand-12);
+}
+.hilfe-anleitung p,
+.hilfe-anleitung li {
+  overflow-wrap: anywhere;
+}
+.hilfe-anleitung section > .sl-knopf {
+  margin: var(--abstand-8) var(--abstand-8) 0 0;
+}
+@container startinhalt (max-width: 45em) {
+  .hilfe-aufgaben {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.anwendung[data-grosser-text='true'] .hilfe-aufgaben {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (forced-colors: active) {
+  .hilfe-aufgabenkarte > button > .sl-symbol,
+  .hilfe-inhalt button {
+    color: LinkText;
+  }
+}

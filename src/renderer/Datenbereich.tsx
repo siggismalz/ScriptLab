@@ -78,7 +78,6 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
   const [sortierung, setSortierung] = useState<{ spalte: number; absteigend: boolean } | null>(null);
   const [zeilenseite, setZeilenseite] = useState(0);
   const [spaltenseite, setSpaltenseite] = useState(0);
-  const [spaltenbreiten, setSpaltenbreiten] = useState<Record<string, number>>({});
   const [auswahlzeile, setAuswahlzeile] = useState<number | null>(null);
   const [datenansicht, setDatenansicht] = useState<Datenansicht>('quellen');
   const ansichtenId = useId();
@@ -123,7 +122,6 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
     // Persönliche Vorschaufilter gehören nicht in einen anderen Workflow.
     setFilter('');
     setParametersatz('test');
-    setSpaltenbreiten({});
     setDatenansicht('quellen');
     scrollpositionen.current = {};
     setAuswahl(schritte.find((s) => s.id === props.blockId)?.id ?? schritte[0]?.id ?? null);
@@ -242,7 +240,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
   const aktiveSpaltenseite = Math.min(spaltenseite, maxSpaltenseite);
   const sichtbareSpalten = spalten.slice(aktiveSpaltenseite * 20, aktiveSpaltenseite * 20 + 20);
   const csvHinweis = vorschauStand?.veraltet ? null : csvTrennzeichenHinweis(schritt, spalten);
-  const breite = (name: string) => vorschauSpaltenbreite(name, spaltenbreiten[name]);
+  const breite = (name: string) => vorschauSpaltenbreite(name);
   const konfigurationstitel =
     schritt?.operation === 'daten.importieren' ? 'Quelle konfigurieren' : 'Schritt konfigurieren';
 
@@ -917,71 +915,6 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                   >
                     Zum Baustein
                   </Knopf>
-                )}
-                <details className="daten-herkunft">
-                  <summary>Herkunft und Laufstand</summary>
-                  <dl>
-                    <div>
-                      <dt>Workflow</dt>
-                      <dd>{vorschauLauf?.projektName ?? projekt.name}</dd>
-                    </div>
-                    <div>
-                      <dt>Umfang</dt>
-                      <dd>
-                        Ergebnis bis zum ausgewählten Schritt einschließlich seiner notwendigen Vorgänger.
-                        Gesamtzahl der Quelldaten unbekannt.
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Begrenzung</dt>
-                      <dd>
-                        Höchstens 200 Zeilen und 256 KiB. Suche und Sortierung gelten nur für diesen
-                        Ausschnitt.
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Arbeitsordner des Laufs</dt>
-                      <dd>{vorschauLauf?.optionen.basisVerzeichnis ?? 'Nicht bekannt'}</dd>
-                    </div>
-                    <div>
-                      <dt>Lauf-ID</dt>
-                      <dd>
-                        <code>{vorschauLauf?.laufId ?? 'Nicht bekannt'}</code>
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Vollständige Standkennung</dt>
-                      <dd>
-                        <code>{vorschauLauf?.standHash ?? 'Nicht bekannt'}</code>
-                      </dd>
-                    </div>
-                  </dl>
-                </details>
-                {sichtbareSpalten.length > 0 && (
-                  <details className="daten-spaltenbreiten">
-                    <summary>Spaltenbreiten einstellen</summary>
-                    <div>
-                      {sichtbareSpalten.map((s, i) => (
-                        <Feld
-                          key={`${s.name}-${i}`}
-                          beschriftung={`${s.name} · Breite in Pixeln`}
-                          type="number"
-                          min={96}
-                          max={640}
-                          step={16}
-                          value={breite(s.name)}
-                          onChange={(e) => {
-                            const wert = Number(e.target.value);
-                            if (Number.isFinite(wert))
-                              setSpaltenbreiten((alt) => ({
-                                ...alt,
-                                [s.name]: Math.max(96, Math.min(640, wert)),
-                              }));
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </details>
                 )}
               </div>
             </>

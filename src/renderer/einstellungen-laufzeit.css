@@ -1,51 +1,139 @@
-.komponenten-status {
-  display: flex;
-  flex-direction: column;
+/* Zusammengehörige Einstellungen statt technischer Bestandslisten. */
+.einstellungen-dialog {
+  max-inline-size: min(760px, calc(100vw - var(--abstand-32)));
 }
-.komponenten-status > section {
-  display: grid;
+.einstellungen-auswahl {
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--abstand-8);
-  min-inline-size: 0;
-  padding-block: var(--abstand-16);
   border-block-end: 1px solid var(--farbe-trennung);
+  padding-block-end: var(--abstand-8);
 }
-.komponenten-status h4 {
-  margin: 0;
-  font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
-  font-weight: var(--gewicht-semibold);
-}
-.komponenten-details {
-  min-inline-size: 0;
-}
-.komponenten-details[open] {
-  display: flex;
-  flex-direction: column;
-  gap: var(--abstand-16);
-}
-.komponenten-details dl {
-  display: grid;
-  gap: var(--abstand-8);
-  margin: 0;
-}
-.komponenten-details dl > div {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--abstand-16);
-  min-inline-size: 0;
-}
-.komponenten-details dt {
+.einstellungen-auswahl button {
+  flex: 1 1 auto;
+  min-block-size: 44px;
+  padding: var(--abstand-8) var(--abstand-12);
+  border: 1px solid transparent;
+  border-radius: var(--radius-normal);
+  background: transparent;
   color: var(--farbe-text-sekundaer);
-}
-.komponenten-details dd {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-}
-.komponenten-details summary {
-  min-block-size: var(--hoehe-bedienfeld);
   cursor: pointer;
 }
-.komponenten-details summary:focus-visible {
+.einstellungen-auswahl button:hover {
+  background: var(--farbe-erhoeht);
+  color: var(--farbe-text);
+}
+.einstellungen-auswahl [aria-selected='true'] {
+  border-color: var(--farbe-akzent);
+  background: var(--farbe-auswahl-flaeche);
+  color: var(--farbe-text);
+  font-weight: var(--gewicht-semibold);
+}
+.einstellungen-auswahl button:focus-visible {
   outline: var(--fokus-kontur) solid var(--farbe-akzent);
   outline-offset: var(--fokus-abstand);
+}
+.einstellungen-inhalt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--abstand-16);
+  min-inline-size: 0;
+}
+.einstellungen-inhalt[hidden] {
+  display: none;
+}
+.einstellungen-karte {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--abstand-16);
+  min-inline-size: 0;
+}
+.einstellungen-kartenkopf h3 {
+  margin: 0 0 var(--abstand-4);
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  line-height: var(--zeilenhoehe);
+  font-weight: var(--gewicht-semibold);
+  overflow-wrap: anywhere;
+}
+.einstellungen-kartenkopf p,
+.einstellungen-hinweis {
+  color: var(--farbe-text-sekundaer);
+}
+.einstellungen-felder {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--abstand-16);
+}
+.einstellungen-verfuegbarkeit {
+  display: grid;
+  gap: var(--abstand-16);
+}
+.einstellungen-verfuegbarkeit > div {
+  display: grid;
+  gap: var(--abstand-8);
+  min-inline-size: 0;
+}
+.einstellungen-verfuegbarkeit h4 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: var(--gewicht-semibold);
+}
+.einstellungen-karte > .sl-knopf,
+.einstellungen-karte > .sl-knopf-mit-grund {
+  align-self: flex-start;
+  max-inline-size: 100%;
+}
+.einstellungen-karte .sl-knopf {
+  white-space: normal;
+  overflow-wrap: normal;
+  max-inline-size: 100%;
+}
+.einstellungen-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--abstand-8);
+  align-items: flex-start;
+}
+.einstellungen-fehlerdetails summary {
+  min-block-size: var(--hoehe-bedienfeld);
+  padding-block: var(--abstand-8);
+  color: var(--farbe-text-sekundaer);
+  cursor: pointer;
+}
+.einstellungen-fehlerdetails summary:focus-visible {
+  outline: var(--fokus-kontur) solid var(--farbe-akzent);
+  outline-offset: var(--fokus-abstand);
+}
+.einstellungen-fehlerdetails > p,
+.einstellungen-fehlerdetails > label,
+.einstellungen-fehlerdetails > .sl-feld {
+  margin-block-start: var(--abstand-8);
+}
+.einstellungen-download progress {
+  inline-size: 100%;
+  accent-color: var(--farbe-akzent);
+}
+.einstellungen-dialog .ml-laufzeit > * + * {
+  margin-block-start: 0;
+}
+.einstellungen-dialog .aenderungen {
+  max-block-size: 18rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .einstellungen-felder {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.anwendung[data-grosser-text='true'] .einstellungen-felder {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (forced-colors: active) {
+  .einstellungen-auswahl [aria-selected='true'] {
+    border-color: Highlight;
+    color: Highlight;
+  }
 }

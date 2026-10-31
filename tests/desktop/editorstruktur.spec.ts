@@ -195,7 +195,7 @@ for (const farbe of ['hell', 'dunkel'] as const) {
           'aria-selected',
           'true',
         );
-        await imFenster(page.getByRole('button', { name: 'Laufdetails', exact: true }));
+        await imFenster(page.getByRole('button', { name: 'Ergebnis ansehen', exact: true }));
         const laufCanvas = await canvas.boundingBox();
         expect(laufCanvas!.height).toBeGreaterThanOrEqual(120);
         const laufId = (await zustand(page)).laufId;

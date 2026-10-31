@@ -62,7 +62,8 @@ describe('Verständliche Business-Ergebnisse aus tatsächlichen Laufdaten', () =
     expect(dateien!.match(/<li\b/g)).toHaveLength(2);
     expect(dateien).not.toMatch(/<(article|section)\b/);
     expect(html).toContain('Ein Ziel wurde übersprungen.');
-    expect(html).toContain('Vollständiger Laufbericht');
+    expect(html).not.toContain('Vollständiger Laufbericht');
+    expect(html).not.toContain('Inhalt des vollständigen Laufberichts');
   });
   it('erzeugt ohne vorhandenen Kontext oder Dateiergebnisse keine leeren Ergebnisgruppen', () => {
     const html = zeigen({ bericht: { summen: { fehlerhaft: 0 }, ausgaben: [] } }, false, false);
@@ -70,7 +71,8 @@ describe('Verständliche Business-Ergebnisse aus tatsächlichen Laufdaten', () =
     expect(html).not.toContain('aria-label="Zusammenfassung des Laufs"');
     expect(html).not.toContain('aria-label="Dateien und Ausgabeziele"');
     expect(html).not.toContain('Ausgabedateien');
-    expect(html).toContain('Vollständiger Laufbericht');
+    expect(html).not.toContain('Vollständiger Laufbericht');
+    expect(html).not.toContain('Inhalt des vollständigen Laufberichts');
   });
   it('zeigt Modus und Parametersatz ohne erfundene Dateizähler', () => {
     const html = zeigen();
@@ -132,7 +134,7 @@ describe('Verständliche Business-Ergebnisse aus tatsächlichen Laufdaten', () =
     expect(html).toContain('Ausgabedateien');
     expect(html).toContain('2000');
     expect(html).toContain('Fehlermeldungen: 1');
-    expect(html).toContain('vollstaendig.json');
+    expect(html).not.toContain('vollstaendig.json');
   });
   it('zeigt Ausgaben und Fehler ausschließlich als Text', () => {
     const html = zeigen({
@@ -144,11 +146,11 @@ describe('Verständliche Business-Ergebnisse aus tatsächlichen Laufdaten', () =
     expect(html).toContain('&lt;script&gt;');
     expect(html).toContain('&lt;img');
   });
-  it('begrenzt sichtbare Meldungen und Ausgabeziele und hält den Bericht zugänglich', () => {
+  it('begrenzt sichtbare Meldungen und blättert große Dateilisten ohne Rohdaten', () => {
     const html = zeigen({
       ereignisse: Array.from({ length: 8 }, (_, i) => ({ art: 'hinweis', meldung: `Hinweis-${i}` })),
       bericht: {
-        ausgaben: Array.from({ length: 8 }, (_, i) => ({ pfad: `Ausgabe-${i}.csv`, status: 'publiziert' })),
+        ausgaben: Array.from({ length: 24 }, (_, i) => ({ pfad: `Ausgabe-${i}.csv`, status: 'publiziert' })),
         bericht_pfad: 'C:\\Berichte\\bericht.json',
       },
     });
@@ -156,12 +158,11 @@ describe('Verständliche Business-Ergebnisse aus tatsächlichen Laufdaten', () =
     expect(html).toContain('Hinweis-7');
     const ausgabeliste = html.match(/<ul class="business-ergebnis-ausgaben">([\s\S]*?)<\/ul>/)?.[1];
     expect(ausgabeliste).toBeDefined();
-    expect(ausgabeliste!.match(/<li\b/g)).toHaveLength(5);
-    expect(ausgabeliste).toContain('Ausgabe-4.csv');
-    expect(ausgabeliste).not.toContain('Ausgabe-5.csv');
-    // Die vollständigen technischen Details behalten auch die übrigen Ziele.
-    expect(html).toContain('Ausgabe-7.csv');
+    expect(ausgabeliste!.match(/<li\b/g)).toHaveLength(20);
+    expect(ausgabeliste).toContain('Ausgabe-19.csv');
+    expect(ausgabeliste).not.toContain('Ausgabe-20.csv');
+    expect(html).toContain('Seite 1 von 2');
     expect(html).toMatch(/readonly=/i);
-    expect(html).toContain('Weitere Ausgabeziele');
+    expect(html).toContain('Weitere Dateien');
   });
 });

@@ -21,7 +21,7 @@ ScriptLab ist ein visueller Automatisierungsbaukasten für **Windows 11 x64**. D
 
 **VBScript (VBS)** bleibt für kleinere Windows-Automatisierungen und vorhandene Projekte erhalten. Die Ausführung benötigt die verfügbare Windows-VBScript-Komponente und passende Richtlinien. Die gemeinsamen Grundbausteine sind für beide Sprachen vorhanden; die zusätzlichen Business-Funktionen gehören zu Python. Ein bestehender Workflow behält seine Sprache.
 
-**Neuer Workflow** bietet drei Karten: **Python**, **VBS** und **Machine Learning**. Machine Learning verwendet ebenfalls Python, mit einem auf Tabellen und die vier Modellaktionen begrenzten Bausteinkatalog. Ein bestehender Workflow behält seine Art; allgemeine Python-/VBS-Workflows behalten ihren bisherigen Katalog.
+**Neuer Workflow** bietet **Automatisierung** für Dateien, Tabellen und Dokumente, **Windows-Automatisierung** für kleinere vorhandene Windows-Abläufe sowie **Machine Learning**. Die Auswahl benennt die Aufgabe; die bestehenden Python-/VBS-Zuordnungen und Projektformate bleiben erhalten. Für die meisten Aufgaben ist Automatisierung direkt startklar.
 
 ## Oberfläche und Arbeitsbereiche
 
@@ -31,21 +31,27 @@ ScriptLab ist ein visueller Automatisierungsbaukasten für **Windows 11 x64**. D
 
 Im geöffneten Workflow stehen drei Arbeitsbereiche zur Verfügung:
 
-| Bereich                 | Zweck                                                                                                                                                                                     |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Ablauf**              | Im Blockly-Bausteineditor Verbindungen und Reihenfolge bearbeiten. Bausteine per Ziehen oder über Plus und eine Einfügestelle ergänzen; Eigenschaften und Codevorschau bei Bedarf öffnen. |
-| **Daten und Parameter** | Bausteinangaben, Workflowparameter und unterstützte Tabellenvorschauen bearbeiten beziehungsweise prüfen.                                                                                 |
-| **Läufe**               | Den aktuellen oder gespeicherten Lauf beurteilen: Status, Ergebnisse und Protokoll. Eine abweichende Vorbereitung ist optional; der Workflowkopf bietet den direkten Start.                  |
+| Bereich                 | Zweck                                                                                                                                                                                                                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ablauf**              | Im Blockly-Bausteineditor Verbindungen und Reihenfolge bearbeiten. Bausteine per Ziehen oder über Plus und eine Einfügestelle ergänzen; Angaben in den Eigenschaften ändern; ausgewählte Bausteine sichtbar löschen und mit Rückgängig wiederherstellen. |
+| **Daten und Parameter** | Bausteinangaben, Workflowparameter und unterstützte Tabellenvorschauen bearbeiten beziehungsweise prüfen.                                                                                                                                                |
+| **Läufe**               | Eine zusammenhängende Ergebnisfläche für den gewählten Lauf. **Laufeinstellungen** passen den nächsten Start an; **Verlauf anzeigen** öffnet frühere Läufe.                                                                                              |
 
-Die Vorlagen verwenden ein anpassbares Kartenraster; vergleichbare Workflows stehen in einer Liste. In **Daten und Parameter** wechseln **Quellen**, **Parameter** und **Vorschau** den Arbeitskontext. Die Vorschautabelle hat feste Kopfzeilen, horizontales Scrollen und eine Seitensteuerung am Ergebnis. Lange Spaltennamen bleiben über ihren Titel vollständig zugänglich. Herkunft, Laufstand und Spaltenbreiten lassen sich bei Bedarf aufklappen.
+Die Vorlagen verwenden ein anpassbares Kartenraster; vergleichbare Workflows stehen in einer Liste. In **Daten und Parameter** wechseln **Quellen**, **Parameter** und **Vorschau** den Arbeitskontext. Die Vorschautabelle hat feste Kopfzeilen, horizontales Scrollen und eine Seitensteuerung am Ergebnis. Lange Spaltennamen bleiben über ihren Titel vollständig zugänglich. Der gewählte Ergebnisschritt, der geladene Umfang und Hinweise auf Begrenzungen oder geänderte Stände bleiben erkennbar.
 
 Zeigt eine CSV-Vorschau nur eine Spalte mit mehreren erkennbaren Trennzeichen, führt **Trennzeichen prüfen** direkt zum vorhandenen Quellenfeld. ScriptLab ändert die Einstellung nicht automatisch; nach der Korrektur wird die Vorschau bewusst neu geladen. Suche und Sortierung betreffen weiterhin nur den geladenen Ausschnitt, nicht alle Quelldaten.
 
 ![Datenvorschau mit lesbaren Spalten und Seitensteuerung unter der Tabelle.](docs/qualitaet/ui-ansichten/daten-hell.png)
 
-**Hell**, **Dunkel** und **System** sowie die Textgröße lassen sich unter **Einstellungen → Darstellung** wählen. Die Textgröße der Oberfläche ist vom Canvaszoom getrennt. Bei großer Schrift wird die Seitennavigation zu beschrifteten Symbolaktionen mit Tooltips; die Inhalte bleiben scrollbar.
+**Hell**, **Dunkel** und **System** sowie die Textgröße lassen sich unter **Einstellungen → Aussehen** wählen. Die Textgröße der Oberfläche ist vom Canvaszoom getrennt. Bei großer Schrift wird die Seitennavigation zu beschrifteten Symbolaktionen mit Tooltips; die Inhalte bleiben scrollbar.
 
-[Bausteineditor ansehen](docs/qualitaet/ui-ansichten/editor-hell.png) · [Aufbau, Fachaufträge und Prüfnachweise](docs/qualitaet/UI-NEUAUFBAU.md)
+[Bausteineditor ansehen](docs/qualitaet/ui-ansichten/editor-hell.png) · [Aufbau und damalige Prüfnachweise](docs/qualitaet/UI-NEUAUFBAU.md). Die Galerie `ui-ansichten` dokumentiert den vorherigen Oberflächenstand; einzelne Beschriftungen wurden inzwischen vereinfacht.
+
+Die lokale **Hilfe** führt durch vier Aufgaben: **Workflow bauen**, **Dateien verwenden**, **Ausführen und Ergebnisse prüfen** sowie **Fehler beheben und aufräumen**. Suchtreffer führen zur passenden Anleitung. Die Einstellungen gliedern sich in **Aussehen**, **Automatisierungen** und **Updates**.
+
+![Aufgabenbezogene lokale Hilfe mit vier Einstiegen.](docs/qualitaet/einfache-bedienung/hilfe-hell.png)
+
+![Einstellungen mit den Bereichen Aussehen, Automatisierungen und Updates.](docs/qualitaet/einfache-bedienung/einstellungen-hell.png)
 
 ## Mit einer Vorlage anfangen
 
@@ -56,7 +62,7 @@ Die folgenden Schritte zeigen den Einstieg mit einer Python-Business-Vorlage, zu
 3. **Als Vorlage öffnen** wählen. ScriptLab erstellt eine eigene bearbeitbare Kopie und übernimmt die mitgelieferten Testdaten in deren Arbeitsordner. Die Vorlage bleibt erhalten.
 4. Bausteine, Quellen und Parameter anpassen. **Speichern** sichert den Workflow intern; für eine weiterzugebende Projektdatei dient **Exportieren**.
 5. **Workflow ausführen** startet den aktuellen Ablauf sofort mit den konfigurierten Bausteinen und Parameterwerten. Vorheriges Speichern ist nicht nötig. Dein aktiver Arbeitsbereich bleibt offen. Im Ablauf siehst du Status und Ausgabe direkt über den Bausteinen; **Stoppen** bleibt erreichbar. Fehlende Pflichtangaben führen gezielt zur Korrektur.
-6. **Laufdetails** öffnet bei Bedarf Ergebnisse und Protokoll. Unter **Läufe → Vorbereitung** kannst du Arbeitsordner, Zeitlimit und Parameter anpassen oder bei unterstützten Python-Business-Workflows ausdrücklich einen **Prüflauf ohne Zieländerungen** wählen. Die **Datenvorschau** bleibt separat erreichbar. Diese optionalen Prüfungen sind keine Voraussetzung für den direkten Start; der Hauptknopf führt immer wirklich aus, auch nach einer Vorschau.
+6. **Ergebnis ansehen** öffnet das zugehörige Ergebnis. Unter **Läufe → Laufeinstellungen** kannst du Arbeitsordner, Zeitlimit und Parameter prüfen oder bei unterstützten Datenabläufen ausdrücklich einen **Prüflauf ohne Zieländerungen** wählen. Die **Datenvorschau** bleibt separat erreichbar. Diese optionalen Prüfungen sind keine Voraussetzung für den direkten Start; der Hauptknopf führt immer wirklich aus, auch nach einer Vorschau.
 
 **Dateipfade eingeben:** Bei einem Baustein mit einer eindeutigen Quelle steht der tatsächliche Quellenpfad direkt unter seiner **Bezeichnung**. Die Bezeichnung ist nur der Name des Schritts. Gib den Pfad in das beschriftete Pfadfeld ein oder ziehe eine lokale Datei aus dem Explorer auf den Quellbaustein beziehungsweise das Pfadfeld. Auch die Quellenfelder in den Eigenschaften und ausdrücklich gewählte Datei-/Dokumentparameter unterstützen das Ablegen. Eine Ablage startet keinen Workflow. Bestehende Parameterbindungen bleiben erhalten; ändere deren Wert unter **Daten und Parameter**. Ausgabeziele und berechnete Pfade werden durch einen Drop auf den Baustein nicht ersetzt.
 
@@ -80,7 +86,7 @@ Unter **Dokumentvorlagen** ist die vorhandene `Bestellung.docx` dem zugehörigen
 
 Die vier Modellaktionen heißen **Modell trainieren**, **Modell speichern**, **Modell laden** und **Vorhersagen erzeugen**. Vorhandene CSV-/XLSX- und Tabellenbausteine bereiten die Daten vor und schreiben Ergebnisse. Wähle Klassifikation für Kategorien oder Regression für Zahlenwerte. Random Forest und das feste neuronale PyTorch-Netz verwenden ausschließlich die CPU. Standardmäßig bleiben 20 % der Daten für die unabhängige Testbewertung zurück; die Vorverarbeitung lernt nur aus den übrigen 80 %.
 
-Unter **Einstellungen → Laufzeit → Machine-Learning-Komponenten** kannst du das CPU-Paket ausdrücklich online einrichten oder einen vorbereiteten Offline-Paketordner verwenden. Das Öffnen oder Auswählen eines Workflows und der Workflowstart installieren nichts. Ohne Paket bleiben Bearbeiten, Speichern und Exportieren möglich.
+Unter **Einstellungen → Automatisierungen** kannst du das CPU-Paket ausdrücklich online einrichten oder einen vorbereiteten Offline-Paketordner verwenden. Das Öffnen oder Auswählen eines Workflows und der Workflowstart installieren nichts. Ohne Paket bleiben Bearbeiten, Speichern und Exportieren möglich.
 
 Vorschau und Prüflauf trainieren und speichern kein Modell. Ein vorhandenes unterstütztes Modell darf dabei lesend für Vorhersagen verwendet werden; geplante Trainingsergebnisse werden nicht als echte Vorhersagen ausgegeben. Erst die echte Ausführung trainiert beziehungsweise veröffentlicht Dateien. Die Qualitätsanzeige zeigt bestätigte Testmetriken, keine Qualitätsgarantie für neue Daten.
 
@@ -88,26 +94,34 @@ Die eigene `.slmodell`-Datei enthält Modell, Spaltenschema und Qualitätsangabe
 
 ![Bestätigte ML-Ergebnisse der synthetischen Klassifikationsvorlage mit getrennten Trainings- und Testzeilen.](docs/qualitaet/ml-ansichten/ergebnisse-hell.png)
 
-Der [ML-Prüfbericht](docs/qualitaet/ML-ABSCHLUSS.md) nennt ausgeführte Tests, Paketstand, Agentenaufträge und offene Grenzen einschließlich des noch ausstehenden CI-Gesamtergebnisses.
+Der [ML-Prüfbericht](docs/qualitaet/ML-ABSCHLUSS.md) dokumentiert die damaligen Tests, Paketstände, Agentenaufträge und Prüfgrenzen; er ist keine neue Abnahme dieses Oberflächenumbaus.
 
 ## Vorschau, Prüfung und echte Ausführung
 
 | Aktion                                    | Was passiert?                                                                                                                                                                           |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Codevorschau / Strukturprüfung**        | Zeigt erzeugten Quelltext beziehungsweise prüft den Workflow. Startet keine Verarbeitung.                                                                                               |
+| **Bearbeiten / Strukturprüfung**          | Bearbeitet beziehungsweise prüft Angaben und Verbindungen. Startet keine Verarbeitung.                                                                                                  |
 | **Business-Datenvorschau**                | Liest bewusst die benötigten unterstützten Tabellenschritte und zeigt höchstens 200 Zeilen beziehungsweise 256 KiB. Filter oder Gruppierungen können trotzdem die gesamte Quelle lesen. |
 | **Business-Prüflauf ohne Zieländerungen** | Prüft unterstützte Schritte und geplante Ausgaben. Technische Zwischenfassungen können entstehen; fachliche Quellen und Ziele bleiben unverändert.                                      |
 | **Echte Ausführung / Grundbaustein-Test** | Führt den aktuellen Workflow tatsächlich aus. Dateiänderungen und Dialoge sind echt.                                                                                                    |
 
 Grundbausteine und VBS erhalten keinen vorgetäuschten Business-Prüflauf. Die Parametersätze **Testdaten** und **Echte Daten** sind keine Sicherheitsbereiche. **Stoppen** macht bereits erfolgte Dateiänderungen nicht rückgängig. Öffnen, Ansichtswechsel, Speichern und Export starten keinen Workflow.
 
-Unter **Läufe** gehören Ergebnisse und Protokolle zum tatsächlich ausgeführten Workflowstand samt Parametern und Arbeitsordner. Ein früherer Stand wird kenntlich gemacht; die Historie hält keine zusätzliche Kopie jeder Ausgabedatei vor.
+Unter **Läufe** gehören Ergebnis, Dateiausgaben und Protokoll zum tatsächlich ausgeführten Workflowstand samt Parametern und Arbeitsordner. **Verlauf anzeigen** öffnet gespeicherte Läufe. Ein früherer Stand wird kenntlich gemacht; die Historie hält keine zusätzliche Kopie jeder Ausgabedatei vor.
 
-![Laufdetails mit tatsächlichem Status, Modus, erreichbarem Stopp und optionalen technischen Angaben.](docs/qualitaet/ui-ansichten/lauf-hell.png)
+![Ergebnis eines bewusst ausgeführten Tabellenworkflows mit erzeugter XLSX-Datei.](docs/qualitaet/einfache-bedienung/ergebnis-xlsx.png)
+
+## Tabellen ohne vorgegebenen Zielpfad speichern
+
+Bei **Tabelle als CSV/XLSX/JSON/Parquet speichern** darf **Speicherort (optional)** als fester Wert leer bleiben. ScriptLab verwendet den Namen der eindeutigen Quelldatei mit der gewählten Endung und speichert im Workflow-Arbeitsordner. Aus `Umsatz.csv` wird zum Beispiel `Umsatz.xlsx`; bei mehreren oder nicht eindeutig benannten Quellen heißt die Ausgabe `Auswertung.xlsx`.
+
+Würde die Ausgabe denselben Pfad wie eine Quelle treffen, erhält sie den Zusatz `-Ausgabe`. Namenskonflikte werden nummeriert, etwa `Umsatz (2).xlsx`; automatisches Speichern überschreibt keine vorhandene Datei. Einen eigenen Speicherort kannst du weiterhin angeben: Dann gilt die gewählte Konfliktregel. Ein leerer Parameter oder eine leere gebundene Variable wird als Fehler behandelt und löst keine automatische Zielwahl aus.
 
 ## Speichern, Ablage und Export
 
 Workflows, Entwürfe, Arbeitsdateien und Laufhistorie liegen außerhalb der Installation im ScriptLab-Nutzerverzeichnis, gewöhnlich unter `%APPDATA%\ScriptLab`. Relative Pfade verwenden in der Anwendung den Arbeitsordner des jeweiligen Workflows. Externe Quellen bleiben lesbar; Schreibziele innerhalb der App müssen in der ScriptLab-Nutzerablage liegen. **Speichern** überschreibt eine extern geöffnete Projektdatei nicht. Die automatische Entwurfssicherung ersetzt das bewusste Speichern nicht.
+
+**Aufräumen:** Der Löschknopf im Ablauf entfernt den ausgewählten Baustein; **Rückgängig** stellt ihn wieder her. **Entwurf löschen** entfernt nach Bestätigung nur die lokale Entwurfssicherung. **Aus Liste entfernen** entfernt einen gespeicherten Workflow aus der Übersicht und erhält dessen Datei.
 
 | Export                        | Verwendung außerhalb von ScriptLab                                                                                                                                                        |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -122,7 +136,7 @@ Bei ML-Workflows enthält das Business-Paket zusätzlich die ML-Module, die unve
 
 ## Installation und Entwicklung
 
-ScriptLab befindet sich im Entwicklungsstand **0.2.0**. Ein öffentliches Installationspaket ist bisher nicht veröffentlicht; spätere Downloads gehören auf die [GitHub-Releases-Seite](https://github.com/siggismalz/ScriptLab/releases). Lokale Testinstaller sind keine produktive Freigabe.
+ScriptLab befindet sich im Entwicklungsstand **0.2.0**. Veröffentlichte Installationspakete gehören auf die [GitHub-Releases-Seite](https://github.com/siggismalz/ScriptLab/releases). Lokale Testinstaller sind keine produktive Freigabe.
 
 ### Aus dem Repository starten
 
@@ -156,7 +170,7 @@ Der NSIS-Testinstaller entsteht unter `release/ScriptLab-0.2.0-Setup-x64.exe`; d
 
 ## Entwicklungsstand und Grenzen
 
-- Der Editor hat Schutzgrenzen für Projektgröße und Verschachtelung. Das erneute Laden einer linearen 1000er-Blockkette ist noch nicht zuverlässig nachgewiesen; außerdem ist eine sporadische Farbschema-Abweichung aus der Windows-CI offen. Details stehen im [aktuellen Kartenbericht](docs/qualitaet/KARTEN.md) und dessen [unabhängigem Review](docs/qualitaet/KARTEN-REVIEW.md).
+- Der Editor hat Schutzgrenzen für Projektgröße und Verschachtelung. Historische Last- und Darstellungsbefunde stehen im [Kartenbericht](docs/qualitaet/KARTEN.md) und dessen [unabhängigem Review](docs/qualitaet/KARTEN-REVIEW.md); ihre Ergebnisse gelten für den dort genannten Stand.
 - Excel-Formeln werden von openpyxl nicht berechnet. PDF-Textextraktion enthält keine OCR für Scans. Beliebige Word-/Excel-Funktionen oder Office-Konvertierungen werden nicht nachgebildet.
 - Es gibt keine automatische Zeitplanung, Cloud-Ausführung, Konten-, Mandanten- oder Abrechnungsverwaltung. Die Anwendung ist lokal; die spätere SaaS-Ausrichtung ist ein Architekturziel.
 - Prüfberichte gelten für ihren genannten Quell- und Paketstand. Erfolgreiche Modul- oder Desktoptests ersetzen keine vollständige Installer-, Update- oder Anwenderabnahme. Dokumentierte Lastmessungen sind keine Zusage unbegrenzter Skalierbarkeit.

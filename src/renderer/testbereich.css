@@ -2,11 +2,11 @@
   container-type: inline-size;
   container-name: testbereich;
   display: flex;
+  flex-direction: column;
+  flex: 1;
   min-width: 0;
   min-height: 0;
   height: 100%;
-  flex: 1;
-  flex-direction: column;
   overflow: hidden;
   color: var(--farbe-text);
   background: var(--farbe-grundflaeche);
@@ -17,89 +17,40 @@
   display: none !important;
 }
 .testbereich-kopf {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--abstand-8) var(--abstand-24);
-  padding: var(--abstand-16) var(--abstand-24);
-}
-.testbereich-laufkontext {
-  min-width: 0;
-}
-.testbereich-titelzeile {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--abstand-8) var(--abstand-16);
-  margin-bottom: var(--abstand-4);
+  justify-content: space-between;
+  gap: var(--abstand-12) var(--abstand-24);
+  flex: 0 0 auto;
+  padding: var(--abstand-16) var(--abstand-24);
+  border-bottom: 1px solid var(--farbe-trennung);
 }
-.testbereich-titelzeile h2 {
-  margin: 0;
+.testbereich-laufkontext {
+  min-width: 0;
+  flex: 1 1 280px;
+}
+.testbereich-laufkontext h2 {
+  margin: 0 0 var(--abstand-4);
   font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
-  font-weight: var(--gewicht-semibold);
   line-height: 1.5;
 }
-.testbereich-kontextart {
+.testbereich-modus,
+.testbereich-hilfe,
+.lauf-standkurz,
+.testbereich-startgrund {
+  margin: 0;
   color: var(--farbe-text-sekundaer);
+  overflow-wrap: anywhere;
 }
 .testbereich-aktionen {
   flex-wrap: wrap;
   gap: var(--abstand-8);
-  margin-left: auto;
-}
-.testbereich-status {
-  min-width: 0;
-  flex: 0 1 auto;
-}
-.testbereich-status .sl-status {
-  margin: 0;
-  align-items: center;
-}
-.testbereich-status .sl-symbol {
-  width: 16px;
-  height: 16px;
-}
-.testbereich-modus {
-  color: var(--farbe-text-sekundaer);
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-.testbereich-modus strong {
-  font-weight: var(--gewicht-normal);
-}
-.lauf-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0;
-  padding: 0 var(--abstand-12);
-  border-bottom: 1px solid var(--farbe-trennung);
-  flex: 0 0 auto;
-}
-.lauf-tabs button {
-  min-height: var(--hoehe-bedienfeld);
-  color: var(--farbe-text-sekundaer);
-  background: transparent;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  padding: var(--abstand-8) var(--abstand-12);
-  font: inherit;
-  cursor: pointer;
-}
-.lauf-tabs button:hover {
-  color: var(--farbe-text);
-  background: var(--farbe-erhoeht);
-}
-.lauf-tabs button[aria-selected='true'] {
-  color: var(--farbe-akzent);
-  border-bottom-color: var(--farbe-akzent);
-  font-weight: var(--gewicht-semibold);
-}
-.lauf-tabs button:focus-visible {
-  outline: var(--fokus-kontur) solid var(--farbe-akzent);
-  outline-offset: -2px;
 }
 .testbereich-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--abstand-24);
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -108,82 +59,63 @@
   overscroll-behavior: contain;
   scroll-padding: var(--abstand-16);
 }
-.lauf-panel {
+.testbereich-inhalt h3 {
+  margin: 0;
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+}
+.lauf-leerzustand,
+.lauf-ergebnisfokus,
+.lauf-ausgabe,
+.testbereich-vorbereitung {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--abstand-12);
   min-width: 0;
+}
+.lauf-ausgabe {
+  align-items: stretch;
+}
+.lauf-leerzustand p,
+.lauf-ergebnisfokus p {
+  margin: 0;
+  max-width: 80ch;
+}
+.testbereich-status {
+  width: 100%;
+}
+.testbereich-status .sl-status {
   margin: 0;
 }
-.lauf-panel:focus-visible {
-  outline-offset: -2px;
-}
-.lauf-panel h3 {
-  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
-  line-height: 1.5;
-}
-.lauf-leerzustand {
-  padding: var(--abstand-16) 0;
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: var(--abstand-12);
-}
-.lauf-ergebnisfokus {
+.testbereich-status .sl-status > span {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--abstand-8);
-  padding-bottom: var(--abstand-16);
-  border-bottom: 1px solid var(--farbe-trennung);
+  gap: var(--abstand-4);
 }
-.lauf-ergebnisfokus :is(h3, p) {
-  margin: 0;
-}
-.lauf-ergebnismeldung {
+.testbereich-status strong {
   font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
-  font-weight: var(--gewicht-semibold);
-  overflow-wrap: anywhere;
 }
 .lauf-moduserklaerung {
-  max-width: 80ch;
   color: var(--farbe-text-sekundaer);
 }
 .lauf-stopp-hinweis {
   color: var(--farbe-hinweis);
 }
-.testbereich-wirkung {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--abstand-8);
-  margin: 0;
-  color: var(--farbe-text-sekundaer);
-}
-.testbereich-wirkung[data-modus='ausfuehren'] {
-  color: var(--farbe-hinweis);
-}
-.testbereich-wirkung .sl-symbol {
-  margin-top: 2px;
-  flex-shrink: 0;
+.testbereich-vorbereitung {
+  width: 100%;
+  padding-bottom: var(--abstand-24);
+  border-bottom: 1px solid var(--farbe-trennung);
 }
 .testbereich-konfiguration {
   display: grid;
-  grid-template-columns: minmax(0, 640px) minmax(256px, 360px);
+  grid-template-columns: minmax(0, 640px) minmax(240px, 360px);
   align-items: start;
   gap: var(--abstand-24);
+  width: 100%;
+  min-width: 0;
   border: 0;
   padding: 0;
   margin: 0;
-  min-width: 0;
-}
-.lauf-vorbereitung-ordner {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--abstand-12);
-  padding: 0 0 0 var(--abstand-24);
-  border-left: 1px solid var(--farbe-trennung);
 }
 .lauf-vorbereitung-business {
   min-width: 0;
@@ -194,6 +126,13 @@
 .testbereich-konfiguration:has(.lauf-vorbereitung-business:empty) {
   grid-template-columns: minmax(0, 720px);
 }
+.lauf-vorbereitung-ordner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  gap: var(--abstand-12);
+}
 .testbereich-konfiguration .sl-feld {
   margin: 0;
   gap: var(--abstand-4);
@@ -203,15 +142,23 @@
   min-height: var(--hoehe-bedienfeld);
   overflow-wrap: anywhere;
 }
-.testbereich-hilfe,
-.testbereich-details p {
-  color: var(--farbe-text-sekundaer);
+.lauf-ordnerpfad {
+  margin: var(--abstand-8) 0;
+  overflow-wrap: anywhere;
+  user-select: text;
 }
-.testbereich-startgrund {
-  color: var(--farbe-text-sekundaer);
+.lauf-arbeitsordner > summary,
+.lauf-zeitlimit > summary,
+.lauf-weitergeben > summary {
+  min-height: var(--hoehe-bedienfeld);
+  padding-block: var(--abstand-8);
+  cursor: pointer;
+  overflow-wrap: anywhere;
 }
-.testbereich-fehler {
-  color: var(--farbe-fehler);
+.testbereich summary:focus-visible,
+.testbereich-vorbereitung:focus-visible {
+  outline: var(--fokus-kontur) solid var(--farbe-akzent);
+  outline-offset: var(--fokus-abstand);
 }
 .testbereich-ausgabekopf {
   display: flex;
@@ -220,221 +167,59 @@
   justify-content: space-between;
   gap: var(--abstand-8);
 }
-.testbereich-ausgabekopf .knopfgruppe {
-  flex-wrap: wrap;
-  gap: var(--abstand-8);
-}
-.testbereich-ausgabe,
-.testbereich-details pre {
+.testbereich-ausgabe {
+  width: 100%;
   min-width: 0;
+  min-height: 96px;
+  max-height: 45vh;
   margin: 0;
   padding: var(--abstand-12) var(--abstand-16);
   overflow: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--farbe-kontur);
-  border-radius: 0;
+  border-radius: var(--radius-normal);
   background: var(--farbe-arbeitsflaeche);
   color: var(--farbe-text);
-  font-family: var(--schrift-code-familie);
-  font-size: calc(var(--schrift-code) * var(--text-skala, 1));
-  line-height: 1.55;
+  font: inherit;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
 }
-.testbereich-ausgabe {
-  height: clamp(180px, 42vh, 640px);
-  min-height: 120px;
-}
-.testbereich-details pre {
-  max-height: 45vh;
-}
-.testbereich-details {
+.lauf-ergebnisdateien {
   min-width: 0;
-}
-.testbereich-details summary {
-  min-height: var(--hoehe-bedienfeld);
-  cursor: pointer;
-  font-weight: var(--gewicht-semibold);
-  overflow-wrap: anywhere;
-}
-.testbereich-details summary:focus-visible {
-  outline: var(--fokus-kontur) solid var(--farbe-akzent);
-  outline-offset: var(--fokus-abstand);
-}
-.testbereich-metadaten {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--abstand-8) var(--abstand-24);
-  margin: 0;
-  padding: var(--abstand-16) 0;
-  border-block: 1px solid var(--farbe-trennung);
-}
-.testbereich-metadaten dt,
-.lauf-zaehler dt {
-  color: var(--farbe-text-sekundaer);
-}
-.testbereich-metadaten dd,
-.lauf-zaehler dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-  font-variant-numeric: tabular-nums;
-}
-.testbereich-metadaten code {
-  font-family: var(--schrift-code-familie);
-  font-size: calc(var(--schrift-code) * var(--text-skala, 1));
-  user-select: text;
-}
-.testbereich-dateikontext {
-  grid-column: 1 / -1;
-}
-.lauf-zaehler {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--abstand-8) var(--abstand-24);
-  margin: 0;
-  padding-block: var(--abstand-8);
-  border-bottom: 1px solid var(--farbe-trennung);
-}
-.lauf-zaehler > div {
-  display: flex;
-  align-items: baseline;
-  gap: var(--abstand-8);
-}
-.lauf-zaehler dd {
-  font-weight: var(--gewicht-semibold);
-}
-.testbereich-metadaten > div {
-  display: grid;
-  grid-template-columns: minmax(100px, 140px) minmax(0, 1fr);
-  gap: var(--abstand-8);
-  align-items: baseline;
-}
-.testbereich .business-parameter {
-  gap: var(--abstand-12);
-}
-.testbereich .business-parameter > h3 {
-  margin: 0;
-}
-.testbereich-details h3,
-.testbereich-details pre,
-.testbereich-details table {
-  margin-top: var(--abstand-12);
-}
-.testbereich-details table {
   width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-.testbereich-details th,
-.testbereich-details td {
-  padding: var(--abstand-8);
-  text-align: left;
-  vertical-align: top;
-  overflow-wrap: anywhere;
-  border-bottom: 1px solid var(--farbe-trennung);
 }
 .testbereich .business-vorschau {
   max-width: 100%;
   overflow: auto;
 }
-.testbereich .business-vorschau th,
-.testbereich .business-vorschau td {
+.testbereich .business-vorschau :is(td, th) {
   padding: var(--abstand-8) var(--abstand-12);
-  min-height: 36px;
+}
+.lauf-weitergeben .knopfgruppe {
+  flex-wrap: wrap;
+  gap: var(--abstand-8);
 }
 @container testbereich (max-width: 850px) {
-  .testbereich-konfiguration,
-  .testbereich-metadaten {
+  .testbereich-konfiguration {
     grid-template-columns: minmax(0, 1fr);
   }
-  .testbereich-inhalt {
+  .testbereich-inhalt,
+  .testbereich-kopf {
     padding: var(--abstand-16);
   }
-  .testbereich-kopf {
-    padding-inline: var(--abstand-16);
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .testbereich-kopf .testbereich-aktionen {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .lauf-tabs {
-    padding-inline: var(--abstand-4);
-  }
-  .lauf-vorbereitung-ordner {
-    padding: var(--abstand-16) 0 0;
-    border-left: 0;
-    border-top: 1px solid var(--farbe-trennung);
-  }
-  .testbereich-metadaten > div {
-    grid-template-columns: minmax(96px, 140px) minmax(0, 1fr);
-  }
+}
+.anwendung[data-grosser-text='true'] .testbereich-konfiguration {
+  grid-template-columns: minmax(0, 1fr);
 }
 @media (forced-colors: active) {
   .testbereich,
-  .testbereich-ausgabe,
-  .testbereich-details pre,
-  .lauf-vorbereitung-ordner,
-  .lauf-zaehler {
+  .testbereich-ausgabe {
     color: CanvasText;
     background: Canvas;
     border-color: CanvasText;
   }
-  .testbereich-wirkung,
-  .testbereich-hilfe,
-  .testbereich-metadaten dt,
-  .testbereich-startgrund,
-  .testbereich-fehler,
-  .testbereich-details p,
-  .testbereich-modus {
-    color: CanvasText;
-  }
-  .lauf-tabs button[aria-selected='true'] {
-    color: Highlight;
-    border-bottom-color: Highlight;
-  }
 }
-
-@media (max-width: 600px) {
-  .testbereich-aktionen {
-    margin-left: 0;
-  }
-  .testbereich-kopf {
-    gap: var(--abstand-8) var(--abstand-16);
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .testbereich-kopf .testbereich-aktionen {
-    grid-column: 1;
-    grid-row: auto;
-  }
-  .testbereich-metadaten > div {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--abstand-4);
-  }
-}
-
-.testbereich-konfiguration:has(.lauf-vorbereitung-business:empty) .lauf-vorbereitung-ordner {
-  border: 0;
-  padding: 0;
-}
-.anwendung[style*='--text-skala: 2'] .lauf-vorbereitung-ordner {
-  border-left: 0;
-  border-top: 1px solid var(--farbe-trennung);
-  padding: var(--abstand-16) 0 0;
-}
-
-.anwendung[style*='--text-skala: 2'] .testbereich-kopf {
-  grid-template-columns: minmax(0, 1fr);
-}
-.anwendung[style*='--text-skala: 2'] .testbereich-aktionen {
-  grid-column: 1;
-  grid-row: auto;
-  justify-content: flex-start;
-  margin-left: 0;
-}
-
-/* Erst die Laufentscheidung, Details erst nach gezieltem Öffnen. */
 .lauf-kernauswahl {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -450,9 +235,7 @@
   border-top: 1px solid var(--farbe-trennung);
 }
 .testbereich .business-parameter > details > summary,
-.testbereich-laufdetails > summary,
-.lauf-zeitlimit > summary,
-.lauf-sicherheit > summary {
+.lauf-zeitlimit > summary {
   min-height: var(--hoehe-bedienfeld);
   padding-block: var(--abstand-8);
   cursor: pointer;
@@ -460,9 +243,7 @@
   overflow-wrap: anywhere;
 }
 .testbereich .business-parameter > details > summary:focus-visible,
-.testbereich-laufdetails > summary:focus-visible,
-.lauf-zeitlimit > summary:focus-visible,
-.lauf-sicherheit > summary:focus-visible {
+.lauf-zeitlimit > summary:focus-visible {
   outline: var(--fokus-kontur) solid var(--farbe-akzent);
   outline-offset: var(--fokus-abstand);
 }
@@ -483,15 +264,6 @@
 }
 .lauf-zeitlimit > .sl-feld {
   max-width: 240px;
-}
-.testbereich-laufdetails {
-  border-top: 1px solid var(--farbe-trennung);
-}
-.testbereich-laufdetails .testbereich-metadaten {
-  border-top: 0;
-}
-.testbereich-laufdetails > .testbereich-hilfe {
-  margin-bottom: var(--abstand-12);
 }
 .lauf-quellenuebersicht ul {
   margin: var(--abstand-8) 0;
@@ -536,24 +308,6 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* Erst der Laufkontext, danach die Ansichten innerhalb dieses Laufs. */
-.lauf-kopfleiste {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  flex: 0 0 auto;
-  border-bottom: 1px solid var(--farbe-trennung);
-}
-.lauf-kopfnavigation {
-  display: flex;
-  align-items: center;
-}
-.testbereich-stand {
-  white-space: nowrap;
-}
-.lauf-kopfleiste .lauf-tabs {
-  border-bottom: 0;
-}
 .lauf-vorbereitung-ordner > .sl-knopf {
   align-self: flex-start;
   max-width: 100%;

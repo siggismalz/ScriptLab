@@ -5,7 +5,10 @@ export async function sprachwahlBestaetigen(seite: Page, sprache: 'vbs' | 'pytho
   const dialog = seite.getByRole('dialog', { name: 'Neuer Workflow', exact: true });
   await expect(dialog).toBeVisible();
   await dialog
-    .getByRole('radio', { name: sprache === 'python' ? 'Python' : 'VBScript (VBS)', exact: true })
+    .getByRole('radio', {
+      name: sprache === 'python' ? 'Automatisierung' : 'Windows-Automatisierung',
+      exact: true,
+    })
     .check();
   await dialog.getByRole('button', { name: 'Workflow erstellen', exact: true }).click();
   await expect(dialog).not.toBeVisible();

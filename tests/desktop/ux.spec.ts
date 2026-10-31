@@ -1,5 +1,5 @@
 import { sprachwahlBestaetigen } from './sprache';
-import { workflowBefehl, ansichtsMenueAktion, einstellungenOeffnen } from './ansichten';
+import { workflowBefehl, einstellungenOeffnen } from './ansichten';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, readFile, writeFile, mkdir, rm, stat } from 'node:fs/promises';
@@ -130,9 +130,6 @@ async function projektExportieren(seite: Page): Promise<void> {
   const dialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
   await dialog.getByRole('combobox', { name: 'Inhalt', exact: true }).selectOption('projekt');
   await dialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
-}
-async function codevorschauOeffnen(seite: Page) {
-  await ansichtsMenueAktion(seite, 'Codevorschau öffnen');
 }
 
 async function projektLesen(seite: Page): Promise<Projekt> {
@@ -416,7 +413,7 @@ test('UX: UI-Textgröße ist vom Canvas-Zoom getrennt und behält Export und Pan
   }
 });
 
-test('UX: verschachtelter Ablauf zeigt 28-Block-Ansicht und optionale schreibgeschützte Codevorschau', async () => {
+test('UX: verschachtelter Ablauf bleibt im Canvas bearbeitbar und exportiert echte VBS-Dateien', async () => {
   const s = await starten(1, 1600, 1000);
   try {
     await oeffnen(s, '01-Alltagsworkflow.scriptlab');
@@ -425,13 +422,30 @@ test('UX: verschachtelter Ablauf zeigt 28-Block-Ansicht und optionale schreibges
     await screenshot(s.seite, 'workflow-28-bausteine');
     await oeffnen(s, '02-Verschachtelte-Ablaeufe.scriptlab');
     await s.seite.getByRole('button', { name: 'Alles anzeigen', exact: true }).click();
-    await codevorschauOeffnen(s.seite);
-    const code = s.seite.getByTestId('code-panel');
-    await expect(code).toBeVisible();
-    expect(await code.locator('pre').getAttribute('contenteditable')).not.toBe('true');
-    await expect(code).toContainText('If ');
-    await expect(code).toContainText('For ');
-    await screenshot(s.seite, 'verschachtelt-mit-code');
+    // Der sichtbare Fit ist sofort da; VIEWPORT_CHANGE wird danach im Mainstand gespeichert.
+    // Erst diesen wirklichen Ausgangsstand mit dem Export vergleichen.
+    const canvasZoom = await s.seite.locator('.blocklyBlockCanvas').evaluate((element) => {
+      if (!(element instanceof SVGGraphicsElement)) throw new Error('Die Canvasgrafik fehlt.');
+      const matrix = element.getCTM();
+      if (!matrix) throw new Error('Die Canvasdarstellung ist noch nicht verfügbar.');
+      return matrix.a;
+    });
+    // SVG liefert hier Float32-Rundung (z. B. 1.207000017 statt 1.207).
+    await expect.poll(async () => (await projektLesen(s.seite)).ansicht.zoom).toBeCloseTo(canvasZoom, 6);
+    const vorher = await projektLesen(s.seite);
+    const exportdatei = join(s.ordner, 'Verschachtelter Ablauf.vbs');
+    await speicherziel(s, exportdatei);
+    await scriptExportieren(s.seite);
+    await expect(s.seite.getByRole('status', { name: 'Export abgeschlossen' })).toBeVisible();
+    const bytes = await readFile(exportdatei);
+    expect([...bytes.subarray(0, 2)]).toEqual([255, 254]);
+    const code = bytes.subarray(2).toString('utf16le');
+    expect(code).toContain('If ');
+    expect(code).toContain('For ');
+    expect(await projektLesen(s.seite)).toEqual(vorher);
+    const lauf = await s.seite.evaluate(() => window.scriptlab.testLesen());
+    expect(lauf.ok && lauf.wert.zustand.laufId).toBeNull();
+    await screenshot(s.seite, 'verschachtelt-nach-export');
   } finally {
     await beenden(s);
   }
@@ -627,8 +641,7 @@ for (const zustand of ['verfuegbar', 'laedt', 'fehler'] as const) {
       );
       if (zustand === 'laedt') await expect(dialog.getByRole('progressbar')).toHaveAttribute('value', '43');
       await dialog
-        .locator('.einstellungs-abschnitt')
-        .filter({ has: s.seite.getByRole('heading', { name: 'Anwendungsupdates', exact: true }) })
+        .getByRole('region', { name: 'ScriptLab aktuell halten', exact: true })
         .scrollIntoViewIfNeeded();
       await screenshot(s.seite, `testantwort-update-${zustand}`);
       test.info().annotations.push({

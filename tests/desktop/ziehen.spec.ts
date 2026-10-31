@@ -103,9 +103,9 @@ test('Ziehen: Palette verbindet am Start mit sichtbarer nativer Einfügemarkieru
     await expect(marker(s.seite)).not.toHaveCount(0);
     expect((await stand(s.seite)).ansicht).toEqual(vorher.ansicht);
     const danach = await rahmen(s.seite, 'start');
+    await bild(s.seite, 'ziehen-am-start-mit-marker');
     expect(danach.x).toBeCloseTo(start.x, 1);
     expect(danach.y).toBeCloseTo(start.y, 1);
-    await bild(s.seite, 'ziehen-am-start-mit-marker');
     await s.seite.mouse.up();
     await expect
       .poll(async () => (await stand(s.seite)).editor.blocks?.blocks[0].next?.block.type)

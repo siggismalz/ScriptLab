@@ -187,9 +187,6 @@ for (const { anzahl, verzweigt } of [
     await expect.poll(ersterText).toBe(geaendert);
     const vorher = await seite.evaluate(() => window.scriptlab.testLesen());
     expect(vorher.ok && vorher.wert.zustand.phase).toBe('bereit');
-    await seite.getByRole('button', { name: 'Ansicht', exact: true }).click();
-    await seite.getByRole('menuitem', { name: 'Codevorschau öffnen', exact: true }).click();
-    const vorschau = await seite.locator('.code-panel pre').textContent();
     const scriptpfad = join(ordner, 'Export.py');
     await app!.evaluate(({ dialog }, pfad) => {
       dialog.showSaveDialog = async () => ({ canceled: false, filePath: pfad });
@@ -202,7 +199,19 @@ for (const { anzahl, verzweigt } of [
       .poll(async () => readFile(scriptpfad, 'utf8').catch(() => ''), { timeout: 15_000 })
       .not.toBe('');
     const exportcode = await readFile(scriptpfad, 'utf8');
-    expect(exportcode.replace(/\r\n/g, '\n')).toBe(vorschau?.replace(/\r\n/g, '\n'));
+    const kommentarzahl = verzweigt ? anzahl - 3 : anzahl - 1;
+    const erwarteteKommentare = Array.from({ length: kommentarzahl }, (_, index) =>
+      index === 0 ? geaendert : `Schritt ${index + 1}: Überprüfung von Geschäftsabläufen ohne Dateiänderung`,
+    );
+    const exportKommentare = exportcode
+      .split(/\r?\n/)
+      .map((zeile) => zeile.trim())
+      .filter((zeile) => /^# (?:Schritt \d+:|Geändert:)/.test(zeile))
+      .map((zeile) => zeile.slice(2));
+    expect(exportKommentare).toEqual(erwarteteKommentare);
+    const nachExport = await seite.evaluate(() => window.scriptlab.testLesen());
+    expect(nachExport.ok && nachExport.wert.zustand.phase).toBe('bereit');
+    expect(nachExport.ok && nachExport.wert.zustand.laufId).toBeNull();
     expect(exportcode).toContain(`Schritt ${verzweigt ? anzahl - 3 : anzahl - 1}: Überprüfung`);
     await laufStarten(seite);
     await expect

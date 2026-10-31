@@ -279,6 +279,7 @@ test('ein Headerklick führt den ungespeicherten VBS-Stand aus und zeigt das Erg
   expect(ende.optionen.basisVerzeichnis).toBe(vorlage.basis);
   await bleibtImAblauf();
   await expect(kurzansicht()).toContainText('Workflow beendet');
+  await expect(kurzansicht().getByRole('button', { name: 'Ergebnis ansehen', exact: true })).toBeVisible();
   await expect(kurzansicht().getByRole('log', { name: 'Laufausgabe', exact: true })).toContainText(
     'DIREKTSTART FERTIG',
   );

@@ -5,7 +5,8 @@ import type { Zertifikat } from '../windows/signatur';
 import type { UpdateZustand } from '../windows/updates';
 import { Dialog } from './komponenten/Dialog';
 import { Knopf } from './komponenten/Knopf';
-import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
+import { Auswahlfeld, Feld } from './komponenten/Feld';
+import { Karte } from './komponenten/Karte';
 import { Statusanzeige } from './komponenten/Statusanzeige';
 import type { PythonStatus } from '../gemeinsam/python';
 import type { BusinessStatus } from '../gemeinsam/business-laufzeit';
@@ -21,7 +22,6 @@ export function EinstellungenDialog({
   setzen,
   projekt,
   exportOptionenSetzen,
-  version,
   zertifikate,
   zertifikateLaden,
   zertifikatMeldung,
@@ -53,16 +53,11 @@ export function EinstellungenDialog({
 }) {
   const [bereich, setBereich] = useState('darstellung');
   const bereiche = [
-    { id: 'darstellung', text: 'Darstellung' },
-    { id: 'laufzeit', text: 'Laufzeit' },
+    { id: 'darstellung', text: 'Aussehen' },
+    { id: 'laufzeit', text: 'Automatisierungen' },
     { id: 'updates', text: 'Updates' },
-    ...(projektOptionenAnzeigen && projekt.skriptsprache === 'vbs'
-      ? [{ id: 'signatur', text: 'VBS-Signatur' }]
-      : []),
   ];
-  const [breitenEntwurf, setBreitenEntwurf] = useState(String(einstellungen.palettenBreite));
   const [zeitstempelEntwurf, setZeitstempelEntwurf] = useState(projekt.exportOptionen.zeitstempelUrl);
-  const [breitenFehler, setBreitenFehler] = useState('');
   const [zeitstempelFehler, setZeitstempelFehler] = useState('');
   const [businessStatus, setBusinessStatus] = useState<BusinessStatus | null>(null);
   const [komponentenFehler, setKomponentenFehler] = useState('');
@@ -121,10 +116,6 @@ export function EinstellungenDialog({
     }
   }
   useEffect(() => {
-    if (bereich === 'signatur' && (!projektOptionenAnzeigen || projekt.skriptsprache !== 'vbs'))
-      setBereich('darstellung');
-  }, [bereich, projektOptionenAnzeigen, projekt.skriptsprache]);
-  useEffect(() => {
     if (!offen || bereich !== 'laufzeit') return;
     let aktuell = true;
     setKomponentenLaden(true);
@@ -147,25 +138,12 @@ export function EinstellungenDialog({
     };
   }, [offen, bereich, pythonStatus]);
   useEffect(() => {
-    setBreitenEntwurf(String(einstellungen.palettenBreite));
-    setBreitenFehler('');
-  }, [einstellungen.palettenBreite, offen]);
-  useEffect(() => {
     setZeitstempelEntwurf(projekt.exportOptionen.zeitstempelUrl);
     setZeitstempelFehler('');
   }, [projekt.exportOptionen.zeitstempelUrl, offen]);
-  function breiteUebernehmen(): boolean {
-    const n = Number(breitenEntwurf);
-    if (!Number.isInteger(n) || n < 240 || n > 400) {
-      setBreitenFehler('Gib eine ganze Zahl zwischen 240 und 400 ein.');
-      return false;
-    }
-    setBreitenFehler('');
-    if (n !== einstellungen.palettenBreite) setzen({ ...einstellungen, palettenBreite: n });
-    return true;
-  }
   function zeitstempelUebernehmen(): boolean {
-    if (projekt.skriptsprache !== 'vbs') return true;
+    if (!projektOptionenAnzeigen || projekt.skriptsprache !== 'vbs' || !projekt.exportOptionen.signieren)
+      return true;
     if (zeitstempelEntwurf) {
       try {
         const url = new URL(zeitstempelEntwurf);
@@ -185,15 +163,14 @@ export function EinstellungenDialog({
     <Dialog
       offen={offen}
       titel="Einstellungen"
+      className="einstellungen-dialog"
       onSchliessen={schliessen}
       fuss={
         <Knopf
           variante="primaer"
           onClick={() => {
-            const b = breiteUebernehmen(),
-              z = zeitstempelUebernehmen();
-            if (b && z) schliessen();
-            else setBereich(!b ? 'darstellung' : 'signatur');
+            if (zeitstempelUebernehmen()) schliessen();
+            else setBereich('laufzeit');
           }}
         >
           Fertig
@@ -206,7 +183,7 @@ export function EinstellungenDialog({
         </p>
       )}
       {fehlerMeldung && <Statusanzeige art="fehler">{fehlerMeldung}</Statusanzeige>}
-      <nav className="einstellungen-bereiche" role="tablist" aria-label="Einstellungsbereiche">
+      <nav className="einstellungen-auswahl" role="tablist" aria-label="Einstellungsbereiche">
         {bereiche.map((tab, index) => (
           <button
             key={tab.id}
@@ -235,65 +212,77 @@ export function EinstellungenDialog({
         ))}
       </nav>
       <div
+        className="einstellungen-inhalt"
         role="tabpanel"
         id="einstellung-panel-darstellung"
         aria-labelledby="einstellung-darstellung"
         hidden={bereich !== 'darstellung'}
       >
-        <section className="einstellungs-abschnitt">
-          <h3>Darstellung</h3>
+        <Karte as="section" className="einstellungen-karte" aria-labelledby="einstellungen-aussehen">
+          <div className="einstellungen-kartenkopf">
+            <h3 id="einstellungen-aussehen">Farben und Lesbarkeit</h3>
+            <p>Passe ScriptLab an deine Anzeige an.</p>
+          </div>
+          <div className="einstellungen-felder">
+            <Auswahlfeld
+              beschriftung="Farbschema"
+              value={einstellungen.darstellung ?? 'hell'}
+              onChange={(e) =>
+                setzen({ ...einstellungen, darstellung: e.target.value as 'dunkel' | 'hell' | 'system' })
+              }
+            >
+              <option value="hell">Hell</option>
+              <option value="dunkel">Dunkel</option>
+              <option value="system">Wie Windows</option>
+            </Auswahlfeld>
+            <Auswahlfeld
+              beschriftung="Textgröße der Oberfläche"
+              value={einstellungen.textSkalierung}
+              onChange={(e) => setzen({ ...einstellungen, textSkalierung: Number(e.target.value) })}
+            >
+              {[1, 1.25, 1.5, 2].map((v) => (
+                <option key={v} value={v}>
+                  {Math.round(v * 100)} %
+                </option>
+              ))}
+            </Auswahlfeld>
+          </div>
+        </Karte>
+        <Karte as="section" className="einstellungen-karte" aria-labelledby="einstellungen-palette">
+          <div className="einstellungen-kartenkopf">
+            <h3 id="einstellungen-palette">Bausteinpalette</h3>
+            <p>Mehr Platz für Bausteinnamen oder für deinen Ablauf.</p>
+          </div>
           <Auswahlfeld
-            beschriftung="Farbschema"
-            hilfe="„System“ folgt der Windows-Darstellung."
-            value={einstellungen.darstellung ?? 'hell'}
-            onChange={(e) =>
-              setzen({ ...einstellungen, darstellung: e.target.value as 'dunkel' | 'hell' | 'system' })
-            }
+            beschriftung="Platz für Bausteine"
+            value={einstellungen.palettenBreite}
+            onChange={(e) => setzen({ ...einstellungen, palettenBreite: Number(e.target.value) })}
           >
-            <option value="hell">Hell</option>
-            <option value="dunkel">Dunkel</option>
-            <option value="system">System</option>
+            {![240, 272, 336, 400].includes(einstellungen.palettenBreite) && (
+              <option value={einstellungen.palettenBreite}>Eigene Einstellung</option>
+            )}
+            <option value={240}>Kompakt</option>
+            <option value={272}>Standard</option>
+            <option value={336}>Geräumig</option>
+            <option value={400}>Breit</option>
           </Auswahlfeld>
-          <Auswahlfeld
-            beschriftung="Textgröße der Oberfläche"
-            hilfe="Unabhängig von Windows-Skalierung und Canvas-Zoom."
-            value={einstellungen.textSkalierung}
-            onChange={(e) => setzen({ ...einstellungen, textSkalierung: Number(e.target.value) })}
-          >
-            {[1, 1.25, 1.5, 2].map((v) => (
-              <option key={v} value={v}>
-                {Math.round(v * 100)} %
-              </option>
-            ))}
-          </Auswahlfeld>
-          <Feld
-            beschriftung="Breite der Bausteinpalette"
-            hilfe="240–400 logische Pixel."
-            type="number"
-            min={240}
-            max={400}
-            value={breitenEntwurf}
-            onChange={(e) => setBreitenEntwurf(e.target.value)}
-            onBlur={breiteUebernehmen}
-            fehler={breitenFehler}
-          />
-        </section>
+        </Karte>
       </div>
       <div
+        className="einstellungen-inhalt"
         role="tabpanel"
         id="einstellung-panel-laufzeit"
         aria-labelledby="einstellung-laufzeit"
         hidden={bereich !== 'laufzeit'}
       >
-        <section
-          className="einstellungs-abschnitt komponenten-uebersicht"
-          aria-labelledby="komponenten-titel"
-        >
-          <h3 id="komponenten-titel">Mitgelieferte Komponenten</h3>
-          <p>Python sowie die Komponenten für Tabellen und Dokumente gehören zu ScriptLab.</p>
-          <div id="komponenten-status" className="komponenten-status" aria-busy={komponentenLaden}>
-            <section>
-              <h4>Python</h4>
+        <Karte as="section" className="einstellungen-karte" aria-labelledby="einstellungen-automatisierungen">
+          <div className="einstellungen-kartenkopf">
+            <h3 id="einstellungen-automatisierungen">Workflows und Dokumente</h3>
+            <p>Alles Nötige wird mit ScriptLab geliefert.</p>
+          </div>
+          <div className="einstellungen-verfuegbarkeit" aria-busy={komponentenLaden}>
+            <div>
+              <h4>Allgemeine Automatisierungen</h4>
               <Statusanzeige
                 art={
                   pythonStatus?.zustand === 'bereit' && pythonStatus.installation
@@ -305,10 +294,16 @@ export function EinstellungenDialog({
                         : 'neutral'
                 }
               >
-                {pythonStatus?.meldung ?? 'Noch nicht geprüft.'}
+                {pythonStatus?.zustand === 'bereit' && pythonStatus.installation
+                  ? 'Bereit zum Ausführen.'
+                  : pythonStatus?.zustand === 'prueft'
+                    ? 'Verfügbarkeit wird geprüft …'
+                    : pythonStatus?.zustand === 'fehler' || pythonStatus?.zustand === 'fehlt'
+                      ? 'Zurzeit nicht verfügbar. Prüfe die Verfügbarkeit erneut.'
+                      : 'Noch nicht geprüft.'}
               </Statusanzeige>
-            </section>
-            <section>
+            </div>
+            <div>
               <h4>Tabellen und Dokumente</h4>
               <Statusanzeige
                 art={
@@ -323,67 +318,37 @@ export function EinstellungenDialog({
                           : 'neutral'
                 }
               >
-                {komponentenFehler ||
-                  (komponentenLaden ? 'Status wird geladen …' : businessStatus?.meldung) ||
-                  'Noch nicht geprüft.'}
+                {komponentenLaden
+                  ? 'Verfügbarkeit wird geprüft …'
+                  : businessStatus?.zustand === 'bereit'
+                    ? 'Bereit zum Verarbeiten.'
+                    : komponentenFehler || businessStatus
+                      ? 'Zurzeit nicht verfügbar. Prüfe die Verfügbarkeit erneut.'
+                      : 'Noch nicht geprüft.'}
               </Statusanzeige>
-            </section>
+            </div>
           </div>
-          <div className="knopfgruppe">
-            <Knopf
-              onClick={() => pythonAktion('pruefen')}
-              disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft' || komponentenLaden}
-              grund={verarbeitung || 'Die Komponenten werden gerade geprüft.'}
-            >
-              Erneut prüfen
-            </Knopf>
-          </div>
-          <details className="komponenten-details">
-            <summary>Versionen und technische Angaben</summary>
-            {pythonStatus?.installation && (
-              <dl>
-                <div>
-                  <dt>Python</dt>
-                  <dd>
-                    {pythonStatus.installation.implementierung} {pythonStatus.installation.version} ·{' '}
-                    {pythonStatus.installation.architektur}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Dialogfunktionen</dt>
-                  <dd>
-                    {pythonStatus.installation.tkinter === true
-                      ? 'Verfügbar'
-                      : pythonStatus.installation.tkinter === false
-                        ? 'Nicht verfügbar'
-                        : 'Noch nicht geprüft'}
-                  </dd>
-                </div>
-              </dl>
-            )}
-            {pythonStatus?.installation?.pfad && (
-              <Textfeld
-                beschriftung="Mitgelieferte Programmdatei"
-                readOnly
-                rows={2}
-                value={pythonStatus.installation.pfad}
-              />
-            )}
-            {businessStatus && (
-              <dl>
-                {businessStatus.pakete.map((paket) => (
-                  <div key={paket.name}>
-                    <dt>{paket.name}</dt>
-                    <dd>
-                      {paket.version ?? 'Nicht vorhanden'}
-                      {!paket.importierbar && ' · Nicht verwendbar'}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-          </details>
-        </section>
+          <Knopf
+            onClick={() => pythonAktion('pruefen')}
+            disabled={!!verarbeitung || pythonStatus?.zustand === 'prueft' || komponentenLaden}
+            grund={verarbeitung || 'Die Verfügbarkeit wird gerade geprüft.'}
+          >
+            Verfügbarkeit prüfen
+          </Knopf>
+          {(komponentenFehler ||
+            (pythonStatus && ['fehler', 'fehlt'].includes(pythonStatus.zustand)) ||
+            (businessStatus && businessStatus.zustand !== 'bereit')) && (
+            <details className="einstellungen-fehlerdetails">
+              <summary>Fehlermeldung anzeigen</summary>
+              {pythonStatus && ['fehler', 'fehlt'].includes(pythonStatus.zustand) && (
+                <p>{pythonStatus.meldung}</p>
+              )}
+              {(komponentenFehler || (businessStatus && businessStatus.zustand !== 'bereit')) && (
+                <p>{komponentenFehler || businessStatus?.meldung}</p>
+              )}
+            </details>
+          )}
+        </Karte>
         <MlLaufzeit
           status={mlStatus}
           aktiv={mlAktiv}
@@ -391,85 +356,12 @@ export function EinstellungenDialog({
           fehler={mlFehler}
           aktion={(art) => void mlAktion(art)}
         />
-      </div>
-      <div
-        role="tabpanel"
-        id="einstellung-panel-updates"
-        aria-labelledby="einstellung-updates"
-        hidden={bereich !== 'updates'}
-      >
-        <section className="einstellungs-abschnitt">
-          <h3>Anwendungsupdates</h3>
-          <p>
-            Installierte Version: {version}
-            {update?.verfuegbareVersion ? ` · Verfügbar: ${update.verfuegbareVersion}` : ''}
-          </p>
-          {(['automatischeUpdates', 'vorabversionen'] as const).map((key) => (
-            <label key={key} className="schalter">
-              <input
-                type="checkbox"
-                checked={einstellungen[key]}
-                onChange={(e) => setzen({ ...einstellungen, [key]: e.target.checked })}
-              />
-              <span>
-                {key === 'automatischeUpdates'
-                  ? 'Automatisch nach Updates suchen'
-                  : 'Vorabversionen bewusst zulassen'}
-              </span>
-            </label>
-          ))}
-          {update && (
-            <Statusanzeige
-              art={
-                update.phase === 'fehler'
-                  ? 'fehler'
-                  : update.phase === 'prueft' || update.phase === 'laedt'
-                    ? 'verarbeitung'
-                    : 'neutral'
-              }
-            >
-              {update.meldung}
-            </Statusanzeige>
-          )}
-          {update?.phase === 'laedt' && (
-            <>
-              <progress value={update.fortschritt} max={100} aria-label="Update-Download" />
-              <p>{Math.round(update.fortschritt)} % heruntergeladen</p>
-            </>
-          )}
-          <div className="knopfgruppe umbrechen">
-            <Knopf
-              verarbeitung={update?.phase === 'prueft'}
-              disabled={Boolean(verarbeitung)}
-              grundId="einstellungen-vorgang"
-              onClick={() => updateAktion('pruefen')}
-            >
-              Nach Updates suchen
-            </Knopf>
-            {update?.phase === 'verfuegbar' && (
-              <Knopf onClick={() => updateAktion('laden')}>Update herunterladen</Knopf>
-            )}
-            {update?.phase === 'bereit-zur-installation' && (
-              <Knopf onClick={() => updateAktion('installieren')}>Installieren und neu starten</Knopf>
-            )}
-          </div>
-          {update?.aenderungen && (
-            <section>
-              <h4>Änderungen</h4>
-              <pre className="aenderungen">{update.aenderungen}</pre>
-            </section>
-          )}
-        </section>
-      </div>
-      <div
-        role="tabpanel"
-        id="einstellung-panel-signatur"
-        aria-labelledby="einstellung-signatur"
-        hidden={bereich !== 'signatur'}
-      >
         {projektOptionenAnzeigen && projekt.skriptsprache === 'vbs' && (
-          <section className="einstellungs-abschnitt">
-            <h3>Signatur für dieses Projekt</h3>
+          <Karte as="section" className="einstellungen-karte" aria-labelledby="einstellungen-signatur">
+            <div className="einstellungen-kartenkopf">
+              <h3 id="einstellungen-signatur">Signatur für dieses Projekt</h3>
+              <p>Unterschreibe exportierte VBS-Dateien mit deinem Zertifikat.</p>
+            </div>
             <label className="schalter">
               <input
                 type="checkbox"
@@ -480,12 +372,11 @@ export function EinstellungenDialog({
               />
               <span>Exportierte Datei signieren</span>
             </label>
-            <p>Der normale Export funktioniert ohne Zertifikat.</p>
             {projekt.exportOptionen.signieren && (
               <>
                 <p>
-                  Für die optionale Signatur benötigst du ein gültiges Code-Signing-Zertifikat mit privatem
-                  Schlüssel im Windows-Zertifikatspeicher.
+                  Du benötigst ein gültiges Signaturzertifikat mit privatem Schlüssel im
+                  Windows-Zertifikatspeicher.
                 </p>
                 <Knopf
                   onClick={zertifikateLaden}
@@ -516,16 +407,21 @@ export function EinstellungenDialog({
                       (z) => z.fingerabdruck === projekt.exportOptionen.zertifikatFingerabdruck,
                     ) && (
                       <option value={projekt.exportOptionen.zertifikatFingerabdruck}>
-                        Gespeicherte Auswahl: {projekt.exportOptionen.zertifikatFingerabdruck}
+                        Gespeicherte Auswahl
                       </option>
                     )}
                   {zertifikate.map((z) => (
                     <option key={z.fingerabdruck} value={z.fingerabdruck}>
-                      {z.betreff} · {z.fingerabdruck}
+                      {z.betreff}
+                      {zertifikate.filter((anderes) => anderes.betreff === z.betreff).length > 1 &&
+                        ` · ${z.fingerabdruck}`}
                     </option>
                   ))}
                 </Auswahlfeld>
-                <details>
+                <details
+                  className="einstellungen-fehlerdetails"
+                  open={Boolean(zeitstempelFehler) || undefined}
+                >
                   <summary>Zeitstempel einrichten</summary>
                   <Feld
                     beschriftung="Zeitstempeldienst (optional)"
@@ -534,17 +430,90 @@ export function EinstellungenDialog({
                     onChange={(e) => setZeitstempelEntwurf(e.target.value)}
                     onBlur={zeitstempelUebernehmen}
                     fehler={zeitstempelFehler}
-                    hilfe="Dieser Windows-Signaturweg unterstützt für Authenticode-Zeitstempel nur HTTP."
+                    hilfe="Dieser Signaturweg unterstützt nur HTTP."
                   />
                 </details>
-                <p>
-                  Eine Signatur hilft, Herausgeber und Änderungen zu prüfen. Sie garantiert keine
-                  Ungefährlichkeit und verhindert keine Windows-Warnungen.
-                </p>
+                <p>Eine Signatur bestätigt den Herausgeber. Sie garantiert keine Ungefährlichkeit.</p>
               </>
             )}
-          </section>
+          </Karte>
         )}
+      </div>
+      <div
+        className="einstellungen-inhalt"
+        role="tabpanel"
+        id="einstellung-panel-updates"
+        aria-labelledby="einstellung-updates"
+        hidden={bereich !== 'updates'}
+      >
+        <Karte as="section" className="einstellungen-karte" aria-labelledby="einstellungen-updates">
+          <div className="einstellungen-kartenkopf">
+            <h3 id="einstellungen-updates">ScriptLab aktuell halten</h3>
+            <p>Suche nach Verbesserungen und installiere Updates bewusst.</p>
+          </div>
+          <label className="schalter">
+            <input
+              type="checkbox"
+              checked={einstellungen.automatischeUpdates}
+              onChange={(e) => setzen({ ...einstellungen, automatischeUpdates: e.target.checked })}
+            />
+            <span>Automatisch nach Updates suchen</span>
+          </label>
+          {update && (
+            <Statusanzeige
+              art={
+                update.phase === 'fehler'
+                  ? 'fehler'
+                  : update.phase === 'prueft' || update.phase === 'laedt'
+                    ? 'verarbeitung'
+                    : 'neutral'
+              }
+            >
+              {update.meldung}
+            </Statusanzeige>
+          )}
+          {update?.phase === 'laedt' && (
+            <div className="einstellungen-download">
+              <progress value={update.fortschritt} max={100} aria-label="Update-Download" />
+              <p>{Math.round(update.fortschritt)} % heruntergeladen</p>
+            </div>
+          )}
+          <div className="einstellungen-aktionen">
+            <Knopf
+              verarbeitung={update?.phase === 'prueft'}
+              disabled={Boolean(verarbeitung)}
+              grundId="einstellungen-vorgang"
+              onClick={() => updateAktion('pruefen')}
+            >
+              Nach Updates suchen
+            </Knopf>
+            {update?.phase === 'verfuegbar' && (
+              <Knopf onClick={() => updateAktion('laden')}>Update herunterladen</Knopf>
+            )}
+            {update?.phase === 'bereit-zur-installation' && (
+              <Knopf variante="primaer" onClick={() => updateAktion('installieren')}>
+                Installieren und neu starten
+              </Knopf>
+            )}
+          </div>
+          {update?.aenderungen && (
+            <details className="einstellungen-fehlerdetails">
+              <summary>Was ist neu?</summary>
+              <pre className="aenderungen">{update.aenderungen}</pre>
+            </details>
+          )}
+          <details className="einstellungen-fehlerdetails">
+            <summary>Vorabversionen</summary>
+            <label className="schalter">
+              <input
+                type="checkbox"
+                checked={einstellungen.vorabversionen}
+                onChange={(e) => setzen({ ...einstellungen, vorabversionen: e.target.checked })}
+              />
+              <span>Vorabversionen anbieten (können noch Fehler enthalten)</span>
+            </label>
+          </details>
+        </Karte>
       </div>
     </Dialog>
   );

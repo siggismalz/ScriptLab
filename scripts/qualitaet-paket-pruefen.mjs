@@ -105,7 +105,10 @@ try {
   if (!neu.ok || !neu.wert) throw new Error('Der synthetische Python-Workflow konnte nicht angelegt werden.');
   // Die vorigen IPC-Proben ersetzen den Main-Stand. Vor echter UI-Bedienung denselben Stand laden.
   await seite.reload();
-  await expect(seite.getByTestId('editor-sprache')).toHaveText('Python');
+  await expect(seite.getByRole('button', { name: 'Workflow ausführen', exact: true })).toBeVisible();
+  const neuerStand = await seite.evaluate(() => window.scriptlab.laden());
+  if (!neuerStand.ok || neuerStand.wert.dokument.projekt.skriptsprache !== 'python')
+    throw new Error('Der geladene Workflow hat seine Sprache nicht erhalten.');
   const projekt = neu.wert.projekt;
   const soll = 'ScriptLab-Paketprüfung: Grüße äöü';
   const quelle = join(basis, 'Abgelegte Quelle mit Umlaut ä.txt');

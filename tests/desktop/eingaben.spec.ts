@@ -63,7 +63,7 @@ async function einstellungenOeffnen() {
 }
 async function zeitstempelOeffnen() {
   const dialog = await einstellungenOeffnen();
-  await dialog.getByRole('tab', { name: 'VBS-Signatur', exact: true }).click();
+  await dialog.getByRole('tab', { name: 'Automatisierungen', exact: true }).click();
   await dialog.getByRole('checkbox', { name: 'Exportierte Datei signieren' }).check();
   await dialog.getByText('Zeitstempel einrichten', { exact: true }).click();
   const feld = dialog.getByRole('textbox', { name: 'Zeitstempeldienst (optional)', exact: true });
@@ -167,19 +167,12 @@ async function undoDiagnoseEinrichten() {
   });
 }
 
-test('übernimmt nacheinander getippte Palettebreite 300 erst nach fertiger Eingabe', async () => {
+test('übernimmt eine benannte Palettenbreite und erhält sie im gespeicherten Stand', async () => {
   const dialog = await einstellungenOeffnen();
-  const feld = dialog.getByRole('spinbutton', { name: 'Breite der Bausteinpalette', exact: true });
-  await feld.fill('');
-  await feld.pressSequentially('3');
-  await expect(feld).toHaveValue('3');
-  await expect(feld).not.toHaveAttribute('aria-invalid', 'true');
-  await feld.pressSequentially('0');
-  await expect(feld).toHaveValue('30');
-  await feld.pressSequentially('0');
-  await expect(feld).toHaveValue('300');
-  await expect(feld).not.toHaveAttribute('aria-invalid', 'true');
-  await feld.press('Tab');
+  const feld = dialog.getByRole('combobox', { name: 'Platz für Bausteine', exact: true });
+  await expect(feld).toHaveValue('272');
+  await feld.selectOption({ label: 'Geräumig' });
+  await expect(feld).toHaveValue('336');
   await expect
     .poll(() =>
       seite.evaluate(async () => {
@@ -187,12 +180,16 @@ test('übernimmt nacheinander getippte Palettebreite 300 erst nach fertiger Eing
         return r.ok ? r.wert.einstellungen.palettenBreite : null;
       }),
     )
-    .toBe(300);
-  const gespeichert = JSON.parse(await readFile(join(ordner, 'Profil', 'einstellungen.json'), 'utf8'));
-  expect(gespeichert.palettenBreite).toBe(300);
+    .toBe(336);
+  await expect
+    .poll(
+      async () =>
+        JSON.parse(await readFile(join(ordner, 'Profil', 'einstellungen.json'), 'utf8')).palettenBreite,
+    )
+    .toBe(336);
   await dialog.getByRole('button', { name: 'Fertig', exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  expect((await seite.getByTestId('palette').boundingBox())!.width).toBeCloseTo(300, 0);
+  expect((await seite.getByTestId('palette').boundingBox())!.width).toBeCloseTo(336, 0);
 });
 
 test('behandelt eine schrittweise getippte Zeitstempeladresse als ruhigen Entwurf', async () => {
@@ -246,7 +243,7 @@ test('hält fehlerhafte Einstellungen aus dem Projekt heraus und erhält die Dat
   expect(await readFile(datei)).toEqual(original);
   expect((await projektLesen()).exportOptionen.zeitstempelUrl).toBe('');
   await einstellungenOeffnen();
-  await dialog.getByRole('tab', { name: 'VBS-Signatur', exact: true }).click();
+  await dialog.getByRole('tab', { name: 'Automatisierungen', exact: true }).click();
   if (!(await feld.isVisible())) await dialog.getByText('Zeitstempel einrichten', { exact: true }).click();
   await expect(feld).toHaveValue('');
 });
@@ -364,14 +361,17 @@ test.describe('vorhandenes Profil aus der bisherigen Anwendung', () => {
     const dialog = await einstellungenOeffnen();
     await dialog.getByRole('tab', { name: 'Updates', exact: true }).click();
     await expect(dialog.getByRole('checkbox', { name: 'Automatisch nach Updates suchen' })).not.toBeChecked();
-    await expect(dialog.getByRole('checkbox', { name: 'Vorabversionen bewusst zulassen' })).toBeChecked();
-    await dialog.getByRole('tab', { name: 'Darstellung', exact: true }).click();
+    await dialog.locator('summary').filter({ hasText: 'Vorabversionen' }).click();
+    await expect(
+      dialog.getByRole('checkbox', { name: 'Vorabversionen anbieten (können noch Fehler enthalten)' }),
+    ).toBeChecked();
+    await dialog.getByRole('tab', { name: 'Aussehen', exact: true }).click();
     await expect(dialog.getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })).toHaveValue(
       '1',
     );
-    await expect(
-      dialog.getByRole('spinbutton', { name: 'Breite der Bausteinpalette', exact: true }),
-    ).toHaveValue('272');
+    await expect(dialog.getByRole('combobox', { name: 'Platz für Bausteine', exact: true })).toHaveValue(
+      '272',
+    );
   });
 });
 

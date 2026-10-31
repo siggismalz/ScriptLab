@@ -23,13 +23,11 @@ export function MlLaufzeit({ status, aktiv, fortschritt, fehler, aktion }: MlLau
     laufend.fertigePakete >= 0 &&
     laufend.fertigePakete <= laufend.gesamtPakete;
   return (
-    <Karte as="section" className="ml-laufzeit" aria-label="Machine-Learning-Komponenten">
-      <h3>Machine-Learning-Komponenten</h3>
-      <p>
-        Ein optionales CPU-Paket für Training und Vorhersagen. Die Online-Einrichtung lädt die festgelegten
-        Komponenten erst nach deinem bewussten Auftrag. Alternativ kannst du einen vorbereiteten
-        Offline-Paketordner wählen.
-      </p>
+    <Karte as="section" className="ml-laufzeit einstellungen-karte" aria-label="Machine Learning">
+      <div className="einstellungen-kartenkopf">
+        <h3>Machine Learning</h3>
+        <p>Modelle mit Tabellendaten trainieren und Vorhersagen erstellen. Einmalige Einrichtung nötig.</p>
+      </div>
       <Statusanzeige
         art={
           fehler || status?.zustand === 'fehler'
@@ -42,14 +40,21 @@ export function MlLaufzeit({ status, aktiv, fortschritt, fehler, aktion }: MlLau
         }
       >
         {fehler ||
-          (aktiv ? laufend?.meldung : '') ||
-          status?.meldung ||
-          'Die ML-Komponenten wurden noch nicht geprüft.'}
+          (aktiv ? laufend?.meldung || status?.meldung || 'Einrichtung wird vorbereitet …' : '') ||
+          (status?.zustand === 'bereit'
+            ? 'Bereit für Training und Vorhersagen.'
+            : status?.zustand === 'fehlt'
+              ? 'Noch nicht eingerichtet.'
+              : status?.zustand === 'prueft'
+                ? 'Verfügbarkeit wird geprüft …'
+                : status?.zustand === 'fehler'
+                  ? status.meldung
+                  : 'Noch nicht geprüft.')}
       </Statusanzeige>
       {aktiv && hatFortschritt && (
         <div className="ml-fortschritt">
           <p>
-            {laufend.fertigePakete} von {laufend.gesamtPakete} Paketen in der gemeldeten Phase.
+            In diesem Abschnitt: {laufend.fertigePakete} von {laufend.gesamtPakete} Bestandteilen.
           </p>
           <progress
             aria-label="Fortschritt der ML-Einrichtung"
@@ -64,13 +69,13 @@ export function MlLaufzeit({ status, aktiv, fortschritt, fehler, aktion }: MlLau
           grund="Warte auf das Ende des laufenden Vorgangs oder brich ihn ab."
           onClick={() => aktion('pruefen')}
         >
-          ML-Komponenten prüfen
+          Verfügbarkeit prüfen
         </Knopf>
         <Knopf disabled={aktiv} grund="Ein Vorgang läuft bereits." onClick={() => aktion('einrichten')}>
-          CPU-Paket online einrichten
+          Online einrichten
         </Knopf>
         <Knopf disabled={aktiv} grund="Ein Vorgang läuft bereits." onClick={() => aktion('offline')}>
-          Offline-Paketordner verwenden
+          Aus Ordner einrichten
         </Knopf>
         {aktiv && (
           <Knopf variante="gefahr" onClick={() => aktion('abbrechen')}>
@@ -78,34 +83,11 @@ export function MlLaufzeit({ status, aktiv, fortschritt, fehler, aktion }: MlLau
           </Knopf>
         )}
       </div>
-      <p>
-        Ohne ML-Paket bleiben Bearbeiten, Speichern und Exportieren möglich. Ein Workflowstart installiert
-        keine Pakete.
-      </p>
-      {status && (
-        <details>
-          <summary>Geprüfte Komponenten und technische Angaben</summary>
-          <ul>
-            {status.pakete.map((paket) => (
-              <li key={paket.name}>
-                {paket.name}: {paket.version ?? 'fehlt'} · benötigt {paket.sollVersion}
-                {paket.version && !paket.importierbar ? ' · nicht importierbar' : ''}
-              </li>
-            ))}
-          </ul>
-          {status.installation && (
-            <dl className="ml-angaben">
-              <div>
-                <dt>Python-Version</dt>
-                <dd>{status.installation.version}</dd>
-              </div>
-              <div>
-                <dt>Programmdatei</dt>
-                <dd>{status.installation.pfad}</dd>
-              </div>
-            </dl>
-          )}
-        </details>
+      {status?.zustand !== 'bereit' && !aktiv && (
+        <p className="einstellungen-hinweis">
+          Bearbeiten, Speichern und Exportieren sind auch ohne Einrichtung möglich. Ein Download beginnt erst
+          mit „Online einrichten“; „Aus Ordner einrichten“ nutzt vorbereitete Installationsdateien.
+        </p>
       )}
     </Karte>
   );

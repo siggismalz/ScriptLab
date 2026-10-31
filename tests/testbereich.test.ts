@@ -56,19 +56,19 @@ function lauf(angaben: Partial<TestZustand> = {}): TestZustand {
 }
 
 describe('Kontrollierte Darstellung des Testbereichs', () => {
-  it('hält den Listenrückweg in derselben Kopfleiste wie Ansichten und Startaktion', () => {
+  it('hält Verlauf und optionale Einstellungen im Ergebniskopf statt zusätzlicher Tabs', () => {
     const html = darstellung(testBereit(), {
-      kopfNavigation: createElement('button', { type: 'button' }, 'Alle Läufe'),
+      kopfNavigation: createElement('button', { type: 'button' }, 'Verlauf anzeigen'),
       businessVorbereitung: createElement('div', {}, 'Modus und Parameter'),
     });
     const kopf = html.slice(
-      html.indexOf('class="lauf-kopfleiste"'),
+      html.indexOf('class="testbereich-kopf"'),
       html.indexOf('class="testbereich-inhalt"'),
     );
-    expect(kopf).toContain('Alle Läufe');
-    expect(kopf).toContain('Ansichten des Laufs');
-    expect(kopf).toContain('Prüflauf starten');
-    expect(darstellung()).not.toContain('class="lauf-kopfnavigation"');
+    expect(kopf).toContain('Verlauf anzeigen');
+    expect(kopf).toContain('Laufeinstellungen');
+    expect(kopf).not.toContain('Prüflauf starten');
+    expect(html).not.toContain('role="tablist"');
   });
 
   it('zeigt bei zurückgesetzten Business-Optionen bereits vor der Initialisierung einen Prüflauf', () => {
@@ -76,7 +76,7 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
       businessVorbereitung: createElement('div', {}, 'Modus und Parameter'),
     });
     expect(knopf(html, 'Prüflauf starten')).toContain('sl-knopf--primaer');
-    expect(html).toMatch(/class="testbereich-wirkung"[^>]*data-modus="prueflauf"[^>]*hidden=""/);
+    expect(html).toMatch(/aria-label="Laufeinstellungen"[^>]*hidden=""/);
     const ohneBusiness = darstellung();
     expect(knopf(ohneBusiness, 'Workflow ausführen')).toContain('sl-knopf--primaer');
     const bewusst = darstellung(testBereit(), {
@@ -95,22 +95,25 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
       },
     });
     expect(knopf(bewusst, 'Workflow ausführen')).toContain('sl-knopf--primaer');
-    expect(bewusst).toMatch(/class="testbereich-wirkung"[^>]*data-modus="ausfuehren"/);
+    expect(bewusst).toMatch(/aria-label="Laufeinstellungen"[^>]*hidden=""/);
   });
 
-  it('ordnet einen historischen Lauf in der Kopfleiste mit Datum, Modus und Stand ein', () => {
-    const html = darstellung(lauf({ phase: 'beendet', exitcode: 0 }), {
+  it('ordnet einen historischen Lauf mit Datum und Modus ein und hält seine Standkennung intern', () => {
+    const zustand = lauf({ phase: 'beendet', exitcode: 0 });
+    const html = darstellung(zustand, {
       historisch: true,
-      kopfNavigation: createElement('button', { type: 'button' }, 'Alle Läufe'),
+      kopfNavigation: createElement('button', { type: 'button' }, 'Verlauf anzeigen'),
     });
     const kopf = html.slice(
-      html.indexOf('class="lauf-kopfleiste"'),
+      html.indexOf('class="testbereich-kopf"'),
       html.indexOf('class="testbereich-inhalt"'),
     );
-    expect(kopf).toContain('Lauf vom');
-    expect(kopf).toContain('dateTime="2026-10-26T12:00:00Z"');
+    expect(kopf).toContain('Ausführung vom');
+    expect(kopf).toContain('26.10.26');
     expect(kopf).toContain('Echte Ausführung');
-    expect(kopf).toContain('Stand aaaaaaaa');
+    expect(kopf).not.toContain('aaaaaaaa');
+    expect(zustand.standHash).toBe('a'.repeat(64));
+    expect(zustand.gestartetAm).toBe('2026-10-26T12:00:00Z');
     expect(kopf).toContain('Neuen Lauf vorbereiten');
     expect(kopf).not.toMatch(/role="tab"[^>]*>Vorbereitung<\/button>/);
   });
@@ -136,93 +139,95 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
         blockAnzeigen: nichts,
       }),
     );
-    expect(html).toContain('Alle Läufe');
+    expect(html).toContain('Verlauf anzeigen');
     expect(html).not.toContain('Aktueller Arbeitsstand');
     expect(html).not.toContain('class="laufverwaltung-kontext"');
   });
 
-  it('bietet für ungeprüftes Python den Komponentenstatus und zeigt eine alte Version nur aus dem Teststand', () => {
+  it('bietet bei fehlender Umgebung einen Einrichtungsweg und erhält alte Laufversionen nur im Modell', () => {
     const ungeprueft = darstellung(testBereit(), {
       sprache: 'python',
       pythonStatus: null,
       pythonEinrichten: () => {},
     });
-    expect(ungeprueft).toContain('Komponentenstatus anzeigen');
-    const vorherigerTest = darstellung(
-      lauf({ phase: 'beendet', skriptsprache: 'python', pythonVersion: '3.12.8', exitcode: 0 }),
-      {
-        sprache: 'vbs',
-        pythonStatus: {
-          zustand: 'bereit',
-          auswahl: 'C:\\Python315\\python.exe',
-          installation: {
-            pfad: 'C:\\Python315\\python.exe',
-            version: '3.15.0',
-            architektur: 'x64',
-            implementierung: 'CPython',
-            tkinter: true,
-          },
-          meldung: 'Aktuelle Installation geprüft.',
+    expect(ungeprueft).toContain('Ausführung einrichten');
+    const alterStand = lauf({
+      phase: 'beendet',
+      skriptsprache: 'python',
+      pythonVersion: '3.12.8',
+      exitcode: 0,
+    });
+    const vorherigerTest = darstellung(alterStand, {
+      sprache: 'vbs',
+      pythonStatus: {
+        zustand: 'bereit',
+        auswahl: 'C:\\Python315\\python.exe',
+        installation: {
+          pfad: 'C:\\Python315\\python.exe',
+          version: '3.15.0',
+          architektur: 'x64',
+          implementierung: 'CPython',
+          tkinter: true,
         },
-        pythonEinrichten: () => {},
+        meldung: 'Aktuelle Installation geprüft.',
       },
-    );
-    expect(vorherigerTest).toContain('3.12.8');
+      pythonEinrichten: () => {},
+    });
+    expect(vorherigerTest).not.toContain('3.12.8');
     expect(vorherigerTest).not.toContain('3.15.0');
-    expect(vorherigerTest).toContain('Skriptsprache</dt><dd>Python');
+    expect(alterStand.pythonVersion).toBe('3.12.8');
+    expect(alterStand.skriptsprache).toBe('python');
   });
-  it('erklärt reale Auswirkungen und zeigt vor dem ersten Test den automatisch verwalteten Arbeitsordner', () => {
+  it('hält Arbeitsordner und Zeitlimit optional bereit und zeigt vor dem ersten Start keine erfundenen Ausgaben', () => {
     const html = darstellung(testBereit(), { optionen: { basisVerzeichnis: null, zeitlimitSekunden: 120 } });
-    expect(html).toContain(
-      'Dateiänderungen werden tatsächlich vorgenommen. Stoppen macht sie nicht rückgängig.',
-    );
-    expect(html).toContain('Keine Sandbox');
-    expect(html).toContain('nicht rückgängig');
     expect(html).toContain('Wird von ScriptLab festgelegt.');
-    expect(html).toContain('automatisch verwalteten Ordner dieses Workflows');
+    expect(html).toContain('Relative Dateipfade verwenden diesen Ordner der Automatisierung');
     expect(knopf(html, 'Workflow ausführen')).not.toContain('disabled=""');
     expect(knopf(html, 'Workflow ausführen')).toContain('sl-knopf--primaer');
     expect(html).not.toContain('>Stoppen<');
     expect(html).toMatch(/min="1"[^>]+max="28800"[^>]+value="120"/);
-    expect(html).toMatch(/<h2[^>]*>Läufe<\/h2>/);
-    expect(html).toMatch(/role="tab" aria-selected="true"[^>]*>Vorbereitung<\/button>/);
-    expect(knopf(html, 'Ausgabe leeren')).toContain('disabled=""');
-    expect(knopf(html, 'Ausgabe kopieren')).toContain('disabled=""');
-    expect(html).toContain('Für diesen Workflow liegt noch kein Laufprotokoll vor.');
+    expect(html).toMatch(/<h2[^>]*>Ergebnis<\/h2>/);
+    expect(html).toMatch(/aria-label="Laufeinstellungen"[^>]*hidden=""/);
+    expect(html).not.toContain('>Ausgabe leeren<');
+    expect(html).not.toContain('>Ausgabe kopieren<');
+    expect(html).toContain('Noch kein Ergebnis');
   });
 
   it('verhindert einen zweiten Start und hält Stoppen auch bei sonst gesperrter Oberfläche erreichbar', () => {
     const html = darstellung(lauf(), { gesperrt: true });
-    expect(html).not.toContain('>Workflow ausführen<');
+    expect(knopf(html, 'Workflow ausführen')).toContain('disabled=""');
     expect(knopf(html, 'Stoppen')).not.toContain('disabled=""');
-    expect(knopf(html, 'Im Explorer anzeigen')).not.toContain('disabled=""');
+    expect(html).toMatch(/<fieldset[^>]*disabled=""/);
     expect(knopf(html, 'Ausgabe leeren')).not.toContain('disabled=""');
     expect(knopf(html, 'Ausgabe kopieren')).not.toContain('disabled=""');
     expect(html).not.toContain('Stoppe den Test, bevor du die Anzeige leerst.');
-    expect(html).toMatch(/role="tab" aria-selected="true"[^>]*>Übersicht<\/button>/);
+    expect(html).not.toContain('role="tab"');
     expect(html).toContain('C:\\Tatsaechlicher Test');
     expect(html).not.toContain('C:\\Naechster Test');
     expect(html).toMatch(/min="1"[^>]+max="28800"[^>]+value="7"/);
   });
 
   it('trennt nächste Optionen von tatsächlichem Laufkontext und zeigt das echte Ergebnis', () => {
-    const html = darstellung(
-      lauf({ phase: 'beendet', beendetAm: '2026-10-26T12:01:02Z', exitcode: 0, meldung: 'Test beendet.' }),
-    );
+    const zustand = lauf({
+      phase: 'beendet',
+      beendetAm: '2026-10-26T12:01:02Z',
+      exitcode: 0,
+      meldung: 'Test beendet.',
+    });
+    const vorher = structuredClone(zustand);
+    const html = darstellung(zustand);
     expect(html).toContain('C:\\Naechster Test');
-    expect(html).toContain('C:\\Tatsaechlicher Test');
-    expect(html).toContain('Gesicherter Teststand');
-    expect(html).toContain('Lauf-ID');
-    expect(html).toContain('Standkennung');
+    expect(html).not.toContain('Lauf-ID');
+    expect(html).not.toContain('Standkennung');
     expect(html).toContain('1 min 02 s');
-    expect(html).toContain('<dd>0</dd>');
-    expect(knopf(html, 'Neuen Lauf vorbereiten')).not.toContain('disabled=""');
-    expect(html.indexOf('Standkennung')).toBeLessThan(html.indexOf('aria-label="Laufprotokoll"'));
-    expect(html).toContain('role="tablist"');
-    expect(html).toContain('aria-label="Ansichten des Laufs"');
+    expect(html).toContain('Test beendet.');
+    expect(knopf(html, 'Laufeinstellungen')).not.toContain('disabled=""');
+    expect(html).toContain('aria-label="Laufausgabe"');
+    expect(zustand).toEqual(vorher);
+    expect(zustand.optionen).toEqual({ basisVerzeichnis: 'C:\\Tatsaechlicher Test', zeitlimitSekunden: 7 });
   });
 
-  it('zeigt Ausgabe, Fehler und Quelltext ausschließlich als escaped Text mit konkreter Blockzuordnung', () => {
+  it('zeigt Ausgabe als escaped Text, erhält die Fehleraktion und rendert technische Felder nicht', () => {
     const html = darstellung(
       lauf({
         phase: 'fehlgeschlagen',
@@ -237,12 +242,13 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
       }),
     );
     expect(html).toContain('&lt;img');
-    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('&lt;script&gt;Testtext');
     expect(html).not.toMatch(/<img|<script|contenteditable="true"/);
     expect(html).toContain('role="log"');
-    expect(html).toContain('Fehler in VBS-Zeile 17.');
-    expect(html).toContain('15–19');
-    expect(html).toContain('block-fehler');
+    expect(html).not.toContain('Fehler in VBS-Zeile 17.');
+    expect(html).not.toContain('15–19');
+    expect(html).not.toContain('block-fehler');
+    expect(html).toContain('Der Test meldet einen Fehler.');
     expect(knopf(html, 'Baustein anzeigen')).not.toContain('disabled=""');
     expect(darstellung(lauf({ fehlerBlockId: null }))).not.toContain('Baustein anzeigen');
   });
@@ -251,10 +257,10 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
     const html = darstellung(lauf({ phase: 'abgebrochen', exitcode: null, abgeschnitteneZeichen: 1200 }), {
       veraltet: true,
     });
-    expect(html).toContain('Die Ergebnisse gehören zum angezeigten früheren Stand.');
+    expect(html).toContain('Die Ergebnisse gehören zu einem früheren Stand.');
     expect(html).toContain('1.200 Zeichen werden nicht angezeigt.');
     expect(html).toContain('Abgebrochen');
-    expect(html).toContain('<dd>Nicht vorhanden</dd>');
+    expect(html).not.toContain('Exitcode');
     expect(html).not.toContain('sl-status--erfolg');
   });
   it('erhält den Modus eines abgeschlossenen Prüflaufs unabhängig von den nächsten Startoptionen', () => {
@@ -266,24 +272,22 @@ describe('Kontrollierte Darstellung des Testbereichs', () => {
       tempGB: 4,
       fortsetzen: false,
     };
-    const html = darstellung(
-      lauf({
-        phase: 'beendet',
-        exitcode: 0,
-        optionen: { basisVerzeichnis: 'C:\\Prueflauf', zeitlimitSekunden: 60, business },
-      }),
-      {
-        optionen: {
-          basisVerzeichnis: 'C:\\Echte Daten',
-          zeitlimitSekunden: 7200,
-          business: { ...business, modus: 'ausfuehren', parametersatz: 'echt' },
-        },
+    const zustand = lauf({
+      phase: 'beendet',
+      exitcode: 0,
+      optionen: { basisVerzeichnis: 'C:\\Prueflauf', zeitlimitSekunden: 60, business },
+    });
+    const html = darstellung(zustand, {
+      optionen: {
+        basisVerzeichnis: 'C:\\Echte Daten',
+        zeitlimitSekunden: 7200,
+        business: { ...business, modus: 'ausfuehren', parametersatz: 'echt' },
       },
-    );
-    expect(html).toContain('<strong>Modus dieses Laufs:</strong> Prüflauf ohne Zieländerungen');
-    expect(html).toContain('<dt>Parametersatz</dt><dd>Testdaten</dd>');
-    expect(html).toContain('<dd>C:\\Prueflauf · Zeitlimit 60 s</dd>');
-    expect(html).not.toContain('<strong>Modus dieses Laufs:</strong> Echte Ausführung');
+    });
+    expect(html).toContain('<p class="testbereich-modus">Prüflauf ohne Zieländerungen</p>');
+    expect(html).toContain('ohne Zieldateien zu verändern.');
+    expect(zustand.optionen).toEqual({ basisVerzeichnis: 'C:\\Prueflauf', zeitlimitSekunden: 60, business });
+    expect(html).not.toContain('<p class="testbereich-modus">Echte Ausführung</p>');
   });
 });
 

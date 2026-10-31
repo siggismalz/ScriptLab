@@ -1,5 +1,5 @@
 import { sprachwahlBestaetigen } from './sprache';
-import { startseiteWaehlen, workflowBefehl, workflowMenueAktion, ansichtsMenueAktion } from './ansichten';
+import { startseiteWaehlen, workflowBefehl, workflowMenueAktion } from './ansichten';
 import { test, expect } from '@playwright/test';
 import { _electron as electron, type ElectronApplication, type Page } from 'playwright';
 import { mkdtemp, readFile, writeFile, rm, mkdir, stat } from 'node:fs/promises';
@@ -145,18 +145,23 @@ async function projektangaben(name?: string, beschreibung?: string) {
   await dialog.getByRole('button', { name: 'Übernehmen', exact: true }).click();
   await expect(dialog).not.toBeVisible();
 }
-async function vorschauOeffnen() {
-  await editorBereit();
-  if (!(await seite.getByTestId('code-panel').isVisible())) {
-    await ansichtsMenueAktion(seite, 'Codevorschau öffnen');
-  }
-  await expect(seite.getByTestId('code-panel')).toBeVisible();
-}
 async function scriptExportieren() {
   await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
   const dialog = seite.getByRole('dialog', { name: 'Exportieren', exact: true });
   await expect(dialog.getByRole('combobox', { name: 'Inhalt', exact: true })).toHaveValue('script');
   await dialog.getByRole('button', { name: 'Ausgabeort auswählen', exact: true }).click();
+}
+/** Prüft den echten eigenständig nutzbaren Export statt einer entfernten Codeansicht. */
+async function vbsExportLesen(name: string): Promise<string> {
+  const datei = join(ordner, name);
+  await speicherziel(datei);
+  await scriptExportieren();
+  await dateidialogAbwarten('speichern');
+  await expect(seite.getByRole('status', { name: 'Export abgeschlossen' })).toBeVisible();
+  const bytes = await readFile(datei);
+  expect([...bytes.subarray(0, 2)]).toEqual([255, 254]);
+  await seite.getByRole('button', { name: 'Exportmeldung schließen', exact: true }).click();
+  return bytes.subarray(2).toString('utf16le');
 }
 async function projektExportieren() {
   await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
@@ -290,13 +295,16 @@ test('findet, fügt ein, konfiguriert und verbindet eine Nachricht ohne gehalten
     .toBe('sl_message');
   await nachrichtBearbeiten('Hallo! Erstellt mit ScriptLab.');
   await seite.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
-  await vorschauOeffnen();
-  const code = seite.getByLabel('Schreibgeschützter VBS-Code', { exact: true });
-  await expect(code).toContainText('Option Explicit');
-  await expect(code).toContainText('Hallo! Erstellt mit ScriptLab.');
-  expect(
-    await code.evaluate((el) => ({ tag: el.tagName, editierbar: el.getAttribute('contenteditable') })),
-  ).toEqual({ tag: 'PRE', editierbar: null });
+  const nachricht = (await projektLesen()).editor.blocks!.blocks[0].next!.block;
+  expect(nachricht.type).toBe('sl_message');
+  const eingabe = nachricht.inputs!.TEXT;
+  expect(eingabe.block ?? eingabe.shadow).toMatchObject({
+    type: 'sl_text',
+    fields: { TEXT: 'Hallo! Erstellt mit ScriptLab.' },
+  });
+  const code = await vbsExportLesen('Konfigurierte Nachricht.vbs');
+  expect(code).toContain('Option Explicit');
+  expect(code).toContain('Hallo! Erstellt mit ScriptLab.');
   await palette.getByRole('button', { name: 'Suche leeren', exact: true }).first().click();
 });
 
@@ -456,7 +464,7 @@ test('prüft Credits, Zertifikatsauflistung und die gesperrten Entwicklerupdates
   await expect(dialog.getByRole('progressbar')).toHaveCount(0);
   const update = await seite.evaluate(() => window.scriptlab.updateAktion('laden'));
   expect(update.ok && (update.wert as { phase: string }).phase).toBe('nicht-eingerichtet');
-  await dialog.getByRole('tab', { name: 'VBS-Signatur', exact: true }).click();
+  await dialog.getByRole('tab', { name: 'Automatisierungen', exact: true }).click();
   await dialog.getByRole('checkbox', { name: 'Exportierte Datei signieren' }).check();
   await dialog.getByRole('button', { name: 'Zertifikate laden', exact: true }).click();
   await expect(dialog).toContainText(/Kein geeignetes Zertifikat|geeignete Zertifikate gefunden/);
@@ -482,8 +490,8 @@ test('fügt per Klick ein, kopiert über Bausteinaktionen und fügt im Canvas mi
   await palette.getByRole('searchbox', { name: 'Bausteine suchen' }).fill('Kommentar');
   await palette.getByRole('button', { name: `Baustein einfügen: ${kommentarName}`, exact: true }).click();
   await palette.getByRole('button', { name: 'Nach „Workflow starten“', exact: true }).click();
-  await vorschauOeffnen();
-  await expect(seite.locator('.code')).toContainText("' Mein Hinweis");
+  const kommentarCode = await vbsExportLesen('Kommentar vor dem Kopieren.vbs');
+  expect(kommentarCode).toContain("' Mein Hinweis");
   const kommentar = (await projektLesen()).editor.blocks!.blocks[0].next!.block;
   await seite.locator(`g[data-id="${kommentar.id}"]`).click({ position: { x: 56, y: 18 } });
   if (!(await seite.getByTestId('eigenschaften-panel').isVisible()))
@@ -591,15 +599,19 @@ test('exportiert einen kombinierten Ablauf ohne dessen Dateiaktionen auszuführe
   await workflowBefehl(seite, 'oeffnen');
   await expect.poll(async () => (await projektLesen()).name).toBe(p.name);
   await dateidialogAbwarten('oeffnen');
-  await vorschauOeffnen();
-  await expect(seite.locator('.code')).toContainText('InputBox');
-  await expect(seite.locator('.code')).toContainText('For sl_intern_');
-  await expect(seite.locator('.code')).toContainText('If (v_1 <>');
-  await speicherziel(join(ordner, 'Kombiniert.vbs'));
+  const scriptdatei = join(ordner, 'Kombiniert.vbs');
+  await speicherziel(scriptdatei);
   await scriptExportieren();
   await expect(seite.getByRole('status', { name: 'Export abgeschlossen' })).toContainText(
     'Das Script wurde gespeichert.',
   );
+  const scriptbytes = await readFile(scriptdatei);
+  expect([...scriptbytes.subarray(0, 2)]).toEqual([255, 254]);
+  const code = scriptbytes.subarray(2).toString('utf16le');
+  expect(code).toContain('InputBox');
+  expect(code).toContain('For sl_intern_');
+  expect(code).toContain('If (v_1 <>');
+  expect(code).toContain(zielDatei);
   await expect(stat(zielDatei)).rejects.toMatchObject({ code: 'ENOENT' });
   await seite.screenshot({ path: 'artifacts/qualitaet-desktop/agent-ux-bilder/editor-kombiniert.png' });
 });

@@ -229,14 +229,14 @@ describe('Bibliotheksansicht ohne zweite Datenwahrheit', () => {
 
 describe('Lokale Hilfe und vorhandene Vorlagen', () => {
   it('liefert gezielte Fundstellen in existierenden Artikeln und Abschnitten', () => {
-    expect(hilfeArtikel).toHaveLength(10);
-    expect(new Set(hilfeArtikel.map((a) => a.id)).size).toBe(10);
-    const treffer = hilfeDurchsuchen('SHA-256');
+    expect(hilfeArtikel).toHaveLength(4);
+    expect(new Set(hilfeArtikel.map((a) => a.id)).size).toBe(4);
+    const treffer = hilfeDurchsuchen('Trennzeichen');
     expect(treffer.length).toBeGreaterThan(0);
     for (const t of treffer) {
       const artikel = hilfeArtikel.find((a) => a.id === t.artikelId)!;
       expect(artikel.abschnitte.some((a) => a.id === t.abschnittId)).toBe(true);
-      expect(t.ausschnitt).toContain('SHA-256');
+      expect(t.ausschnitt.toLocaleLowerCase('de')).toContain('trennzeichen');
     }
     expect(hilfeDurchsuchen('')).toEqual([]);
     expect(hilfeDurchsuchen('<script>keinehilfe</script>')).toEqual([]);

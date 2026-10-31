@@ -87,7 +87,7 @@ export function LaufKurzansicht({
             </Knopf>
           )}
           <Knopf variante="leise" onClick={details}>
-            Laufdetails
+            Ergebnis ansehen
           </Knopf>
         </div>
       </div>
@@ -104,7 +104,7 @@ export function LaufKurzansicht({
       )}
       {gekuerzt && (
         <p className="lauf-kurzansicht-hinweis">
-          Die Ausgabe wurde begrenzt. In den Laufdetails steht der verfügbare Verlauf.
+          Die Ausgabe wurde begrenzt. Unter „Ergebnis ansehen“ findest du die gespeicherten Ausgaben.
         </p>
       )}
     </section>

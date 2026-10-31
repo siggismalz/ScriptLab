@@ -139,7 +139,7 @@ test('führt den ungespeicherten Editorstand aus und schreibt relative Dateien a
   const original = await readFile(datei);
   expect((await zustand()).laufId).toBeNull();
   await expect(stat(join(basis, 'Echtes Testergebnis.txt'))).rejects.toMatchObject({ code: 'ENOENT' });
-  await seite.getByText('ScriptLab-Arbeitsordner', { exact: true }).click();
+  await seite.getByText('Arbeitsordner', { exact: true }).click();
   await expect(seite.locator('.lauf-ordnerpfad')).toHaveText(basis);
   await arbeitsbereichWaehlen(seite, 'Ablauf');
   await seite.locator(`g[data-id="${a.id}"]`).click({ position: { x: 60, y: 18 } });
@@ -162,7 +162,13 @@ test('führt den ungespeicherten Editorstand aus und schreibt relative Dateien a
   await expect(seite.getByLabel('Projektstatus', { exact: true })).toHaveText('Ungespeicherte Änderungen');
   await expect(seite.getByTestId('test-panel')).toContainText('Lauf beendet');
   await laufansichtWaehlen(seite, 'Protokoll');
-  await seite.getByRole('button', { name: 'Protokoll kopieren', exact: true }).click();
+  const berichtKopieren = seite.getByRole('button', {
+    name: 'Laufbericht kopieren',
+    exact: true,
+    includeHidden: true,
+  });
+  await feldEinblenden(berichtKopieren);
+  await berichtKopieren.click();
   // Fremde vorhandene Zwischenablageinhalte werden weder ausgegeben noch als Testanhang gespeichert.
   await expect
     .poll(() =>
@@ -189,12 +195,15 @@ test('führt den gebauten Workflow mit einem Klick aus und zeigt Details erst au
   await expect(seite.getByTestId('test-panel')).toBeHidden();
   expect((await fertig()).phase).toBe('beendet');
   const laufId = (await zustand()).laufId;
-  await seite.getByRole('button', { name: 'Laufdetails', exact: true }).click();
+  await seite.getByRole('button', { name: 'Ergebnis ansehen', exact: true }).click();
   await expect(seite.getByTestId('test-panel')).toBeVisible();
-  await expect(seite.getByTestId('test-panel')).toContainText(ordner);
   await expect(
-    seite.getByTestId('test-panel').getByRole('tab', { name: 'Übersicht', exact: true }),
-  ).toHaveAttribute('aria-selected', 'true');
+    seite.getByTestId('test-panel').getByRole('heading', { name: 'Ergebnis', exact: true }),
+  ).toBeVisible();
+  await expect(
+    seite.getByTestId('test-panel').getByRole('log', { name: 'Laufausgabe', exact: true }),
+  ).toContainText('DIREKT IM EDITOR AUSGEFÜHRT');
+  expect((await zustand()).optionen.basisVerzeichnis).toBe(basis);
   expect((await zustand()).laufId).toBe(laufId);
   const anderesProjekt = projektMit(ausgabe('ANDERER WORKFLOW NOCH NICHT GESTARTET'));
   await oeffnen(anderesProjekt, false, 'Anderer Workflow.scriptlab');
@@ -208,8 +217,11 @@ test('führt den gebauten Workflow mit einem Klick aus und zeigt Details erst au
     .toBe(anderesProjekt.projektKennung);
   await arbeitsbereichWaehlen(seite, 'Läufe');
   await expect(
-    seite.getByTestId('test-panel').getByRole('tab', { name: 'Vorbereitung', exact: true }),
-  ).toHaveAttribute('aria-selected', 'true');
+    seite.getByTestId('test-panel').getByRole('heading', { name: 'Noch kein Ergebnis', exact: true }),
+  ).toBeVisible();
+  await expect(
+    seite.getByTestId('test-panel').getByRole('region', { name: 'Laufeinstellungen', exact: true }),
+  ).not.toBeVisible();
   expect((await zustand()).laufId).toBe(laufId);
 });
 
@@ -291,7 +303,9 @@ test('sperrt Bearbeitung, erhält Auswahl und Zoom und stoppt auch mit zugeklapp
   await feld.fill('Nach Test geändert');
   await seite.getByRole('button', { name: 'Eigenschaften schließen', exact: true }).click();
   await laufansichtWaehlen(seite, 'Übersicht');
-  await expect(seite.getByTestId('test-panel')).toContainText('seit diesem Lauf geändert');
+  await expect(seite.getByTestId('test-panel')).toContainText(
+    'Die Ergebnisse gehören zu einem früheren Stand. Änderungen danach sind hier noch nicht enthalten.',
+  );
 });
 
 test('meldet ein echtes Zeitlimit und führt nachfolgende Anweisungen nicht mehr aus', async () => {
@@ -305,7 +319,7 @@ test('meldet ein echtes Zeitlimit und führt nachfolgende Anweisungen nicht mehr
   await expect(seite.getByTestId('test-panel')).toContainText('Zeitlimit erreicht');
 });
 
-test('ordnet einen echten Dateifehler dem Testbaustein zu und zeigt seine Quelltextstelle', async () => {
+test('ordnet einen echten Dateifehler dem zugehörigen Baustein zu und führt zur Korrektur', async () => {
   const a = block(
     'sl_copy',
     { QUELLE: text('Nicht vorhanden.txt'), ZIEL: text('Ziel.txt') },
@@ -355,12 +369,24 @@ test('lässt alte Ausgabe beim Lesen stehen und kopiert sie auch während eines 
   await laufStarten(seite);
   await ausgabeErwarten('Lesbare Testzeile 50 ä');
   await laufansichtWaehlen(seite, 'Protokoll');
-  const log = seite.getByRole('log', { name: 'Laufprotokoll', exact: true });
+  const log = seite.getByRole('log', { name: 'Laufausgabe', exact: true });
+  await expect(log).toContainText('Lesbare Testzeile 50 ä');
   await log.scrollIntoViewIfNeeded();
+  const ausgabemasse = await log.evaluate((element) => ({
+    inhalt: element.scrollHeight,
+    sichtbar: element.clientHeight,
+  }));
+  expect(ausgabemasse.inhalt).toBeGreaterThan(ausgabemasse.sichtbar);
   await log.hover();
   await seite.mouse.wheel(0, -10000);
   await expect.poll(() => log.evaluate((el) => el.scrollTop)).toBe(0);
-  await seite.getByRole('button', { name: 'Protokoll kopieren', exact: true }).click();
+  const berichtKopieren = seite.getByRole('button', {
+    name: 'Laufbericht kopieren',
+    exact: true,
+    includeHidden: true,
+  });
+  await feldEinblenden(berichtKopieren);
+  await berichtKopieren.click();
   expect(testAktiv((await zustand()).phase)).toBe(true);
   await expect
     .poll(() =>

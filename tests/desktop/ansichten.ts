@@ -27,10 +27,27 @@ export async function arbeitsbereichWaehlen(seite: Page, name: 'Ablauf' | 'Daten
 
 export async function laufansichtWaehlen(
   seite: Page,
-  name: 'Vorbereitung' | 'Übersicht' | 'Ergebnisse' | 'Protokoll',
+  name: 'Vorbereitung' | 'Übersicht' | 'Ergebnisse' | 'Protokoll' | 'Laufeinstellungen' | 'Ergebnis',
 ) {
   await arbeitsbereichWaehlen(seite, 'Läufe');
-  await seite.getByTestId('test-panel').getByRole('tab', { name, exact: true }).click();
+  const panel = seite.getByTestId('test-panel');
+  await expect(panel).toBeVisible();
+  // Die bisherigen Ergebnis-/Protokollwege zeigen jetzt dieselbe verständliche Ergebnisfläche.
+  const einstellungen = panel.getByRole('region', { name: 'Laufeinstellungen', exact: true });
+  if (name === 'Vorbereitung' || name === 'Laufeinstellungen') {
+    if (!(await einstellungen.isVisible())) {
+      const oeffnen = panel.getByRole('button', { name: /^(Laufeinstellungen|Neuen Lauf vorbereiten)$/ });
+      await oeffnen.click();
+    }
+    await expect(einstellungen).toBeVisible();
+  } else {
+    if (await einstellungen.isVisible())
+      await panel.getByRole('button', { name: 'Laufeinstellungen', exact: true }).click();
+    if (name === 'Protokoll') {
+      const ausgabe = panel.getByRole('log', { name: 'Laufausgabe', exact: true });
+      if (await ausgabe.count()) await ausgabe.scrollIntoViewIfNeeded();
+    }
+  }
 }
 
 export async function startseiteWaehlen(seite: Page) {

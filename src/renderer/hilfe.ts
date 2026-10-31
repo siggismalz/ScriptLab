@@ -27,7 +27,7 @@ const vbsBeispiele: readonly BeispielInfo[] = [
     aufgabe: 'Einstieg',
     ergebnis: 'Ein ausdrücklich gestarteter Lauf zeigt eine Nachricht an. Es werden keine Dateien geändert.',
     beschreibung: 'Ein Startbaustein und eine Nachricht bilden einen ersten vollständigen Ablauf.',
-    lernziele: ['Anweisungen verbinden', 'Nachrichtentext bearbeiten', 'VBS-Vorschau und Export verstehen'],
+    lernziele: ['Anweisungen verbinden', 'Nachrichtentext bearbeiten', 'Ausführung und Export verstehen'],
     vorbereitung: 'Für dieses Beispiel sind keine Testdateien nötig.',
   },
   {
@@ -42,7 +42,7 @@ const vbsBeispiele: readonly BeispielInfo[] = [
       'Prüft eine einzelne Testdatei, legt einen Sicherungsordner an und kopiert die Datei dorthin.',
     lernziele: ['Dateipfade festlegen', 'Eine Bedingung verwenden', 'Vorhandene Zieldateien beachten'],
     vorbereitung:
-      'Beim Verwenden der Vorlage wird eine kleine synthetische Quelldatei in den eigenen Arbeitsordner kopiert. Erst der bewusste Lauf erzeugt ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt; vorhandene Sicherungen werden nicht überschrieben. Für einen eigenständigen Export den Ordner ScriptLab-Testdaten mit der Quelldatei neben die VBS-Datei kopieren. Den Arbeitsordner findest du unter „Läufe → Vorbereitung“.',
+      'Beim Verwenden der Vorlage wird eine kleine synthetische Quelldatei in den eigenen Arbeitsordner kopiert. Erst der bewusste Lauf erzeugt ScriptLab-Testdaten\\Backup\\Sicherung\\beispiel.txt; vorhandene Sicherungen werden nicht überschrieben. Für einen eigenständigen Export den Ordner ScriptLab-Testdaten mit der Quelldatei neben die VBS-Datei kopieren. Den Arbeitsordner findest du unter „Läufe → Laufeinstellungen → Arbeitsordner“.',
   },
   {
     id: 'dateiliste',
@@ -90,7 +90,7 @@ export const beispiele: readonly BeispielInfo[] = [
     beschreibung: b.beschreibung,
     lernziele: ['Parameter, Strukturprüfung, Vorschau und echte Ausführung unterscheiden'],
     vorbereitung: b.id.startsWith('business-ml-')
-      ? 'Benötigt für die Ausführung das optionale CPU-Paket unter Einstellungen → Laufzeit. Die Vorlage erstellt eine eigene ML-Workflowkopie mit synthetischen CSV-Daten. Nur echte Ausführung trainiert und speichert ein Modell; der Prüflauf plant diese Schritte. Für neue Läufe bestehende Ausgaben prüfen. Die 20 Vorhersagezeilen sind nicht die unabhängigen Testdaten der Qualitätsbewertung. Öffnen startet weder Training noch Einrichtung.'
+      ? 'Benötigt für die Ausführung zusätzliche Komponenten unter Einstellungen → Automatisierungen. Die Vorlage erstellt eine eigene ML-Workflowkopie mit synthetischen CSV-Daten. Nur echte Ausführung trainiert und speichert ein Modell; der Prüflauf plant diese Schritte. Für neue Läufe bestehende Ausgaben prüfen. Die 20 Vorhersagezeilen sind nicht die unabhängigen Testdaten der Qualitätsbewertung. Öffnen startet weder Training noch Einrichtung.'
       : 'Verwendet die mitgelieferten Business-Komponenten. Beim Verwenden der Vorlage werden synthetische Testdateien in den Arbeitsordner eines eigenen Workflows kopiert. Der Bezug bleibt beim Speichern und Wiederherstellen erhalten. Für eigene Geschäftsdaten die Quellen bewusst ändern und Ausgabeziele prüfen. PDF-Berichte können die mitgelieferte Vera-Schrift verwenden. Öffnen startet keine Verarbeitung.',
   })),
   ...vbsBeispiele,
@@ -122,399 +122,177 @@ export interface HilfeArtikel {
 export const hilfeArtikel: readonly HilfeArtikel[] = [
   {
     id: 'erste-schritte',
-    titel: 'Erste Schritte',
-    beschreibung: 'Eine Sprache wählen, mit Bausteinen arbeiten und als Script exportieren.',
+    titel: 'Workflow bauen',
+    beschreibung: 'Einen Ablauf aus Bausteinen zusammensetzen, ändern und speichern.',
     abschnitte: [
       {
         id: 'erster-ablauf',
-        titel: 'Deinen ersten Ablauf erstellen',
+        titel: 'Eine erste Nachricht anzeigen',
         texte: [
-          'Mit „Neuer Workflow“ auf der Startseite, „Workflow → Neuer Workflow“ im Editor oder Strg+N wählst du zuerst Python oder VBScript (VBS). Beim ersten Mal ist keine Sprache vorausgewählt. Erst „Workflow erstellen“ öffnet den Editor mit einem Startbaustein. Abbrechen lässt den bisherigen Workflow unverändert. Die zuletzt erfolgreich gewählte Sprache wird bei der nächsten Erstellung vorgeschlagen.',
-          'Die beiden Sprachkarten bleiben ausdrücklich wählbar. Python und seine Daten-, Dokument- und Dialogkomponenten sind in ScriptLab mitgeliefert. VBS verwendet die verfügbare Windows-Komponente. Die Sprache bleibt für dieses Projekt fest. Die 48 Grundbausteintypen gibt es in beiden Sprachen; Python bietet zusätzlich 47 Business-Bausteintypen. Für eine andere Sprache erstellst du einen neuen Workflow.',
+          'Beginne mit einem kleinen Ablauf. Das Hinzufügen und Bearbeiten von Bausteinen führt noch nichts aus.',
         ],
         schritte: [
-          'Suche links nach „Nachricht“.',
-          'Klicke neben „Nachricht anzeigen“ auf Plus und wähle „Nach Workflow starten“.',
-          'Ändere den Text direkt im Baustein oder öffne die Eigenschaften mit F4.',
-          'Sichere mit „Speichern“ den Workflow. ScriptLab verwendet automatisch die interne Ablage; du musst keinen Zielordner auswählen.',
-          'Öffne bei Bedarf „Ansicht → Codevorschau öffnen“. Unter „Exportieren“ wählst du bei „Inhalt“ das Scriptformat deiner Sprache und anschließend „Ausgabeort auswählen“.',
+          'Klicke auf „Neuer Workflow“, wähle „Automatisierung“ und bestätige „Workflow erstellen“. Alles für diesen Einstieg ist bereits enthalten.',
+          'Suche links nach „Nachricht“. Klicke bei „Nachricht anzeigen“ auf Plus und wähle die Einfügestelle nach „Workflow starten“. Alternativ ziehst du den Baustein an den Anschluss.',
+          'Ändere den Nachrichtentext im Baustein. Für längere Eingaben öffnest du „Eigenschaften“.',
+          'Klicke auf „Workflow ausführen“. Erst jetzt wird die Nachricht angezeigt.',
+          'Klicke auf „Speichern“, um den Ablauf für später zu behalten.',
         ],
         beispiel: 'begruessung',
       },
       {
-        id: 'bewusste-ausfuehrung',
-        titel: 'Nur bewusst gestartete Tests führen den Workflow aus',
-        texte: [
-          'Bearbeiten, Öffnen, Wiederherstellen, Codevorschau, Strukturprüfung, Speichern, Signieren und Export starten keine Verarbeitung. Nur ein bewusst gestarteter echter Test führt den vollständigen Workflow aus. Business-Abläufe bieten zusätzlich eine Datenvorschau und einen Prüflauf ohne fachliche Zieländerungen. Es gibt keine automatische Ausführung oder Zeitplanung.',
-          'Der Test führt deinen Workflow auf diesem Computer aus. Dateiänderungen werden tatsächlich vorgenommen. Er ist keine Sandbox; Stoppen macht bereits vorgenommene Änderungen nicht rückgängig.',
-          'Nach dem Export entscheidest du selbst, ob du das Script außerhalb von ScriptLab ausführst. Dafür müssen die passende Python- beziehungsweise VBS-Laufzeit vorhanden sein und die Richtlinien den Start erlauben. ScriptLab wird beim Empfänger nicht benötigt.',
-        ],
-      },
-      {
-        id: 'test-vorbereiten',
-        titel: 'Workflow direkt ausführen und seine Ausgabe verstehen',
-        texte: [
-          '„Workflow ausführen“ startet den gebauten Ablauf mit den vorhandenen Parameterwerten direkt im Editor. Status, Ausgabe und „Stoppen“ sind sofort erreichbar. Nur fehlende oder ungültige Angaben führen zur Korrektur. ScriptLab verwendet automatisch den Arbeitsordner dieses Workflows.',
-          'Klappe bei Bedarf „Zeitlimit“ auf: gewöhnlich 120 Sekunden, erlaubt 1 bis 28800. Business-Profile bieten eigene Vorgaben bis acht Stunden. Für den ersten Lauf ist kein vorheriges Speichern nötig. Nutze zuerst entbehrliche Dateien.',
-          'Der Hauptknopf führt immer den vollständigen aktuellen Hauptablauf wirklich aus, einschließlich ungespeicherter Änderungen. „Läufe → Vorbereitung“ bietet auf Wunsch weitere Einstellungen und für Business-Abläufe separate Prüfmodi. Die Schrittvorschau in der Datenansicht endet am gewählten Tabellenschritt. Während eines Laufs sind inhaltliche Änderungen gesperrt. Ein Lauf speichert weder dein Projekt noch eine Exportdatei.',
-          '„Text ausgeben“ erscheint direkt im Editor; „Laufdetails → Protokoll“ zeigt den verfügbaren Verlauf. „Nachricht anzeigen“, Texteingaben, Ja-/Nein-Fragen und die Löschrückfrage öffnen die im Workflow gebauten Dialoge; Tcl/Tk ist für Python bereits mitgeliefert. Stoppen und das Zeitlimit beenden den Lauf; bereits erfolgte Änderungen bleiben bestehen.',
-          '„Übersicht“ zeigt den Laufstatus, „Ergebnisse“ die zugehörigen Ausgaben und Prüfhinweise. Unter „Laufstand und technische Angaben“ stehen Sprache, verwendete Python-Version, Laufkennung, Workflowstand, Zeiten, Arbeitsordner und Exitcode. Exitcode 0 bestätigt ein Ende ohne gemeldeten Fehler, nicht das fachlich gewünschte Dateiergebnis. Nach einer Workflowänderung erscheint ein Hinweis auf den früheren Stand.',
-          'Beim Hochscrollen im „Protokoll“ folgt die Anzeige neuen Zeilen nicht automatisch; „Zum Ausgabeende“ führt zurück. „Ausgabe leeren“ leert die aktuelle Liveanzeige, ohne bereits gespeicherte Läufe zu ändern. „Technische Details“ zeigt den schreibgeschützten Laufquelltext und vorhandene Fehlerzuordnungen. „Baustein anzeigen“ ist nur bei passendem Workflowstand verfügbar.',
-        ],
-      },
-      {
-        id: 'gespeicherte-laeufe',
-        titel: 'Frühere Läufe ansehen',
-        texte: [
-          'Abgeschlossene Läufe bleiben lokal gespeichert. „Alle Läufe“ zeigt die Läufe des geöffneten Workflows, neueste zuerst. Suche und Modusfilter gelten für diese Liste. „Anzeigen“ öffnet die Übersicht, Ergebnisse und das Protokoll genau dieses Laufs. Die Auswahl startet keine Verarbeitung.',
-          '„Protokoll kopieren“ kopiert das Protokoll des ausgewählten Laufs. „Protokoll exportieren“ fragt nach einer Textdatei als Ausgabeziel. Bestätigte Business-Ausgaben und Berichte lassen sich im Explorer anzeigen, wenn die Dateien noch vorhanden sind. Die Historie hält keine zusätzliche Kopie jeder Ausgabedatei vor.',
-          'Die Historie bewahrt insgesamt höchstens 200 abgeschlossene Läufe und 64 MiB Detaildaten auf. Ältere Einträge können deshalb entfallen. Ein Ablagefehler wird als Hinweis angezeigt und verändert den tatsächlichen Laufstatus nicht. Beim Öffnen werden keine Prozesse automatisch wiederaufgenommen; das Business-Journal besitzt eine eigene bewusste Fortsetzungsfunktion.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'bausteine',
-    titel: 'Bausteine hinzufügen, verbinden und bearbeiten',
-    beschreibung: 'Palette, Suche, Verbindungen und Eigenschaften nutzen.',
-    abschnitte: [
-      {
-        id: 'hinzufuegen',
-        titel: 'Mit Ziehen oder einzelnen Klicks hinzufügen',
-        texte: [
-          'Die Palette ordnet Bausteine nach Aufgaben: „Ablauf steuern“, „Daten verarbeiten“, „Dateien und Ordner“, „Dokumente erstellen“ sowie „Werte und Eingaben“. Es erscheinen nur Einstiege mit Bausteinen für die gewählte Sprache. Die Suche durchsucht direkt alle verfügbaren Kategorien; „Suche leeren“ führt zur vorherigen Palettenansicht zurück.',
-          'Ziehe am Bausteinnamen auf die Arbeitsfläche. Eine Einfügemarkierung zeigt einen passenden Anschluss. Escape bricht das Ziehen ab und stellt den vorherigen Zustand wieder her.',
-          'Ohne gehaltene Maustaste: Klicke auf Plus und danach auf eine angebotene Einfügestelle. Du kannst auch einen Zielbaustein auf der Arbeitsfläche anklicken. Hat er mehrere passende Anschlüsse, wählst du anschließend links den gewünschten aus.',
-        ],
-      },
-      {
         id: 'bearbeiten',
-        titel: 'Werte ändern und Bausteine umordnen',
+        titel: 'Bausteine verbinden, ändern und löschen',
         texte: [
-          'Die Verbindungen bestimmen die Reihenfolge, nicht die Position auf dem Raster. Werte und Bedingungen passen in die entsprechend geformten Eingänge.',
-          'Häufige Werte änderst du direkt im Baustein. „Eigenschaften“ oder F4 öffnet Hilfe, ein Wirkungsbeispiel und normal große Eingabefelder. Beide Ansichten bearbeiten denselben Wert; lange Texte und Pfade sind vollständig auswählbar.',
-          'Variablen wählst du aus derselben Liste im Baustein oder in den Eigenschaften. „Neue Variable anlegen“ erstellt einen Eintrag. Das Blockly-Auswahlmenü bietet das Umbenennen. Die feste interne ID bleibt dabei erhalten; alle Bezüge derselben Variable verwenden den neuen Namen.',
-          'Zum Umordnen: Baustein auswählen, in den Eigenschaften „Verschieben“ wählen und auf die neue Einfügestelle klicken. Innere Abläufe bleiben erhalten. Rückgängig und Wiederholen korrigieren Änderungen; gelöschte Bausteine lassen sich rückgängig wiederherstellen.',
+          'Die Verbindungen bestimmen die Reihenfolge. Ein Baustein, der nur daneben liegt, gehört noch nicht zum Ablauf. Werte passen in die entsprechend geformten Eingänge.',
+          'Wähle einen Baustein aus und öffne „Eigenschaften“, um seine Angaben zu bearbeiten. Beim Wechsel zwischen „Ablauf“, „Daten und Parameter“ und „Läufe“ bleibt deine Arbeit erhalten.',
+          'Zum Löschen wählst du den Baustein im Ablauf aus und nutzt den Löschknopf oder drückst Entfernen. „Rückgängig“ stellt eine versehentliche Änderung wieder her. Während eines Laufs sind Änderungen gesperrt.',
         ],
       },
       {
-        id: 'ansicht',
-        titel: 'Arbeitsfläche und Schriftgröße einstellen',
+        id: 'workflow-speichern',
+        titel: 'Arbeit behalten oder eine Vorlage ausprobieren',
         texte: [
-          'Mausrad, Bildlaufleisten, Ziehen an einer freien Stelle und die Ansichtspfeile verschieben die Arbeitsfläche. Strg+Mausrad zoomt nur über der Arbeitsfläche. In der Palette scrollt das Rad deren Inhalt.',
-          'Die Zoomknöpfe verkleinern, vergrößern, setzen auf 100 Prozent zurück oder zeigen mit „Alles anzeigen“ den gesamten Ablauf. „Einstellungen → Darstellung → Textgröße der Oberfläche“ verändert die Bedientexte unabhängig vom Canvas-Zoom.',
-          'Eigenschaften und „Ansicht → Codevorschau öffnen“ sind optional. Bei schmalen Fenstern überlagern die Eigenschaften den rechten Rand; bei genügend Platz lassen sie sich anheften. Palette und Codevorschau sind an ihren Trennlinien verstellbar.',
+          '„Speichern“ behält den Workflow. „Ungespeicherte Änderungen“ am Namen bedeutet, dass dein aktueller Stand noch nicht gespeichert ist. Ein erfolgreicher Lauf speichert den Workflow nicht automatisch.',
+          'Unter „Vorlagen“ wählst du einen Beispielworkflow und öffnest eine eigene bearbeitbare Kopie. Die mitgelieferte Vorlage bleibt erhalten. „Weiterbearbeiten“ bringt dich zu deinem bereits geöffneten Workflow zurück.',
+          '„Exportieren“ erstellt auf Wunsch eine Projektdatei zum Weiterbearbeiten oder eine ausführbare Fassung zum Weitergeben. Der Export führt den Ablauf nicht aus.',
         ],
       },
     ],
   },
   {
-    id: 'bedingungen-schleifen',
-    titel: 'Bedingungen und Schleifen',
-    beschreibung: 'Entscheidungen treffen und Schritte wiederholen.',
+    id: 'dateien-verwenden',
+    titel: 'Dateien verwenden',
+    beschreibung: 'Die richtige Quelle auswählen, CSV-Spalten prüfen und Ausgabeziele bewusst festlegen.',
     abschnitte: [
       {
-        id: 'bedingungen',
-        titel: 'Wenn und sonst',
+        id: 'dateipfad',
+        titel: 'Eine eigene Quelldatei auswählen',
         texte: [
-          '„Wenn / sonst“ besitzt einen Bedingungseingang und zwei innere Abläufe. Beim späteren eigenen Start wird abhängig von der Bedingung genau der passende Zweig verwendet. Leere Zweige sind erlaubt.',
-          'Vergleiche Werte mit gleich, ungleich, größer oder kleiner. „Und / oder“ verknüpft Bedingungen; „Bedingung umkehren“ vertauscht wahr und falsch. „Datei oder Ordner vorhanden“ prüft den angegebenen Pfad erst im später gestarteten Script.',
+          'Der Dateipfad einer Quelle benennt die Eingabe; ein Ausgabeziel bestimmt, wo ein echter Lauf neue Ergebnisse ablegt. Verwende zum Ausprobieren eine Kopie oder die mitgelieferten Beispieldaten.',
+        ],
+        schritte: [
+          'Wähle den lesenden Baustein aus und öffne „Eigenschaften“ oder „Daten und Parameter → Quellen“.',
+          'Wähle die Quelldatei über die vorhandene Dateiauswahl. Du kannst auch genau eine lokale Datei auf ihr Pfadfeld oder auf den passenden Quellbaustein ziehen.',
+          'Prüfe den vollständigen Pfad. Relative Pfade beziehen sich auf den Arbeitsordner dieses Workflows; du findest ihn unter „Läufe → Laufeinstellungen → Arbeitsordner“.',
+          'Das Auswählen oder Ablegen übernimmt nur den Pfad. Lade die Vorschau oder starte den Workflow anschließend bewusst.',
         ],
         beispiel: 'backup',
       },
       {
-        id: 'schleifen',
-        titel: 'Wiederholungen festlegen',
+        id: 'csv-spalten',
+        titel: 'CSV-Datei erscheint als eine einzige Spalte',
         texte: [
-          '„Eine Anzahl wiederholen“ wiederholt den inneren Ablauf eine ganze Anzahl von Malen. „Solange wiederholen“ prüft die Bedingung vor jedem Durchlauf. Plane darin eine Änderung ein, durch die die Bedingung wieder falsch werden kann.',
-          '„Für jeden Listeneintrag“ stellt jeden Wert einer Liste in einer benannten Variable bereit. „Für jede Datei im Ordner“ verwendet vollständige Dateipfade und durchsucht keine Unterordner; die Reihenfolge ist nach Dateiname sortiert.',
-          'Schleifen und Bedingungen dürfen ineinander liegen. Verbinde Anweisungen innerhalb des gewünschten inneren Ablaufs; eine nur daneben abgelegte Anweisung gehört nicht automatisch dazu.',
-        ],
-        beispiel: 'dateiliste',
-      },
-    ],
-  },
-  {
-    id: 'projekte-entwuerfe',
-    titel: 'Projekte und Entwürfe',
-    beschreibung: 'Workflows speichern, Kopien exportieren und Zwischenstände fortsetzen.',
-    abschnitte: [
-      {
-        id: 'projektdateien',
-        titel: 'Workflow speichern oder kopieren',
-        texte: [
-          'Eine .scriptlab-Datei enthält den bearbeitbaren Workflow mit fester Sprache, Verbindungen, Variablen-IDs, Werten, Kommentaren und Ansicht. Unvollständige Abläufe dürfen als Projekt gespeichert werden. .py und .vbs sind Exportdateien und lassen sich nicht als Bausteinprojekt zurückimportieren.',
-          'Aktuelle Projekte verwenden Schema 3 mit Workflowparametern und nicht geheimen Test-/Echtwerten. Schema 1 wird als VBS übernommen, Schema 2 behält seine Sprache und erhält leere Business-Angaben. Öffnen verändert keine Quelldatei. Beim Speichern wird das aktuelle Format intern gesichert. Unbekannte neuere Formate werden abgewiesen.',
-          '„Speichern“ legt den Workflow automatisch im ScriptLab-Nutzerverzeichnis ab, ohne Zielauswahl. Bei einer extern geöffneten Datei bleibt das Original unverändert. „Workflow → Kopie anlegen“ erzeugt eine unabhängige interne Kopie mit neuer Kennung. Namen und Beschreibung änderst du unter „Workflow → Projektangaben“.',
-          'Eine weiterzugebende .scriptlab-Datei erzeugst du unter „Exportieren“ mit dem Inhalt „Projektdatei“. Nur beim Export wählst du einen Ausgabeort. Eine exportierte Projektkopie, ein Script oder ein Paket verändert den Speicherzustand des aktiven Workflows nicht.',
-          'Bei ungespeicherten Änderungen fragt ScriptLab vor einem möglichen Verlust nach: „Speichern“, „Als Entwurf behalten“, „Änderungen verwerfen“ oder „Abbrechen“. „Speichern“ sichert intern; ein Schreibfehler verhindert den Wechsel. „Als Entwurf behalten“ erlaubt den Wechsel erst nach erfolgreicher lokaler Sicherung. „Änderungen verwerfen“ verwirft den ungespeicherten Stand bewusst. „Abbrechen“ erhält den aktuellen Arbeitskontext.',
-        ],
-      },
-      {
-        id: 'bekannte-projekte',
-        titel: 'Bekannte Projekte wiederfinden',
-        texte: [
-          '„Meine gespeicherten Workflows“ zeigt bekannte Projektdateien mit ihrem tatsächlichen Pfad und ihrer Sprache. Suche nach Name oder Pfad, filtere nach Sprache und sortiere nach Name oder dem letzten Öffnen. Die Liste ist ein Verzeichnis bekannter Speicherorte, keine Suche auf deinen Laufwerken. Auch Beispiele und Entwürfe besitzen einen Sprachfilter.',
-          'Fehlt eine Datei oder ist ein Laufwerk nicht erreichbar, erscheint der tatsächliche Prüfzustand. Öffne die Zeilendetails am Pfeil neben dem Namen. Mit „Neu zuordnen“ wählst du dort die verschobene Projektdatei aus. „Aus Liste entfernen“ entfernt nur den Verweis; die Projektdatei bleibt erhalten.',
-          'Gleichnamige Projekte können unterschiedliche Dateien sein. Prüfe deshalb bei Bedarf den vollständigen Dateipfad; das Pfadfeld lässt sich auswählen und kopieren.',
-        ],
-      },
-      {
-        id: 'entwuerfe',
-        titel: 'Gesicherte Entwürfe fortsetzen',
-        texte: [
-          'Die Entwurfsliste enthält lokal gesicherte Zwischenstände. Sie unterscheidet Abläufe ohne Projektdatei und gesicherte Änderungen mit Bezug auf eine vorhandene Datei. Der angezeigte Zeitpunkt gehört zur Entwurfssicherung, nicht zu einem behaupteten Speichern der Projektdatei.',
-          'Inhaltliche Änderungen werden nach einer kurzen Eingabepause lokal im Nutzerverzeichnis gesichert. Ein neuer leerer Startablauf und reine Zoomänderungen erzeugen keinen neuen Entwurf. Beachte im Editor den tatsächlichen Sicherungsstatus; eine fehlgeschlagene Sicherung ist kein gesicherter Stand.',
-          '„Fortsetzen“ öffnet den gesicherten Stand zum Bearbeiten. „Als Projekt speichern“ sichert ihn ohne Zielauswahl als eigenen Workflow im ScriptLab-Nutzerverzeichnis. Erst ein erfolgreicher Schreibvorgang ist ein gespeichertes Projekt.',
-          'Nach erfolgreichem Speichern wird nur der zugehörige Entwurf bereinigt. Bei Abbruch oder Schreibfehler bleibt er erhalten. Wurde die zugehörige Projektdatei außerhalb von ScriptLab verändert oder entfernt, muss der Entwurf als separate Kopie gespeichert werden; die Ausgangsdatei wird nicht automatisch überschrieben.',
-          '„Entwurf löschen“ entfernt nach Bestätigung den gesicherten Zwischenstand, nicht eine zugehörige Projektdatei. Ein Entwurf ersetzt keine selbst gewählte Sicherung deiner wichtigen Projektdateien.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'vbs-export',
-    titel: 'Python- und VBS-Export',
-    beschreibung: 'Fehler beheben, Dateipfade verstehen und eigenständig exportieren.',
-    abschnitte: [
-      {
-        id: 'pruefen-exportieren',
-        titel: 'Prüfen und als Script speichern',
-        texte: [
-          'Unter „Exportieren“ wählst du Projektdatei, Script oder Business-Paket als Inhalt und danach den Ausgabeort. Die Projektdatei erhält den bearbeitbaren Stand, auch wenn noch Angaben fehlen. Vor einem Script- oder Paketexport werden die Bausteine geprüft. Fehlende Pflichtwerte, falsche Verbindungen und lose aktive Anweisungen verhindern diesen Export. Die Hinweisübersicht führt zum betroffenen Baustein.',
-          'Gewöhnliche Python-Projekte erzeugen einzelne .py-Dateien, VBS-Projekte .vbs-Dateien. Python-Business-Projekte erzeugen ein ZIP mit Script, eigenen Modulen, Requirements, Anleitung und Parameterbeispiel. Das ZIP enthält keinen Python-Interpreter. Beim Empfänger sind eine passende eigene Python-Umgebung und für Business-Workflows die festen Pakete erforderlich; exportierte Dialogworkflows benötigen auch Tcl/Tk. ScriptLab oder Node.js werden dort nicht benötigt.',
-          'Die optionale Codevorschau zeigt ausschließlich Text. Sie führt den Ablauf nicht aus. Nach dem Export erscheint: „Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.“ „Speicherordner anzeigen“ öffnet nur den Ordner und startet die Datei nicht.',
-          'Python-Exporte werden als UTF-8 ohne BOM, VBS-Exporte als UTF-16LE mit BOM geschrieben. Beide verwenden Windows-Zeilenenden (CRLF). Identische Workflows und Exportoptionen erzeugen denselben unsignierten Quelltext.',
-        ],
-      },
-      {
-        id: 'pfade-dateien',
-        titel: 'Dateipfade und vorhandene Dateien',
-        texte: [
-          'Bei einem Quellenbaustein sind Bezeichnung und Dateipfad getrennt: Die Bezeichnung benennt nur den Schritt. Gib den tatsächlichen Pfad im beschrifteten Quellenfeld ein oder ziehe genau eine lokale Datei auf den Quellbaustein beziehungsweise sein Pfadfeld. Quellenfelder in den Eigenschaften und Datei-/Dokumentparameter unterstützen diese Ablage ebenfalls. Dabei wird nur der Pfad übernommen, nichts ausgeführt. Gebundene Parameter ändern sich ausschließlich im ausdrücklich bearbeiteten Parameterfeld.',
-          'Relative Pfade verwenden in ScriptLab den Arbeitsordner des Workflows. Externe Quellen können weiterhin gelesen werden. Ausgaben müssen im ScriptLab-Nutzerverzeichnis liegen; bestehende Ziele außerhalb werden abgewiesen und nicht umgeschrieben. Exportierte Scripts verwenden ihren eigenen Scriptordner für relative Pfade und behalten absolute Pfadwerte. Gewöhnliche Dateiaktionen erlauben keine Platzhalter; Business-Dateistapel besitzen ein eigenes Feld für ein Dateimuster.',
-          'Kopieren und Verschieben behandeln ein vorhandenes Ziel standardmäßig als Fehler; bewusst gewähltes Überschreiben ersetzt die Zieldatei. Textdatei schreiben ersetzt den Inhalt. Der erweiterte Löschbaustein erzeugt standardmäßig eine Rückfrage im später gestarteten Script.',
-          'Die Kodierung der vom Workflow bearbeiteten Textdateien wird gesondert gewählt. UTF-8 und UTF-16LE schreiben eine BOM; Windows-ANSI verwendet die lokale Windows-Codepage. Beim Ergänzen muss eine vorhandene Datei zur ausgewählten Kodierung passen. Fehlerhaftes UTF-8 oder UTF-16LE wird vor dem Überschreiben zurückgewiesen.',
-        ],
-        beispiel: 'dateiliste',
-      },
-      {
-        id: 'python-verfuegbarkeit',
-        titel: 'Mitgelieferte Komponenten prüfen',
-        texte: [
-          'ScriptLab verwendet mitgeliefertes CPython 3.15.2 x64 einschließlich Tcl/Tk und aller festen Business-Pakete. Für Workflows innerhalb der Anwendung ist keine externe Installation oder Einrichtung nötig. Die Sprachwahl zwischen Python und VBS bleibt erhalten.',
-          '„Einstellungen → Laufzeit“ zeigt den tatsächlichen Status der App-Komponenten. „Erneut prüfen“ prüft den Bestand. Versionen und Programmdatei stehen lesend in technischen Angaben. Eine Interpreterauswahl und Online-/Offline-Paketinstallation werden nicht angeboten. Ein fehlender oder beschädigter Bestandteil wird als Fehler gemeldet; ein Workflowstart lädt und installiert keine Pakete.',
-          'Zum selbstständigen Start einer exportierten .py-Datei verwendest du in PowerShell den tatsächlichen vollständigen Interpreterpfad und den Scriptpfad, zum Beispiel: & "C:\\Python315\\python.exe" -I -u -X utf8 "C:\\Meine Workflows\\Mein Workflow.py". Ersetze beide Beispielpfade durch deine vorhandenen Pfade. Die Optionen isolieren die Modulsuche, entpuffern die Ausgabe und aktivieren UTF-8; sie bilden keine Sicherheits-Sandbox. Ein Doppelklick hängt von Windows-Dateizuordnungen ab und wird nicht vorausgesetzt.',
-          'Die externe Python-Umgebung wird erst für exportierte Scripts benötigt. Die lokale Hilfe und die normale Workflowverarbeitung mit den mitgelieferten Komponenten benötigen keine Internetverbindung.',
-        ],
-      },
-      {
-        id: 'vbscript-windows',
-        titel: 'VBScript-Verfügbarkeit unter Windows',
-        texte: [
-          'Microsoft hat VBScript abgekündigt. Die spätere Ausführung hängt von Windows-Version, verfügbarer VBScript-Komponente, Windows Script Host und den geltenden Richtlinien ab. Dateiaktionen verwenden die dokumentierten Windows-Komponenten Scripting.FileSystemObject und gegebenenfalls ADODB.Stream.',
-          'ScriptLab kann auch ohne VBScript-Laufzeit bearbeiten, speichern und unsigniert exportieren. Bewusste Tests benötigen die verfügbare Laufzeit und einen von Windows erlaubten Scriptstart. Eine fehlende oder blockierte Laufzeit wird verständlich gemeldet. ScriptLab aktiviert keine Windows-Features und ändert keine Sicherheitsrichtlinien.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'signaturen',
-    titel: 'Signaturen',
-    beschreibung: 'Optional mit einem eigenen Zertifikat signieren und das Prüfergebnis verstehen.',
-    abschnitte: [
-      {
-        id: 'einrichten',
-        titel: 'Ein eigenes Zertifikat auswählen',
-        texte: [
-          'Diese optionale Exportfunktion gilt nur für VBS-Projekte. Bei Python-Projekten werden keine VBS-Signaturoptionen angeboten. Für .py ist kein Signaturverfahren implementiert und es wird kein Signaturprüfergebnis angezeigt. Die Signatur der ScriptLab-Anwendung bleibt davon getrennt.',
-          'Unter Einstellungen kannst du „Exportierte Datei signieren“ aktivieren und die Zertifikate laden. Benötigt wird ein gültiges Code-Signing-Zertifikat mit verfügbarem privatem Schlüssel im Windows-Zertifikatspeicher. Die Auswahl wird eindeutig über den Fingerabdruck zugeordnet.',
-          'ScriptLab schreibt zuerst die fertige VBS-Datei, signiert sie mit SHA-256 und prüft anschließend die Windows-Signatur. Ein optionaler geeigneter Zeitstempeldienst benötigt Netzwerkzugriff. Der Workflowinhalt wird dabei nicht ausgeführt.',
-          'Ohne geeignetes Zertifikat kannst du die Option ausschalten und normal unsigniert exportieren. Private Schlüssel, Kennwörter und Entwicklertokens werden nicht mit Projekten oder Anwendung ausgeliefert.',
-        ],
-      },
-      {
-        id: 'pruefergebnisse',
-        titel: 'Das tatsächliche Ergebnis beachten',
-        texte: [
-          'ScriptLab unterscheidet „Nicht signiert“, „Signatur gültig“, „Signatur ungültig“, „Zertifikatsvertrauen nicht bestätigt“ und „Prüfung nicht möglich“. Eine fehlgeschlagene gewünschte Signatur erscheint nicht als erfolgreich signierter Export.',
-          'Eine Signatur hilft, Herausgeber und Veränderungen zu prüfen. Sie garantiert weder einen ungefährlichen Workflow noch die Ausführung ohne Windows-, SmartScreen- oder Unternehmenswarnungen.',
-          'Die Signatur der ScriptLab-Anwendung und die Signatur deiner VBS-Dateien sind getrennt. Für eigene Workflows verwendest du dein eigenes oder ausdrücklich bereitgestelltes Zertifikat.',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'business-einrichten',
-    titel: 'Daten prüfen, Parameter und Laufmodi',
-    beschreibung: 'Tabellen- und Dokumentabläufe bewusst vorbereiten und sicher unterscheiden.',
-    abschnitte: [
-      {
-        id: 'business-laufzeit',
-        titel: 'Mitgelieferte Business-Komponenten',
-        texte: [
-          'Python 3.15.2 x64 und die festen Komponenten für Daten, Excel, Word und PDF gehören vollständig offline zu ScriptLab. Du musst keine eigene Python-Umgebung oder Pakete einrichten.',
-          'Unter „Einstellungen → Laufzeit“ stehen Komponentenstatus und „Erneut prüfen“. Technische Versionen sind bei Bedarf lesend erreichbar. Ein Workflowstart installiert keine Pakete. Nur für exportierte Scripts benötigt der Empfänger eine eigene passende Umgebung.',
+          'CSV-Dateien können ihre Werte mit Komma, Semikolon oder Tabulator trennen. Die Einstellung muss zur Datei passen. ScriptLab ändert sie nicht automatisch.',
         ],
         schritte: [
-          'Einen Business-Workflow oder eine Beispielkopie öffnen.',
-          'Quelle und notwendige Angaben im Baustein konfigurieren.',
-          'Eine Schrittvorschau oder einen Prüflauf bewusst starten.',
+          'Wenn in der Datenvorschau mehrere Spaltennamen in einer Kopfzelle stehen, klicke auf „Trennzeichen prüfen“, sofern der Hinweis angeboten wird.',
+          'Alternativ öffnest du „Quelle konfigurieren“. Prüfe im lesenden CSV-Baustein das Feld „Trennzeichen“: zum Beispiel ; oder ,.',
+          'Kehre zur Vorschau zurück und klicke erneut auf „Datenvorschau laden“. Vergleiche Spaltennamen und einige bekannte Werte mit deiner Datei.',
         ],
       },
       {
-        id: 'business-parameter',
-        titel: 'Testdaten und echte Daten als Werte festlegen',
+        id: 'datei-parameter',
+        titel: 'Testdaten, echte Daten und vorhandene Ziele',
         texte: [
-          '„Workflow → Workflowparameter“ definiert Name, Beschriftung, Wertart, Pflichtangabe und Standardwert. In den Bausteineigenschaften kann ein Feld einen solchen Parameter verwenden. Kennwörter, Tokens und private Schlüssel gehören nicht in diese Werte.',
-          '„Läufe → Vorbereitung“ zeigt den gewählten Parametersatz. Unter „Parameterwerte anpassen“ gelten Änderungen zunächst für den nächsten Lauf. „Werte im Parametersatz merken“ übernimmt sie ins Projekt; erst Speichern sichert die Projektdatei.',
-          'Die Namen „Testdaten“ und „Echte Daten“ bieten keine Abschirmung. Prüfe die tatsächlich angezeigten Quellen und Ziele. Bei Business-Beispielkopien zeigen die Pfadwerte auf private synthetische Testdaten. Für produktive Dateien musst du diese Werte bewusst ändern.',
+          'Unter „Daten und Parameter → Parameter“ bearbeitest du vorhandene Workflowparameter. „Testdaten“ und „Echte Daten“ sind zwei Sätze von Werten; ihr Wechsel allein führt nichts aus.',
+          'Ein gebundener Quellenpfad verwendet einen Parameter oder eine Variable. Ändere dessen Zuordnung bewusst in „Daten und Parameter“, statt sie durch einen Dateidrop zu ersetzen.',
+          'Bei „Tabelle als CSV/XLSX/JSON/Parquet speichern“ kannst du „Speicherort (optional)“ als festen Wert leer lassen. ScriptLab übernimmt dann den Namen der eindeutigen Quelldatei mit der gewählten Endung und speichert im Arbeitsordner. Bei mehreren Quellen heißt die Ausgabe Auswertung. Belegte Namen werden nummeriert; vorhandene Dateien werden beim automatischen Speichern niemals ersetzt.',
+          'Einen eigenen Speicherort kannst du weiterhin angeben; dann gilt die gewählte Einstellung für vorhandene Ziele. Ein leerer Parameter oder eine leere gebundene Variable ist ein Fehler und wählt keinen automatischen Speicherort. Die Datenvorschau erzeugt keine fachlichen Ausgabedateien.',
         ],
-      },
-      {
-        id: 'business-schrittvorschau',
-        titel: 'Ergebnis bis zu einem Tabellenschritt laden',
-        texte: [
-          'Öffne „Daten und Parameter → Datenvorschau“. Wähle „Ergebnis bis zu diesem Schritt“ und „Verwendete Werte“. „Datenvorschau laden“ startet direkt dort, ohne vorherige Laufvorbereitung. Die Vorschau endet am ausgewählten Tabellenschritt. Unfertige Nachfolger müssen dafür nicht konfiguriert werden; der bearbeitete Workflow bleibt unverändert.',
-          'Unterstützt werden verbundene lesende Business-Tabellenschritte im Hauptablauf. Schleifen, Verzweigungen sowie aktive Grundbausteine oder Dateiaktionen im benötigten Vorlauf lassen sich hier nicht als reine Schrittvorschau laden. Der deaktivierte Start nennt den Grund.',
-          'Die Anzeige ist auf 200 Zeilen und 256 KiB begrenzt. Filter, Sortierung und Gruppierung können trotzdem die gesamte Quelle lesen. Spaltenvorschläge beziehen sich auf die gewählte Eingabetabelle und den passenden Vorschaukontext. Während des Ladens bleibt „Stoppen“ erreichbar.',
-        ],
-      },
-      {
-        id: 'business-modi',
-        titel: 'Datenvorschau, Prüflauf und Ausführen',
-        texte: [
-          '„Datenvorschau“ zeigt höchstens 200 Zeilen und 256 KiB. Filter, Sortierung und Gruppierung können dafür trotzdem die vollständige Quelle lesen. Dokumente und Dateiausgaben werden nur geplant. Die Codevorschau dagegen zeigt ausschließlich Text und liest keine Quellen.',
-          'Für Business-Workflows ist zunächst „Prüflauf ohne Zieländerungen“ gewählt. Er prüft unterstützte Schritte und eigene technische Zwischenfassungen. Fachliche Eingaben und Ziele werden nicht verändert. Ein erfolgreicher Prüflauf ist keine Garantie für einen späteren echten Lauf.',
-          'Erst „Ausführen · echte Dateiänderungen“ führt den vollständigen Workflow tatsächlich aus. Gewöhnliche Aktionsblöcke werden nicht heimlich im Business-Vorschau- oder Prüflaufmodus ausgeführt. Stoppen und Zeitlimit nehmen bereits erfolgte Änderungen nicht zurück.',
-        ],
-      },
-      {
-        id: 'business-umfang',
-        titel: 'Quellen, Ziele und Zeitlimit vor dem Start prüfen',
-        texte: [
-          'Klappe unter „Läufe → Vorbereitung“ vor dem Start „Quellen und Ausgabeziele“ auf. Prüfe Quelle, Vorlage, Ziel, Archiv und die Regel für vorhandene Dateien. Dynamisch berechnete Dateinamen stehen erst im betreffenden Schritt vollständig fest. Ausgaben innerhalb von ScriptLab müssen im ScriptLab-Nutzerverzeichnis liegen; Quellen können außerhalb liegen.',
-          'Unter „Weitere Einstellungen“ liegen Laufprofil sowie Speicher- und Tempbudgets. Laufprofile bieten 15 Sekunden für die Vorschau, eine Minute für den Prüflauf, zwei Minuten für die Kurzprüfung, zwei Stunden für Geschäftsabläufe und acht Stunden für große Stapel. Ein Profil ändert nicht den gewählten Modus. Die Budgets betreffen die Datenengine, nicht den gesamten Rechner. „Technische Schrittangaben“ zeigt bei Bedarf die vollständige Konfiguration.',
-        ],
-        beispiel: 'business-monat',
       },
     ],
   },
   {
-    id: 'business-tabellen-dokumente',
-    titel: 'Tabellen, Word und PDF mit Beispielen',
-    beschreibung: 'Fünf vollständige Abläufe mit synthetischen Daten nachvollziehen.',
+    id: 'ausfuehren-ergebnisse',
+    titel: 'Ausführen und Ergebnisse prüfen',
+    beschreibung: 'Bewusst starten, eine Tabelle vorab ansehen und Ergebnisse dem richtigen Lauf zuordnen.',
     abschnitte: [
       {
-        id: 'business-monat',
-        titel: 'Monatsdaten auswerten',
+        id: 'workflow-starten',
+        titel: 'Den aktuellen Workflow ausführen',
         texte: [
-          '„Monatliche Auswertung“ liest CSV, wählt den Oktober und fasst Beträge nach Region zusammen. Erwartet werden Nord 150, Süd 80 und insgesamt 230 in XLSX und PDF. PDF-Berichte können die mitgelieferte Vera-Schrift verwenden; eigene Schriften werden nicht aus dem Internet geladen.',
-          'Tabellen aus CSV, XLSX, JSON und Parquet werden über Ergebnisverweise weitergegeben. CSV beginnt als Text, damit führende Nullen erhalten bleiben. Lege Zahlen-, Datums- und Dezimaltypen ausdrücklich fest. Erst danach filtern, sortieren, berechnen oder zusammenfassen.',
+          '„Workflow ausführen“ im Kopf startet den vollständigen aktuellen Ablauf mit den vorhandenen Werten. Auch ungespeicherte Änderungen werden verwendet. Wähle für den ersten Versuch entbehrliche Dateien.',
         ],
-        beispiel: 'business-monat',
-      },
-      {
-        id: 'business-zuordnung',
-        titel: 'Bestellungen mit Stammdaten verbinden',
-        texte: [
-          'Das Bestellbeispiel verbindet Kundennummern mit Stammdaten. Drei Bestellungen werden zugeordnet; K9 bleibt ein gemeldeter Fehler. Die zugeordneten Beträge ergeben Nord 45, Süd 40 und insgesamt 85.',
-          'Wähle Verknüpfungsschlüssel und erwartete Zuordnung bewusst. Ein doppelter Stammschlüssel darf keine Bestellung unbemerkt vervielfachen. Datenqualitätsblöcke prüfen unter anderem Pflichtwerte, Eindeutigkeit, Typen und erlaubte Bereiche.',
-        ],
-        beispiel: 'business-bestellungen',
-      },
-      {
-        id: 'business-word',
-        titel: 'Einen Word-Bestellvorschlag erzeugen',
-        texte: [
-          'Das Lagerbeispiel liest XLSX, prüft Bestände und berechnet Zielbestand minus Bestand. Eine Word-Vorlage enthält zwei Positionen für Lieferant S1: 15 und 12, zusammen 27. Artikel mit ausreichendem Bestand werden ausgeschlossen. Es wird keine echte Bestellung versendet.',
-          'Word-Bausteine ersetzen unterstützte benannte Platzhalter und wiederholen vorgesehene Tabellenzeilen. Eine Serie kann nach Lieferant gruppieren. Nicht alle Word-Funktionen werden nachgebildet. Vorlagen und fertige Dokumente fachlich und visuell prüfen.',
-        ],
-        beispiel: 'business-bestellvorschlag',
-      },
-      {
-        id: 'business-pdf',
-        titel: 'PDF-Belege als Kopien geordnet ablegen',
-        texte: [
-          'Das Dokumenteingangsbeispiel enthält zwei PDFs mit eindeutiger Belegnummer und Datum sowie einen Raster-Scan. Zwei Kopien entstehen im Monatsordner; der Scan liefert einen Hinweis. Alle Originale bleiben erhalten. Ein bestehendes Ziel wird mit der Regel Fehler geschützt.',
-          'Die PDF-Bausteine lesen vorhandene Textschichten und können Seiten auswählen, teilen oder verbinden. Ein Scan ohne Textschicht wird nicht per OCR gelesen. ScriptLab konvertiert keine Office-Dateien über eine Office-Anwendung.',
-        ],
-        beispiel: 'business-belege',
-      },
-      {
-        id: 'business-stapel',
-        titel: 'Dateistapel prüfen und bestätigt archivieren',
-        texte: [
-          'Das CSV-Stapelbeispiel schreibt jede gültige CSV vollständig, prüft das Ergebnis und erstellt erst dann die Archivkopie. Erst nach deren Bestätigung wird die gültige Eingangsdatei entfernt. Die fehlerhafte Datei bleibt im Eingang, der Fehler im Bericht.',
-          '„Für jede Datei im Stapel“ verwendet eine geprüfte Eingangsliste. „Fehler behandeln und fortfahren“ ist eine bewusste Regel für fachliche Fehler; Stoppen, Zeitlimit und unklare Publikationen dürfen dadurch nicht verschluckt werden. Ein teilweise erfolgreicher Lauf ist kein uneingeschränkter Erfolg.',
-        ],
-        beispiel: 'business-stapel',
-      },
-    ],
-  },
-  {
-    id: 'business-export-fortsetzen',
-    titel: 'Business-Paket, Laufbericht und Wiederaufnahme',
-    beschreibung: 'Eigenständige Pakete exportieren und bestätigte Teilschritte nachvollziehen.',
-    abschnitte: [
-      {
-        id: 'business-paket',
-        titel: 'Ein eigenständiges ZIP bewusst zusammenstellen',
-        texte: [
-          'Wähle „Exportieren → Inhalt → Business-Paket (.zip)“ und „Ausgabeort auswählen“. Die Dateien werden vor dem Schreiben angezeigt. Das ZIP enthält workflow.py, eigene Business-Module, feste Requirements, Parameterbeispiel, Anleitung, Vera-Schrift und Lizenzhinweise. Es funktioniert ohne ScriptLab oder Node.js, benötigt aber eine vorbereitete Python-Umgebung.',
-          '„Ressourcen auswählen“ fügt nur ausdrücklich gewählte DOCX-/XLSX-Vorlagen, PNG-/JPEG-Bilder oder TTF-Schriften bei. Geschäftsdaten, Eingangsordner, Berichte und Journale werden nicht automatisch kopiert. Rechte und vertrauliche Inhalte vor Weitergabe prüfen. Höchstens 16 MiB je Ressource und 64 MiB je Paket.',
-          'Beim Empfänger das ganze Paket entpacken, die Parameterdatei prüfen und die Umgebung bewusst mit dem festen Paketsatz vorbereiten. Online- und Offlinewege stehen in der Anleitung. Der Scriptstart installiert nichts. Absolute Pfade bleiben absolut und müssen für eine Weitergabe bewusst angepasst werden.',
+        schritte: [
+          'Prüfe Quellen, Parameter und Ausgabeziele.',
+          'Klicke einmal auf „Workflow ausführen“. Du kannst dabei im Ablauf oder in der Datenansicht bleiben.',
+          'Beobachte Status und Ausgabe. „Stoppen“ fordert den Abbruch an; warte auf das gemeldete Prozessende.',
         ],
       },
       {
-        id: 'business-berichte',
-        titel: 'Bericht und Wiederaufnahme richtig verwenden',
+        id: 'daten-vorab',
+        titel: 'Tabellendaten vorab ansehen',
         texte: [
-          'Der Laufbericht hält Workflow, Quellenfingerabdrücke, Parameter, Ergebnisse, Summen, Fehler und Abschlussgrund fest. Berichte und Journale können geschäftlichen Kontext und Pfade enthalten. Sie bleiben lokal und werden nicht automatisch weitergegeben.',
-          '„Passendes früheres Journal bewusst fortsetzen“ prüft Workflow, Parameter, Quellen, bestätigte Ausgaben und die verwendete Laufzeitfassung. Geänderte eigene Module, Python-/Paketversionen oder Vera-Schriftbytes können die Wiederaufnahme verhindern. Ein älteres Journal ohne Laufzeitidentität wird nicht automatisch übernommen.',
-          'Unklare Schritte verlangen eine Prüfung der tatsächlichen Dateien. Das Journal ist keine allgemeine Genau-einmal-Garantie und kein Rollback. Bestätigte Teilergebnisse bleiben nach Abbruch erhalten. Ein Journal über 16 MiB kann nicht erneut eingelesen werden; es wird dafür nicht heimlich gekürzt oder gelöscht.',
+          'Die Datenvorschau liest die für den gewählten Schritt nötigen Quellen und zeigt einen begrenzten Ausschnitt. Sie ersetzt keine Prüfung der vollständigen Ergebnisdatei.',
+        ],
+        schritte: [
+          'Öffne „Daten und Parameter → Vorschau“.',
+          'Wähle unter „Ergebnis bis zu diesem Schritt“ den Tabellenschritt und unter „Verwendete Werte“ den passenden Parametersatz.',
+          'Klicke auf „Datenvorschau laden“. Suche, Sortierung und Seitenwechsel beziehen sich nur auf die geladenen Vorschauzeilen.',
+          'Wenn der Stand als geändert markiert ist, lade die Vorschau nach deinen Korrekturen erneut.',
         ],
       },
       {
-        id: 'business-grenzen',
-        titel: 'Verarbeitungsgrenzen beachten',
+        id: 'ergebnis-beurteilen',
+        titel: 'Was wurde tatsächlich erledigt?',
         texte: [
-          'Dokumenttabellen haben ein Limit von 20000 Zellen, PDFs von 2000 Seiten, PDF-Textauszüge von 256 KiB. Große Tabellen werden nicht unbemerkt vollständig zu Word- oder PDF-Berichten gemacht. Excel-Formeln werden nicht berechnet; gespeicherte Formelwerte können veraltet sein.',
-          'Das DuckDB-Speicherbudget ist kein Limit für den gesamten Python-Prozess. Große Sortierungen und Verknüpfungen können mehr Speicher benötigen. Das breite Millionen-CSV-Testprofil scheiterte mit 64 MB, ein ausdrücklich schmalerer Plan bestand. Ein begrenzter Vorschauausschnitt beweist keinen begrenzten gesamten Leseaufwand.',
-          'Ein erfolgreicher Modul- oder Dateitest beweist keine vollständige UI-, Screenreader-, Installer- oder Updateabnahme. Beachte die getrennten tatsächlichen Prüfberichte. Es gibt keine OCR, Office-Konvertierung, Cloud-Synchronisation oder allgemeine Shell.',
+          '„Ergebnis ansehen“ öffnet das zugehörige Ergebnis unter „Läufe“. Status, vorhandene Dateiausgaben, Hinweise und Ausgabe stehen dort zusammen. „Verlauf anzeigen“ öffnet frühere Läufe; ihre Auswahl startet nichts.',
+          'Prüfe erzeugte Dateien auch inhaltlich: stimmen zum Beispiel Zeilenanzahl, Summen, Dateinamen und Dokumenttexte? Ein beendet gemeldeter Lauf allein bestätigt nicht das fachlich gewünschte Ergebnis.',
+          'Für Datenabläufe kannst du unter „Läufe → Laufeinstellungen“ einen Prüflauf wählen. Er prüft und plant, ohne fachliche Ausgabeziele zu verändern. Der normale Hauptknopf „Workflow ausführen“ bleibt echte Ausführung.',
+          'Nach Stoppen, Zeitlimit oder einem Fehler können bereits erzeugte Dateien bestehen bleiben. ScriptLab macht erfolgte Dateiänderungen nicht automatisch rückgängig.',
         ],
       },
     ],
   },
   {
     id: 'probleme-tastatur',
-    titel: 'Probleme und Tastenkombinationen',
-    beschreibung: 'Häufige Meldungen einordnen und den Editor mit Tasten bedienen.',
+    titel: 'Fehler beheben und aufräumen',
+    beschreibung: 'Eine Meldung gezielt korrigieren, Entwürfe löschen und die Workflowliste ordnen.',
     abschnitte: [
       {
-        id: 'meldungen',
-        titel: 'Fehler und Speicherzustände verstehen',
+        id: 'fehler-beheben',
+        titel: 'Eine fehlende oder falsche Angabe korrigieren',
         texte: [
-          '„Ungespeicherte Änderungen“ betrifft die Projektdatei. „Projekt gespeichert“ bestätigt deren erfolgreichen Schreibvorgang. „Script gespeichert“ betrifft den Python- oder VBS-Export; „Signatur gültig“ bestätigt erst das tatsächliche VBS-Signaturprüfergebnis.',
-          '„Verbinde diesen Baustein mit deinem Ablauf“ bedeutet, dass eine aktive Anweisung lose ist. Ein dynamischer Dateipfad ist nicht allein deshalb falsch, weil er beim Entwerfen nicht aufgelöst werden kann. Die Strukturprüfung probiert keine Dateiaktionen aus. Eine bewusst gestartete Datenvorschau oder ein Prüflauf kann Quellen lesen; erst der echte Lauf verändert fachliche Ziele.',
-          'Unbekannte neuere Projektformate werden nicht überschrieben. Ist eine intern gespeicherte Datei von außen verändert worden, beachte die Konfliktmeldung. „Kopie speichern“ sichert deinen Stand als unabhängigen internen Workflow, ohne die betroffene Datei zu ersetzen.',
+          'Fehlermeldungen bleiben sichtbar, bis du sie schließt oder das Problem bearbeitest. Lies zuerst den genannten Baustein und das betroffene Feld.',
+        ],
+        schritte: [
+          'Nutze den angebotenen Verweis auf den Baustein oder das Feld. Fehlende Pflichtparameter führen zu „Daten und Parameter“.',
+          'Prüfe bei Dateifehlern den vollständigen Pfad, die Erreichbarkeit des Ordners und ob die Datei in einem anderen Programm geöffnet ist.',
+          'Prüfe bei CSV-Daten das Trennzeichen, wenn alle Werte in einer Spalte erscheinen.',
+          'Korrigiere die Angabe und starte die Vorschau oder den Lauf erneut. Allein die Korrektur startet keine Verarbeitung.',
         ],
       },
       {
-        id: 'tastenkombinationen',
-        titel: 'Tastenkombinationen im Editor',
+        id: 'entwurf-aufraeumen',
+        titel: 'Einen Entwurf löschen',
         texte: [
-          'Strg+N: neuer Workflow. Strg+O: Projekt öffnen. Strg+S: intern speichern. Strg+Umschalt+S: unabhängige interne Kopie anlegen. Projektkürzel gelten auch während einer Texteingabe, solange kein Dialog geöffnet ist.',
-          'Außerhalb von Texteingaben: Strg+Z macht rückgängig; Strg+Y oder Strg+Umschalt+Z wiederholt. F4 öffnet Eigenschaften. Entf löscht den ausgewählten Baustein. Escape bricht Ziehen oder die Auswahl einer Einfügestelle ab.',
-          'Strg+Plus und Strg+Minus verändern den Canvas-Zoom; Strg+0 setzt ihn auf 100 Prozent zurück. Für Schaltflächen und Formulare stehen Tab, Umschalt+Tab, Eingabetaste und die üblichen Auswahlfeldtasten zur Verfügung.',
+          'Ein Entwurf ist ein lokal gesicherter Zwischenstand. Er ist von einer gespeicherten Projektdatei zu unterscheiden.',
+        ],
+        schritte: [
+          'Öffne „Workflows“ und wähle „Entwürfe“.',
+          'Prüfe den Namen des Entwurfs. Nutze bei Bedarf zuerst „Fortsetzen“ oder „Als Projekt speichern“.',
+          'Klicke auf „Entwurf löschen“ und bestätige die Rückfrage. Nur die lokale Entwurfssicherung wird gelöscht; eine zugehörige Projektdatei bleibt erhalten.',
         ],
       },
       {
-        id: 'updates',
-        titel: 'Updates und Offlinebetrieb',
+        id: 'workflowliste-aufraeumen',
+        titel: 'Einen gespeicherten Workflow aus der Liste entfernen',
         texte: [
-          'Bearbeiten, lokale Hilfe, Projektdateien und unsignierter Export funktionieren offline. Unter Einstellungen kannst du nach Updates suchen, automatische Prüfungen abschalten und Vorabversionen bewusst zulassen.',
-          'Ein Update wird erst nach deiner Entscheidung heruntergeladen und installiert. Ein normales Beenden installiert nichts stillschweigend. Fehlende Release- oder Anwendungssignatureinrichtung wird als solche angezeigt; sie ist kein erfolgreich geprüftes Update.',
+          '„Aus Liste entfernen“ entfernt nur den Eintrag aus ScriptLab. Die gespeicherte Datei bleibt erhalten und kann über „Workflow öffnen“ wieder ausgewählt werden.',
+        ],
+        schritte: [
+          'Öffne „Workflows“ und suche den gewünschten Eintrag.',
+          'Klicke bei diesem Eintrag auf „Aus Liste entfernen“. Verwechsle dies nicht mit dem Löschen eines Entwurfs.',
+          'Wenn du die Datei selbst verwalten möchtest, öffne über ihre Details „Ordner anzeigen“. Prüfe im Explorer den Speicherort und die Datei, bevor du sie dort entfernst.',
+        ],
+      },
+      {
+        id: 'bedienung-erleichtern',
+        titel: 'Ansicht und Tastatur nutzen',
+        texte: [
+          'Unter „Einstellungen → Aussehen“ wählst du das Farbschema und die Textgröße. Die Zoomknöpfe im Ablauf ändern nur die Ansicht der Bausteine.',
+          'Tab und Umschalt+Tab wechseln zwischen Bedienelementen. Im Ablauf macht Strg+Z die letzte Änderung rückgängig; Entfernen löscht den ausgewählten Baustein. Strg+S speichert den Workflow.',
         ],
       },
     ],

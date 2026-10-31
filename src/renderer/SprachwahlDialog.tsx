@@ -21,25 +21,24 @@ const sprachen: readonly {
 }[] = [
   {
     id: 'python',
-    name: 'Python',
-    beschreibung: 'Für Geschäftsprozesse mit Daten, Excel und Dokumenten.',
+    name: 'Automatisierung',
+    beschreibung: 'Dateien verarbeiten, Tabellen bearbeiten und Dokumente erstellen.',
     vorteil: 'Gemeinsame Grundbausteine und zusätzliche Daten- und Dokumentbausteine.',
-    hinweis: 'In ScriptLab mitgeliefert und direkt nutzbar.',
+    hinweis: 'Für die meisten Aufgaben. Direkt startklar.',
   },
   {
     id: 'vbs',
-    name: 'VBS',
-    beschreibung: 'Für kleine Windows-Aufgaben und bestehende VBScript-Abläufe.',
+    name: 'Windows-Automatisierung',
+    beschreibung: 'Kleine Windows-Aufgaben und vorhandene ältere Workflows.',
     vorteil: 'Nutzt den Windows Script Host und vorhandene Windows-Schnittstellen.',
-    hinweis: 'Benötigt die Windows-VBScript-Komponente. Microsoft lässt die Unterstützung auslaufen.',
+    hinweis: 'Für vorhandene Windows-Abläufe. Benötigt die entsprechende Windows-Komponente.',
   },
   {
     id: 'ml',
     name: 'Machine Learning',
     beschreibung: 'Modelle mit Tabellendaten trainieren und für Vorhersagen verwenden.',
     vorteil: 'Ein begrenzter Python-Bausteinkatalog für Tabellenaufbereitung, Modelle und Vorhersagen.',
-    hinweis:
-      'Verwendet Python. Das optionale CPU-Paket wird erst nach deiner ausdrücklichen Auswahl eingerichtet.',
+    hinweis: 'Zusätzliche Komponenten lassen sich bei Bedarf in den Einstellungen einrichten.',
   },
 ];
 
@@ -56,7 +55,7 @@ export function SprachwahlDialog({ offen, vorauswahl, abbrechen, erstellen }: Sp
       titel="Neuer Workflow"
       onSchliessen={abbrechen}
       className="sprachwahl-dialog"
-      beschreibung="Wähle eine Sprache. Du arbeitest anschließend mit Bausteinen."
+      beschreibung="Was möchtest du automatisieren?"
       fuss={
         <>
           <Knopf onClick={abbrechen}>Abbrechen</Knopf>
@@ -74,8 +73,8 @@ export function SprachwahlDialog({ offen, vorauswahl, abbrechen, erstellen }: Sp
         </>
       }
     >
-      <fieldset className="sprachwahl-karten" role="radiogroup" aria-label="Workflowart und Skriptsprache">
-        <legend className="sl-nur-vorlesen">Workflowart und Skriptsprache wählen</legend>
+      <fieldset className="sprachwahl-karten" role="radiogroup" aria-label="Art der Automatisierung">
+        <legend className="sl-nur-vorlesen">Art der Automatisierung wählen</legend>
         {sprachen.map((sprache) => (
           <label key={sprache.id} className={`sprachwahl-karte ${wahl === sprache.id ? 'ist-gewaehlt' : ''}`}>
             <span className="sprachwahl-kopf">
@@ -85,13 +84,7 @@ export function SprachwahlDialog({ offen, vorauswahl, abbrechen, erstellen }: Sp
                 value={sprache.id}
                 checked={wahl === sprache.id}
                 onChange={() => setWahl(sprache.id)}
-                aria-label={
-                  sprache.id === 'python'
-                    ? 'Python'
-                    : sprache.id === 'ml'
-                      ? 'Machine Learning'
-                      : 'VBScript (VBS)'
-                }
+                aria-label={sprache.name}
                 aria-describedby={`${id}-${sprache.id}-beschreibung ${id}-${sprache.id}-hinweis`}
               />
               <span className="sprachwahl-name">{sprache.name}</span>
@@ -103,22 +96,9 @@ export function SprachwahlDialog({ offen, vorauswahl, abbrechen, erstellen }: Sp
           </label>
         ))}
       </fieldset>
-      <p className="sprachwahl-ml-hinweis">
-        Auch ohne eingerichtetes ML-Paket kannst du einen Machine-Learning-Workflow bearbeiten, speichern und
-        exportieren. Das Auswählen oder Öffnen eines Workflows startet keine Einrichtung.
-      </p>
-      <details className="sprachwahl-details">
-        <summary>Sprachen und Voraussetzungen im Detail</summary>
-        {sprachen.map((sprache) => (
-          <section key={sprache.id}>
-            <h3>{sprache.name}</h3>
-            <p>{sprache.vorteil}</p>
-          </section>
-        ))}
-      </details>
       {wahl === null && (
         <p id={`${id}-startgrund`} className="sprachwahl-startgrund">
-          Wähle zuerst Python, VBScript (VBS) oder Machine Learning.
+          Wähle eine der drei Aufgabenarten.
         </p>
       )}
     </Dialog>

@@ -419,8 +419,8 @@ async function sprachwahl(s: Sitzung): Promise<Locator> {
   await workflowBefehl(s.seite, 'neu');
   const dialog = s.seite.getByRole('dialog', { name: 'Neuer Workflow', exact: true });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('Für Geschäftsprozesse mit Daten, Excel und Dokumenten.');
-  await expect(dialog).toContainText('Für kleine Windows-Aufgaben und bestehende VBScript-Abläufe.');
+  await expect(dialog).toContainText('Dateien verarbeiten, Tabellen bearbeiten und Dokumente erstellen.');
+  await expect(dialog).toContainText('Kleine Windows-Aufgaben und vorhandene ältere Workflows.');
   return dialog;
 }
 
@@ -432,8 +432,8 @@ test('Businesszustände: Sprachwahl per Tastatur und Abbrechen behalten den bish
     await expect(dialog.getByRole('button', { name: 'Workflow erstellen', exact: true })).toBeDisabled();
     await s.seite.keyboard.press('Tab');
     await s.seite.keyboard.press('Tab');
-    const python = dialog.getByRole('radio', { name: 'Python', exact: true });
-    const vbs = dialog.getByRole('radio', { name: 'VBScript (VBS)', exact: true });
+    const python = dialog.getByRole('radio', { name: 'Automatisierung', exact: true });
+    const vbs = dialog.getByRole('radio', { name: 'Windows-Automatisierung', exact: true });
     await expect(python).toBeFocused();
     await python.press('Space');
     await expect(python).toBeChecked();
@@ -451,7 +451,7 @@ test('Businesszustände: Sprachwahl per Tastatur und Abbrechen behalten den bish
     await expect(vbs).toBeChecked();
     await dialog.getByRole('button', { name: 'Workflow erstellen', exact: true }).press('Enter');
     await editorBereit(s);
-    await expect(s.seite.getByTestId('editor-sprache')).toHaveText('VBScript (VBS)');
+    expect((await dokument(s)).projekt.skriptsprache).toBe('vbs');
     await keinWorkflowstart(s);
     await screenshot(s, 'sprachwahl-tastatur-vbs');
   } finally {

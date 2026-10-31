@@ -54,8 +54,6 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
   const [seite, setSeite] = useState(0);
   const [vorbereitung, setVorbereitung] = useState(0);
   const [detailLaedt, setDetailLaedt] = useState<string | null>(null);
-  const ersteListe = useRef(true);
-  const absicht = useRef(false);
   const anfrage = useRef(0);
   const anforderung = useRef(props.vorbereitungAnfrage);
   const uebersichtAnfrage = useRef(props.uebersichtAnfordern);
@@ -70,9 +68,6 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
       setEintraege(r.wert.eintraege);
       setHinweis(r.wert.hinweis);
       setFehler('');
-      if (ersteListe.current && !aktuell.laufId && !absicht.current && r.wert.eintraege.length)
-        setListeOffen(true);
-      ersteListe.current = false;
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Die Läufe konnten nicht geladen werden.');
     } finally {
@@ -103,16 +98,15 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
   useEffect(() => {
     if (uebersichtAnfrage.current === props.uebersichtAnfordern) return;
     uebersichtAnfrage.current = props.uebersichtAnfordern;
-    absicht.current = true;
     anfrage.current++;
     setAuswahl(null);
     setListeOffen(false);
     setDetailLaedt(null);
+    setVorbereitung(0);
     requestAnimationFrame(() => detailRef.current?.focus());
   }, [props.uebersichtAnfordern]);
 
   function vorbereiten() {
-    absicht.current = true;
     anfrage.current++;
     setAuswahl(null);
     setListeOffen(false);
@@ -120,11 +114,11 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
     setVorbereitung((n) => n + 1);
   }
   function aktuellenLaufAnzeigen() {
-    absicht.current = true;
     anfrage.current++;
     setAuswahl(null);
     setListeOffen(false);
     setDetailLaedt(null);
+    setVorbereitung(0);
     requestAnimationFrame(() => detailRef.current?.focus());
   }
   async function waehlen(eintrag: LaufEintrag) {
@@ -136,6 +130,7 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
       if (nummer !== anfrage.current) return;
       if (!r.ok) throw new Error(r.meldung);
       setAuswahl({ ...r.wert, workflowStand: props.workflowStand });
+      setVorbereitung(0);
       setListeOffen(false);
       requestAnimationFrame(() => detailRef.current?.focus());
     } catch (e) {
@@ -151,7 +146,7 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
       (e) =>
         (modusFilter === 'alle' || e.modus === modusFilter) &&
         (!suche ||
-          `${zeit(e.gestartetAm ?? e.vorbereitetAm)} ${modus(e.modus)} ${phasen[e.phase]} ${e.sprache} ${e.standHash}`
+          `${zeit(e.gestartetAm ?? e.vorbereitetAm)} ${modus(e.modus)} ${phasen[e.phase]}`
             .toLocaleLowerCase('de')
             .includes(suche)),
     );
@@ -174,8 +169,8 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
       {listeOffen && (
         <header className="laufverwaltung-kontext">
           <div>
-            <h2>Gespeicherte Läufe</h2>
-            <p>Ergebnisse, Protokolle und Optionen gehören jeweils zum gespeicherten Laufstand.</p>
+            <h2>Verlauf</h2>
+            <p>Öffne eine frühere Ausführung, um ihre Ergebnisse anzusehen.</p>
             {aktiv && <span role="status">{laufStatus}</span>}
           </div>
           <div className="knopfgruppe">
@@ -297,9 +292,6 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
                         <time dateTime={e.gestartetAm ?? e.vorbereitetAm ?? undefined}>
                           {zeit(e.gestartetAm ?? e.vorbereitetAm)}
                         </time>
-                        <span className="laufverwaltung-stand" title={e.standHash}>
-                          Stand {e.standHash.slice(0, 8)}
-                        </span>
                       </td>
                       <td>{modus(e.modus)}</td>
                       <td>
@@ -363,7 +355,7 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
                 requestAnimationFrame(() => listeRef.current?.focus());
               }}
             >
-              Alle Läufe{eintraege.length > 0 ? ` (${eintraege.length})` : ''}
+              Verlauf anzeigen{eintraege.length > 0 ? ` (${eintraege.length})` : ''}
             </Knopf>
           }
           gesperrt={props.gesperrt || (historisch && aktiv)}

@@ -41,7 +41,7 @@ function lauf(modus: 'vorschau' | 'prueflauf' | 'ausfuehren', extra: Partial<Tes
   };
 }
 function uebersicht(html: string) {
-  const panel = html.match(/<section\b[^>]*id="[^"]*-panel-uebersicht"[^>]*>[\s\S]*?<\/section>/)?.[0];
+  const panel = html.match(/<section\b[^>]*aria-label="Ergebnis dieses Laufs"[^>]*>[\s\S]*?<\/section>/)?.[0];
   if (!panel) throw new Error('Die Laufübersicht fehlt.');
   expect(panel.match(/^<section[^>]*>/)?.[0]).not.toContain('hidden=""');
   return panel;
@@ -56,15 +56,15 @@ describe('Verständlicher Kontext des tatsächlich angezeigten Laufs', () => {
   it('kennzeichnet eine beendete Vorschau trotz danach gewählter echter Ausführung als begrenzte Vorschau', () => {
     const html = anzeigen(lauf('vorschau'));
     const sichtbar = uebersicht(html);
-    expect(sichtbar).toContain('Dieser Lauf zeigt eine begrenzte Datenvorschau.');
+    expect(sichtbar).toContain('Begrenzte Datenvorschau.');
     expect(sichtbar).toContain('Zieldateien werden dabei nicht verändert.');
     expect(sichtbar).not.toContain('Dieser Lauf führt den Workflow tatsächlich aus.');
-    expect(html).toContain('<strong>Modus dieses Laufs:</strong> Datenvorschau');
+    expect(html).toContain('<p class="testbereich-modus">Datenvorschau</p>');
   });
 
   it('unterscheidet ein Prüfergebnis von bereits veröffentlichten Dateiänderungen', () => {
     const sichtbar = uebersicht(anzeigen(lauf('prueflauf'), { optionen: optionen('vorschau') }));
-    expect(sichtbar).toContain('Dieser Prüflauf prüft unterstützte Schritte und plant Dateiaktionen');
+    expect(sichtbar).toContain('Prüft unterstützte Schritte und plant Dateiaktionen');
     expect(sichtbar).toContain('ohne Zieldateien zu verändern.');
     expect(sichtbar).not.toContain('Dieser Lauf zeigt eine begrenzte Datenvorschau.');
     expect(sichtbar).not.toContain('Dieser Lauf führt den Workflow tatsächlich aus.');
@@ -89,11 +89,11 @@ describe('Verständlicher Kontext des tatsächlich angezeigten Laufs', () => {
       }),
       { historisch: true, veraltet: true },
     );
-    expect(html).toContain('Gespeicherter Lauf');
+    expect(html).toContain('Ausführung vom');
     const sichtbar = uebersicht(html);
     expect(sichtbar).toContain('Die synthetische Quelldatei fehlt.');
     expect(schaltflaeche(sichtbar, 'Baustein anzeigen')).toContain('disabled=""');
-    expect(html).toContain('Die Ergebnisse gehören zum angezeigten früheren Stand.');
+    expect(html).toContain('Die Ergebnisse gehören zu einem früheren Stand.');
     expect(html).not.toMatch(/role="tab"[^>]*>Vorbereitung<\/button>/);
   });
 });

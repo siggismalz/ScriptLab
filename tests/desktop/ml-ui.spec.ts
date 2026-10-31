@@ -59,9 +59,11 @@ for (const farbe of ['hell', 'dunkel'] as const) {
         const dialog = seite.getByRole('dialog', { name: 'Neuer Workflow', exact: true });
         await expect(dialog.getByRole('radio')).toHaveCount(3);
         const ml = dialog.getByRole('radio', { name: 'Machine Learning', exact: true });
-        await dialog.getByRole('radio', { name: 'Python', exact: true }).focus();
+        await dialog.getByRole('radio', { name: 'Automatisierung', exact: true }).focus();
         await seite.keyboard.press('ArrowRight');
-        await expect(dialog.getByRole('radio', { name: 'VBScript (VBS)', exact: true })).toBeChecked();
+        await expect(
+          dialog.getByRole('radio', { name: 'Windows-Automatisierung', exact: true }),
+        ).toBeChecked();
         await seite.keyboard.press('ArrowRight');
         await expect(ml).toBeFocused();
         await expect(ml).toBeChecked();
@@ -145,15 +147,17 @@ for (const farbe of ['hell', 'dunkel'] as const) {
         await keinLauf(seite);
 
         const einstellungsdialog = await einstellungenOeffnen(seite);
-        await einstellungsdialog.getByRole('tab', { name: 'Laufzeit', exact: true }).click();
+        await einstellungsdialog.getByRole('tab', { name: 'Automatisierungen', exact: true }).click();
         const laufzeit = einstellungsdialog.getByRole('region', {
-          name: 'Machine-Learning-Komponenten',
+          name: 'Machine Learning',
           exact: true,
         });
-        await expect(laufzeit).toContainText('Bearbeiten, Speichern und Exportieren möglich');
-        const cpu = laufzeit.getByRole('button', { name: 'CPU-Paket online einrichten', exact: true });
+        await expect(laufzeit).toContainText(
+          'Bearbeiten, Speichern und Exportieren sind auch ohne Einrichtung möglich',
+        );
+        const cpu = laufzeit.getByRole('button', { name: 'Online einrichten', exact: true });
         await expect(cpu).toBeEnabled();
-        await laufzeit.getByRole('button', { name: 'ML-Komponenten prüfen', exact: true }).focus();
+        await laufzeit.getByRole('button', { name: 'Verfügbarkeit prüfen', exact: true }).focus();
         await seite.keyboard.press('Tab');
         await expect(cpu).toBeFocused();
         const paketstand = await seite.evaluate(() => window.scriptlab.mlLesen());
@@ -169,7 +173,10 @@ for (const farbe of ['hell', 'dunkel'] as const) {
           const alteKennung = (await dokument(seite)).projektKennung;
           await workflowBefehl(seite, 'neu');
           await dialog
-            .getByRole('radio', { name: sprache === 'python' ? 'Python' : 'VBScript (VBS)', exact: true })
+            .getByRole('radio', {
+              name: sprache === 'python' ? 'Automatisierung' : 'Windows-Automatisierung',
+              exact: true,
+            })
             .check();
           await dialog.getByRole('button', { name: 'Workflow erstellen', exact: true }).click();
           await expect

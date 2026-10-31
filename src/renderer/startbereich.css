@@ -224,52 +224,30 @@
   resize: vertical;
   user-select: text;
 }
-.start-hilfesuche {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: var(--abstand-12);
-  max-inline-size: 76ch;
-  margin-block-start: var(--abstand-16);
-}
-.start-hilfesuche .sl-feld {
-  flex: 1 1 30ch;
-}
-.start-themen,
 .start-hilfe-treffer {
   display: flex;
   flex-direction: column;
-  margin-block-start: var(--abstand-24);
   border-block-start: 1px solid var(--farbe-trennung);
 }
-.start-themen > button,
 .start-hilfe-treffer > button {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--abstand-8);
   min-inline-size: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--abstand-16);
   padding: var(--abstand-16) var(--abstand-8);
   border: 0;
   border-block-end: 1px solid var(--farbe-trennung);
   background: transparent;
   color: var(--farbe-text);
   text-align: start;
+  line-height: var(--zeilenhoehe);
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
-.start-themen > button:hover,
 .start-hilfe-treffer > button:hover {
   background: var(--farbe-erhoeht);
 }
-.start-themen > button > span,
-.start-hilfe-treffer > button {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--abstand-4);
-  overflow-wrap: anywhere;
-}
-.start-themen > button > span > span,
 .start-hilfe-treffer > button > span:last-child {
   color: var(--farbe-text-sekundaer);
 }
@@ -279,27 +257,6 @@
 .start-hilfe-treffer mark {
   color: var(--farbe-auf-akzent);
   background: var(--farbe-akzent);
-}
-.start-hilfeartikel {
-  max-inline-size: 82ch;
-}
-.start-hilfeartikel > section {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--abstand-12);
-  margin-block-start: var(--abstand-32);
-}
-.start-hilfeartikel h2 {
-  scroll-margin-block-start: var(--abstand-24);
-  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
-}
-.start-hilfeartikel ol {
-  margin: 0;
-  padding-inline-start: var(--abstand-24);
-}
-.start-hilfeartikel li + li {
-  margin-block-start: var(--abstand-4);
 }
 @container startinhalt (max-width:960px) {
   .start-listenfilter {

@@ -68,12 +68,12 @@ describe('Datenansicht mit echten Laufgrenzen', () => {
     expect(html).not.toContain('FREMDER-DATENBESTAND');
     expect(html).toContain('Für diesen Schritt ist noch keine Datenvorschau geladen');
   });
-  it('ordnet die lesende Vorschau dem tatsächlichen Lauf und Basisordner zu', () => {
+  it('zeigt die zugeordnete Vorschau schreibgeschützt ohne technische Kennungen', () => {
     const html = darstellen(vorschau());
-    expect(html).toContain('lauf-123');
-    expect(html).toContain('C:\\Testdaten\\Eingang');
-    expect(html).toContain('a'.repeat(64));
-    expect(html).toContain('Gesamtzahl der Quelldaten');
+    expect(html).not.toContain('lauf-123');
+    expect(html).not.toContain('C:\\Testdaten\\Eingang');
+    expect(html).not.toContain('a'.repeat(64));
+    expect(html).toContain('Suche und Sortierung gelten für diesen Ausschnitt.');
     expect(html).toContain('Schreibgeschützte Daten');
     expect(html).not.toContain('contenteditable');
   });

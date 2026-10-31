@@ -56,7 +56,7 @@ async function imFenster(steuerung: Locator) {
 }
 async function textgroesse(seite: Page, wert: 1 | 2) {
   const dialog = await einstellungenOeffnen(seite);
-  await dialog.getByRole('tab', { name: 'Darstellung', exact: true }).click();
+  await dialog.getByRole('tab', { name: 'Aussehen', exact: true }).click();
   await dialog
     .getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })
     .selectOption(String(wert));
@@ -148,20 +148,27 @@ for (const [thema, sprache] of [
       expect(gestartet.phase).toBe('laeuft');
       expect(gestartet.prozessId).not.toBeNull();
       const panel = seite.getByTestId('test-panel');
+      const stoppHinweis = panel.getByText(
+        'Bereits erfolgte Dateiänderungen bleiben auch nach einem Stopp bestehen.',
+        { exact: true },
+      );
       for (const skala of [1, 2] as const) {
         await textgroesse(seite, skala);
-        await expect(panel.getByRole('heading', { name: 'Läufe', exact: true })).toBeVisible();
-        await expect(panel.getByText('Aktueller Lauf', { exact: true }).first()).toBeVisible();
+        await expect(panel.getByRole('heading', { name: 'Ergebnis', exact: true })).toBeVisible();
+        await expect(panel.getByText('Lauf läuft', { exact: true })).toBeVisible();
         await imFenster(panel.getByRole('button', { name: 'Stoppen', exact: true }));
-        const ansicht = panel.getByRole('tab', { name: 'Übersicht', exact: true });
-        await ansicht.focus();
-        await ansicht.press('End');
-        await expect(panel.getByRole('tab', { name: 'Protokoll', exact: true })).toBeFocused();
-        await expect(panel.getByRole('log', { name: 'Laufprotokoll', exact: true })).toContainText(neuerText);
-        await panel.getByRole('tab', { name: 'Übersicht', exact: true }).click();
-        await expect(
-          panel.getByText(/Bereits erfolgte Dateiänderungen bleiben auch nach einem Stopp bestehen/),
-        ).toBeVisible();
+        await expect(panel.getByRole('tablist')).toHaveCount(0);
+        const ausgabe = panel.getByRole('log', { name: 'Laufausgabe', exact: true });
+        await ausgabe.scrollIntoViewIfNeeded();
+        await ausgabe.focus();
+        await expect(ausgabe).toBeFocused();
+        await expect(ausgabe).toContainText(neuerText);
+        await ausgabe.press('Tab');
+        await expect(panel.locator('summary', { hasText: 'Ergebnis weitergeben' })).toBeFocused();
+        await panel.locator('.testbereich-inhalt').evaluate((element) => {
+          element.scrollTop = 0;
+        });
+        await expect(stoppHinweis).toHaveCount(0);
         expect((await lauf(seite)).laufId).toBe(gestartet.laufId);
         await mkdir(nachweise, { recursive: true });
         await seite.screenshot({ path: join(nachweise, `${thema}-${skala * 100}-laufend-1280x720.png`) });
@@ -176,17 +183,18 @@ for (const [thema, sprache] of [
       expect(ende.phase, JSON.stringify(ende)).toBe('abgebrochen');
       expect(ende.laufId).toBe(gestartet.laufId);
       expect(ende.ausgabe).toContain(neuerText);
-      await panel.getByRole('button', { name: /^Alle Läufe/ }).click();
+      await expect(stoppHinweis).toBeVisible();
+      await panel.getByRole('button', { name: /^Verlauf anzeigen/ }).click();
       const historie = seite.getByRole('region', { name: 'Läufe dieses Workflows', exact: true });
-      await expect(historie.getByRole('heading', { name: 'Gespeicherte Läufe', exact: true })).toBeVisible();
+      await expect(historie.getByRole('heading', { name: 'Verlauf', exact: true })).toBeVisible();
       await historie.getByRole('button', { name: /^Lauf vom .* anzeigen$/ }).click();
-      await expect(panel.getByText('Gespeicherter Lauf', { exact: true })).toBeVisible();
+      await expect(panel.getByText(/Ausführung vom/)).toBeVisible();
+      await expect(panel.getByRole('log', { name: 'Laufausgabe', exact: true })).toContainText(neuerText);
       await expect(panel.getByText('Abgebrochen', { exact: true })).toBeVisible();
       expect((await lauf(seite)).laufId).toBe(gestartet.laufId);
-      await panel.getByRole('button', { name: /^Alle Läufe/ }).click();
+      await panel.getByRole('button', { name: /^Verlauf anzeigen/ }).click();
       await historie.getByRole('button', { name: 'Aktuellen Lauf anzeigen', exact: true }).click();
-      await expect(panel.getByText('Aktueller Lauf', { exact: true }).first()).toBeVisible();
-      await expect(panel.getByText('Gespeicherter Lauf', { exact: true })).not.toBeVisible();
+      await expect(panel.getByText(/Ausführung vom/)).not.toBeVisible();
       expect((await lauf(seite)).laufId).toBe(gestartet.laufId);
       await imFenster(kopf.getByRole('button', { name: 'Exportieren', exact: true }));
       const ziel = join(ordner, sprache === 'vbs' ? 'Ausgabe.vbs' : 'Ausgabe.py');

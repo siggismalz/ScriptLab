@@ -34,8 +34,7 @@
 }
 .laufverwaltung-kontext > div:first-child > span,
 .laufverwaltung-kontext p,
-.laufverwaltung-umfang,
-.laufverwaltung-stand {
+.laufverwaltung-umfang {
   color: var(--farbe-text-sekundaer);
 }
 .laufverwaltung-kontext p {
@@ -89,10 +88,6 @@
 .laufverwaltung-tabelle tr[aria-selected='true'] {
   background: var(--farbe-auswahl-flaeche);
   box-shadow: inset 3px 0 var(--farbe-akzent);
-}
-.laufverwaltung-stand {
-  display: block;
-  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
 }
 .laufverwaltung-dauer {
   text-align: right;

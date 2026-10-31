@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { EntwurfEintrag, ProjektBibliothek, ProjektEintrag, Verfuegbarkeit } from '../gemeinsam/bruecke';
-import { beispiele, hilfeArtikel, hilfeDurchsuchen, type BeispielKennung } from './hilfe';
+import { beispiele, hilfeArtikel, type BeispielKennung } from './hilfe';
+import { HilfeBereich } from './HilfeBereich';
 import { Knopf } from './komponenten/Knopf';
 import { Karte } from './komponenten/Karte';
 import { Auswahlfeld, Feld, Textfeld } from './komponenten/Feld';
@@ -177,20 +178,6 @@ function zeitDarstellen(iso: string | null): string {
     : datum.toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-function markieren(text: string, suche: string): ReactNode {
-  const filter = suche.trim();
-  if (!filter) return text;
-  const position = text.toLocaleLowerCase('de').indexOf(filter.toLocaleLowerCase('de'));
-  if (position < 0) return text;
-  return (
-    <>
-      {text.slice(0, position)}
-      <mark>{text.slice(position, position + filter.length)}</mark>
-      {text.slice(position + filter.length)}
-    </>
-  );
-}
-
 /** Die Bibliothek bleibt Eigentum des Hauptprozesses. Diese Komponente hält nur Ansicht und Suche. */
 export function Startbereich(props: StartbereichEigenschaften) {
   const [seite, setSeite] = useState<Seite>(props.ziel ?? 'start');
@@ -259,6 +246,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
       if (ziel) {
         ziel.scrollIntoView({ block: 'start' });
         ziel.focus({ preventScroll: true });
+        setSprungziel(null);
       }
     } else {
       const wechselt = letzteAnsicht.current !== ansicht || letzteScrollAnfrage.current !== props.zielAnfrage;
@@ -284,7 +272,6 @@ export function Startbereich(props: StartbereichEigenschaften) {
 
   const gesperrt = Boolean(props.verarbeitung);
   const artikel = hilfeArtikel.find((a) => a.id === artikelId);
-  const treffer = hilfeDurchsuchen(hilfeSuche);
   const projekte = props.daten
     ? projekteFiltern(props.daten.projekte, projektSuche, projektSortierung, projektSprache)
     : [];
@@ -342,20 +329,14 @@ export function Startbereich(props: StartbereichEigenschaften) {
           <h3 title={projekt.name}>{projekt.name}</h3>
           {ausgewaehltesProjekt === projekt.id && <span className="sl-nur-vorlesen">Ausgewählt</span>}
         </div>
-        <span
-          className="start-workflowsprache"
-          aria-label={`Sprache: ${sprachdaten[projekt.skriptsprache].bezeichnung}`}
-        >
-          {projekt.workflowArt === 'ml'
-            ? 'Machine Learning · Python'
-            : sprachdaten[projekt.skriptsprache].kurzbezeichnung}
-        </span>
-        <span
-          className={`start-dateistatus ${fehlt ? 'start-dateistatus--fehler' : zustand === 'geaendert' ? 'start-dateistatus--hinweis' : ''}`}
-        >
-          <Symbol name={fehlt ? 'hinweis' : zustand === 'verfuegbar' ? 'erfolg' : 'info'} groesse={16} />
-          {zustandsname}
-        </span>
+        {(fehlt || zustand === 'geaendert') && (
+          <span
+            className={`start-dateistatus ${fehlt ? 'start-dateistatus--fehler' : zustand === 'geaendert' ? 'start-dateistatus--hinweis' : ''}`}
+          >
+            <Symbol name={fehlt ? 'hinweis' : zustand === 'verfuegbar' ? 'erfolg' : 'info'} groesse={16} />
+            {zustandsname}
+          </span>
+        )}
         <span
           className="start-workflowdatum"
           aria-label={`Zuletzt geöffnet: ${zeitDarstellen(projekt.zuletztGeoeffnet)}`}
@@ -371,6 +352,18 @@ export function Startbereich(props: StartbereichEigenschaften) {
           >
             Öffnen
           </Knopf>
+          {!kompakt && (
+            <Knopf
+              variante="leise"
+              symbol="loeschen"
+              title="Nur den Listeneintrag entfernen. Die gespeicherte Datei bleibt erhalten."
+              disabled={gesperrt}
+              grundId="start-verarbeitung"
+              onClick={() => props.projektEntfernen(projekt.id)}
+            >
+              Aus Liste entfernen
+            </Knopf>
+          )}
         </div>
         <details className="start-dateidetails">
           <summary title={`Details zu ${projekt.name}`}>
@@ -379,6 +372,10 @@ export function Startbereich(props: StartbereichEigenschaften) {
           </summary>
           <div className="start-dateidetails-inhalt">
             {projekt.beschreibung && <p>{projekt.beschreibung}</p>}
+            <p className="start-metadaten">
+              {projekt.workflowArt === 'ml' ? 'Machine Learning · ' : ''}
+              {sprachdaten[projekt.skriptsprache].bezeichnung}
+            </p>
             <Textfeld
               beschriftung="Dateipfad"
               value={projekt.pfad}
@@ -410,14 +407,6 @@ export function Startbereich(props: StartbereichEigenschaften) {
                     onClick={() => props.projektNeuZuordnen(projekt.id)}
                   >
                     Neu zuordnen
-                  </Knopf>
-                  <Knopf
-                    variante="leise"
-                    disabled={gesperrt}
-                    grundId="start-verarbeitung"
-                    onClick={() => props.projektEntfernen(projekt.id)}
-                  >
-                    Aus Liste entfernen
                   </Knopf>
                 </>
               )}
@@ -458,14 +447,6 @@ export function Startbereich(props: StartbereichEigenschaften) {
         <div className="start-workflowname">
           <h3 title={workflow.name}>{workflow.name}</h3>
         </div>
-        <span
-          className="start-workflowsprache"
-          aria-label={`Sprache: ${sprachdaten[workflow.skriptsprache].bezeichnung}`}
-        >
-          {workflow.workflowArt === 'ml'
-            ? 'Machine Learning · Python'
-            : sprachdaten[workflow.skriptsprache].kurzbezeichnung}
-        </span>
         <span className="start-dateistatus">
           <Symbol name={workflow.geaendert ? 'entwurf' : 'info'} groesse={16} />
           {status}
@@ -490,6 +471,10 @@ export function Startbereich(props: StartbereichEigenschaften) {
               <span className="sl-nur-vorlesen">Speicherort und Dateistatus</span>
             </summary>
             <div className="start-dateidetails-inhalt">
+              <p className="start-metadaten">
+                {workflow.workflowArt === 'ml' ? 'Machine Learning · ' : ''}
+                {sprachdaten[workflow.skriptsprache].bezeichnung}
+              </p>
               <Textfeld
                 beschriftung="Dateipfad"
                 value={workflow.dateiname}
@@ -513,10 +498,8 @@ export function Startbereich(props: StartbereichEigenschaften) {
     return (
       <div className="start-listenkopf" aria-hidden="true">
         <span>Workflow</span>
-        <span>Sprache</span>
-        <span>Speicherstatus</span>
         <span>Zuletzt geöffnet</span>
-        <span />
+        <span>Aktionen</span>
       </div>
     );
   }
@@ -768,6 +751,9 @@ export function Startbereich(props: StartbereichEigenschaften) {
                       ? `${projekte.length} ${projekte.length === 1 ? 'Workflow' : 'Workflows'}${projektSuche.trim() || projektSprache !== 'alle' ? ' gefunden' : ''}`
                       : 'Bibliothek noch nicht geladen'}
               </p>
+              <p className="start-hilfetext">
+                „Aus Liste entfernen“ räumt diese Übersicht auf. Die gespeicherte Datei bleibt erhalten.
+              </p>
               {projekte.length ? (
                 <>
                   {workflowSpaltenkopf()}
@@ -888,11 +874,6 @@ export function Startbereich(props: StartbereichEigenschaften) {
                               : 'Noch nicht als Projektdatei gespeichert'}
                           </p>
                         </div>
-                        <span className="start-workflowsprache">
-                          {entwurf.workflowArt === 'ml'
-                            ? 'Machine Learning · Python'
-                            : sprachdaten[entwurf.skriptsprache].bezeichnung}
-                        </span>
                         <p className="start-metadaten">
                           Entwurf gesichert am {zeitDarstellen(entwurf.gesichertAm)}
                         </p>
@@ -924,10 +905,17 @@ export function Startbereich(props: StartbereichEigenschaften) {
                           Entwurf löschen
                         </Knopf>
                       </div>
+                      <p className="start-hilfetext start-loeschhinweis">
+                        „Entwurf löschen“ entfernt die lokale Sicherung. Eine zugehörige Projektdatei bleibt
+                        erhalten.
+                      </p>
                       {(entwurf.ausgangspfad || entwurf.beschreibung) && (
                         <details className="start-entwurfsdetails">
                           <summary>Speicherort und Beschreibung</summary>
                           <div>
+                            <p className="start-metadaten">
+                              {sprachdaten[entwurf.skriptsprache].bezeichnung}
+                            </p>
                             {entwurf.beschreibung && <p>{entwurf.beschreibung}</p>}
                             {entwurf.ausgangspfad && (
                               <Textfeld
@@ -974,102 +962,15 @@ export function Startbereich(props: StartbereichEigenschaften) {
           )}
 
           {seite === 'hilfe' && (
-            <section data-testid="hilfe" aria-label="Lokale Hilfe">
-              {!artikel && (
-                <>
-                  <p className="start-einleitung">
-                    Diese Hilfe ist vollständig lokal verfügbar und benötigt keine Internetverbindung.
-                  </p>
-                  <div className="start-hilfesuche">
-                    <Feld
-                      beschriftung="Hilfe durchsuchen"
-                      type="search"
-                      value={hilfeSuche}
-                      onChange={(e) => setHilfeSuche(e.target.value)}
-                      placeholder="Zum Beispiel Dateipfad oder Speichern"
-                    />
-                    {hilfeSuche && <Knopf onClick={() => setHilfeSuche('')}>Suche leeren</Knopf>}
-                  </div>
-                  {hilfeSuche.trim() ? (
-                    <>
-                      <p role="status" className="start-ergebniszahl">
-                        {treffer.length
-                          ? `${treffer.length} ${treffer.length === 1 ? 'Artikelstelle gefunden' : 'Artikelstellen gefunden'}`
-                          : 'Keine Hilfe gefunden. Versuche einen anderen Suchbegriff.'}
-                      </p>
-                      <div className="start-hilfe-treffer">
-                        {treffer.map((t) => (
-                          <button
-                            key={`${t.artikelId}/${t.abschnittId}`}
-                            onClick={() => seiteWechseln('hilfe', t.artikelId, t.abschnittId)}
-                          >
-                            <span className="start-treffertitel">
-                              {t.artikelTitel} · {t.abschnittTitel}
-                            </span>
-                            <span>{markieren(t.ausschnitt, hilfeSuche)}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="start-themen">
-                      {hilfeArtikel.map((thema) => (
-                        <button
-                          key={thema.id}
-                          aria-label={thema.titel}
-                          onClick={() => seiteWechseln('hilfe', thema.id)}
-                        >
-                          <span>
-                            <strong>{thema.titel}</strong>
-                            <span>{thema.beschreibung}</span>
-                          </span>
-                          <Symbol name="rechts" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-              {artikel && (
-                <article className="start-hilfeartikel">
-                  <p className="start-einleitung">{artikel.beschreibung}</p>
-                  {artikel.abschnitte.map((abschnitt) => {
-                    const verknuepfteBeispiele = beispiele.filter(
-                      (b) => b.id === abschnitt.beispiel || b.id === `${abschnitt.beispiel}-python`,
-                    );
-                    return (
-                      <section key={abschnitt.id} aria-labelledby={`hilfe-${abschnitt.id}`}>
-                        <h2 id={`hilfe-${abschnitt.id}`} tabIndex={-1}>
-                          {abschnitt.titel}
-                        </h2>
-                        {abschnitt.texte.map((text) => (
-                          <p key={text}>{text}</p>
-                        ))}
-                        {abschnitt.schritte && (
-                          <ol>
-                            {abschnitt.schritte.map((schritt) => (
-                              <li key={schritt}>{schritt}</li>
-                            ))}
-                          </ol>
-                        )}
-                        {verknuepfteBeispiele.map((beispiel) => (
-                          <Knopf
-                            key={beispiel.id}
-                            symbol="neu"
-                            onClick={() => props.beispielOeffnen(beispiel.id)}
-                            disabled={gesperrt}
-                            grundId="start-verarbeitung"
-                          >
-                            Beispiel als Vorlage öffnen: {beispiel.name} ·{' '}
-                            {sprachdaten[beispiel.skriptsprache].kurzbezeichnung}
-                          </Knopf>
-                        ))}
-                      </section>
-                    );
-                  })}
-                </article>
-              )}
-            </section>
+            <HilfeBereich
+              artikel={artikel}
+              suche={hilfeSuche}
+              sucheAendern={setHilfeSuche}
+              artikelOeffnen={(id, abschnitt) => seiteWechseln('hilfe', id, abschnitt ?? null)}
+              beispielOeffnen={props.beispielOeffnen}
+              ueberOeffnen={props.ueberOeffnen}
+              gesperrt={gesperrt}
+            />
           )}
         </div>
       </main>

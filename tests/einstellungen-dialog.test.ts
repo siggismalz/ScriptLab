@@ -13,9 +13,10 @@ vi.mock('../src/renderer/komponenten/Dialog', () => ({
 }));
 
 for (const sprache of ['python', 'vbs'] as const) {
-  it(`${sprache}: Fertig behandelt die gespeicherte HTTPS-Zeitstempeloption ausschließlich im VBS-Kontext`, () => {
+  it(`${sprache}: Fertig prüft die gespeicherte HTTPS-Zeitstempeloption ausschließlich bei aktiver VBS-Signatur`, () => {
     const projekt = neuesProjekt(sprache);
     projekt.exportOptionen.zeitstempelUrl = 'https://zeitstempel.example.test/';
+    projekt.exportOptionen.signieren = sprache === 'vbs';
     const vorher = structuredClone(projekt);
     const schliessen = vi.fn(),
       optionenSetzen = vi.fn();
