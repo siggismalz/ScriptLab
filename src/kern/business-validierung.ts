@@ -423,7 +423,7 @@ export function businessKonfigurationFeldfehler(
   } else if (op === 'ml.vorhersagen') {
     imFeld(['ausgabespalte'], () => text(k.ausgabespalte, 'Neue Vorhersagespalte'));
   } else if (op === 'daten.importieren' || op === 'daten.exportieren') {
-    benoetigt('pfad', 'Dateipfad');
+    if (op !== 'daten.exportieren' || k.pfad !== '') benoetigt('pfad', 'Dateipfad');
     const o = objekt(k.optionen) ? k.optionen : {};
     if (
       k.format === 'CSV' &&

@@ -1076,6 +1076,7 @@ export function KonfigEingabe(eigenschaften: KonfigEingabeEigenschaften) {
         feldFehlerId={fehler.length ? fehlerId : undefined}
         feldUngueltig={fehler.length > 0}
       />
+      {eigenschaften.feld.hilfe && <p className="business-hilfe">{eigenschaften.feld.hilfe}</p>}
       {fehler.length > 0 && (
         <p id={fehlerId} className="sl-feld-fehler">
           {fehler.map((f) => f.text).join(' ')}

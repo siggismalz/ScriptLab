@@ -52,7 +52,12 @@ export function laufPfadangaben(
       feldPfad: [feld.name],
       titel: feld.titel,
       rolle: rolle([feld.name]),
-      wert: laufPfadwert(konfiguration[feld.name] ?? feld.standard, parameter),
+      wert:
+        definition.operation === 'daten.exportieren' &&
+        feld.name === 'pfad' &&
+        (konfiguration[feld.name] ?? feld.standard) === ''
+          ? { art: 'berechnet', text: 'Automatisch im Arbeitsordner speichern' }
+          : laufPfadwert(konfiguration[feld.name] ?? feld.standard, parameter),
     }));
   if (Array.isArray(konfiguration.abschnitte)) {
     konfiguration.abschnitte.forEach((abschnitt, index) => {

@@ -73,7 +73,7 @@ for (const [darstellung, textSkalierung] of [
         .getByRole('button', { name: 'Baustein einfügen: Tabelle als CSV speichern', exact: true })
         .click();
       await palette.getByRole('button', { name: 'Nach „CSV-Tabelle lesen“', exact: true }).click();
-      await eig.getByRole('textbox', { name: 'Dateipfad', exact: true }).fill('ausgabe.csv');
+      await eig.getByRole('textbox', { name: 'Speicherort (optional)', exact: true }).fill('ausgabe.csv');
       const tabellenwahl = eig.getByRole('combobox', { name: 'Tabelle', exact: true });
       await tabellenwahl.selectOption(
         (await tabellenwahl

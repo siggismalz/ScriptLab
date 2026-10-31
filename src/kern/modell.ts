@@ -281,7 +281,11 @@ export function workflowPruefen(projekt: Projekt): { workflow: Workflow | null; 
               );
           }
           for (const feld of businessDef.felder)
-            if (feld.name === 'pfad' && !business.konfiguration.pfad)
+            if (
+              feld.name === 'pfad' &&
+              !business.konfiguration.pfad &&
+              !(businessDef.operation === 'daten.exportieren' && business.konfiguration.pfad === '')
+            )
               fehler(b, 'Wähle einen Dateipfad oder einen Workflowparameter aus.', ['konfiguration', 'pfad']);
         } catch (e) {
           fehler(b, e instanceof Error ? e.message : 'Prüfe die Einstellungen dieses Bausteins.');

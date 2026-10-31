@@ -770,6 +770,17 @@ class DatenEngine:
         optionen = objekt(optionen or {}, "Exportoptionen")
         plan = self._plan(tabelle)
         self._pruefe_quellen(plan)
+        if pfad == "":
+            # Ein leeres Ausgabeziel bedeutet automatisch: gleicher Quellenname im
+            # Arbeitsordner. Mehrere Quellen haben keinen eindeutigen Dateinamen.
+            quellen = {q.pfad for q in plan.quellen}
+            name = next(iter(quellen)).stem if len(quellen) == 1 else "Auswertung"
+            automatisch = self.kontext.basis / f"{name}.{format.lower()}"
+            if automatisch in quellen:
+                automatisch = automatisch.with_name(f"{name}-Ausgabe.{format.lower()}")
+            pfad = str(automatisch)
+            # Automatische Ziele überschreiben niemals vorhandene Dateien.
+            konflikt = "NEUER_NAME"
         ziel = self.kontext.pfad(pfad, schreiben=True)
         return publizieren(self.kontext, ziel, lambda staging: self._schreiben(tabelle, format, Path(staging), optionen), konflikt=konflikt, quellen=[q.pfad for q in plan.quellen])
 

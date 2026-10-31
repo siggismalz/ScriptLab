@@ -97,7 +97,6 @@ describe('Statische Business-Prüfung ohne Dateizugriffe', () => {
   );
   it.each([
     'lesen_csv',
-    'schreiben_xlsx',
     'ordner',
     'kopieren',
     'archivieren',
@@ -115,6 +114,15 @@ describe('Statische Business-Prüfung ohne Dateizugriffe', () => {
   ])('meldet leere Pflichtwerte bei %s', (typ) => {
     expect(pruefen(typ, {})).not.toEqual([]);
   });
+  it.each(['csv', 'xlsx', 'json', 'parquet'])(
+    'erlaubt automatische %s-Ausgabeziele und prüft ungültige explizite Ziele',
+    (format) => {
+      expect(pruefen(`schreiben_${format}`, { pfad: '' })).toEqual([]);
+      expect(pruefen(`schreiben_${format}`, { pfad: '   ' })).not.toEqual([]);
+      expect(pruefen(`schreiben_${format}`, { pfad: { parameter: 'Fehlt' } })).not.toEqual([]);
+      expect(pruefen(`schreiben_${format}`, { pfad: 'Ausgabe.' + format })).toEqual([]);
+    },
+  );
   it('prüft keine Dateiexistenz und lässt dynamische Pfade unverändert', () => {
     expect(
       pruefen('docx_vorlage', { vorlage: { parameter: 'Vorlage' }, ziel: { variable: 'stabile-id' } }, [

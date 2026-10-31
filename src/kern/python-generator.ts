@@ -320,6 +320,20 @@ export function pythonErzeugen(projekt: Projekt, optionen?: GeneratorOptionen): 
           anweisungen(a.zweige.FEHLER, tiefe + 1);
           continue;
         }
+        const ausgabePfad = a.business.konfiguration.pfad;
+        if (
+          a.business.operation === 'daten.exportieren' &&
+          ausgabePfad &&
+          typeof ausgabePfad === 'object' &&
+          !Array.isArray(ausgabePfad) &&
+          typeof ausgabePfad.variable === 'string'
+        ) {
+          zeile(`if ${variable(ausgabePfad.variable)} == '':`);
+          zeile(
+            `raise ValueError('Die Variable für den Speicherort ist leer. Gib einen Dateipfad an oder wähle im Baustein den automatischen Speicherort.')`,
+            1,
+          );
+        }
         zeile(
           `sl_business_schritt(sl_business_kontext, ${pythonText(a.id)}, ${pythonText(a.business.operation)}, ${businessWert(a.business.konfiguration)}, ${businessWert(a.business.eingaben)})`,
         );

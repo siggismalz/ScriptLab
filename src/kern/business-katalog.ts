@@ -192,8 +192,13 @@ for (const format of ['CSV', 'XLSX', 'JSON', 'PARQUET']) {
     tabelle,
     [
       wahl('format', 'Dateiformat', [format]),
-      pfad,
-      konflikt,
+      {
+        ...pfad,
+        titel: 'Speicherort (optional)',
+        hilfe:
+          'Leer lassen: ScriptLab übernimmt den Namen der Quelldatei und speichert im Arbeitsordner. Bei mehreren Quellen heißt die Datei Auswertung. Vorhandene Dateien erhalten einen neuen Namen.',
+      },
+      weitere(konflikt),
       {
         ...obj(
           'optionen',

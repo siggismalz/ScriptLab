@@ -96,6 +96,8 @@ def schritt(kontext: Kontext, id: str, operation: str, konfiguration: dict, eing
     kontext.beginn_schritt(id, k, e, operation)
     kontext.ereignis("schritt", operation=operation, status="begonnen")
     try:
+        if operation == "daten.exportieren" and k.get("pfad") == "" and konfiguration.get("pfad") != "":
+            raise BusinessFehler("Der Parameter für den Speicherort ist leer. Gib einen Dateipfad an oder wähle im Baustein den automatischen Speicherort.")
         if ((kontext.modus == "vorschau" and operation not in REINE_OPERATIONEN)
                 or (kontext.modus != "ausfuehren" and (_geplante_eingabe(e)
                     or operation in {"ml.trainieren", "ml.speichern"}))):

@@ -72,7 +72,7 @@ export function blockZusammenfassung(
       return kurz(pfad ? `${pfad}${blatt ? ` · ${blatt}` : ''}` : 'Quelldatei auswählen');
     }
     if (def.operation === 'daten.exportieren')
-      return kurz(`→ ${wertText(k.pfad, true) || 'Ausgabedatei festlegen'}`);
+      return kurz(`→ ${wertText(k.pfad, true) || 'Automatisch speichern'}`);
     if (def.operation === 'daten.filtern') {
       const vergleich = filterText(k.bedingung);
       if (vergleich) return kurz(vergleich);

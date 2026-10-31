@@ -25,3 +25,11 @@ Gemeinsamer Arbeitsbaum, ausschließlich Hauptagent führt Git, Builds und GUI-P
 ## Prüfprotokoll
 
 Die letzte dokumentierte Abnahme gehört zum Ausgangsstand; sie ist kein Nachweis für diesen Durchgang. Neue Ergebnisse werden hier ergänzt. Keine Leistungsverbesserung behauptet. Synthetische Workflows und isolierte Testprofile; keine Unternehmensdateien.
+
+### Ergänzung E-07: CSV ohne zusätzliches Ausgabeziel umwandeln
+
+Konkreter Nutzerbefund: CSV lesen → Tabelle als XLSX speichern wurde trotz eindeutiger Eingabetabelle durch das zusätzliche Pflichtfeld Dateipfad blockiert. Ein leeres, direktes Ausgabeziel wird nun aus dem Quellenamen im Arbeitsordner gebildet. Bei mehreren Quellen: `Auswertung`; beim selben Quell-/Zielformat: Zusatz `-Ausgabe`; Namenskonflikte erhalten eine Nummer. Bestehende Dateien werden dabei niemals ersetzt. Explizite Ziele und ihre Konfliktregeln bleiben erhalten; leere gebundene Variablen und Parameter werden als Fehler behandelt. Betroffen sind Katalog, beide Validierungsebenen, Python-Generator, Business-Laufzeit und die lesende Pfadübersicht. VBS bietet diese Businessfunktion weiterhin nicht an.
+
+Nachweise am integrierten Arbeitsstand: neun reale Python-Dateifälle bestanden (Python 3.12.6, DuckDB 2.0.0, openpyxl 3.1.5); 159 bestehende/ergänzte Generator-, Validierungs- und Pfadprüfungen bestanden. Der neue native Variablenfall blockierte zunächst an der erwarteten Windows-Fehlermeldungsbox; nach Abfangen ausschließlich dieses Betriebssystemdialogs im Test bestanden beide vollständigen Workflowfälle. In der echten Electron-Oberfläche wurde eine CSV mit Umlauten und führenden Nullen in eine mit openpyxl lesbare XLSX umgewandelt. Nach Schließen von Electron erzeugte das exportierte ZIP dieselben Sollwerte eigenständig. Originalquelle blieb bytegleich. Im unabhängigen Quellreview erkannte der Fachagent die notwendige Unterscheidung leerer Variablenbindungen; sie wurde ergänzt und getestet.
+
+Die breite UI-Abnahme läuft noch. Dabei erkannte überholte Erwartungen an entfernte Bedienelemente werden auf tatsächliche Ausgaben bzw. gespeicherte Modelle umgestellt; fachliche Nachweise bleiben erhalten.
