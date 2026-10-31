@@ -41,4 +41,12 @@ Umgebung: Windows 11 x64, Node 24.19, npm 11.17, Electron 45.0.0, Blockly 13.4.0
 
 Der begrenzte Nachlauf nach Korrektur der veralteten Statusmeldung bestand in A (einschließlich Statusprüfung) und fünf Direktstartfällen. Ein VBS-Direktstartfall erreichte einmal seine 5-Sekunden-Ausgabeerwartung nicht, während der Lauf noch aktiv war. Derselbe unveränderte Fall bestand unmittelbar zuvor und beim einmaligen isolierten Nachtest (5,1 Sekunden Fallzeit). Keine Assertion oder Frist wurde dafür gelockert; Ursache des sporadischen Ausgabeverzugs bleibt offen. Der Prozess wurde im fehlgeschlagenen Durchgang geordnet durch die Testbereinigung gestoppt.
 
-Der Paketabschluss wird nach seinem tatsächlichen Ergebnis ergänzt. Keine vollständige Prüfung jeder Bausteinkombination behauptet.
+## Paket und Git-Abschluss
+
+- **`a812831` – „Quellpfade eindeutig bearbeiten und Dateien ablegen“** auf `main` committet und erfolgreich nach `origin/main` gepusht. Der Remote-Hash wurde mit dem lokalen Commit verglichen und stimmt überein.
+- Windows-NSIS gebaut mit `CSC_IDENTITY_AUTO_DISCOVERY=false` und `npx electron-builder --win nsis --x64 --publish never --config.directories.output=release/dateipfade-a812831`. Keine automatische Installation, kein Update und keine Release-Veröffentlichung. Das lokale Paket ist **unsigniert**.
+- `npm run verify:package -- release/dateipfade-a812831`: **13/13 bestanden**. Installer: `release/dateipfade-a812831/ScriptLab-0.2.0-Setup-x64.exe`; SHA-256 `39df432315c75cfcc7bd9713704eff5643107409420b6ad598f496a7fa99b533`.
+- `node scripts/qualitaet-paket-pruefen.mjs release/dateipfade-a812831/win-unpacked/ScriptLab.exe artifacts/dateipfade-paket.json`: **bestanden**. Tatsächliche paketierte App mit bestätigtem eigenem Profil, ohne externes Python im PATH, Python 3.15.2/Tk und elf mitgelieferten Business-Paketen. Nativer Dateidrop auf einen vorhandenen Quellbaustein übernimmt den Pfad ohne Ausführung. Erst der Headerklick startet den Workflow. Die unabhängig gelesene Ausgabe enthält exakt den Solltext mit Umlauten; Prozessende bestätigt. Keine vollständige Installer- oder Updateabnahme.
+- **Ausstehend:** [Windows-CI für den Quellstand](https://github.com/siggismalz/ScriptLab/actions/runs/41148458878) läuft beim Abschluss noch. Einrichtung, Typprüfung und Testhost bereits erfolgreich; Business-/Modul-/Desktop- und Paketnachweise der CI noch nicht abgeschlossen. Die lokalen Ergebnisse ersetzen keinen grünen CI-Abschluss.
+
+Der folgende Dokumentationscommit hält diese Nachweise fest; das gebaute Produkt entspricht `a812831`. Keine vollständige Prüfung jeder Bausteinkombination behauptet.
