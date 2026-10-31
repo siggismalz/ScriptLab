@@ -2,6 +2,9 @@ import { jsonSchreiben } from '../gemeinsam/json';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import * as Blockly from 'blockly/core';
 import { registriereBausteine } from '../editor/bausteine';
+import { dateipfadAufBlock } from '../editor/dateipfadAblage';
+import { dateipfadAusAblage } from '../gemeinsam/dateiablage';
+import './dateiablage.css';
 import { bausteinDefinitionen } from '../kern/katalog';
 import { maximaleBausteinzahl, neuesProjekt, projektPruefen, type Projekt } from '../kern/projekt';
 import { skriptErzeugen } from '../kern/skript';
@@ -67,6 +70,7 @@ import type { PythonStatus } from '../gemeinsam/python';
 import paket from '../../package.json' with { type: 'json' };
 
 registriereBausteine();
+const bausteinPflichthinweis = 'Vervollständige die markierten Bausteine vor der Ausführung.';
 const vorgaben: Einstellungen = {
   automatischeUpdates: false,
   vorabversionen: false,
@@ -189,6 +193,17 @@ export function Anwendung() {
     () => skriptErzeugen(projekt),
     [projekt.editor, projekt.exportOptionen, projekt.skriptsprache, projekt.business],
   );
+  useEffect(() => {
+    if (
+      statusArt === 'hinweis' &&
+      status === bausteinPflichthinweis &&
+      !ergebnis.meldungen.some((m) => m.stufe === 'fehler')
+    ) {
+      setStatus('Die markierten Angaben sind korrigiert. Du kannst den Workflow erneut starten.');
+      setStatusArt('erfolg');
+      setMeldungsNummer((n) => n + 1);
+    }
+  }, [ergebnis, status, statusArt]);
   const sprache = sprachdaten[projekt.skriptsprache];
   const sichtbareHinweise = ergebnis.meldungen.filter(
     (m) => pruefungAngefordert || (m.blockId && beruehrt.has(m.blockId)),
@@ -679,6 +694,30 @@ export function Anwendung() {
     setVorschauZiel((alt) => ({ blockId, anfrage: (alt?.anfrage ?? 0) + 1 }));
     setArbeitsbereich('daten');
   }
+  function dateiAufCanvasAblegen(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('dateiablage-aktiv');
+    if (testAnfrage.current || testSperre.current || busy.current) {
+      melden('Beende den laufenden Vorgang vor Änderungen am Dateipfad.', 'hinweis');
+      return;
+    }
+    try {
+      const pfad = dateipfadAusAblage(e.dataTransfer);
+      const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
+      const block = id ? wsRef.current?.getBlockById(id) : null;
+      if (!block) throw new Error('Lege die Datei direkt auf einen Quellbaustein oder ein Dateipfadfeld.');
+      dateipfadAufBlock(block, pfad);
+      auswaehlen(block.id);
+      fehlerSchliessen();
+      melden('Dateipfad übernommen. Der Workflow wurde nicht gestartet.', 'erfolg');
+    } catch (fehler) {
+      melden(
+        fehler instanceof Error ? fehler.message : 'Der Dateipfad konnte nicht übernommen werden.',
+        'fehler',
+      );
+    }
+  }
   function vorschauBausteinAnzeigen(blockId: string) {
     const ursprung = blockId === vorschauZiel?.blockId;
     if (!ursprung) {
@@ -724,7 +763,7 @@ export function Anwendung() {
       if (!pruefung.code) {
         setPruefungAngefordert(true);
         setHinweiseOffen(true);
-        melden('Vervollständige die markierten Bausteine vor der Ausführung.', 'hinweis');
+        melden(bausteinPflichthinweis, 'hinweis');
         const erstesProblem = pruefung.meldungen.find((m) => m.stufe === 'fehler');
         blockAnzeigen(erstesProblem?.blockId, erstesProblem?.feldPfad);
         return;
@@ -1033,7 +1072,8 @@ export function Anwendung() {
       const x = ws.scrollX,
         y = ws.scrollY;
       Blockly.svgResize(ws);
-      ws.scroll(x, y);
+      // Ein Layoutabgleich ist keine Navigation und darf ein offenes Eingabefeld nicht schließen.
+      ws.scroll(x, y, false);
     });
     groesse.observe(element.current!);
     const navigation = editorNavigationEinrichten(ws, {
@@ -1094,6 +1134,16 @@ export function Anwendung() {
       b.getSvgRoot()?.classList.toggle('scriptlabFehler', texte.length > 0);
       blockAuswahlKennzeichnen(b, b.id === auswahlRef.current);
     }
+    // Ein Pfadfeld kann die Blockbreite ändern; die eigene Auswahlkontur braucht die fertige Geometrie.
+    let aktuell = true;
+    void Blockly.renderManagement.finishQueuedRenders().then(() => {
+      if (!aktuell || !auswahlRef.current) return;
+      const block = wsRef.current?.getBlockById(auswahlRef.current);
+      if (block && !block.disposed) blockAuswahlKennzeichnen(block, true);
+    });
+    return () => {
+      aktuell = false;
+    };
   }, [ergebnis, pruefungAngefordert, beruehrt, revision, test.phase, test.fehlerBlockId, test.meldung]);
   useEffect(() => {
     const resize = () => setBreite(window.innerWidth);
@@ -1110,6 +1160,27 @@ export function Anwendung() {
     const timer = setInterval(lesen, 1000);
     return () => clearInterval(timer);
   }, [dialog]);
+  useEffect(() => {
+    // Dateien und Links außerhalb eines bewusst getroffenen Pfadfelds dürfen die App nicht ersetzen.
+    const extern = (e: DragEvent) =>
+      Array.from(e.dataTransfer?.types ?? []).some((typ) =>
+        ['Files', 'text/uri-list', 'text/html'].includes(typ),
+      );
+    const darueber = (e: DragEvent) => {
+      if (extern(e)) e.preventDefault();
+    };
+    const ablegen = (e: DragEvent) => {
+      if (e.defaultPrevented || !extern(e)) return;
+      e.preventDefault();
+      melden('Lege die Datei auf einen Quellbaustein oder ein Dateipfadfeld.', 'hinweis');
+    };
+    window.addEventListener('dragover', darueber);
+    window.addEventListener('drop', ablegen);
+    return () => {
+      window.removeEventListener('dragover', darueber);
+      window.removeEventListener('drop', ablegen);
+    };
+  }, []);
   useEffect(() => {
     const tasten = (event: KeyboardEvent) => {
       if (busy.current) {
@@ -1545,7 +1616,21 @@ export function Anwendung() {
               }}
             />
             <section className="editor-mitte" aria-label="Workflow bearbeiten">
-              <div className="canvas-bereich">
+              <div
+                className="canvas-bereich"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  const datei = Array.from(e.dataTransfer.types).includes('Files');
+                  const erlaubt = datei && !testSperre.current && !testAnfrage.current && !busy.current;
+                  e.dataTransfer.dropEffect = erlaubt ? 'copy' : 'none';
+                  e.currentTarget.classList.toggle('dateiablage-aktiv', erlaubt);
+                }}
+                onDragLeave={(e) => {
+                  if (!(e.relatedTarget instanceof Node) || !e.currentTarget.contains(e.relatedTarget))
+                    e.currentTarget.classList.remove('dateiablage-aktiv');
+                }}
+                onDrop={dateiAufCanvasAblegen}
+              >
                 <div
                   ref={element}
                   data-testid="arbeitsbereich"

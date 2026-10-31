@@ -108,6 +108,8 @@ try {
   await expect(seite.getByTestId('editor-sprache')).toHaveText('Python');
   const projekt = neu.wert.projekt;
   const soll = 'ScriptLab-Paketprüfung: Grüße äöü';
+  const quelle = join(basis, 'Abgelegte Quelle mit Umlaut ä.txt');
+  await writeFile(quelle, soll, 'utf8');
   projekt.editor.blocks.blocks[0].next = {
     block: {
       type: 'sl_write_text',
@@ -115,7 +117,16 @@ try {
       fields: { KODIERUNG: 'UTF8' },
       inputs: {
         PFAD: { block: { type: 'sl_text', id: 'paket-pfad', fields: { TEXT: 'Paketprüfung.txt' } } },
-        TEXT: { block: { type: 'sl_text', id: 'paket-text', fields: { TEXT: soll } } },
+        TEXT: {
+          block: {
+            type: 'sl_read_text',
+            id: 'paket-quelle',
+            fields: { KODIERUNG: 'UTF8' },
+            inputs: {
+              PFAD: { block: { type: 'sl_text', id: 'paket-quellpfad', fields: { TEXT: '' } } },
+            },
+          },
+        },
       },
     },
   };
@@ -125,6 +136,35 @@ try {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [pfad] });
   }, projektdatei);
   await seite.getByRole('button', { name: 'Workflow öffnen', exact: true }).click();
+  const quellblock = seite.locator('g[data-id="paket-quelle"]').first();
+  await expect(quellblock).toBeVisible();
+  const rahmen = await quellblock.boundingBox();
+  if (!rahmen) throw new Error('Der Quellenbaustein ist nicht erreichbar.');
+  const cdp = await seite.context().newCDPSession(seite);
+  try {
+    const daten = {
+      x: rahmen.x + 20,
+      y: rahmen.y + 15,
+      data: { files: [quelle], items: [], dragOperationsMask: 1 },
+    };
+    for (const type of ['dragEnter', 'dragOver', 'drop'])
+      await cdp.send('Input.dispatchDragEvent', { type, ...daten });
+  } finally {
+    await cdp.detach();
+  }
+  await expect
+    .poll(async () => {
+      const r = await seite.evaluate(() => window.scriptlab.laden());
+      return r.ok
+        ? r.wert.dokument.projekt.editor.blocks.blocks[0].next.block.inputs.TEXT.block.inputs.PFAD.block
+            .fields.TEXT
+        : null;
+    })
+    .toBe(quelle);
+  const vorLauf = await seite.evaluate(() => window.scriptlab.testLesen());
+  if (!vorLauf.ok || vorLauf.wert.zustand.laufId !== null)
+    throw new Error('Eine Dateiablage darf keinen Workflow starten.');
+  bericht.nativerDateidropOhneAusfuehrung = true;
   const ausfuehren = seite.getByRole('navigation', { name: 'Projektaktionen' }).getByRole('button', {
     name: 'Workflow ausführen',
     exact: true,

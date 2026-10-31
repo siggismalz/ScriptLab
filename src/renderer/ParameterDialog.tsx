@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useId } from 'react';
+import { useState, useEffect, useRef, useId, type ComponentProps } from 'react';
 import { Dialog } from './komponenten/Dialog';
 import { Feld, Auswahlfeld, Textfeld } from './komponenten/Feld';
 import { Knopf } from './komponenten/Knopf';
+import { DateipfadFeld } from './komponenten/DateipfadFeld';
 import {
   businessProjektPruefen,
   parameterWertePruefen,
@@ -86,6 +87,7 @@ export function ParameterWertEingabe({
   hilfe,
   gesperrt = false,
   dateiWaehlen,
+  beiPfadUebernahme,
 }: {
   typ: WorkflowParameter['typ'];
   wert: ParameterWert;
@@ -94,6 +96,7 @@ export function ParameterWertEingabe({
   hilfe?: string;
   gesperrt?: boolean;
   dateiWaehlen?: () => Promise<string | null>;
+  beiPfadUebernahme?: () => void;
 }) {
   const [beruehrt, setBeruehrt] = useState(false);
   const [waehltDatei, setWaehltDatei] = useState(false);
@@ -105,11 +108,57 @@ export function ParameterWertEingabe({
   const [tipptext, setTipptext] = useState(String(wert ?? ''));
   const bearbeitet = useRef(false);
   const eingabeGeaendert = useRef(false);
+  const gesperrtRef = useRef(gesperrt);
+  gesperrtRef.current = gesperrt;
+  const pfadUebernehmen = (pfad: string) => {
+    if (gesperrtRef.current) return;
+    setTipptext(pfad);
+    bearbeitet.current = false;
+    eingabeGeaendert.current = false;
+    beiPfadUebernahme?.();
+    aendern(pfad);
+  };
   const ungueltigeZahl =
     typ === 'Zahl' &&
     typeof wert === 'string' &&
     wert.trim() !== '' &&
     typeof parameterWertAusText(typ, wert) !== 'number';
+  const feldAngaben: ComponentProps<typeof Feld> = {
+    beschriftung,
+    value: bearbeitet.current ? tipptext : String(wert ?? ''),
+    disabled: gesperrt || waehltDatei,
+    inputMode: typ === 'Zahl' || typ === 'Dezimalbetrag' ? 'decimal' : undefined,
+    fehler: beruehrt && ungueltigeZahl ? 'Gib eine gültige Zahl ein, zum Beispiel 12,5.' : undefined,
+    hilfe:
+      [
+        hilfe,
+        typ === 'Zahl'
+          ? 'Zahl mit Komma oder Punkt, zum Beispiel 12,5. Leer bleibt ohne Wert.'
+          : typ === 'Dezimalbetrag'
+            ? 'Exakter Betrag mit Punkt, zum Beispiel 12.50.'
+            : typ === 'Datum'
+              ? 'Datum im Format JJJJ-MM-TT.'
+              : '',
+      ]
+        .filter(Boolean)
+        .join(' ') || undefined,
+    onFocus: (e) => {
+      bearbeitet.current = true;
+      eingabeGeaendert.current = false;
+      setTipptext(e.target.value);
+    },
+    onChange: (e) => {
+      eingabeGeaendert.current = true;
+      setTipptext(e.target.value);
+      aendern(parameterWertAusText(typ, e.target.value));
+    },
+    onBlur: (e) => {
+      bearbeitet.current = false;
+      setBeruehrt(true);
+      if (eingabeGeaendert.current) aendern(parameterWertAusText(typ, e.target.value));
+      eingabeGeaendert.current = false;
+    },
+  };
   const eingabe =
     typ === 'Wahrheitswert' ? (
       <Auswahlfeld
@@ -123,44 +172,10 @@ export function ParameterWertEingabe({
         <option value="ja">Ja</option>
         <option value="nein">Nein</option>
       </Auswahlfeld>
+    ) : ['Datei', 'Dokument', 'Dokumentvorlage'].includes(typ) ? (
+      <DateipfadFeld {...feldAngaben} pfadAendern={pfadUebernehmen} />
     ) : (
-      <Feld
-        beschriftung={beschriftung}
-        value={bearbeitet.current ? tipptext : String(wert ?? '')}
-        disabled={gesperrt || waehltDatei}
-        inputMode={typ === 'Zahl' || typ === 'Dezimalbetrag' ? 'decimal' : undefined}
-        fehler={beruehrt && ungueltigeZahl ? 'Gib eine gültige Zahl ein, zum Beispiel 12,5.' : undefined}
-        hilfe={
-          [
-            hilfe,
-            typ === 'Zahl'
-              ? 'Zahl mit Komma oder Punkt, zum Beispiel 12,5. Leer bleibt ohne Wert.'
-              : typ === 'Dezimalbetrag'
-                ? 'Exakter Betrag mit Punkt, zum Beispiel 12.50.'
-                : typ === 'Datum'
-                  ? 'Datum im Format JJJJ-MM-TT.'
-                  : '',
-          ]
-            .filter(Boolean)
-            .join(' ') || undefined
-        }
-        onFocus={(e) => {
-          bearbeitet.current = true;
-          eingabeGeaendert.current = false;
-          setTipptext(e.target.value);
-        }}
-        onChange={(e) => {
-          eingabeGeaendert.current = true;
-          setTipptext(e.target.value);
-          aendern(parameterWertAusText(typ, e.target.value));
-        }}
-        onBlur={(e) => {
-          bearbeitet.current = false;
-          setBeruehrt(true);
-          if (eingabeGeaendert.current) aendern(parameterWertAusText(typ, e.target.value));
-          eingabeGeaendert.current = false;
-        }}
-      />
+      <Feld {...feldAngaben} />
     );
   if (!dateiWaehlen) return eingabe;
   return (
@@ -180,11 +195,7 @@ export function ParameterWertEingabe({
           setDateiFehler('');
           try {
             const pfad = await dateiWaehlen();
-            if (pfad !== null) {
-              setTipptext(pfad);
-              bearbeitet.current = false;
-              aendern(pfad);
-            }
+            if (pfad !== null) pfadUebernehmen(pfad);
           } catch (fehler) {
             setDateiFehler(
               fehler instanceof Error && fehler.message.trim()

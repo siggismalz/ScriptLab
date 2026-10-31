@@ -1,0 +1,44 @@
+# Dateipfade eindeutig eingeben und Dateien ablegen
+
+## Befund und Auftrag
+
+31.10.2026, `main` auf `30bce0381034c14e4a53857a1594ab2307be5f87`, sauberer Ausgangsbaum. Der Screenshot zeigt einen absoluten CSV-Pfad im frei editierbaren Business-Bausteinnamen (`fields.NAME`). Der echte Quellenpfad (`data.konfiguration.pfad`) bleibt leer. Dadurch erscheinen trotz des sichtbaren Textes beide Pflichtfeldhinweise. Es handelt sich um eine missverständliche Eingabe, nicht um einen Nachweis, dass die ausgewählte CSV unlesbar ist. Die Datei aus den Downloads des Nutzers wurde nicht geöffnet oder als Testmaterial verwendet.
+
+**PFAD-01, hoch:** CSV-Baustein anlegen, Pfad ins bisher einzige Canvas-Textfeld schreiben, prüfen: Name enthält Pfad, Quelle bleibt leer. Abnahme: eigener beschrifteter Quellenpfad direkt am Baustein ändert die fachliche Konfiguration; individuelle Namen und alte Projekte bleiben erhalten.
+
+**PFAD-02, mittel:** Datei auf eine Quelle ziehen: bislang keine unterstützte Pfadübernahme. Abnahme: genau eine lokale Datei kann auf einen eindeutigen Quellenbaustein oder ein echtes Pfadfeld gelegt werden. Nur Daten ändern, keine automatische Vorschau, Ausführung oder Dateiverarbeitung. Rückgängig und Speichern erhalten die Änderung. Ungültige Ablagen erzeugen keine Navigation und keine neue Blockverbindung.
+
+**PFAD-03, mittel, bei der Abnahme entdeckt:** Nach dem Korrigieren eines Pflichtfelds verschwindet der geöffnete Blockly-Texteditor. Der `ResizeObserver` stellt die Canvasposition durch `WorkspaceSvg.scroll(x, y)` wieder her; dessen Standard schließt alle Popups. Der reine Layoutabgleich verwendet jetzt `scroll(x, y, false)`. Bewusste Navigation bleibt unverändert. Außerdem wird die Auswahlkontur nach dem abgeschlossenen Blockly-Rendern erneuert, damit sie nach einer Pfadänderung die tatsächliche Blockbreite umschließt.
+
+Der ergänzende Sichtcheck zeigte eine veraltete Aufforderung in der Statusleiste, obwohl der korrigierte Workflow keine Strukturfehler mehr enthielt. Ausschließlich dieser vorherige Pflichtfeldhinweis wird dann durch eine kurze Korrekturbestätigung ersetzt. Lauf- und Speicherfehler werden dadurch nicht entfernt.
+
+## Fachaufträge und Integration
+
+- **Bedienung:** Exklusiv `src/editor/bausteine.ts`, neues `businessPfadFeld.ts` und eigene Unitprüfung. Ursache NAME/data prüfen; Namen serialisiert erhalten, echte Pfadangabe aus kanonischen Daten darstellen, keine zweite Projektwahrheit. Eingabe/Drop erzeugen `BlockDatenEreignis`; Undo/Redo und vorhandene Parameterbindungen bleiben korrekt. Keine stille NAME→Pfad-Migration.
+- **Businessdaten / Formulare:** Exklusiv `BusinessEigenschaften`, `ParameterDialog`, neue Komponente `DateipfadFeld` mit eigener CSS/Unitprüfung. Vorhandene Quellfelder und Datei-/Dokumentparameter unterstützen lokales Ablegen. Sichtbare Rückmeldung, Feldfehler, Tastatur- und Dialogalternative erhalten. Den expliziten Parameter-Übernahmecallback an Root melden, damit Blur keinen Wert verliert oder geerbte Standards unbeabsichtigt fixiert.
+- **Ausführung / unabhängige QA:** Zunächst nur Review der engen Bridge, Quellen-/Ausgabegrenzen und VBS. Danach ausschließlich `tests/desktop/dateipfade.spec.ts`: native Dateidrops über Chromium mit echten eigenen Dateien, fachliche CSV-Sollwerte, Undo/Redo, Speichern/Laden, gebundene Quellen, ungültige Ablagen und Laufsperre. Auch bestehendes VBS-Quellliteral prüfen. Keine GUI vor Root-Freigabe.
+- **Root:** Gemeinsame Verträge, Preload-/Renderer-Bridge, Canvasdrop, Datenbereich-Callback, Browser-Navigationsschutz, Integration, Tests, Dokumentation, Git und Windows-Paket. Alle schreiben in getrennten Bereichen desselben Arbeitsbaums; ausschließlich Root committet und pusht.
+
+## Entscheidungen und Grenzen
+
+Eindeutige Quellen verwenden die vorhandene `istQuellenfeld`-Zuordnung. Ausgabeziele werden durch einen Drop auf einen Baustein nicht überschrieben. Parameter-/Variablenbindungen bleiben bestehen; ihren Wert ändert man ausdrücklich im passenden Parameterfeld. Gewöhnliche Python-/VBS-Quellpfade können in bestehenden verbundenen Textliteralen übernommen werden; Ausdrücke und Verbindungen werden nicht automatisch ersetzt.
+
+Die neue enge Methode `dateipfadAusDatei(File)` ermittelt ausschließlich den nativen Dateipfad. Sie verwendet [Electrons dokumentiertes `webUtils.getPathForFile`](https://www.electronjs.org/docs/latest/api/web-utils), umgeht gezielt den bestehenden JSON-Transport für dieses File-Objekt und stellt weder Electron-Objekte noch Dateilese-/Shellfunktionen bereit. Virtuelle JavaScript-Dateien haben keinen lokalen Pfad und werden abgewiesen. Dateinamen, HTML, URLs und Text werden nicht als Ersatzpfad interpretiert.
+
+Ein gültig übernommener Pfad ist keine Aussage über Inhalt, Format, Berechtigungen oder eine spätere erfolgreiche Verarbeitung. Der bewusste Lauf verwendet weiterhin dieselben Generatoren und Laufzeitprüfungen. Alte, versehentlich als Name eingetragene Pfade werden nicht still umgedeutet; sie bleiben als Bezeichnung erhalten und können im echten Pfadfeld erneut eingegeben beziehungsweise durch eine abgelegte Datei ersetzt werden.
+
+## Tatsächliche Nachweise
+
+Umgebung: Windows 11 x64, Node 24.19, npm 11.17, Electron 45.0.0, Blockly 13.4.0, React 19.3.1, TypeScript 7.0.2, Vitest 5.0.5 und Playwright 1.64.1. Eigene temporäre Dateien mit Leerzeichen, Umlauten, führenden Nullen und Dezimaltext; keine Nutzerdaten. Die Desktopprüfung übergibt echte Betriebssystemdateien über Chromium `Input.dispatchDragEvent`. Das prüft den nativen File-Übergang in Electron, ist aber keine manuelle Explorer-Bedienung.
+
+- **Bestanden:** `npm run check` und `npm run build`. Bestehende Vite-Warnung wegen eines großen Renderer-Bundles; hier keine Leistungsverbesserung behauptet.
+- **Bestanden:** `npm test -- --reporter=json --outputFile=artifacts/dateipfade-module.json`: nach Integration der vier zusätzlichen Guardfälle insgesamt 751 bestanden, 84 optionale Prüfungen übersprungen, kein Fehler. Enthält Grundbausteinverbindungen, Ausgabeziele und gesperrte Quellen/Literale.
+- **Bestanden, unabhängiger Review:** Fachagenten prüfen getrennt Formularablage und Canvas-/Bridgegrenzen. Ein fehlender Editable-Guard im klassischen/VBS-Zweig wurde vor Abschluss ergänzt und geprüft.
+- **Bestanden:** `npx playwright test tests/desktop/dateipfade.spec.ts --reporter=list`: 5/5 in 18,6 Sekunden. A: leerer echter Pfad trotz alter Bezeichnung, Korrektur im offenen Feld, weiterer Tippentwurf, nativer Dateidrop, Tab/Blur, bewusster CSV-Lauf und unabhängige Sollzeilen. B: Canvasdrop, genaue Auswahlkontur, Undo/Redo, Speichern/Wiederöffnen. C: Eigenschaften und ausdrücklicher Parameterwert ohne Änderung von Standard oder Bindung. D: Mehrfach-/Text-/HTML-/virtuelle Ablage, Ausgabeziel, gebundene Quelle und aktiver Lauf. E: bestehende VBS-Verbindung und Quellliteral bleiben erhalten; kein VBS-Lauf für diesen Ablagefall behauptet.
+- **Bestanden:** `npx playwright test tests/desktop/business-ui.spec.ts tests/desktop/business-zustaende.spec.ts tests/desktop/ziehen.spec.ts tests/desktop/direktstart.spec.ts tests/desktop/ml-ui.spec.ts --reporter=list`: 29/29 in 1,6 Minuten. Vorhandene Arbeitsabläufe, Parameterzustände, Direktstart und Blockly-Ziehen funktionieren weiter.
+- **Bestanden, Sichtprüfung durch Root:** echte Screenshots `artifacts/qualitaet-dateipfade/inline-hell-1280.png` und `drop-dunkel-1280.png` bei 1280 × 720 geöffnet. Bezeichnung und tatsächliches Pfadfeld erkennbar, Aktionsleiste erreichbar, lange Pfade werden nur in der Darstellung gekürzt. Bestehende Business-UI-Prüfungen decken zusätzlich Prozess-DPI und größere Textdarstellung ab. Kein Anwender-/Screenreadertest behauptet.
+- **Ausgangsfehler, nicht durch diesen Durchgang verursacht:** CI des Ausgangscommits `30bce03`, Lauf [41146511861](https://github.com/siggismalz/ScriptLab/actions/runs/41146511861): 152 Desktopprüfungen bestanden, 3 übersprungen; der bereits bekannte 1000-Block-Kettenfall bleibt beim erneuten Laden nach 30 Sekunden auf `darstellungNoetig=true`. Typprüfung, Module und Build waren dort grün. Diese Skalierungsgrenze bleibt eine gesonderte Anschlussaufgabe.
+
+Der begrenzte Nachlauf nach Korrektur der veralteten Statusmeldung bestand in A (einschließlich Statusprüfung) und fünf Direktstartfällen. Ein VBS-Direktstartfall erreichte einmal seine 5-Sekunden-Ausgabeerwartung nicht, während der Lauf noch aktiv war. Derselbe unveränderte Fall bestand unmittelbar zuvor und beim einmaligen isolierten Nachtest (5,1 Sekunden Fallzeit). Keine Assertion oder Frist wurde dafür gelockert; Ursache des sporadischen Ausgabeverzugs bleibt offen. Der Prozess wurde im fehlgeschlagenen Durchgang geordnet durch die Testbereinigung gestoppt.
+
+Der Paketabschluss wird nach seinem tatsächlichen Ergebnis ergänzt. Keine vollständige Prüfung jeder Bausteinkombination behauptet.

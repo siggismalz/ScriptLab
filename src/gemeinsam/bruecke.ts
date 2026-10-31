@@ -138,6 +138,8 @@ export interface ScriptLabBruecke {
     optionen: TestOptionen,
   ): Promise<Antwort<TestZustand>>;
   quelleWaehlen(blockId: string, feldPfad: string[]): Promise<Antwort<string | null>>;
+  /** Nur den Pfad einer ausdrücklich übergebenen lokalen Datei ermitteln; liest keine Inhalte. */
+  dateipfadAusDatei(datei: File): string;
   testStoppen(laufId: string): Promise<Antwort<TestZustand>>;
   testAusgabeLeeren(): Promise<Antwort<TestZustand>>;
   testAusgabeKopieren(): Promise<Antwort<void>>;
@@ -151,8 +153,10 @@ export interface ScriptLabBruecke {
 
 /** Nur der Transport über Electrons Weltgrenze ist JSON; fachliche Aufrufe bleiben typisiert. */
 export type ScriptLabTransport = {
-  [K in Exclude<keyof ScriptLabBruecke, 'beiStandAnfrage'>]: (argumente: string) => Promise<string>;
-} & { beiStandAnfrage(lesen: () => string): () => void };
+  [K in Exclude<keyof ScriptLabBruecke, 'beiStandAnfrage' | 'dateipfadAusDatei'>]: (
+    argumente: string,
+  ) => Promise<string>;
+} & { beiStandAnfrage(lesen: () => string): () => void; dateipfadAusDatei(datei: File): string };
 
 declare global {
   interface Window {

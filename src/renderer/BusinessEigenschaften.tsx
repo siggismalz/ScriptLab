@@ -22,6 +22,7 @@ import { businessQuellenVorBlock } from '../editor/businessQuellen';
 import { istQuellenfeld } from '../kern/quellenfeld';
 import { Knopf } from './komponenten/Knopf';
 import { Feld, Auswahlfeld } from './komponenten/Feld';
+import { DateipfadFeld } from './komponenten/DateipfadFeld';
 import { ParameterWertEingabe, parameterWertAusText } from './ParameterDialog';
 import {
   ausdruckArtSetzen,
@@ -1097,6 +1098,11 @@ function KonfigEingabeInhalt({
   const formular = useContext(FormularKontext);
   const [waehlt, setWaehlt] = useState(false);
   const [auswahlFehler, setAuswahlFehler] = useState('');
+  const gesperrtRef = useRef(gesperrt);
+  gesperrtRef.current = gesperrt;
+  const istDateiquelle = Boolean(
+    formular.blockTyp && istQuellenfeld(formular.blockTyp, feldPfad, formular.konfiguration ?? {}),
+  );
   const w = objekt(wert);
   const teile = Array.isArray(wert) ? wert : [];
   const seitenspalten = formular.spaltenNachEingabe[feld.name];
@@ -1406,8 +1412,9 @@ function KonfigEingabeInhalt({
                 <option value="eigene">Eigene Schriftdatei</option>
               </Auswahlfeld>
               {wert !== 'INTERN:VERA' && (
-                <Feld
+                <DateipfadFeld
                   beschriftung="Pfad zur Schriftdatei (TTF)"
+                  pfadAendern={aendern}
                   value={typeof wert === 'string' ? wert : ''}
                   disabled={gesperrt}
                   aria-invalid={feldUngueltig || undefined}
@@ -1416,6 +1423,16 @@ function KonfigEingabeInhalt({
                 />
               )}
             </>
+          ) : istDateiquelle ? (
+            <DateipfadFeld
+              beschriftung={feld.titel}
+              pfadAendern={aendern}
+              aria-invalid={feldUngueltig || undefined}
+              aria-describedby={feldFehlerId}
+              value={typeof wert === 'object' ? '' : String(wert ?? '')}
+              disabled={gesperrt || waehlt}
+              onChange={(e) => aendern(e.target.value)}
+            />
           ) : (
             <Feld
               beschriftung={feld.titel}
@@ -1428,38 +1445,35 @@ function KonfigEingabeInhalt({
               onChange={(e) => aendern(feld.art === 'zahl' ? Number(e.target.value) : e.target.value)}
             />
           )}
-          {formular.quelleWaehlen &&
-            formular.blockId &&
-            formular.blockTyp &&
-            istQuellenfeld(formular.blockTyp, feldPfad, formular.konfiguration ?? {}) && (
-              <Knopf
-                variante="leise"
-                symbol="oeffnen"
-                disabled={gesperrt}
-                grund="Stoppe den Lauf vor Änderungen."
-                verarbeitung={waehlt}
-                onClick={async () => {
-                  setWaehlt(true);
-                  setAuswahlFehler('');
-                  try {
-                    const pfad = await formular.quelleWaehlen!(formular.blockId!, feldPfad);
-                    if (pfad !== null) aendern(pfad);
-                  } catch (fehler) {
-                    setAuswahlFehler(
-                      fehler instanceof Error ? fehler.message : 'Die Quelle konnte nicht ausgewählt werden.',
-                    );
-                  } finally {
-                    setWaehlt(false);
-                  }
-                }}
-              >
-                {feld.name === 'ordner'
-                  ? 'Ordner auswählen'
-                  : feld.name === 'vorlage'
-                    ? 'Vorlage auswählen'
-                    : 'Datei auswählen'}
-              </Knopf>
-            )}
+          {formular.quelleWaehlen && formular.blockId && istDateiquelle && (
+            <Knopf
+              variante="leise"
+              symbol="oeffnen"
+              disabled={gesperrt}
+              grund="Stoppe den Lauf vor Änderungen."
+              verarbeitung={waehlt}
+              onClick={async () => {
+                setWaehlt(true);
+                setAuswahlFehler('');
+                try {
+                  const pfad = await formular.quelleWaehlen!(formular.blockId!, feldPfad);
+                  if (pfad !== null && !gesperrtRef.current) aendern(pfad);
+                } catch (fehler) {
+                  setAuswahlFehler(
+                    fehler instanceof Error ? fehler.message : 'Die Quelle konnte nicht ausgewählt werden.',
+                  );
+                } finally {
+                  setWaehlt(false);
+                }
+              }}
+            >
+              {feld.name === 'ordner'
+                ? 'Ordner auswählen'
+                : feld.name === 'vorlage'
+                  ? 'Vorlage auswählen'
+                  : 'Datei auswählen'}
+            </Knopf>
+          )}
           {auswahlFehler && (
             <p className="sl-feld-fehler" role="alert">
               {auswahlFehler}

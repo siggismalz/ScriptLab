@@ -1,0 +1,19 @@
+.canvas-bereich.dateiablage-aktiv {
+  outline: 3px dashed var(--farbe-akzent);
+  outline-offset: -3px;
+}
+.canvas-bereich.dateiablage-aktiv::after {
+  content: 'Datei auf einen Quellbaustein ablegen';
+  position: absolute;
+  inset-inline: var(--abstand-16);
+  inset-block-end: var(--abstand-16);
+  width: fit-content;
+  max-width: calc(100% - 32px);
+  padding: var(--abstand-8) var(--abstand-16);
+  border: 1px solid var(--farbe-akzent);
+  border-radius: var(--radius-normal);
+  background: var(--farbe-grundflaeche);
+  color: var(--farbe-text);
+  pointer-events: none;
+  z-index: 5;
+}

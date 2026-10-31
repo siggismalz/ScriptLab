@@ -14,10 +14,12 @@ const electron = vi.hoisted(() => ({
   send: vi.fn(),
   on: vi.fn(),
   removeListener: vi.fn(),
+  getPathForFile: vi.fn(),
 }));
 vi.mock('electron', () => ({
   contextBridge: { exposeInMainWorld: electron.exposeInMainWorld },
   ipcRenderer: electron,
+  webUtils: { getPathForFile: electron.getPathForFile },
 }));
 
 function umfangreicherStand() {
@@ -66,6 +68,7 @@ describe('Weltgrenze mit festen fachlichen Brückenmethoden', () => {
     electron.send.mockClear();
     electron.on.mockClear();
     electron.removeListener.mockClear();
+    electron.getPathForFile.mockReset();
   });
 
   it('bewahrt ein geprüftes 1000-Blockprojekt in beiden Transportrichtungen vollständig', async () => {
@@ -95,6 +98,17 @@ describe('Weltgrenze mit festen fachlichen Brückenmethoden', () => {
     const daten = JSON.parse(transportdaten);
     expect(kanal).toBe('scriptlab:lauf-datei');
     expect(daten).toEqual({ laufId: 'lauf-id', art: 'bericht', index: undefined });
+  });
+
+  it('gibt einen Dateipfad ausschließlich über webUtils und ohne JSON oder IPC weiter', () => {
+    const datei = new File(['Synthetisch'], 'Quelle.csv');
+    electron.getPathForFile.mockReturnValue('C:\\Synthetisch\\Quelle.csv');
+    expect(brueckeVerbinden(transport).dateipfadAusDatei(datei)).toBe('C:\\Synthetisch\\Quelle.csv');
+    expect(electron.getPathForFile).toHaveBeenCalledExactlyOnceWith(datei);
+    expect(electron.invoke).not.toHaveBeenCalled();
+    expect(electron.send).not.toHaveBeenCalled();
+    electron.getPathForFile.mockReturnValue('');
+    expect(brueckeVerbinden(transport).dateipfadAusDatei(datei)).toBe('');
   });
 
   it('überträgt Ausgabeindex 0, Abbruch null und boolean false unverändert', async () => {
@@ -247,6 +261,7 @@ describe('Weltgrenze mit festen fachlichen Brückenmethoden', () => {
       'aendern',
       'darstellungBereit',
       'beiStandAnfrage',
+      'dateipfadAusDatei',
       'neu',
       'oeffnen',
       'beispielOeffnen',

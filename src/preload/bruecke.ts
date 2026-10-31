@@ -1,5 +1,5 @@
 import { jsonSchreiben } from '../gemeinsam/json';
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { ScriptLabBruecke, ScriptLabTransport } from '../gemeinsam/bruecke';
 
 async function aufrufen(kanal: string, daten?: unknown) {
@@ -61,6 +61,7 @@ const bruecke: ScriptLabBruecke = {
   datenvorschauStarten: (projekt, blockId, optionen) =>
     aufrufen('scriptlab:datenvorschau-starten', { projekt, blockId, optionen }),
   quelleWaehlen: (blockId, feldPfad) => aufrufen('scriptlab:quelle-waehlen', { blockId, feldPfad }),
+  dateipfadAusDatei: (datei) => webUtils.getPathForFile(datei),
   testStoppen: (laufId) => aufrufen('scriptlab:test-stoppen', laufId),
   testAusgabeLeeren: () => aufrufen('scriptlab:test-leeren'),
   testAusgabeKopieren: () => aufrufen('scriptlab:test-kopieren'),
@@ -76,7 +77,7 @@ const bruecke: ScriptLabBruecke = {
 // die festen IPC-Kanäle und ihre vollständige Main-Validierung bleiben erhalten.
 const transport = Object.fromEntries(
   Object.entries(bruecke)
-    .filter(([name]) => name !== 'beiStandAnfrage')
+    .filter(([name]) => !['beiStandAnfrage', 'dateipfadAusDatei'].includes(name))
     .map(([name, funktion]) => [
       name,
       async (argumente: string) => {
@@ -89,4 +90,7 @@ const transport = Object.fromEntries(
     ]),
 ) as unknown as ScriptLabTransport;
 transport.beiStandAnfrage = (lesen) => bruecke.beiStandAnfrage(() => JSON.parse(lesen()));
+// File besitzt einen nativen Datenträgerbezug und darf nicht durch JSON serialisiert werden.
+// https://www.electronjs.org/docs/latest/api/web-utils
+transport.dateipfadAusDatei = bruecke.dateipfadAusDatei;
 contextBridge.exposeInMainWorld('scriptlabTransport', Object.freeze(transport));

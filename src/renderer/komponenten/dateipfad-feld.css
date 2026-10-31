@@ -1,0 +1,20 @@
+.sl-dateipfad-feld {
+  display: grid;
+  gap: var(--abstand-4);
+  min-width: 0;
+}
+.sl-dateipfad-feld > .sl-feld-fehler {
+  margin: 0;
+}
+.sl-dateipfad--gezogen .sl-feld-eingabe {
+  border-color: var(--farbe-akzent);
+  background: var(--farbe-auswahl-flaeche);
+  box-shadow: inset 0 0 0 1px var(--farbe-akzent);
+}
+@media (forced-colors: active) {
+  .sl-dateipfad--gezogen .sl-feld-eingabe {
+    border-color: Highlight;
+    background: Canvas;
+    box-shadow: inset 0 0 0 1px Highlight;
+  }
+}

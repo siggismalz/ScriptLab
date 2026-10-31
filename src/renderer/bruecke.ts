@@ -5,7 +5,7 @@ import type { ScriptLabBruecke, ScriptLabTransport } from '../gemeinsam/bruecke'
 export function brueckeVerbinden(transport: ScriptLabTransport): ScriptLabBruecke {
   const bruecke = Object.fromEntries(
     Object.entries(transport)
-      .filter(([name]) => name !== 'beiStandAnfrage')
+      .filter(([name]) => !['beiStandAnfrage', 'dateipfadAusDatei'].includes(name))
       .map(([name, aufrufen]) => [
         name,
         async (...argumente: unknown[]) => {
@@ -17,5 +17,6 @@ export function brueckeVerbinden(transport: ScriptLabTransport): ScriptLabBrueck
       ]),
   ) as unknown as ScriptLabBruecke;
   bruecke.beiStandAnfrage = (lesen) => transport.beiStandAnfrage(() => jsonSchreiben(lesen()));
+  bruecke.dateipfadAusDatei = (datei) => transport.dateipfadAusDatei(datei);
   return Object.freeze(bruecke);
 }

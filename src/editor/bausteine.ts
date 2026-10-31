@@ -5,6 +5,7 @@ import { deutscheErgaenzungen } from './deutsch';
 import { blockStilNachKategorie } from '../gestaltung/blocklyThema';
 import { Variablenfeld } from './variablenfeld';
 import { blockZusammenfassung } from '../kern/blockZusammenfassung';
+import { BusinessPfadFeld, businessPfadFeld, businessPfadFeldname } from './businessPfadFeld';
 
 export const bausteinKatalog = bausteinDefinitionen.map(({ typ, name, kategorie, hilfe }) => ({
   typ,
@@ -40,8 +41,23 @@ export function registriereBausteine(): void {
     const block = this;
     if (block.isInFlyout) return;
     const label = new Blockly.FieldLabel('', 'sl-blockzusammenfassung');
-    block.appendDummyInput('SL_KURZTEXT').appendField(label);
+    label.maxDisplayLength = 40;
+    const quelle = businessPfadFeld(block);
+    const pfad = quelle ? new BusinessPfadFeld(quelle.titel) : null;
+    if (pfad)
+      block
+        .appendDummyInput('SL_QUELLE')
+        .appendField(`${quelle!.titel}:`)
+        .appendField(pfad, businessPfadFeldname);
+    const kurztext = block.appendDummyInput('SL_KURZTEXT').appendField(label);
+    if (pfad) {
+      block.setInputsInline(false);
+      block.getField('NAME')!.maxDisplayLength = 40;
+      // Das direkte Quellenfeld ersetzt hier die frühere reine Pfadzusammenfassung.
+      kurztext.setVisible(false);
+    }
     const aktualisieren = () => {
+      pfad?.aktualisieren();
       const text = blockZusammenfassung(block.type, block.data, (id) => {
         const quelle = block.workspace.getBlockById(id);
         return quelle ? String(quelle.getFieldValue('NAME') ?? '') : undefined;
@@ -61,6 +77,7 @@ export function registriereBausteine(): void {
   });
   Blockly.defineBlocksWithJsonArray(
     bausteinDefinitionen.map((def) => {
+      const hatQuellenpfad = Boolean(businessPfadFeld({ type: def.typ }));
       const namen = reihenfolge[def.typ] ?? [
         ...def.eingaben.map((e) => e.name),
         ...def.felder.map((f) => f.name),
@@ -74,6 +91,8 @@ export function registriereBausteine(): void {
             ...(eingabe.typ !== 'Any' && eingabe.typ !== 'Statement' ? { check: eingabe.typ } : {}),
           };
         const feld = def.felder.find((f) => f.name === name)!;
+        if (hatQuellenpfad && feld.name === 'NAME')
+          return { type: 'field_label_serializable', name, text: String(feld.standard) };
         if (feld.name === 'VAR')
           return { type: 'sl_variablenfeld', name, variable: String(feld.standard || 'Meine Variable') };
         if (feld.art === 'auswahl') return { type: 'field_dropdown', name, options: feld.optionen };
@@ -95,7 +114,7 @@ export function registriereBausteine(): void {
       });
       return {
         type: def.typ,
-        message0: def.nachricht,
+        message0: hatQuellenpfad ? `Bezeichnung: ${def.nachricht}` : def.nachricht,
         args0: args,
         style:
           def.typ === 'sl_delete'

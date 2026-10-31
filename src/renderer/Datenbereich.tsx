@@ -477,6 +477,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                     onChangeCapture={() => parameterEingaben.current.add(feldschluessel)}
                   >
                     <ParameterWertEingabe
+                      beiPfadUebernahme={() => parameterEingaben.current.add(feldschluessel)}
                       dateiWaehlen={
                         props.quelleWaehlen && quellenParameter[p.name]
                           ? async () => {
