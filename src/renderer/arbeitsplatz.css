@@ -1,0 +1,185 @@
+/* Gemeinsamer Rahmen: globale Ziele links, Workflow und aktive Aufgabe rechts. */
+.anwendung {
+  --breite-navigation: 176px;
+}
+.editor-ansicht {
+  display: grid;
+  grid-template-columns: var(--breite-navigation) minmax(0, 1fr);
+  min-width: 0;
+}
+.workflow-arbeitsplatz {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.workflow-kopf {
+  position: relative;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--abstand-16);
+  flex: 0 0 auto;
+  min-height: 76px;
+  padding: var(--abstand-12) var(--abstand-24);
+  background: var(--farbe-grundflaeche);
+  border-bottom: 1px solid var(--farbe-trennung);
+}
+.workflow-identitaet {
+  min-width: 0;
+  flex: 1;
+}
+.workflow-identitaet h1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(var(--schrift-dialog) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+}
+.workflow-identitaet p {
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+  line-height: 1.5;
+}
+.workflow-kopf .skriptsprache-kennzeichen {
+  padding: var(--abstand-4) var(--abstand-8);
+  background: var(--farbe-erhoeht);
+  border-color: var(--farbe-trennung);
+}
+.workflow-aktionen {
+  display: flex;
+  align-items: center;
+  gap: var(--abstand-8);
+  flex: 0 0 auto;
+}
+.workflow-aktionen .sl-knopf {
+  white-space: nowrap;
+}
+.workflow-navigation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  padding-inline: var(--abstand-16);
+  background: var(--farbe-grundflaeche);
+  border-bottom: 1px solid var(--farbe-trennung);
+  z-index: 40;
+}
+.workflow-bereiche {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: var(--abstand-4);
+}
+.workflow-bereiche button {
+  position: relative;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--abstand-8);
+  padding: var(--abstand-8) var(--abstand-12);
+  background: transparent;
+  color: var(--farbe-text-sekundaer);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.workflow-bereiche button[aria-selected='true'] {
+  color: var(--farbe-akzent);
+  border-bottom-color: var(--farbe-akzent);
+  font-weight: var(--gewicht-semibold);
+}
+.workflow-bereiche button:hover {
+  background: var(--farbe-erhoeht);
+}
+.workflow-bereiche button:focus-visible {
+  outline-offset: -4px;
+}
+.workflow-navigation .werkzeugleiste {
+  margin-left: auto;
+  min-height: 48px;
+  border: 0;
+  padding: var(--abstand-4) 0;
+  max-height: none;
+  overflow: visible;
+}
+.workflow-arbeitsplatz .statusleiste {
+  min-height: 30px;
+  background: var(--farbe-grundflaeche);
+  border-top: 1px solid var(--farbe-trennung);
+}
+.workflow-arbeitsplatz .status-aktion {
+  min-width: 0;
+}
+.workflow-panel--daten,
+.workflow-panel--laeufe {
+  background: var(--farbe-fenster);
+}
+.palette {
+  border-right: 1px solid var(--farbe-trennung);
+}
+.palette .panel-kopf {
+  background: var(--farbe-erhoeht);
+}
+.eigenschaften-panel {
+  border-inline-start: 1px solid var(--farbe-trennung);
+}
+@media (max-width: 1100px) {
+  .anwendung {
+    --breite-navigation: 72px;
+  }
+  .workflow-kopf {
+    padding-inline: var(--abstand-16);
+  }
+  .workflow-kopf > .skriptsprache-kennzeichen {
+    display: none;
+  }
+}
+.anwendung[data-grosser-text='true'] {
+  --breite-navigation: 72px;
+}
+.anwendung[data-grosser-text='true'] .workflow-kopf {
+  flex-wrap: wrap;
+  gap: var(--abstand-8) var(--abstand-16);
+  padding: var(--abstand-8) var(--abstand-16);
+}
+.anwendung[data-grosser-text='true'] .workflow-identitaet {
+  flex: 1 1 260px;
+}
+.anwendung[data-grosser-text='true'] .workflow-kopf > .skriptsprache-kennzeichen {
+  display: none;
+}
+.anwendung[data-grosser-text='true'] .workflow-aktionen {
+  margin-left: auto;
+}
+.anwendung[data-grosser-text='true'] .workflow-bereiche .sl-symbol {
+  display: none;
+}
+@media (max-width: 800px) {
+  .workflow-kopf {
+    flex-wrap: wrap;
+    gap: var(--abstand-8);
+  }
+  .workflow-identitaet {
+    flex: 1 1 100%;
+  }
+  .workflow-aktionen {
+    flex-wrap: wrap;
+  }
+  .workflow-navigation {
+    padding-inline: var(--abstand-8);
+  }
+  .workflow-bereiche .sl-symbol {
+    display: none;
+  }
+}
+@media (forced-colors: active) {
+  .workflow-bereiche button[aria-selected='true'] {
+    color: Highlight;
+    border-color: Highlight;
+  }
+}

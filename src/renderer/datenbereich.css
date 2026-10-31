@@ -30,8 +30,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-  padding-inline: var(--abstand-4);
-  border-bottom: 1px solid var(--farbe-trennung);
+  padding: 0;
   flex: 0 0 auto;
 }
 .daten-ansichtauswahl button {
@@ -67,24 +66,15 @@
   display: none;
 }
 .daten-seitenkopf {
-  order: 1;
-  padding: 0;
+  flex: 0 0 auto;
+  padding: var(--abstand-4) var(--abstand-16);
+  border-bottom: 1px solid var(--farbe-trennung);
 }
-.daten-ansichtauswahl {
-  order: 0;
-}
-.daten-ansichten {
-  order: 2;
-}
-.daten-seitenkopf h1 {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+.datenbereich .daten-seitenkopf h2 {
+  margin: 0;
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+  line-height: 1.5;
 }
 .daten-seitenkopf p {
   color: var(--farbe-text-sekundaer);
@@ -119,6 +109,16 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--abstand-8) var(--abstand-16);
+}
+.daten-seitenkopf {
+  align-items: center;
+}
+.daten-sperrhinweis {
+  flex: 0 0 auto;
+  padding: var(--abstand-8) var(--abstand-16) 0;
+}
+.daten-sperrhinweis .sl-status {
+  margin: 0;
 }
 .daten-seitenkopf > div,
 .daten-abschnittskopf > div {
@@ -279,9 +279,6 @@
 .daten-vorschau {
   min-width: 0;
 }
-.daten-vorschau-rueckweg {
-  margin-bottom: var(--abstand-12);
-}
 .daten-parameterfelder {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
@@ -292,11 +289,11 @@
 .daten-vorschaufehler {
   display: grid;
   gap: var(--abstand-8);
-  margin: var(--abstand-16) 0;
+  margin: 0;
 }
 .daten-tabellensteuerung {
   align-items: center;
-  margin: var(--abstand-12) 0;
+  margin: 0;
 }
 .daten-tabellensteuerung p {
   margin: 0;
@@ -310,14 +307,16 @@
 .daten-tabellenausschnitt {
   min-width: 0;
   max-width: 100%;
-  max-height: min(56vh, 560px);
+  flex: 1 1 auto;
+  min-height: 9em;
   overflow: auto;
   border: 1px solid var(--farbe-kontur);
   border-radius: 0;
-  margin-top: var(--abstand-12);
-  scroll-padding-top: 72px;
+  margin: 0;
+  scroll-padding-top: 5em;
 }
 .daten-tabellenausschnitt table {
+  min-width: 100%;
   table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
@@ -343,7 +342,7 @@
   min-height: var(--hoehe-bedienfeld);
   padding: var(--abstand-4) var(--abstand-12);
   display: grid;
-  gap: var(--abstand-4);
+  gap: 0;
   text-align: left;
   border: 0;
   color: var(--farbe-text);
@@ -352,13 +351,23 @@
   font-weight: 600;
   cursor: pointer;
 }
+.daten-spaltenname,
+.daten-zellenwert,
+.daten-tabellenausschnitt th .daten-hilfetext {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
 .daten-tabellenausschnitt th .daten-hilfetext {
   font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
   line-height: 1.5;
   font-weight: 400;
 }
-.daten-tabellenausschnitt td {
-  padding: var(--abstand-8) var(--abstand-12);
+.datenbereich .daten-tabellenausschnitt td {
+  padding: var(--abstand-4) var(--abstand-12);
   min-height: 36px;
   border-bottom: 1px solid var(--farbe-trennung);
   vertical-align: top;
@@ -370,7 +379,7 @@
   border-left: 1px solid var(--farbe-trennung);
 }
 .daten-tabellenausschnitt td:first-child {
-  padding: var(--abstand-8);
+  padding: var(--abstand-4) var(--abstand-8);
 }
 .daten-tabellenausschnitt input[type='radio'] {
   accent-color: var(--farbe-akzent);
@@ -390,11 +399,11 @@
   text-align: right;
 }
 .daten-spaltenbreiten {
-  margin-top: var(--abstand-16);
+  margin: 0;
 }
 .daten-spaltenbreiten summary {
   cursor: pointer;
-  min-height: 36px;
+  min-height: var(--hoehe-bedienfeld);
   padding-block: var(--abstand-8);
 }
 .daten-spaltenbreiten > div {
@@ -404,7 +413,12 @@
   gap: var(--abstand-12);
 }
 .daten-herkunft {
-  margin-block: var(--abstand-12);
+  margin: 0;
+}
+.daten-herkunft summary {
+  min-height: var(--hoehe-bedienfeld);
+  padding-block: var(--abstand-8);
+  cursor: pointer;
 }
 .daten-herkunft dl {
   margin: var(--abstand-8) 0;
@@ -486,16 +500,27 @@
 .daten-eigenschaften .business-formular {
   gap: var(--abstand-12);
 }
-.daten-vorschau > .sl-feld {
-  max-width: 480px;
+.daten-ansichten--vorschau {
+  display: flex;
+  flex-direction: column;
+}
+.daten-vorschau {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  gap: var(--abstand-8);
+}
+.daten-vorschau > :not(.daten-tabellenausschnitt) {
+  flex: 0 0 auto;
 }
 .daten-vorschauwahl {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 2fr) minmax(8em, 1fr) auto;
   align-items: end;
-  gap: var(--abstand-16);
-  margin-block: var(--abstand-12);
-  max-width: 1120px;
+  gap: var(--abstand-8) var(--abstand-12);
+  padding-bottom: var(--abstand-12);
+  border-bottom: 1px solid var(--farbe-trennung);
 }
 .daten-vorschauwahl > * {
   min-width: 0;
@@ -504,41 +529,84 @@
   color: var(--farbe-text-sekundaer);
 }
 .daten-vorschauwerkzeuge {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 380px);
-  gap: var(--abstand-16);
-  align-items: start;
-  margin-top: var(--abstand-16);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--abstand-8) var(--abstand-16);
+  align-items: end;
 }
 .daten-vorschauwerkzeuge > * {
   min-width: 0;
 }
-.daten-vorschauwerkzeuge .daten-herkunft {
-  margin-block: 0;
+.daten-vorschauwerkzeuge > .sl-feld {
+  flex: 0 1 24em;
 }
-@container (max-width: 60em) {
-  .daten-vorschauwahl,
-  .daten-vorschauwerkzeuge {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
+.daten-vorschauinformation {
+  flex: 1 1 16em;
+}
+.daten-vorschauinformation p {
+  margin: 0;
+}
+.daten-vorschauinformation .daten-hilfetext {
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+}
+.daten-vorschaubegrenzung {
+  display: flex;
+  align-items: baseline;
+  gap: var(--abstand-4);
+  color: var(--farbe-hinweis);
+}
+.daten-vorschaubegrenzung .sl-symbol {
+  flex: 0 0 auto;
+  align-self: center;
+}
+.daten-vorschauhinweise {
+  display: grid;
+  gap: var(--abstand-8);
+}
+.daten-vorschauhinweise:empty {
+  display: none;
+}
+.daten-vorschauhinweise .sl-status {
+  margin: 0;
+}
+.daten-csv-hinweis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--abstand-4) var(--abstand-12);
+}
+.daten-csv-hinweis > .sl-status {
+  flex: 1 1 24em;
+}
+.daten-vorschaudetails {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: var(--abstand-4) var(--abstand-16);
+  border-top: 1px solid var(--farbe-trennung);
+  padding-top: var(--abstand-4);
+}
+.daten-vorschaudetails > details[open] {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+.daten-vorschau-leer {
+  padding-block: var(--abstand-16);
+  color: var(--farbe-text-sekundaer);
+}
+/* Erst bei wirklich knapper Breite umbrechen; große Schrift erhält erreichbare Bedienelemente. */
+@container (max-width: 46em) {
+  .daten-vorschauwahl {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   }
   .daten-vorschauwahl > :is(button, .sl-knopf-mit-grund) {
+    grid-column: 1 / -1;
     justify-self: start;
   }
 }
 .daten-vorschau > .daten-hilfetext {
   font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
   line-height: 1.5;
-}
-.daten-tabellensteuerung .sl-knopf-mit-grund {
-  max-width: 16rem;
-}
-.daten-tabellensteuerung .sl-knopf-grund {
-  margin-top: var(--abstand-4);
-  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
-}
-.daten-herkunft {
-  margin-block: var(--abstand-8);
 }
 .daten-parameter .daten-abschnittskopf {
   justify-content: flex-start;

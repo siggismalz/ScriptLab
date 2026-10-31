@@ -116,8 +116,10 @@ try {
   await seite.getByRole('button', { name: 'Exportieren', exact: true }).click();
   await bild('export-business-dunkel-1280');
   await seite.getByRole('button', { name: 'Abbrechen', exact: true }).click();
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Einstellungen', exact: true })
+    .click();
   await bild('einstellungen-dunkel-1280');
   await seite.getByLabel('Farbschema', { exact: true }).selectOption('hell');
   await bild('einstellungen-hell-1280');
@@ -134,8 +136,10 @@ try {
   await seite.getByRole('button', { name: 'Abbrechen', exact: true }).click();
 
   async function thema(wert) {
-    await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-    await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+    await seite
+      .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+      .getByRole('button', { name: 'Einstellungen', exact: true })
+      .click();
     await seite.getByLabel('Farbschema', { exact: true }).selectOption(wert);
     await seite.getByRole('button', { name: 'Fertig', exact: true }).click();
   }

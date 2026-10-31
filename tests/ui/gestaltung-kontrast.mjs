@@ -375,11 +375,10 @@ async function messen(thema, kontext, proben) {
 }
 
 async function einstellungen(thema) {
-  const editor = await seite.getByRole('button', { name: 'Bereiche', exact: true }).isVisible();
-  if (editor) {
-    await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-    await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
-  } else await seite.getByRole('button', { name: 'Einstellungen', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Einstellungen', exact: true })
+    .click();
   const dialog = seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
   await dialog.getByRole('combobox', { name: 'Farbschema', exact: true }).selectOption(thema);
   await seite.waitForFunction(
@@ -433,15 +432,15 @@ async function oeffnen(datei) {
 try {
   for (const thema of ['dunkel', 'hell']) {
     await einstellungen(thema);
-    if (await seite.getByRole('button', { name: 'Bereiche', exact: true }).isVisible()) {
-      await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-      await seite.getByRole('menuitem', { name: 'Start', exact: true }).click();
-    }
+    await seite
+      .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+      .getByRole('button', { name: 'Start', exact: true })
+      .click();
     await seite.getByRole('button', { name: 'Neuer Workflow', exact: true }).waitFor({ state: 'visible' });
     await seite.mouse.move(1, 1);
     await messen(thema, 'Start', [
       { name: 'Seitentitel', selector: '.start-seitenkopf h1' },
-      { name: 'Navigation aktiv', selector: '.start-navigation [aria-current="page"]' },
+      { name: 'Navigation aktiv', selector: '.editor-navigation [aria-current="location"]' },
       { name: 'Kartenbeschriftung', selector: '.start-karte-titel', alle: true },
       { name: 'Kartentext sekundär', selector: '.start-karte-beschreibung', alle: true },
       { name: 'Metadaten', selector: '.start-karte-metadaten', alle: true },

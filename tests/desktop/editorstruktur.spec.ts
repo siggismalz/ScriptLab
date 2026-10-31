@@ -107,9 +107,8 @@ for (const farbe of ['hell', 'dunkel'] as const) {
           'aria-current',
           'location',
         );
-        if (skala === 1)
-          for (const ziel of ['Hilfe', 'Einstellungen'])
-            await imFenster(global.getByRole('button', { name: ziel, exact: true }));
+        for (const ziel of ['Hilfe', 'Einstellungen'])
+          await imFenster(global.getByRole('button', { name: ziel, exact: true }));
         await expect(page.getByRole('heading', { name: projektname, exact: true })).toHaveAttribute(
           'title',
           projektname,
@@ -148,7 +147,7 @@ for (const farbe of ['hell', 'dunkel'] as const) {
         await start.focus();
         await start.press('Tab');
         await expect(global.getByRole('button', { name: 'Workflows', exact: true })).toBeFocused();
-        for (const ziel of ['Workflows', 'Vorlagen', ...(skala === 1 ? ['Hilfe'] : [])]) {
+        for (const ziel of ['Workflows', 'Vorlagen', 'Hilfe']) {
           await global.getByRole('button', { name: ziel, exact: true }).click();
           await expect(
             page.getByTestId('startbereich').getByRole('heading', {
@@ -167,23 +166,20 @@ for (const farbe of ['hell', 'dunkel'] as const) {
           await expect(block).toHaveClass(/scriptlabAuswahl/);
           expect((await zustand(page)).laufId).toBeNull();
         }
-        if (skala === 2) {
-          await page.getByRole('button', { name: 'Bereiche', exact: true }).click();
-          await page.getByRole('menuitem', { name: 'Hilfe', exact: true }).click();
-          await expect(page.getByTestId('hilfe')).toBeVisible();
-          await page.getByTestId('startbereich').getByRole('button', { name: 'Start', exact: true }).click();
-          await page.getByRole('button', { name: 'Weiterbearbeiten', exact: true }).click();
-        }
-        if (skala === 1) await global.getByRole('button', { name: 'Einstellungen', exact: true }).click();
-        else {
-          await page.getByRole('button', { name: 'Bereiche', exact: true }).click();
-          await page.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
-        }
+        await global.getByRole('button', { name: 'Einstellungen', exact: true }).click();
         await page
           .getByRole('dialog', { name: 'Einstellungen', exact: true })
           .getByRole('button', { name: 'Fertig', exact: true })
           .click();
         await arbeitsbereichWaehlen(page, 'Daten und Parameter');
+        // Canvasaktionen dürfen den unsichtbaren Ablauf nicht ändern.
+        const datenTab = page.getByRole('tab', { name: 'Daten und Parameter', exact: true });
+        await datenTab.focus();
+        await datenTab.press('Delete');
+        await datenTab.press('Control++');
+        await datenTab.press('F4');
+        expect((await dokument(page)).projekt.editor).toEqual(vorher.projekt.editor);
+        expect((await dokument(page)).projekt.ansicht).toEqual(vorher.projekt.ansicht);
         await arbeitsbereichWaehlen(page, 'Läufe');
         await arbeitsbereichWaehlen(page, 'Ablauf');
         expect((await zustand(page)).laufId).toBeNull();
@@ -194,6 +190,7 @@ for (const farbe of ['hell', 'dunkel'] as const) {
         await ausfuehren.focus();
         await ausfuehren.press('Enter');
         await expect.poll(async () => (await zustand(page)).phase).toBe('laeuft');
+        await expect(page.getByRole('button', { name: 'Stoppen', exact: true })).toBeFocused();
         await expect(page.getByRole('tab', { name: 'Ablauf', exact: true })).toHaveAttribute(
           'aria-selected',
           'true',

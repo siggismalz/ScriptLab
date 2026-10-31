@@ -1,9 +1,10 @@
+/* Auswahlkarten bleiben dieselben Inhalte; nur die gewählte Karte öffnet Vorbereitung. */
 .vorlagenbereich {
-  min-width: 0;
+  min-inline-size: 0;
 }
 .vorlagen-filter {
   display: grid;
-  grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(150px, 1fr));
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
   gap: var(--abstand-16);
   align-items: end;
 }
@@ -12,16 +13,23 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--abstand-8) var(--abstand-16);
-  margin-block: var(--abstand-12);
+  margin-block: var(--abstand-16);
   color: var(--farbe-text-sekundaer);
 }
 .vorlagen-ergebniszeile > p,
 .vorlagen-hinweis {
   margin: 0;
 }
+.vorlagen-ergebniszeile > p:first-child {
+  color: var(--farbe-text);
+  font-weight: var(--gewicht-semibold);
+}
+.vorlagen-auswahlhilfe {
+  flex: 1 1 28ch;
+}
 .vorlagen-hinweis {
   margin-block-end: var(--abstand-16);
-  max-width: 80ch;
+  max-inline-size: 80ch;
   color: var(--farbe-text-sekundaer);
 }
 .vorlagen-liste {
@@ -31,8 +39,11 @@
   align-items: stretch;
 }
 .vorlagen-eintrag {
-  min-width: 0;
+  min-inline-size: 0;
   overflow-wrap: anywhere;
+  transition:
+    background-color var(--dauer-uebergang),
+    border-color var(--dauer-uebergang);
 }
 .vorlagen-eintrag.ist-ausgewaehlt {
   grid-column: 1 / -1;
@@ -43,10 +54,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--abstand-12);
-  min-height: 100%;
-}
-.vorlagen-eintrag.ist-ausgewaehlt .vorlagen-kartenkopf {
-  min-height: auto;
+  min-block-size: 100%;
 }
 .vorlagen-metadaten {
   display: flex;
@@ -54,22 +62,30 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--abstand-8) var(--abstand-16);
-  width: 100%;
+  inline-size: 100%;
   color: var(--farbe-text-sekundaer);
   font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
 }
+.vorlagen-sprache {
+  padding: var(--abstand-4) var(--abstand-8);
+  border: 1px solid var(--farbe-trennung);
+  border-radius: var(--radius-normal);
+  background: var(--farbe-erhoeht);
+  color: var(--farbe-text);
+}
 .vorlagen-kartenkopf h2 {
-  min-width: 0;
-  width: 100%;
+  min-inline-size: 0;
+  inline-size: 100%;
   margin: 0;
 }
 .vorlagen-kartenkopf .vorlagen-auswahl {
-  width: 100%;
-  max-width: 100%;
+  inline-size: 100%;
+  max-inline-size: 100%;
   justify-content: flex-start;
   align-items: flex-start;
+  gap: var(--abstand-8);
   padding: 0;
-  min-height: 0;
+  min-block-size: var(--hoehe-bedienfeld);
   text-align: start;
   font-weight: var(--gewicht-semibold);
   font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
@@ -78,7 +94,7 @@
   background: transparent;
 }
 .vorlagen-auswahl > span {
-  min-width: 0;
+  min-inline-size: 0;
   overflow-wrap: anywhere;
   white-space: normal;
 }
@@ -101,19 +117,48 @@
 .vorlagen-kartenkopf .vorlagen-auswahl[aria-expanded='true'] {
   color: var(--farbe-akzent);
 }
-.vorlagen-zuordnung {
-  color: var(--farbe-text-sekundaer);
-  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
-}
 .vorlagen-ergebnis,
 .vorlagen-zuordnung {
   margin: 0;
 }
+.vorlagen-ergebnis-label {
+  display: block;
+  margin-block-end: var(--abstand-4);
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+}
+.vorlagen-zuordnung,
+.vorlagen-auswahlhinweis {
+  color: var(--farbe-text-sekundaer);
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+}
+.vorlagen-auswahlhinweis {
+  margin-block-start: auto;
+}
+.vorlagen-eintrag.ist-ausgewaehlt .vorlagen-kartenkopf {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  min-block-size: 0;
+  column-gap: var(--abstand-24);
+}
+.vorlagen-eintrag.ist-ausgewaehlt .vorlagen-metadaten,
+.vorlagen-eintrag.ist-ausgewaehlt h2,
+.vorlagen-eintrag.ist-ausgewaehlt .vorlagen-zuordnung,
+.vorlagen-eintrag.ist-ausgewaehlt .vorlagen-auswahlhinweis {
+  grid-column: 1;
+}
+.vorlagen-eintrag.ist-ausgewaehlt .vorlagen-ergebnis {
+  grid-column: 2;
+  grid-row: 1 / 5;
+  align-self: center;
+}
 .vorlagen-details {
-  margin-block-start: var(--abstand-12);
+  margin-block-start: var(--abstand-16);
   padding: var(--abstand-16);
   background: var(--farbe-erhoeht);
-  border-inline-start: var(--fokus-kontur) solid var(--farbe-akzent);
+  border-block-start: 1px solid var(--farbe-trennung);
 }
 .vorlagen-detailspalten {
   display: grid;
@@ -123,6 +168,7 @@
 .vorlagen-details h3 {
   margin: 0 0 var(--abstand-8);
   font-size: calc(var(--schrift-normal) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
 }
 .vorlagen-details p,
 .vorlagen-details ul {
@@ -140,6 +186,8 @@
   color: var(--farbe-text-sekundaer);
 }
 .vorlagen-dateien summary {
+  min-block-size: var(--hoehe-bedienfeld);
+  padding-block: var(--abstand-8);
   cursor: pointer;
 }
 .vorlagen-dateien dl {
@@ -161,7 +209,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--abstand-12) var(--abstand-24);
-  margin-block-start: var(--abstand-24);
+  margin-block-start: var(--abstand-16);
 }
 .vorlagen-aktion p {
   flex: 1 1 35ch;
@@ -169,13 +217,13 @@
 }
 .vorlagen-aktion .sl-knopf {
   flex: 0 0 auto;
-  max-width: 100%;
+  max-inline-size: 100%;
   white-space: normal;
 }
 .vorlagen-leer {
   padding-block: var(--abstand-24);
 }
-@media (max-width: 1000px) {
+@container startinhalt (max-width:960px) {
   .vorlagen-filter {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -183,19 +231,36 @@
     grid-column: 1 / -1;
   }
 }
-.anwendung[style*='--text-skala: 2'] .vorlagen-filter {
-  grid-template-columns: minmax(0, 1fr);
+@container startinhalt (max-width:680px) {
+  .vorlagen-filter {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vorlagen-eintrag.ist-ausgewaehlt .vorlagen-kartenkopf {
+    display: flex;
+  }
+  .vorlagen-dateien dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
-.anwendung[style*='--text-skala: 2'] .vorlagen-liste {
-  grid-template-columns: minmax(0, 1fr);
-}
+.anwendung[style*='--text-skala: 2'] .vorlagen-filter,
+.anwendung[style*='--text-skala: 2'] .vorlagen-liste,
 .anwendung[style*='--text-skala: 2'] .vorlagen-dateien dl {
   grid-template-columns: minmax(0, 1fr);
 }
+.anwendung[style*='--text-skala: 2'] .vorlagen-eintrag.ist-ausgewaehlt .vorlagen-kartenkopf {
+  display: flex;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vorlagen-eintrag {
+    transition: none;
+  }
+}
 @media (forced-colors: active) {
-  .vorlagen-details {
-    border-color: Highlight;
+  .vorlagen-details,
+  .vorlagen-sprache {
+    border-color: CanvasText;
     background: Canvas;
+    color: CanvasText;
   }
   .vorlagen-auswahl[aria-expanded='true'] {
     color: LinkText;

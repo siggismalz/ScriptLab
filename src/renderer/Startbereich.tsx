@@ -8,7 +8,7 @@ import { Symbol, type SymbolName } from './komponenten/Icon';
 import { Statusanzeige } from './komponenten/Statusanzeige';
 import './startbereich.css';
 import { sprachdaten, type Skriptsprache } from '../kern/sprachen';
-import { Marke } from './komponenten/Marke';
+import { EditorNavigation } from './EditorNavigation';
 import { VorlagenBereich, type VorlagenFilter } from './VorlagenBereich';
 
 type Seite = 'start' | 'projekte' | 'entwuerfe' | 'beispiele' | 'hilfe';
@@ -58,6 +58,14 @@ const seitentitel: Record<Seite, string> = {
   entwuerfe: 'Entwürfe',
   beispiele: 'Beispielworkflows',
   hilfe: 'Dokumentation und Anleitungen',
+};
+
+const seitenbeschreibung: Record<Seite, string> = {
+  start: 'Workflows erstellen, öffnen und vorhandene Arbeit fortsetzen.',
+  projekte: 'Gespeicherte Workflows finden und ihre Verfügbarkeit prüfen.',
+  entwuerfe: 'Lokal gesicherte Zwischenstände. „Gesichert“ bestätigt kein Speichern der Projektdatei.',
+  beispiele: 'Fertige Abläufe vergleichen und als eigene bearbeitbare Kopie verwenden.',
+  hilfe: 'Bedienung und Funktionen nachschlagen. Alle Anleitungen sind lokal verfügbar.',
 };
 
 const karten: readonly { seite: Exclude<Seite, 'start'>; symbol: SymbolName; beschreibung: string }[] = [
@@ -515,54 +523,12 @@ export function Startbereich(props: StartbereichEigenschaften) {
 
   return (
     <section className="startbereich" data-testid="startbereich" aria-label="ScriptLab-Startbereich">
-      <aside className="start-navigation" aria-label="Globale Navigation">
-        <button className="start-marke" onClick={() => seiteWechseln('start')} aria-label="Startseite">
-          <Marke />
-        </button>
-        <nav aria-label="Arbeitsnavigation">
-          {(
-            [
-              { id: 'start', text: 'Start', symbol: 'bausteine' },
-              { id: 'projekte', text: 'Workflows', symbol: 'oeffnen' },
-              { id: 'beispiele', text: 'Vorlagen', symbol: 'buch' },
-            ] as const
-          ).map((eintrag) => (
-            <button
-              type="button"
-              key={eintrag.id}
-              className="start-navlink"
-              aria-current={
-                seite === eintrag.id || (eintrag.id === 'projekte' && seite === 'entwuerfe')
-                  ? 'page'
-                  : undefined
-              }
-              onClick={() => seiteWechseln(eintrag.id)}
-            >
-              <Symbol name={eintrag.symbol} />
-              <span>{eintrag.text}</span>
-            </button>
-          ))}
-        </nav>
-        <nav className="start-navigation-unten" aria-label="Unterstützung">
-          <button
-            type="button"
-            className="start-navlink"
-            aria-current={seite === 'hilfe' ? 'page' : undefined}
-            onClick={() => seiteWechseln('hilfe')}
-          >
-            <Symbol name="buch" />
-            <span>Hilfe</span>
-          </button>
-          <button type="button" className="start-navlink" onClick={props.einstellungenOeffnen}>
-            <Symbol name="einstellungen" />
-            <span>Einstellungen</span>
-          </button>
-          <button type="button" className="start-navlink" onClick={props.ueberOeffnen}>
-            <Symbol name="info" />
-            <span>Über ScriptLab</span>
-          </button>
-        </nav>
-      </aside>
+      <EditorNavigation
+        aktiv={seite === 'entwuerfe' ? 'projekte' : seite}
+        navigieren={(ziel) => seiteWechseln(ziel)}
+        einstellungen={props.einstellungenOeffnen}
+        ueber={props.ueberOeffnen}
+      />
       <main
         ref={inhalt}
         className="start-scrollbereich"
@@ -596,9 +562,21 @@ export function Startbereich(props: StartbereichEigenschaften) {
                       ? 'Workflows'
                       : seitentitel[seite]}
               </h1>
+              {!artikel && <p className="start-bereichsbeschreibung">{seitenbeschreibung[seite]}</p>}
             </div>
-            {seite === 'start' && (
+            {seite !== 'hilfe' && (
               <div className="start-hauptaktionen">
+                {seite !== 'start' && props.aktiveInfo && (
+                  <Knopf
+                    symbol="rechts"
+                    title={props.aktiveInfo.name}
+                    disabled={gesperrt}
+                    grundId="start-verarbeitung"
+                    onClick={props.weiterbearbeiten}
+                  >
+                    Weiterbearbeiten
+                  </Knopf>
+                )}
                 <Knopf
                   variante="primaer"
                   symbol="neu"
@@ -672,6 +650,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
                 )}
               </Karte>
               <section className="start-einstiege" aria-label="Weitere Einstiege">
+                <h2>Schnellzugriff</h2>
                 <div className="start-karten" data-testid="start-karten">
                   {karten.map((karte) => (
                     <Karte as="div" key={karte.seite} className="start-einstiegskarte">
@@ -742,6 +721,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
           )}
           {seite === 'projekte' && (
             <section data-testid="bekannte-projekte" aria-label="Bekannte Projektdateien">
+              <h2 className="sl-nur-vorlesen">Gespeicherte Workflows</h2>
               <div className="start-listenfilter">
                 <Feld
                   beschriftung="Gespeicherte Workflows durchsuchen"
@@ -836,14 +816,6 @@ export function Startbereich(props: StartbereichEigenschaften) {
                   {projektSprache !== 'alle' && (
                     <Knopf onClick={() => setProjektSprache('alle')}>Sprachfilter zurücksetzen</Knopf>
                   )}
-                  <Knopf
-                    symbol="oeffnen"
-                    disabled={gesperrt}
-                    grundId="start-verarbeitung"
-                    onClick={props.workflowOeffnen}
-                  >
-                    Workflow öffnen
-                  </Knopf>
                 </div>
               )}
             </section>
@@ -851,10 +823,7 @@ export function Startbereich(props: StartbereichEigenschaften) {
 
           {seite === 'entwuerfe' && (
             <section data-testid="entwuerfe" aria-label="Gesicherte Entwürfe">
-              <p className="start-einleitung">
-                Lokal gesicherte Zwischenstände. „Gesichert“ bezieht sich auf den Entwurf und bestätigt kein
-                Speichern der Projektdatei.
-              </p>
+              <h2 className="sl-nur-vorlesen">Gesicherte Entwürfe</h2>
               <div className="start-listenfilter">
                 <Feld
                   beschriftung="Entwürfe suchen"
@@ -905,34 +874,29 @@ export function Startbereich(props: StartbereichEigenschaften) {
                 <div className="start-liste">
                   {entwuerfe.map((entwurf) => (
                     <article
-                      className="start-listeneintrag"
+                      className="start-listeneintrag start-entwurfzeile"
                       key={entwurf.id}
                       aria-label={entwurf.name}
                       data-entwurf-id={entwurf.id}
                     >
-                      <h3>{entwurf.name}</h3>
-                      <span className="skriptsprache-kennzeichen">
-                        {sprachdaten[entwurf.skriptsprache].bezeichnung}
-                      </span>
-                      <p>
-                        {entwurf.ausgangspfad
-                          ? 'Gesicherte Änderungen zu einer Projektdatei'
-                          : 'Noch nicht als Projektdatei gespeichert'}
-                      </p>
-                      <p className="start-metadaten">
-                        Entwurf gesichert am {zeitDarstellen(entwurf.gesichertAm)}
-                      </p>
-                      {entwurf.beschreibung && <p>{entwurf.beschreibung}</p>}
-                      {entwurf.ausgangspfad && (
-                        <Textfeld
-                          beschriftung="Zugehörige Projektdatei"
-                          value={entwurf.ausgangspfad}
-                          readOnly
-                          rows={2}
-                          spellCheck={false}
-                          className="start-pfad"
-                        />
-                      )}
+                      <div className="start-entwurf-kopf">
+                        <div className="start-entwurfname">
+                          <h3>{entwurf.name}</h3>
+                          <p className="start-hilfetext">
+                            {entwurf.ausgangspfad
+                              ? 'Gesicherte Änderungen zu einer Projektdatei'
+                              : 'Noch nicht als Projektdatei gespeichert'}
+                          </p>
+                        </div>
+                        <span className="start-workflowsprache">
+                          {entwurf.workflowArt === 'ml'
+                            ? 'Machine Learning · Python'
+                            : sprachdaten[entwurf.skriptsprache].bezeichnung}
+                        </span>
+                        <p className="start-metadaten">
+                          Entwurf gesichert am {zeitDarstellen(entwurf.gesichertAm)}
+                        </p>
+                      </div>
                       <div className="start-eintrag-aktionen">
                         <Knopf
                           symbol="rechts"
@@ -960,6 +924,24 @@ export function Startbereich(props: StartbereichEigenschaften) {
                           Entwurf löschen
                         </Knopf>
                       </div>
+                      {(entwurf.ausgangspfad || entwurf.beschreibung) && (
+                        <details className="start-entwurfsdetails">
+                          <summary>Speicherort und Beschreibung</summary>
+                          <div>
+                            {entwurf.beschreibung && <p>{entwurf.beschreibung}</p>}
+                            {entwurf.ausgangspfad && (
+                              <Textfeld
+                                beschriftung="Zugehörige Projektdatei"
+                                value={entwurf.ausgangspfad}
+                                readOnly
+                                rows={2}
+                                spellCheck={false}
+                                className="start-pfad"
+                              />
+                            )}
+                          </div>
+                        </details>
+                      )}
                     </article>
                   ))}
                 </div>

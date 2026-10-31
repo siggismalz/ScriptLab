@@ -119,12 +119,10 @@ async function bild(s: Sitzung, name: string) {
 }
 
 async function bereich(s: Sitzung, name: 'Start' | 'Workflows' | 'Vorlagen' | 'Hilfe' | 'Einstellungen') {
-  if (await s.seite.getByRole('button', { name: 'Bereiche', exact: true }).isVisible()) {
-    await s.seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-    await s.seite.getByRole('menuitem', { name, exact: true }).click();
-  } else {
-    await s.seite.getByTestId('startbereich').getByRole('button', { name, exact: true }).click();
-  }
+  await s.seite
+    .getByRole('navigation', { name: 'Globale Navigation' })
+    .getByRole('button', { name, exact: true })
+    .click();
 }
 
 async function thema(s: Sitzung, wert: 'dunkel' | 'hell' | 'system', schliessen = true) {

@@ -119,6 +119,14 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
     setDetailLaedt(null);
     setVorbereitung((n) => n + 1);
   }
+  function aktuellenLaufAnzeigen() {
+    absicht.current = true;
+    anfrage.current++;
+    setAuswahl(null);
+    setListeOffen(false);
+    setDetailLaedt(null);
+    requestAnimationFrame(() => detailRef.current?.focus());
+  }
   async function waehlen(eintrag: LaufEintrag) {
     const nummer = ++anfrage.current;
     setDetailLaedt(eintrag.laufId);
@@ -167,16 +175,20 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
         <header className="laufverwaltung-kontext">
           <div>
             <h2>Gespeicherte Läufe</h2>
+            <p>Ergebnisse, Protokolle und Optionen gehören jeweils zum gespeicherten Laufstand.</p>
             {aktiv && <span role="status">{laufStatus}</span>}
           </div>
           <div className="knopfgruppe">
+            {!aktiv && aktuell.laufId && (
+              <Knopf variante="leise" onClick={aktuellenLaufAnzeigen}>
+                Aktuellen Lauf anzeigen
+              </Knopf>
+            )}
             <Knopf
               variante={aktiv ? 'leise' : 'primaer'}
               onClick={() => {
-                if (aktiv) {
-                  setAuswahl(null);
-                  setListeOffen(false);
-                } else vorbereiten();
+                if (aktiv) aktuellenLaufAnzeigen();
+                else vorbereiten();
               }}
             >
               {aktiv ? 'Aktuellen Lauf anzeigen' : 'Neuen Lauf vorbereiten'}
@@ -199,13 +211,7 @@ export function Laufverwaltung(props: LaufverwaltungEigenschaften) {
         <div className="laufverwaltung-aktiv" role="status">
           <span>{laufStatus}</span>
           <div className="knopfgruppe">
-            <Knopf
-              variante="leise"
-              onClick={() => {
-                setAuswahl(null);
-                setListeOffen(false);
-              }}
-            >
+            <Knopf variante="leise" onClick={aktuellenLaufAnzeigen}>
               Aktuellen Lauf anzeigen
             </Knopf>
             <Knopf

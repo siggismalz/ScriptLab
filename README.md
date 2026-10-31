@@ -25,9 +25,9 @@ ScriptLab ist ein visueller Automatisierungsbaukasten für **Windows 11 x64**. D
 
 ## Oberfläche und Arbeitsbereiche
 
-![Aktuelle Startseite mit zuletzt geöffneten Workflows und vier Einstiegskarten.](docs/qualitaet/karten-ansichten/start-hell.png)
+![Startseite mit gemeinsamer Seitennavigation, Workflowliste und Einstiegskarten.](docs/qualitaet/ui-ansichten/start-hell.png)
 
-**Start**, **Workflows**, **Vorlagen**, **Hilfe** und **Einstellungen** bilden die globale Navigation. Auf der Startseite führen Karten zu gespeicherten Workflows, Entwürfen, Beispielen und Anleitungen. **Weiterbearbeiten** kehrt zum vorhandenen Arbeitsstand zurück.
+**Start**, **Workflows**, **Vorlagen**, **Hilfe** und **Einstellungen** stehen in einer gemeinsamen linken Seitennavigation. Auf der Startseite führen Karten zu gespeicherten Workflows, Entwürfen, Beispielen und Anleitungen. **Weiterbearbeiten** kehrt zum vorhandenen Arbeitsstand zurück. Im Workflowkopf bleiben Name, Speicherstatus und die direkten Aktionen **Speichern**, **Workflow ausführen** und **Exportieren** erreichbar.
 
 Im geöffneten Workflow stehen drei Arbeitsbereiche zur Verfügung:
 
@@ -35,11 +35,17 @@ Im geöffneten Workflow stehen drei Arbeitsbereiche zur Verfügung:
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Ablauf**              | Im Blockly-Bausteineditor Verbindungen und Reihenfolge bearbeiten. Bausteine per Ziehen oder über Plus und eine Einfügestelle ergänzen; Eigenschaften und Codevorschau bei Bedarf öffnen. |
 | **Daten und Parameter** | Bausteinangaben, Workflowparameter und unterstützte Tabellenvorschauen bearbeiten beziehungsweise prüfen.                                                                                 |
-| **Läufe**               | Einen Lauf vorbereiten, starten und stoppen oder Übersicht, Ergebnisse und Protokoll eines früheren Laufs ansehen.                                                                        |
+| **Läufe**               | Den aktuellen oder gespeicherten Lauf beurteilen: Status, Ergebnisse und Protokoll. Eine abweichende Vorbereitung ist optional; der Workflowkopf bietet den direkten Start.                  |
 
-Die Vorlagen verwenden ein anpassbares Kartenraster. Laufvorbereitung, bestätigte Zusammenfassung und Ausgabedateien sind als zusammengehörige Flächen gruppiert. **Hell**, **Dunkel** und **System** sowie die Textgröße lassen sich unter **Einstellungen → Darstellung** wählen. Die Textgröße der Oberfläche ist vom Canvaszoom getrennt.
+Die Vorlagen verwenden ein anpassbares Kartenraster; vergleichbare Workflows stehen in einer Liste. In **Daten und Parameter** wechseln **Quellen**, **Parameter** und **Vorschau** den Arbeitskontext. Die Vorschautabelle hat feste Kopfzeilen, horizontales Scrollen und eine Seitensteuerung am Ergebnis. Lange Spaltennamen bleiben über ihren Titel vollständig zugänglich. Herkunft, Laufstand und Spaltenbreiten lassen sich bei Bedarf aufklappen.
 
-[Bausteineditor ansehen](docs/qualitaet/vorlagen-ansichten/editor-hell.png) · [Karten und weitere Ansichten](docs/qualitaet/KARTEN.md)
+Zeigt eine CSV-Vorschau nur eine Spalte mit mehreren erkennbaren Trennzeichen, führt **Trennzeichen prüfen** direkt zum vorhandenen Quellenfeld. ScriptLab ändert die Einstellung nicht automatisch; nach der Korrektur wird die Vorschau bewusst neu geladen. Suche und Sortierung betreffen weiterhin nur den geladenen Ausschnitt, nicht alle Quelldaten.
+
+![Datenvorschau mit lesbaren Spalten und Seitensteuerung unter der Tabelle.](docs/qualitaet/ui-ansichten/daten-hell.png)
+
+**Hell**, **Dunkel** und **System** sowie die Textgröße lassen sich unter **Einstellungen → Darstellung** wählen. Die Textgröße der Oberfläche ist vom Canvaszoom getrennt. Bei großer Schrift wird die Seitennavigation zu beschrifteten Symbolaktionen mit Tooltips; die Inhalte bleiben scrollbar.
+
+[Bausteineditor ansehen](docs/qualitaet/ui-ansichten/editor-hell.png) · [Aufbau, Fachaufträge und Prüfnachweise](docs/qualitaet/UI-NEUAUFBAU.md)
 
 ## Mit einer Vorlage anfangen
 
@@ -49,12 +55,12 @@ Die folgenden Schritte zeigen den Einstieg mit einer Python-Business-Vorlage, zu
 2. Eine Karte auswählen und Ergebnis, Vorbereitung sowie enthaltene Dateien prüfen. Die Auswahl startet keinen Lauf.
 3. **Als Vorlage öffnen** wählen. ScriptLab erstellt eine eigene bearbeitbare Kopie und übernimmt die mitgelieferten Testdaten in deren Arbeitsordner. Die Vorlage bleibt erhalten.
 4. Bausteine, Quellen und Parameter anpassen. **Speichern** sichert den Workflow intern; für eine weiterzugebende Projektdatei dient **Exportieren**.
-5. **Workflow ausführen** startet den aktuellen Ablauf sofort mit den konfigurierten Bausteinen und Parameterwerten. Vorheriges Speichern ist nicht nötig. Du bleibst im Editor und siehst Status und Ausgabe direkt über dem Ablauf; **Stoppen** ist oben erreichbar. Fehlende Pflichtangaben führen gezielt zur Korrektur.
+5. **Workflow ausführen** startet den aktuellen Ablauf sofort mit den konfigurierten Bausteinen und Parameterwerten. Vorheriges Speichern ist nicht nötig. Dein aktiver Arbeitsbereich bleibt offen. Im Ablauf siehst du Status und Ausgabe direkt über den Bausteinen; **Stoppen** bleibt erreichbar. Fehlende Pflichtangaben führen gezielt zur Korrektur.
 6. **Laufdetails** öffnet bei Bedarf Ergebnisse und Protokoll. Unter **Läufe → Vorbereitung** kannst du Arbeitsordner, Zeitlimit und Parameter anpassen oder bei unterstützten Python-Business-Workflows ausdrücklich einen **Prüflauf ohne Zieländerungen** wählen. Die **Datenvorschau** bleibt separat erreichbar. Diese optionalen Prüfungen sind keine Voraussetzung für den direkten Start; der Hauptknopf führt immer wirklich aus, auch nach einer Vorschau.
 
 **Dateipfade eingeben:** Bei einem Baustein mit einer eindeutigen Quelle steht der tatsächliche Quellenpfad direkt unter seiner **Bezeichnung**. Die Bezeichnung ist nur der Name des Schritts. Gib den Pfad in das beschriftete Pfadfeld ein oder ziehe eine lokale Datei aus dem Explorer auf den Quellbaustein beziehungsweise das Pfadfeld. Auch die Quellenfelder in den Eigenschaften und ausdrücklich gewählte Datei-/Dokumentparameter unterstützen das Ablegen. Eine Ablage startet keinen Workflow. Bestehende Parameterbindungen bleiben erhalten; ändere deren Wert unter **Daten und Parameter**. Ausgabeziele und berechnete Pfade werden durch einen Drop auf den Baustein nicht ersetzt.
 
-![Vorlagenkarten zeigen Aufgabe, Sprache und erwartetes Ergebnis vor dem Öffnen einer eigenen Kopie.](docs/qualitaet/karten-ansichten/vorlagen-hell.png)
+![Vorlagenkarten zeigen Aufgabe, Sprache und erwartetes Ergebnis vor dem Öffnen einer eigenen Kopie.](docs/qualitaet/ui-ansichten/vorlagen-hell.png)
 
 Es gibt **13 Beispielworkflows**: fünf bisherige Python-Business-Vorlagen, zwei ML-Vorlagen sowie drei Einstiegsabläufe jeweils für Python und VBS. Die Einstiege zeigen eine Nachricht, sichern eine Testdatei oder schreiben Dateinamen in eine Textliste.
 
@@ -97,7 +103,7 @@ Grundbausteine und VBS erhalten keinen vorgetäuschten Business-Prüflauf. Die P
 
 Unter **Läufe** gehören Ergebnisse und Protokolle zum tatsächlich ausgeführten Workflowstand samt Parametern und Arbeitsordner. Ein früherer Stand wird kenntlich gemacht; die Historie hält keine zusätzliche Kopie jeder Ausgabedatei vor.
 
-![Bestätigte Ausgabedateien und ihre Speicherzustände im Ergebnisbereich eines ausdrücklich gestarteten Laufs.](docs/qualitaet/karten-ansichten/lauf-hell.png)
+![Laufdetails mit tatsächlichem Status, Modus, erreichbarem Stopp und optionalen technischen Angaben.](docs/qualitaet/ui-ansichten/lauf-hell.png)
 
 ## Speichern, Ablage und Export
 

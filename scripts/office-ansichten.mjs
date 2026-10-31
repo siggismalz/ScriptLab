@@ -55,8 +55,10 @@ async function daten(name) {
     .click();
 }
 async function einstellungen(aktion) {
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Einstellungen', exact: true })
+    .click();
   await aktion();
   await seite.getByRole('button', { name: 'Fertig', exact: true }).click();
 }
@@ -284,10 +286,15 @@ try {
   await bild('daten-schmales-fenster-dunkel');
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
   await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Start', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Start', exact: true })
+    .click();
   await bild('start-mit-workflow-dunkel');
-  await seite.getByRole('button', { name: 'Workflows', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Workflows', exact: true })
+    .click();
   await bild('workflowliste-dunkel');
   assert.deepEqual(rendererfehler, []);
   await writeFile(

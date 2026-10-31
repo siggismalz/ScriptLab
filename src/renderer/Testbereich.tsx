@@ -290,69 +290,49 @@ export function Testbereich(props: TestbereichEigenschaften) {
   return (
     <section className="testbereich" data-testid="test-panel" aria-labelledby={titelId}>
       <div className="lauf-kopfleiste">
-        {props.kopfNavigation && <div className="lauf-kopfnavigation">{props.kopfNavigation}</div>}
-        <div className="lauf-tabs" role="tablist" aria-label="Ansichten des Laufs">
-          {sichtbareAnsichten.map((tab, index) => (
-            <button
-              type="button"
-              key={tab.id}
-              id={`${tabsId}-${tab.id}`}
-              role="tab"
-              aria-selected={ansicht === tab.id}
-              aria-controls={`${tabsId}-panel-${tab.id}`}
-              tabIndex={ansicht === tab.id ? 0 : -1}
-              onClick={() => ansichtWechseln(tab.id)}
-              onKeyDown={(event) => {
-                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-                event.preventDefault();
-                const ziel =
-                  event.key === 'Home'
-                    ? 0
-                    : event.key === 'End'
-                      ? sichtbareAnsichten.length - 1
-                      : (index + (event.key === 'ArrowRight' ? 1 : -1) + sichtbareAnsichten.length) %
-                        sichtbareAnsichten.length;
-                ansichtWechseln(sichtbareAnsichten[ziel].id);
-                document.getElementById(`${tabsId}-${sichtbareAnsichten[ziel].id}`)?.focus();
-              }}
-            >
-              {tab.text}
-            </button>
-          ))}
-        </div>
         <header className={`testbereich-kopf ${fokussierteVorbereitung ? 'ist-vorbereitung' : ''}`}>
-          <h2 id={titelId} className="sl-nur-vorlesen">
-            Läufe
-          </h2>
-          <div id={statusId} className="testbereich-status" hidden={fokussierteVorbereitung}>
-            <Statusanzeige art={statusArt(zustand)}>
-              <strong>{hatLauf ? phasen[zustand.phase] : 'Noch kein Lauf'}</strong>
-            </Statusanzeige>
-          </div>
-          <p className="testbereich-modus" hidden={fokussierteVorbereitung}>
-            {props.historisch ? (
-              <>
-                Lauf vom{' '}
-                <time dateTime={zustand.gestartetAm ?? zustand.vorbereitetAm ?? undefined}>
-                  {zeitpunktAnzeigen(zustand.gestartetAm ?? zustand.vorbereitetAm)}
-                </time>{' '}
-                ·{' '}
-              </>
-            ) : (
-              <>
-                <strong>{vorbereitung && !aktiv ? 'Nächster Lauf' : 'Modus dieses Laufs'}:</strong>{' '}
-              </>
-            )}
-            {modusName(anzeigeOptionen)}
-            {vorschauSchritt && <> bis „{vorschauSchritt}“</>}
-            {props.historisch && (
-              <span className="testbereich-stand" title={zustand.standHash ?? undefined}>
-                {' '}
-                · {zustand.standHash ? `Stand ${zustand.standHash.slice(0, 8)}` : 'Stand nicht verfügbar'}
+          <div className="testbereich-laufkontext">
+            <div className="testbereich-titelzeile">
+              <h2 id={titelId}>Läufe</h2>
+              <span className="testbereich-kontextart">
+                {vorbereitung && !aktiv
+                  ? 'Optionale Vorbereitung'
+                  : props.historisch
+                    ? 'Gespeicherter Lauf'
+                    : 'Aktueller Lauf'}
               </span>
-            )}
-          </p>
+              <div id={statusId} className="testbereich-status" hidden={fokussierteVorbereitung}>
+                <Statusanzeige art={statusArt(zustand)}>
+                  <strong>{hatLauf ? phasen[zustand.phase] : 'Noch kein Lauf'}</strong>
+                </Statusanzeige>
+              </div>
+            </div>
+            <p className="testbereich-modus">
+              {props.historisch ? (
+                <>
+                  Lauf vom{' '}
+                  <time dateTime={zustand.gestartetAm ?? zustand.vorbereitetAm ?? undefined}>
+                    {zeitpunktAnzeigen(zustand.gestartetAm ?? zustand.vorbereitetAm)}
+                  </time>{' '}
+                  ·{' '}
+                </>
+              ) : (
+                <>
+                  <strong>{vorbereitung && !aktiv ? 'Nächster Lauf' : 'Modus dieses Laufs'}:</strong>{' '}
+                </>
+              )}
+              {modusName(anzeigeOptionen)}
+              {vorschauSchritt && <> bis „{vorschauSchritt}“</>}
+              {props.historisch && (
+                <span className="testbereich-stand" title={zustand.standHash ?? undefined}>
+                  {' '}
+                  · {zustand.standHash ? `Stand ${zustand.standHash.slice(0, 8)}` : 'Stand nicht verfügbar'}
+                </span>
+              )}
+            </p>
+          </div>
           <div className="knopfgruppe testbereich-aktionen">
+            {props.kopfNavigation && <div className="lauf-kopfnavigation">{props.kopfNavigation}</div>}
             {aktiv ? (
               <Knopf
                 symbol="stoppen"
@@ -386,6 +366,35 @@ export function Testbereich(props: TestbereichEigenschaften) {
             )}
           </div>
         </header>
+        <div className="lauf-tabs" role="tablist" aria-label="Ansichten des Laufs">
+          {sichtbareAnsichten.map((tab, index) => (
+            <button
+              type="button"
+              key={tab.id}
+              id={`${tabsId}-${tab.id}`}
+              role="tab"
+              aria-selected={ansicht === tab.id}
+              aria-controls={`${tabsId}-panel-${tab.id}`}
+              tabIndex={ansicht === tab.id ? 0 : -1}
+              onClick={() => ansichtWechseln(tab.id)}
+              onKeyDown={(event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const ziel =
+                  event.key === 'Home'
+                    ? 0
+                    : event.key === 'End'
+                      ? sichtbareAnsichten.length - 1
+                      : (index + (event.key === 'ArrowRight' ? 1 : -1) + sichtbareAnsichten.length) %
+                        sichtbareAnsichten.length;
+                ansichtWechseln(sichtbareAnsichten[ziel].id);
+                document.getElementById(`${tabsId}-${sichtbareAnsichten[ziel].id}`)?.focus();
+              }}
+            >
+              {tab.text}
+            </button>
+          ))}
+        </div>
       </div>
       <div ref={inhalt} className="testbereich-inhalt">
         {veraltet && hatLauf && !vorbereitung && (
@@ -530,13 +539,31 @@ export function Testbereich(props: TestbereichEigenschaften) {
           {!hatLauf ? (
             <div className="lauf-leerzustand">
               <h3>Für diesen Workflow gibt es noch keine Läufe.</h3>
-              <p>Prüfe die Vorbereitung und starte den Lauf bewusst.</p>
+              <p>
+                Mit „Workflow ausführen“ im Workflowkopf startest du den aktuellen Editorstand. Modus,
+                Parameter und Limits kannst du hier bei Bedarf vorher anpassen.
+              </p>
               <Knopf onClick={() => ansichtWechseln('vorbereitung')}>Lauf vorbereiten</Knopf>
             </div>
           ) : (
             <>
-              <h3>{aktiv ? (aktuellerSchritt ?? 'Aktueller Lauf') : 'Ergebnis dieses Laufs'}</h3>
-              <p>{zustand.meldung || phasen[zustand.phase]}</p>
+              <div className="lauf-ergebnisfokus">
+                <h3>{aktiv ? (aktuellerSchritt ?? 'Aktueller Lauf') : 'Ergebnis dieses Laufs'}</h3>
+                <p className="lauf-ergebnismeldung">{zustand.meldung || phasen[zustand.phase]}</p>
+                <p className="lauf-moduserklaerung">
+                  {laufOptionen.business?.modus === 'vorschau'
+                    ? 'Dieser Lauf zeigt eine begrenzte Datenvorschau. Zieldateien werden dabei nicht verändert.'
+                    : laufOptionen.business?.modus === 'prueflauf'
+                      ? 'Dieser Prüflauf prüft unterstützte Schritte und plant Dateiaktionen, ohne Zieldateien zu verändern.'
+                      : 'Dieser Lauf führt den Workflow tatsächlich aus. Bereits erfolgte Dateiänderungen bleiben auch nach einem Stopp bestehen.'}
+                </p>
+                {zustand.phase === 'stoppt' && (
+                  <p className="lauf-stopp-hinweis">
+                    Der Stopp ist angefordert. Der Prozess ist noch nicht beendet.
+                  </p>
+                )}
+                {fehler}
+              </div>
               {aktiv && fortschritt && (
                 <p className="lauf-fortschritt">
                   {fortschritt.erledigt as number}
@@ -558,7 +585,6 @@ export function Testbereich(props: TestbereichEigenschaften) {
                   ))}
                 </dl>
               )}
-              {fehler}
               <div className="knopfgruppe umbrechen">
                 <Knopf onClick={() => ansichtWechseln('ergebnisse')}>Ergebnisse prüfen</Knopf>
                 <Knopf variante="leise" onClick={() => ansichtWechseln('protokoll')}>
@@ -648,7 +674,10 @@ export function Testbereich(props: TestbereichEigenschaften) {
         >
           <h3>Ergebnisse dieses Laufs</h3>
           {!hatLauf ? (
-            <p>Für diesen Workflow gibt es noch keine Läufe. Bereite zuerst einen Lauf vor.</p>
+            <p>
+              Für diesen Workflow gibt es noch keine Läufe. Starte ihn über „Workflow ausführen“ im
+              Workflowkopf.
+            </p>
           ) : !zustand.business ? (
             <>
               <p>
@@ -685,6 +714,10 @@ export function Testbereich(props: TestbereichEigenschaften) {
                   <p>
                     Die Vorschau zeigt höchstens 200 Zeilen. Die Gesamtzahl der Quelldaten ist hier nicht
                     bekannt.
+                  </p>
+                  <p>
+                    Quellpfade und Parameter änderst du unter „Daten und Parameter“ oder am Quellenbaustein.
+                    Diese Ansicht zeigt den Stand dieses Laufs.
                   </p>
                   <table>
                     <thead>

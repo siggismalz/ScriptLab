@@ -131,8 +131,10 @@ async function testordnerEntfernen(ordner: string): Promise<void> {
 }
 
 async function textgroesseSetzen(seite: Page, prozent: 100 | 200): Promise<void> {
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation' })
+    .getByRole('button', { name: 'Einstellungen', exact: true })
+    .click();
   const dialog = seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
   await dialog
     .getByRole('combobox', { name: 'Textgröße der Oberfläche', exact: true })

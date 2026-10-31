@@ -1,79 +1,113 @@
 .editor-navigation {
   display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-  gap: var(--abstand-16);
+  flex-direction: column;
   min-width: 0;
-  min-height: 48px;
-  padding: var(--abstand-4) var(--abstand-16);
-  border-block-end: 1px solid var(--farbe-trennung);
-  background: var(--farbe-navigation);
-  position: relative;
+  min-height: 0;
+  padding: var(--abstand-24) var(--abstand-12) var(--abstand-16);
+  background: var(--farbe-seitenleiste);
+  color: var(--farbe-auf-seitenleiste);
+  border-inline-end: 1px solid var(--farbe-seitenleiste-auswahl);
+  overflow: auto;
   z-index: 70;
+}
+.editor-navigation-marke {
+  padding: 0 var(--abstand-8) var(--abstand-32);
+  flex: 0 0 auto;
+}
+.editor-navigation .sl-marke-signet {
+  color: var(--farbe-auf-seitenleiste);
 }
 .editor-navigation-ziele {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--abstand-4);
   flex: 1;
-  min-width: 0;
+}
+.editor-navigation-gruppe {
+  font-size: calc(var(--schrift-meta) * var(--text-skala, 1));
+  color: var(--farbe-seitenleiste-sekundaer);
+  padding: 0 var(--abstand-12) var(--abstand-8);
 }
 .editor-navlink {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: var(--abstand-8);
-  min-height: 36px;
-  padding: var(--abstand-4) var(--abstand-8);
-  color: var(--farbe-text-sekundaer);
+  gap: var(--abstand-12);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--abstand-8) var(--abstand-12);
   background: transparent;
+  color: var(--farbe-seitenleiste-sekundaer);
   border: 1px solid transparent;
   border-radius: var(--radius-normal);
+  text-align: left;
   cursor: pointer;
   line-height: 1.5;
   white-space: nowrap;
 }
-.editor-navlink:hover {
-  background: var(--farbe-erhoeht);
-  color: var(--farbe-text);
+.editor-navlink:hover,
+.editor-navlink[aria-current] {
+  color: var(--farbe-auf-seitenleiste);
+  background: var(--farbe-seitenleiste-auswahl);
 }
 .editor-navlink[aria-current] {
-  color: var(--farbe-text);
-  background: var(--farbe-auswahl-flaeche);
-  border-color: var(--farbe-kontur);
+  font-weight: var(--gewicht-semibold);
+  border-color: var(--farbe-seitenleiste-kontur);
 }
-.editor-navlink--hilfe {
-  margin-inline-start: auto;
+.editor-navlink:focus-visible {
+  outline-color: var(--farbe-auf-seitenleiste);
+  outline-offset: -3px;
 }
-.editor-navigation .sl-menue-liste {
-  inset-inline-end: 0;
-  inset-inline-start: auto;
+.editor-navigation-unten {
+  display: flex;
+  flex-direction: column;
+  gap: var(--abstand-4);
+  margin-top: auto;
+  padding-top: var(--abstand-32);
 }
-@media (max-width: 1000px) {
-  .editor-navlink--hilfe,
-  .editor-navlink--unterstuetzung {
+@media (max-width: 1100px) {
+  .editor-navigation {
+    padding-inline: var(--abstand-8);
+  }
+  .editor-navigation-marke {
+    padding-inline: var(--abstand-12);
+  }
+  .editor-navigation .sl-marke > span:last-child,
+  .editor-navigation-gruppe,
+  .editor-navlink > span {
     display: none;
   }
+  .editor-navlink {
+    justify-content: center;
+    padding-inline: var(--abstand-8);
+  }
 }
-.anwendung[style*='--text-skala: 2'] .editor-navlink--hilfe,
-.anwendung[style*='--text-skala: 2'] .editor-navlink--unterstuetzung {
+.anwendung[data-grosser-text='true'] .editor-navigation {
+  padding-inline: var(--abstand-8);
+}
+.anwendung[data-grosser-text='true'] .editor-navigation-marke {
+  padding-inline: var(--abstand-12);
+}
+.anwendung[data-grosser-text='true'] .editor-navigation .sl-marke > span:last-child,
+.anwendung[data-grosser-text='true'] .editor-navigation-gruppe,
+.anwendung[data-grosser-text='true'] .editor-navlink > span {
   display: none;
 }
-@media (max-width: 760px) {
-  .editor-navigation {
-    gap: var(--abstand-8);
-    flex-wrap: wrap;
-  }
-  .editor-navigation > .sl-marke {
-    margin-inline-end: auto;
-  }
-  .editor-navigation-ziele {
-    flex: 1 0 100%;
-    order: 1;
-    flex-wrap: wrap;
-  }
+.anwendung[data-grosser-text='true'] .editor-navlink {
+  justify-content: center;
+  padding-inline: var(--abstand-8);
 }
 @media (forced-colors: active) {
+  .editor-navigation .sl-marke-signet {
+    color: CanvasText;
+  }
+  .editor-navigation {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+  .editor-navlink {
+    color: ButtonText;
+  }
   .editor-navlink[aria-current] {
     color: Highlight;
     border-color: Highlight;

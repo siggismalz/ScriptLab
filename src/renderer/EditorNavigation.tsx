@@ -1,70 +1,83 @@
 import { Marke } from './komponenten/Marke';
-import { Symbol } from './komponenten/Icon';
-import { Menue } from './komponenten/Menue';
+import { Symbol, type SymbolName } from './komponenten/Icon';
 import './editor-navigation.css';
 
 type GlobalesZiel = 'start' | 'projekte' | 'beispiele' | 'hilfe';
+const hauptziele: { id: GlobalesZiel; text: string; symbol: SymbolName }[] = [
+  { id: 'start', text: 'Start', symbol: 'bausteine' },
+  { id: 'projekte', text: 'Workflows', symbol: 'oeffnen' },
+  { id: 'beispiele', text: 'Vorlagen', symbol: 'buch' },
+];
 
-/** Globale Ziele bleiben von den Arbeitsbereichen des geöffneten Workflows getrennt. */
+/** Dieselbe globale Orientierung in Bibliothek und Editor, unabhängig vom geöffneten Arbeitsstand. */
 export function EditorNavigation({
+  aktiv = 'projekte',
   navigieren,
   einstellungen,
   ueber,
 }: {
+  aktiv?: GlobalesZiel;
   navigieren: (ziel: GlobalesZiel) => void;
   einstellungen: () => void;
   ueber: () => void;
 }) {
   return (
-    <div className="editor-navigation">
-      <Marke kompakt />
+    <aside className="editor-navigation">
+      <div className="editor-navigation-marke" aria-label="ScriptLab">
+        <Marke kompakt />
+      </div>
       <nav aria-label="Globale Navigation" className="editor-navigation-ziele">
-        <button type="button" className="editor-navlink" onClick={() => navigieren('start')}>
-          <Symbol name="bausteine" />
-          <span>Start</span>
-        </button>
-        <button
-          type="button"
-          className="editor-navlink"
-          aria-current="location"
-          onClick={() => navigieren('projekte')}
-        >
-          <Symbol name="oeffnen" />
-          <span>Workflows</span>
-        </button>
-        <button type="button" className="editor-navlink" onClick={() => navigieren('beispiele')}>
-          <Symbol name="buch" />
-          <span>Vorlagen</span>
-        </button>
-        <button
-          type="button"
-          className="editor-navlink editor-navlink--hilfe"
-          onClick={() => navigieren('hilfe')}
-        >
-          <Symbol name="buch" />
-          <span>Hilfe</span>
-        </button>
-        <button
-          type="button"
-          className="editor-navlink editor-navlink--unterstuetzung"
-          onClick={einstellungen}
-        >
-          <Symbol name="einstellungen" />
-          <span>Einstellungen</span>
-        </button>
+        <span className="editor-navigation-gruppe" aria-hidden="true">
+          Arbeitsbereich
+        </span>
+        {hauptziele.map((ziel) => (
+          <button
+            key={ziel.id}
+            type="button"
+            className="editor-navlink"
+            aria-label={ziel.text}
+            title={ziel.text}
+            aria-current={aktiv === ziel.id ? 'location' : undefined}
+            onClick={() => navigieren(ziel.id)}
+          >
+            <Symbol name={ziel.symbol} />
+            <span>{ziel.text}</span>
+          </button>
+        ))}
+        <div className="editor-navigation-unten">
+          <button
+            type="button"
+            className="editor-navlink"
+            aria-label="Hilfe"
+            title="Hilfe"
+            aria-current={aktiv === 'hilfe' ? 'location' : undefined}
+            onClick={() => navigieren('hilfe')}
+          >
+            <Symbol name="buch" />
+            <span>Hilfe</span>
+          </button>
+          <button
+            type="button"
+            className="editor-navlink"
+            aria-label="Einstellungen"
+            title="Einstellungen"
+            onClick={einstellungen}
+          >
+            <Symbol name="einstellungen" />
+            <span>Einstellungen</span>
+          </button>
+          <button
+            type="button"
+            className="editor-navlink"
+            aria-label="Über ScriptLab"
+            title="Über ScriptLab"
+            onClick={ueber}
+          >
+            <Symbol name="info" />
+            <span>Über ScriptLab</span>
+          </button>
+        </div>
       </nav>
-      <Menue
-        beschriftung="Bereiche"
-        symbol="unten"
-        eintraege={[
-          { text: 'Start', aktion: () => navigieren('start') },
-          { text: 'Workflows', symbol: 'oeffnen', aktion: () => navigieren('projekte') },
-          { text: 'Vorlagen', symbol: 'bausteine', aktion: () => navigieren('beispiele') },
-          { text: 'Hilfe', symbol: 'buch', aktion: () => navigieren('hilfe') },
-          { text: 'Einstellungen', symbol: 'einstellungen', aktion: einstellungen },
-          { text: 'Über ScriptLab', symbol: 'info', aktion: ueber },
-        ]}
-      />
-    </div>
+    </aside>
   );
 }

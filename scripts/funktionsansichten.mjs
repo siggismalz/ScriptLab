@@ -145,8 +145,10 @@ try {
       }
     })
     .toBeGreaterThan(0);
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Einstellungen', exact: true })
+    .click();
   await seite.getByLabel('Farbschema', { exact: true }).selectOption('hell');
   await seite.getByRole('button', { name: 'Fertig', exact: true }).click();
   await seite.getByRole('button', { name: /^Alle Läufe/ }).click();

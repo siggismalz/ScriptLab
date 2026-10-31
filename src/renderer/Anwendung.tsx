@@ -108,6 +108,8 @@ export function Anwendung() {
   arbeitsbereichRef.current = arbeitsbereich;
   const testSperre = useRef(false);
   const testAnfrage = useRef(false);
+  const laufAktionen = useRef<HTMLElement>(null);
+  const laufAktionsFokus = useRef<HTMLElement | null>(null);
   const testInhalt = useRef<string | null>(null);
   const [ansicht, setAnsicht] = useState<'start' | 'editor'>('start');
   const [editorBegonnen, setEditorBegonnen] = useState(false);
@@ -740,6 +742,9 @@ export function Anwendung() {
     return antwort(await window.scriptlab.quelleWaehlen(blockId, feldPfad));
   }
   function testUebernehmen(neu: TestZustand) {
+    const fokussiert = document.activeElement;
+    laufAktionsFokus.current =
+      fokussiert instanceof HTMLElement && laufAktionen.current?.contains(fokussiert) ? fokussiert : null;
     const sperren = testAktiv(neu.phase);
     testSperre.current = sperren;
     const ws = wsRef.current;
@@ -750,6 +755,14 @@ export function Anwendung() {
     }
     setTest(neu);
   }
+  useLayoutEffect(() => {
+    const vorher = laufAktionsFokus.current;
+    laufAktionsFokus.current = null;
+    if (!vorher || (vorher.isConnected && !vorher.matches(':disabled'))) return;
+    // Der Startknopf wird beim Start durch den tatsächlichen Laufstatus ersetzt.
+    const ziel = laufAktionen.current?.querySelector<HTMLElement>('[data-laufaktion]:not(:disabled)');
+    (ziel ?? laufAktionen.current)?.focus({ preventScroll: true });
+  }, [test.phase]);
   async function testStarten(direkt = false) {
     if (testAnfrage.current || testSperre.current || busy.current) return;
     setVorschauOffen(false);
@@ -1218,7 +1231,12 @@ export function Anwendung() {
         );
         return;
       }
-      if (!editorSichtbar.current || ziel.matches?.('input,textarea,select') || ziel.isContentEditable)
+      if (
+        !editorSichtbar.current ||
+        arbeitsbereichRef.current !== 'ablauf' ||
+        ziel.matches?.('input,textarea,select') ||
+        ziel.isContentEditable
+      )
         return;
       if (event.ctrlKey && ['z', 'y'].includes(event.key.toLowerCase())) {
         event.preventDefault();
@@ -1293,7 +1311,7 @@ export function Anwendung() {
     '--breite-palette': einstellungen.paletteEingeklappt ? '48px' : `${einstellungen.palettenBreite}px`,
   } as CSSProperties;
   return (
-    <div className="anwendung" style={style}>
+    <div className="anwendung" style={style} data-grosser-text={einstellungen.textSkalierung >= 1.5}>
       <div className="start-ansicht" hidden={ansicht !== 'start'}>
         <Startbereich
           daten={bibliothek}
@@ -1351,736 +1369,746 @@ export function Anwendung() {
           einstellungen={() => setDialog('einstellungen')}
           ueber={() => setDialog('ueber')}
         />
-        <header className="workflow-kopf">
-          <div className="workflow-identitaet">
-            <h1 title={projekt.name}>{projekt.name}</h1>
-            <p aria-label="Projektstatus" role="status">
-              {geaendert
-                ? 'Ungespeicherte Änderungen'
-                : datei
-                  ? 'Gespeichert'
-                  : 'Noch nicht als Datei gespeichert'}
-            </p>
-          </div>
-          <span
-            className="skriptsprache-kennzeichen"
-            data-testid="editor-sprache"
-            aria-label="Skriptsprache des Workflows"
-          >
-            {sprache.bezeichnung}
-          </span>
-          <nav className="workflow-aktionen" aria-label="Projektaktionen">
-            <Knopf
-              symbol="speichern"
-              variante="leise"
-              disabled={!!verarbeitung || testAktiv(test.phase)}
-              grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
-              onClick={() => void projektAktion('speichern')}
+        <div className="workflow-arbeitsplatz">
+          <header className="workflow-kopf">
+            <div className="workflow-identitaet">
+              <h1 title={projekt.name}>{projekt.name}</h1>
+              <p aria-label="Projektstatus" role="status">
+                {geaendert
+                  ? 'Ungespeicherte Änderungen'
+                  : datei
+                    ? 'Gespeichert'
+                    : 'Noch nicht als Datei gespeichert'}
+              </p>
+            </div>
+            <span
+              className="skriptsprache-kennzeichen"
+              data-testid="editor-sprache"
+              aria-label="Skriptsprache des Workflows"
             >
-              Speichern
-            </Knopf>
-            {arbeitsbereich === 'ablauf' && !testAktiv(test.phase) && (
+              {sprache.bezeichnung}
+            </span>
+            <nav ref={laufAktionen} tabIndex={-1} className="workflow-aktionen" aria-label="Projektaktionen">
               <Knopf
-                variante="primaer"
-                symbol="testen"
-                disabled={!!verarbeitung}
-                grundId="status-aktion"
-                onClick={() => void testStarten(true)}
+                symbol="speichern"
+                aria-label="Speichern"
+                title="Speichern (Strg+S)"
+                variante="leise"
+                disabled={!!verarbeitung || testAktiv(test.phase)}
+                grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
+                onClick={() => void projektAktion('speichern')}
               >
-                Workflow ausführen
+                Speichern
               </Knopf>
-            )}
-            {testAktiv(test.phase) && (
-              <>
-                <span id="test-sperrhinweis" className="test-kurzstatus" role="status">
-                  {test.phase === 'vorbereitung'
-                    ? 'Wird vorbereitet'
-                    : test.phase === 'stoppt'
-                      ? 'Wird gestoppt'
-                      : 'Lauf läuft'}
-                  <span className="sl-nur-vorlesen">
-                    . Änderungen und ein weiterer Start sind bis zum Laufende gesperrt.
+              {!testAktiv(test.phase) && (
+                <Knopf
+                  variante="primaer"
+                  symbol="testen"
+                  data-laufaktion
+                  disabled={!!verarbeitung}
+                  grundId="status-aktion"
+                  onClick={() => void testStarten(true)}
+                >
+                  Workflow ausführen
+                </Knopf>
+              )}
+              {testAktiv(test.phase) && (
+                <>
+                  <span id="test-sperrhinweis" className="test-kurzstatus" role="status">
+                    {test.phase === 'vorbereitung'
+                      ? 'Wird vorbereitet'
+                      : test.phase === 'stoppt'
+                        ? 'Wird gestoppt'
+                        : 'Lauf läuft'}
+                    <span className="sl-nur-vorlesen">
+                      . Änderungen und ein weiterer Start sind bis zum Laufende gesperrt.
+                    </span>
                   </span>
-                </span>
-                {arbeitsbereich !== 'laeufe' && (
-                  <Knopf
-                    variante="gefahr"
-                    symbol="stoppen"
-                    disabled={test.phase === 'stoppt'}
-                    grundId="test-sperrhinweis"
-                    onClick={() => void testStoppen()}
-                  >
-                    Stoppen
-                  </Knopf>
-                )}
-              </>
-            )}
-            <Knopf
-              symbol="exportieren"
-              variante="leise"
-              disabled={!!verarbeitung || testAktiv(test.phase)}
-              grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
-              onClick={() => setDialog('export')}
-            >
-              Exportieren
-            </Knopf>
-          </nav>
-        </header>
-        <div className="workflow-navigation">
-          <Arbeitsbereiche wert={arbeitsbereich} setzen={setArbeitsbereich} />
-          <nav className="werkzeugleiste" aria-label="Bearbeitungswerkzeuge">
-            <div className="knopfgruppe">
+                  {arbeitsbereich !== 'laeufe' && (
+                    <Knopf
+                      variante="gefahr"
+                      symbol="stoppen"
+                      data-laufaktion
+                      disabled={test.phase === 'stoppt'}
+                      grundId="test-sperrhinweis"
+                      onClick={() => void testStoppen()}
+                    >
+                      Stoppen
+                    </Knopf>
+                  )}
+                </>
+              )}
+              <Knopf
+                symbol="exportieren"
+                aria-label="Exportieren"
+                title="Exportieren"
+                variante="leise"
+                disabled={!!verarbeitung || testAktiv(test.phase)}
+                grundId={testAktiv(test.phase) ? 'test-sperrhinweis' : 'status-aktion'}
+                onClick={() => setDialog('export')}
+              >
+                Exportieren
+              </Knopf>
+            </nav>
+          </header>
+          <div className="workflow-navigation">
+            <Arbeitsbereiche wert={arbeitsbereich} setzen={setArbeitsbereich} />
+            <nav className="werkzeugleiste" aria-label="Bearbeitungswerkzeuge">
+              <div className="knopfgruppe">
+                <Menue
+                  beschriftung="Workflow"
+                  symbol="unten"
+                  eintraege={[
+                    {
+                      text: 'Neuer Workflow',
+                      symbol: 'neu',
+                      aktion: () => void projektAktion('neu'),
+                    },
+                    {
+                      text: 'Workflow öffnen',
+                      symbol: 'oeffnen',
+                      aktion: () => void projektAktion('oeffnen'),
+                    },
+                    {
+                      text: 'Kopie anlegen',
+                      symbol: 'speichern',
+                      gesperrt: testAktiv(test.phase),
+                      grund: 'Stoppe den Lauf vor dem Speichern.',
+                      aktion: () => void projektAktion('unter'),
+                    },
+                    {
+                      text: 'Als Entwurf sichern',
+                      symbol: 'entwurf',
+                      aktion: () => void entwurfJetztSichern(),
+                    },
+                    {
+                      text: 'Projektangaben',
+                      symbol: 'info',
+                      gesperrt: testAktiv(test.phase),
+                      grund: 'Stoppe den Lauf vor Änderungen.',
+                      aktion: () => setDialog('projekt'),
+                    },
+                    {
+                      text: 'Workflowparameter',
+                      gesperrt: testAktiv(test.phase),
+                      grund: 'Stoppe den Lauf vor Änderungen.',
+                      aktion: () => {
+                        setArbeitsbereich('daten');
+                        setDialog('parameter');
+                      },
+                    },
+                  ]}
+                />
+              </div>
+              {arbeitsbereich === 'ablauf' && (
+                <>
+                  <span className="werkzeug-trenner" />
+                  <div className="knopfgruppe">
+                    <Knopf
+                      variante="leise"
+                      symbol="rueckgaengig"
+                      aria-label="Rückgängig"
+                      disabled={testAktiv(test.phase)}
+                      grundId="test-sperrhinweis"
+                      title="Rückgängig (Strg+Z)"
+                      onClick={() => wsRef.current && void verlaufAendern(wsRef.current)}
+                    />
+                    <Knopf
+                      variante="leise"
+                      symbol="wiederholen"
+                      aria-label="Wiederholen"
+                      disabled={testAktiv(test.phase)}
+                      grundId="test-sperrhinweis"
+                      title="Wiederholen (Strg+Y)"
+                      onClick={() => wsRef.current && void verlaufAendern(wsRef.current, true)}
+                    />
+                  </div>
+                  <div className="knopfgruppe ansichtknopfgruppe">
+                    <Knopf
+                      variante="leise"
+                      symbol="eigenschaften"
+                      aria-label="Eigenschaften"
+                      aria-pressed={eigenschaftenOffen}
+                      onClick={() =>
+                        eigenschaftenOffen ? eigenschaftenSchliessen() : eigenschaftenOeffnen()
+                      }
+                    >
+                      Eigenschaften
+                    </Knopf>
+                  </div>
+                </>
+              )}
               <Menue
-                beschriftung="Workflow"
+                beschriftung="Ansicht"
                 symbol="unten"
                 eintraege={[
                   {
-                    text: 'Neuer Workflow',
-                    symbol: 'neu',
-                    aktion: () => void projektAktion('neu'),
-                  },
-                  {
-                    text: 'Workflow öffnen',
-                    symbol: 'oeffnen',
-                    aktion: () => void projektAktion('oeffnen'),
-                  },
-                  {
-                    text: 'Kopie anlegen',
-                    symbol: 'speichern',
-                    gesperrt: testAktiv(test.phase),
-                    grund: 'Stoppe den Lauf vor dem Speichern.',
-                    aktion: () => void projektAktion('unter'),
-                  },
-                  {
-                    text: 'Als Entwurf sichern',
-                    symbol: 'entwurf',
-                    aktion: () => void entwurfJetztSichern(),
-                  },
-                  {
-                    text: 'Projektangaben',
-                    symbol: 'info',
-                    gesperrt: testAktiv(test.phase),
-                    grund: 'Stoppe den Lauf vor Änderungen.',
-                    aktion: () => setDialog('projekt'),
-                  },
-                  {
-                    text: 'Workflowparameter',
-                    gesperrt: testAktiv(test.phase),
-                    grund: 'Stoppe den Lauf vor Änderungen.',
+                    text: vorschauOffen ? 'Codevorschau schließen' : 'Codevorschau öffnen',
+                    symbol: 'code',
                     aktion: () => {
-                      setArbeitsbereich('daten');
-                      setDialog('parameter');
+                      setArbeitsbereich('ablauf');
+                      setVorschauOffen(!vorschauOffen);
+                    },
+                  },
+
+                  {
+                    text: 'Ansicht zurücksetzen',
+                    aktion: () => {
+                      setEigenschaftenOffen(false);
+                      setVorschauOffen(false);
+                      setHinweiseOffen(false);
+                      void einstellungenSetzen({
+                        ...einstellungenRef.current,
+                        palettenBreite: 272,
+                        paletteEingeklappt: false,
+                        eigenschaftenAngeheftet: false,
+                      });
                     },
                   },
                 ]}
               />
-            </div>
-            {arbeitsbereich === 'ablauf' && (
-              <>
-                <span className="werkzeug-trenner" />
-                <div className="knopfgruppe">
-                  <Knopf
-                    variante="leise"
-                    symbol="rueckgaengig"
-                    aria-label="Rückgängig"
-                    disabled={testAktiv(test.phase)}
-                    grundId="test-sperrhinweis"
-                    title="Rückgängig (Strg+Z)"
-                    onClick={() => wsRef.current && void verlaufAendern(wsRef.current)}
-                  />
-                  <Knopf
-                    variante="leise"
-                    symbol="wiederholen"
-                    aria-label="Wiederholen"
-                    disabled={testAktiv(test.phase)}
-                    grundId="test-sperrhinweis"
-                    title="Wiederholen (Strg+Y)"
-                    onClick={() => wsRef.current && void verlaufAendern(wsRef.current, true)}
-                  />
-                </div>
-                <div className="knopfgruppe ansichtknopfgruppe">
-                  <Knopf
-                    variante="leise"
-                    symbol="eigenschaften"
-                    aria-label="Eigenschaften"
-                    aria-pressed={eigenschaftenOffen}
-                    onClick={() => (eigenschaftenOffen ? eigenschaftenSchliessen() : eigenschaftenOeffnen())}
-                  >
-                    Eigenschaften
-                  </Knopf>
-                </div>
-              </>
-            )}
-            <Menue
-              beschriftung="Ansicht"
-              symbol="unten"
-              eintraege={[
-                {
-                  text: vorschauOffen ? 'Codevorschau schließen' : 'Codevorschau öffnen',
-                  symbol: 'code',
-                  aktion: () => {
-                    setArbeitsbereich('ablauf');
-                    setVorschauOffen(!vorschauOffen);
-                  },
-                },
-
-                {
-                  text: 'Ansicht zurücksetzen',
-                  aktion: () => {
-                    setEigenschaftenOffen(false);
-                    setVorschauOffen(false);
-                    setHinweiseOffen(false);
+            </nav>
+          </div>
+          <div
+            className="workflow-panel workflow-panel--ablauf"
+            id="workflow-ablauf"
+            role="tabpanel"
+            aria-labelledby="bereich-ablauf"
+            hidden={arbeitsbereich !== 'ablauf'}
+          >
+            <LaufKurzansicht
+              zustand={
+                test.projektKennung && test.projektKennung !== projekt.projektKennung ? testBereit() : test
+              }
+              veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
+              details={() => {
+                setLaufDetailsAnfrage((n) => n + 1);
+                setArbeitsbereich('laeufe');
+              }}
+              blockAnzeigen={(id) => blockAnzeigen(id)}
+            />
+            <main className={`arbeitszeile ${angeheftet ? 'mit-eigenschaften' : ''}`}>
+              <div className="test-palette" inert={testAktiv(test.phase)}>
+                <Palette
+                  sprache={projekt.skriptsprache}
+                  workflowArt={projekt.workflowArt}
+                  ws={workspace}
+                  eingeklappt={einstellungen.paletteEingeklappt}
+                  umschalten={() =>
                     void einstellungenSetzen({
                       ...einstellungenRef.current,
-                      palettenBreite: 272,
-                      paletteEingeklappt: false,
-                      eigenschaftenAngeheftet: false,
-                    });
-                  },
-                },
-              ]}
-            />
-          </nav>
-        </div>
-        <div
-          className="workflow-panel workflow-panel--ablauf"
-          id="workflow-ablauf"
-          role="tabpanel"
-          aria-labelledby="bereich-ablauf"
-          hidden={arbeitsbereich !== 'ablauf'}
-        >
-          <LaufKurzansicht
-            zustand={
-              test.projektKennung && test.projektKennung !== projekt.projektKennung ? testBereit() : test
-            }
-            veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
-            details={() => {
-              setLaufDetailsAnfrage((n) => n + 1);
-              setArbeitsbereich('laeufe');
-            }}
-            blockAnzeigen={(id) => blockAnzeigen(id)}
-          />
-          <main className={`arbeitszeile ${angeheftet ? 'mit-eigenschaften' : ''}`}>
-            <div className="test-palette" inert={testAktiv(test.phase)}>
-              <Palette
-                sprache={projekt.skriptsprache}
-                workflowArt={projekt.workflowArt}
-                ws={workspace}
-                eingeklappt={einstellungen.paletteEingeklappt}
-                umschalten={() =>
-                  void einstellungenSetzen({
-                    ...einstellungenRef.current,
-                    paletteEingeklappt: !einstellungenRef.current.paletteEingeklappt,
-                  })
-                }
-                platzierung={platzierung}
-                ziele={ziele}
-                einfuegen={(typ) => platzierungStarten('einfuegen', typ)}
-                zielWaehlen={zielWaehlen}
-                abbrechen={() => {
-                  setPlatzierung(null);
-                  platzierungRef.current = null;
-                  melden('Einfügen abgebrochen.');
-                }}
-                blockAuswaehlen={auswaehlen}
-                meldung={melden}
-              />
-            </div>
-            <div
-              className="paletten-trenner"
-              role="separator"
-              tabIndex={0}
-              aria-label="Breite der Bausteinpalette"
-              aria-orientation="vertical"
-              aria-valuemin={240}
-              aria-valuemax={400}
-              aria-valuenow={einstellungen.palettenBreite}
-              onPointerDown={paletteGroesseStarten}
-              onKeyDown={(e) => {
-                if (['ArrowLeft', 'ArrowRight', 'Home'].includes(e.key)) {
-                  e.preventDefault();
-                  void einstellungenSetzen({
-                    ...einstellungenRef.current,
-                    palettenBreite:
-                      e.key === 'Home'
-                        ? 272
-                        : Math.max(
-                            240,
-                            Math.min(
-                              400,
-                              einstellungenRef.current.palettenBreite + (e.key === 'ArrowRight' ? 16 : -16),
-                            ),
-                          ),
-                  });
-                }
-              }}
-            />
-            <section className="editor-mitte" aria-label="Workflow bearbeiten">
-              <div
-                className="canvas-bereich"
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  const datei = Array.from(e.dataTransfer.types).includes('Files');
-                  const erlaubt = datei && !testSperre.current && !testAnfrage.current && !busy.current;
-                  e.dataTransfer.dropEffect = erlaubt ? 'copy' : 'none';
-                  e.currentTarget.classList.toggle('dateiablage-aktiv', erlaubt);
-                }}
-                onDragLeave={(e) => {
-                  if (!(e.relatedTarget instanceof Node) || !e.currentTarget.contains(e.relatedTarget))
-                    e.currentTarget.classList.remove('dateiablage-aktiv');
-                }}
-                onDrop={dateiAufCanvasAblegen}
-              >
-                <div
-                  ref={element}
-                  data-testid="arbeitsbereich"
-                  className={`blockly-editor ${platzierung ? 'wartet-auf-ziel' : ''}`}
-                  tabIndex={-1}
-                  aria-label="Arbeitsbereich"
-                  onPointerUp={(e) => {
-                    if (testSperre.current) {
-                      const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
-                      if (id) {
-                        auswaehlen(id);
-                        wsRef.current?.getBlockById(id)?.select();
-                      }
-                      return;
-                    }
-                    if (!platzierungRef.current) return;
-                    const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
-                    if (id) {
-                      const passend = einfuegestellenLesen(
-                        wsRef.current!,
-                        platzierungRef.current.typOderId,
-                      ).filter((z) => z.blockId === id);
-                      if (passend.length === 1) zielWaehlen(passend[0]);
-                      else if (passend.length) {
-                        setZiele(passend);
-                        melden('Wähle links den gewünschten Anschluss dieses Bausteins.');
-                      }
-                    }
+                      paletteEingeklappt: !einstellungenRef.current.paletteEingeklappt,
+                    })
+                  }
+                  platzierung={platzierung}
+                  ziele={ziele}
+                  einfuegen={(typ) => platzierungStarten('einfuegen', typ)}
+                  zielWaehlen={zielWaehlen}
+                  abbrechen={() => {
+                    setPlatzierung(null);
+                    platzierungRef.current = null;
+                    melden('Einfügen abgebrochen.');
                   }}
+                  blockAuswaehlen={auswaehlen}
+                  meldung={melden}
                 />
-                {nurStart && !platzierung && (
-                  <div className="naechster-schritt">
-                    <p>Füge links einen Baustein hinzu.</p>
-                    <Knopf variante="leise" onClick={() => void projektAktion('begruessung')}>
-                      Beispiel öffnen
-                    </Knopf>
-                  </div>
-                )}
-                <div className="canvas-werkzeuge">
-                  <div className="ansichtsteuerung">
-                    <Menue
-                      beschriftung="Arbeitsbereich verschieben"
-                      nurSymbol
-                      symbol="verschieben"
-                      eintraege={(['links', 'rechts', 'oben', 'unten'] as const).map((name, index) => ({
-                        text: `Nach ${name}`,
-                        symbol: name,
-                        aktion: () =>
-                          verschieben(
-                            index === 0 ? 100 : index === 1 ? -100 : 0,
-                            index === 2 ? 100 : index === 3 ? -100 : 0,
-                          ),
-                      }))}
-                    />
-                  </div>
-                  <div className="zoom" aria-label="Zoom im Arbeitsbereich">
-                    <Knopf
-                      variante="leise"
-                      symbol="minus"
-                      aria-label="Verkleinern"
-                      title="Verkleinern"
-                      onClick={() => wsRef.current?.zoomCenter(-1)}
-                    />
-                    <Knopf
-                      variante="leise"
-                      aria-label="Zoom auf 100 Prozent zurücksetzen"
-                      onClick={() => wsRef.current?.setScale(1)}
-                    >
-                      {Math.round(projekt.ansicht.zoom * 100)} %
-                    </Knopf>
-                    <Knopf
-                      variante="leise"
-                      symbol="plus"
-                      aria-label="Vergrößern"
-                      title="Vergrößern"
-                      onClick={() => wsRef.current?.zoomCenter(1)}
-                    />
-                    <Knopf
-                      variante="leise"
-                      symbol="einpassen"
-                      aria-label="Alles anzeigen"
-                      title="Alles anzeigen"
-                      onClick={() => wsRef.current?.zoomToFit()}
-                    >
-                      Alles anzeigen
-                    </Knopf>
-                  </div>
-                </div>
-                {exportiert && (
-                  <section className="export-rueckmeldung" role="status" aria-label="Export abgeschlossen">
-                    <div>
-                      <h3>Export erstellt</h3>
-                      <p>
-                        {exportiert.dateiname.endsWith('.scriptlab')
-                          ? 'Die Projektkopie lässt sich in ScriptLab öffnen und weiterbearbeiten.'
-                          : exportiert.dateiname.endsWith('.zip')
-                            ? 'Das Business-Paket enthält den Workflow und die benötigten Begleitdateien.'
-                            : 'Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.'}
-                      </p>
-                      {projekt.skriptsprache === 'vbs' && exportiert.signatur && (
-                        <p
-                          className={
-                            exportiert.signatur.status === 'vertrauen-offen'
-                              ? 'text-hinweis'
-                              : 'text-sekundaer'
-                          }
-                        >
-                          {exportiert.signatur.meldung}
-                        </p>
-                      )}
-                      <Knopf
-                        onClick={() =>
-                          void aktion('Speicherordner wird angezeigt …', async () => {
-                            antwort(await window.scriptlab.exportOrdnerAnzeigen());
-                          })
-                        }
-                      >
-                        Speicherordner anzeigen
-                      </Knopf>
-                    </div>
-                    <Knopf
-                      variante="leise"
-                      symbol="schliessen"
-                      aria-label="Exportmeldung schließen"
-                      onClick={() => setExportiert(null)}
-                    />
-                  </section>
-                )}
               </div>
-              {vorschauOffen && (
-                <section
-                  className="code-panel"
-                  data-testid="code-panel"
-                  aria-label={sprache.vorschauTitel}
-                  style={{ height: codeHoehe }}
+              <div
+                className="paletten-trenner"
+                role="separator"
+                tabIndex={0}
+                aria-label="Breite der Bausteinpalette"
+                aria-orientation="vertical"
+                aria-valuemin={240}
+                aria-valuemax={400}
+                aria-valuenow={einstellungen.palettenBreite}
+                onPointerDown={paletteGroesseStarten}
+                onKeyDown={(e) => {
+                  if (['ArrowLeft', 'ArrowRight', 'Home'].includes(e.key)) {
+                    e.preventDefault();
+                    void einstellungenSetzen({
+                      ...einstellungenRef.current,
+                      palettenBreite:
+                        e.key === 'Home'
+                          ? 272
+                          : Math.max(
+                              240,
+                              Math.min(
+                                400,
+                                einstellungenRef.current.palettenBreite + (e.key === 'ArrowRight' ? 16 : -16),
+                              ),
+                            ),
+                    });
+                  }
+                }}
+              />
+              <section className="editor-mitte" aria-label="Workflow bearbeiten">
+                <div
+                  className="canvas-bereich"
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    const datei = Array.from(e.dataTransfer.types).includes('Files');
+                    const erlaubt = datei && !testSperre.current && !testAnfrage.current && !busy.current;
+                    e.dataTransfer.dropEffect = erlaubt ? 'copy' : 'none';
+                    e.currentTarget.classList.toggle('dateiablage-aktiv', erlaubt);
+                  }}
+                  onDragLeave={(e) => {
+                    if (!(e.relatedTarget instanceof Node) || !e.currentTarget.contains(e.relatedTarget))
+                      e.currentTarget.classList.remove('dateiablage-aktiv');
+                  }}
+                  onDrop={dateiAufCanvasAblegen}
                 >
                   <div
-                    role="separator"
-                    className="code-trenner"
-                    tabIndex={0}
-                    aria-label="Höhe der Codevorschau"
-                    aria-orientation="horizontal"
-                    aria-valuemin={140}
-                    aria-valuemax={Math.floor(window.innerHeight * 0.65)}
-                    aria-valuenow={Math.round(codeHoehe)}
-                    onPointerDown={codeGroesseStarten}
-                    onKeyDown={(e) => {
-                      if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
-                        e.preventDefault();
-                        setCodeHoehe((h) =>
-                          Math.max(
-                            140,
-                            Math.min(window.innerHeight * 0.65, h + (e.key === 'ArrowUp' ? 24 : -24)),
-                          ),
-                        );
+                    ref={element}
+                    data-testid="arbeitsbereich"
+                    className={`blockly-editor ${platzierung ? 'wartet-auf-ziel' : ''}`}
+                    tabIndex={-1}
+                    aria-label="Arbeitsbereich"
+                    onPointerUp={(e) => {
+                      if (testSperre.current) {
+                        const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
+                        if (id) {
+                          auswaehlen(id);
+                          wsRef.current?.getBlockById(id)?.select();
+                        }
+                        return;
+                      }
+                      if (!platzierungRef.current) return;
+                      const id = (e.target as Element).closest?.('[data-id]')?.getAttribute('data-id');
+                      if (id) {
+                        const passend = einfuegestellenLesen(
+                          wsRef.current!,
+                          platzierungRef.current.typOderId,
+                        ).filter((z) => z.blockId === id);
+                        if (passend.length === 1) zielWaehlen(passend[0]);
+                        else if (passend.length) {
+                          setZiele(passend);
+                          melden('Wähle links den gewünschten Anschluss dieses Bausteins.');
+                        }
                       }
                     }}
                   />
-                  <header className="panel-kopf">
-                    <h2>{sprache.vorschauTitel}</h2>
-                    <div className="knopfgruppe">
+                  {nurStart && !platzierung && (
+                    <div className="naechster-schritt">
+                      <p>Füge links einen Baustein hinzu.</p>
+                      <Knopf variante="leise" onClick={() => void projektAktion('begruessung')}>
+                        Beispiel öffnen
+                      </Knopf>
+                    </div>
+                  )}
+                  <div className="canvas-werkzeuge">
+                    <div className="ansichtsteuerung">
+                      <Menue
+                        beschriftung="Arbeitsbereich verschieben"
+                        nurSymbol
+                        symbol="verschieben"
+                        eintraege={(['links', 'rechts', 'oben', 'unten'] as const).map((name, index) => ({
+                          text: `Nach ${name}`,
+                          symbol: name,
+                          aktion: () =>
+                            verschieben(
+                              index === 0 ? 100 : index === 1 ? -100 : 0,
+                              index === 2 ? 100 : index === 3 ? -100 : 0,
+                            ),
+                        }))}
+                      />
+                    </div>
+                    <div className="zoom" aria-label="Zoom im Arbeitsbereich">
                       <Knopf
                         variante="leise"
-                        symbol="oben"
-                        aria-label="Codevorschau vergrößern"
-                        onClick={() => setCodeHoehe((h) => Math.min(window.innerHeight * 0.65, h + 48))}
+                        symbol="minus"
+                        aria-label="Verkleinern"
+                        title="Verkleinern"
+                        onClick={() => wsRef.current?.zoomCenter(-1)}
                       />
                       <Knopf
                         variante="leise"
-                        symbol="unten"
-                        aria-label="Codevorschau verkleinern"
-                        onClick={() => setCodeHoehe((h) => Math.max(140, h - 48))}
-                      />
-                      <Knopf
-                        variante="leise"
-                        aria-pressed={codeUmbruch}
-                        onClick={() => setCodeUmbruch(!codeUmbruch)}
+                        aria-label="Zoom auf 100 Prozent zurücksetzen"
+                        onClick={() => wsRef.current?.setScale(1)}
                       >
-                        Zeilen umbrechen
+                        {Math.round(projekt.ansicht.zoom * 100)} %
                       </Knopf>
                       <Knopf
                         variante="leise"
-                        symbol="schliessen"
-                        aria-label="Codevorschau schließen"
-                        onClick={() => setVorschauOffen(false)}
+                        symbol="plus"
+                        aria-label="Vergrößern"
+                        title="Vergrößern"
+                        onClick={() => wsRef.current?.zoomCenter(1)}
                       />
+                      <Knopf
+                        variante="leise"
+                        symbol="einpassen"
+                        aria-label="Alles anzeigen"
+                        title="Alles anzeigen"
+                        onClick={() => wsRef.current?.zoomToFit()}
+                      >
+                        Alles anzeigen
+                      </Knopf>
                     </div>
-                  </header>
-                  <p className="code-hinweis">Schreibgeschützt. Diese Vorschau führt keine Aktionen aus.</p>
-                  <pre
-                    tabIndex={0}
-                    className={`code ${codeUmbruch ? 'mit-umbruch' : ''}`}
-                    aria-label={`Schreibgeschützter ${sprache.vorschauTitel}`}
-                  >
-                    {ergebnis.code ??
-                      "' Vervollständige den Entwurf. Die Hinweise erklären fehlende Verbindungen."}
-                  </pre>
-                </section>
-              )}
-              {hinweiseOffen && (
-                <section
-                  className="hinweise-panel"
-                  data-testid="hinweise-panel"
-                  aria-label="Hinweise zum Workflow"
-                >
-                  <header className="panel-kopf">
-                    <h2>Hinweise zum Workflow</h2>
-                    <Knopf
-                      variante="leise"
-                      symbol="schliessen"
-                      aria-label="Hinweise schließen"
-                      onClick={() => setHinweiseOffen(false)}
-                    />
-                  </header>
-                  <div className="hinweise-liste">
-                    {ergebnis.meldungen.length ? (
-                      ergebnis.meldungen.map((m, i) => (
-                        <Knopf
-                          key={i}
-                          variante="leise"
-                          symbol={m.stufe === 'fehler' ? 'fehler' : 'hinweis'}
-                          onClick={() => blockAnzeigen(m.blockId, m.feldPfad)}
-                        >
-                          {m.text}
-                        </Knopf>
-                      ))
-                    ) : (
-                      <p>Der Workflow enthält keine erkannten Strukturfehler.</p>
-                    )}
                   </div>
-                </section>
-              )}
-            </section>
-            {eigenschaftenOffen && (
-              <Eigenschaften
-                vorschauOeffnen={schrittVorschauOeffnen}
-                vorschauHinweis={datenvorschauHinweis(projekt, auswahl)}
-                spaltenNachQuelle={spaltenNachQuelle}
-                parameterKontext={parameterKontext}
-                quelleWaehlen={quelleWaehlen}
-                feldFehler={ergebnis.meldungen.flatMap((m) =>
-                  m.blockId === auswahl && m.feldPfad ? [{ feldPfad: m.feldPfad, text: m.text }] : [],
-                )}
-                parameter={projekt.business.parameter}
-                ws={workspace}
-                blockId={auswahl}
-                angeheftet={einstellungen.eigenschaftenAngeheftet}
-                kannAnheften={kannAnheften}
-                anheften={() =>
-                  void einstellungenSetzen({
-                    ...einstellungenRef.current,
-                    eigenschaftenAngeheftet: !einstellungenRef.current.eigenschaftenAngeheftet,
-                  })
-                }
-                schliessen={eigenschaftenSchliessen}
-                verschieben={() => {
-                  if (auswahlRef.current) platzierungStarten('verschieben', auswahlRef.current);
-                  else melden('Wähle zuerst einen Baustein.');
-                }}
-                blockAktion={blockAktion}
-                schreibgeschuetzt={testAktiv(test.phase)}
-                beruehrt={(id) => setBeruehrt((alt) => new Set([...alt, id]))}
-              />
-            )}
-          </main>
-        </div>
-        <div
-          className="workflow-panel"
-          id="workflow-daten"
-          role="tabpanel"
-          aria-labelledby="bereich-daten"
-          hidden={arbeitsbereich !== 'daten'}
-        >
-          <Datenbereich
-            projekt={projekt}
-            workspace={workspace}
-            blockId={auswahl}
-            auswaehlen={auswaehlen}
-            aendern={(neu) => {
-              const satz = testOptionen.business?.parametersatz ?? 'test';
-              const vorher = projekt.business.parametersaetze[satz];
-              const nachher = neu.business.parametersaetze[satz];
-              const ersetzt = Object.keys(testOptionen.business?.parameter ?? {}).filter(
-                (name) =>
-                  Object.hasOwn(vorher, name) !== Object.hasOwn(nachher, name) ||
-                  vorher[name] !== nachher[name],
-              );
-              if (ersetzt.length)
-                setTestOptionen((alt) =>
-                  alt.business
-                    ? {
-                        ...alt,
-                        business: {
-                          ...alt.business,
-                          parameter: Object.fromEntries(
-                            Object.entries(alt.business.parameter).filter(
-                              ([name]) => !ersetzt.includes(name),
+                  {exportiert && (
+                    <section className="export-rueckmeldung" role="status" aria-label="Export abgeschlossen">
+                      <div>
+                        <h3>Export erstellt</h3>
+                        <p>
+                          {exportiert.dateiname.endsWith('.scriptlab')
+                            ? 'Die Projektkopie lässt sich in ScriptLab öffnen und weiterbearbeiten.'
+                            : exportiert.dateiname.endsWith('.zip')
+                              ? 'Das Business-Paket enthält den Workflow und die benötigten Begleitdateien.'
+                              : 'Das Script wurde gespeichert. Du kannst es außerhalb von ScriptLab selbst ausführen.'}
+                        </p>
+                        {projekt.skriptsprache === 'vbs' && exportiert.signatur && (
+                          <p
+                            className={
+                              exportiert.signatur.status === 'vertrauen-offen'
+                                ? 'text-hinweis'
+                                : 'text-sekundaer'
+                            }
+                          >
+                            {exportiert.signatur.meldung}
+                          </p>
+                        )}
+                        <Knopf
+                          onClick={() =>
+                            void aktion('Speicherordner wird angezeigt …', async () => {
+                              antwort(await window.scriptlab.exportOrdnerAnzeigen());
+                            })
+                          }
+                        >
+                          Speicherordner anzeigen
+                        </Knopf>
+                      </div>
+                      <Knopf
+                        variante="leise"
+                        symbol="schliessen"
+                        aria-label="Exportmeldung schließen"
+                        onClick={() => setExportiert(null)}
+                      />
+                    </section>
+                  )}
+                </div>
+                {vorschauOffen && (
+                  <section
+                    className="code-panel"
+                    data-testid="code-panel"
+                    aria-label={sprache.vorschauTitel}
+                    style={{ height: codeHoehe }}
+                  >
+                    <div
+                      role="separator"
+                      className="code-trenner"
+                      tabIndex={0}
+                      aria-label="Höhe der Codevorschau"
+                      aria-orientation="horizontal"
+                      aria-valuemin={140}
+                      aria-valuemax={Math.floor(window.innerHeight * 0.65)}
+                      aria-valuenow={Math.round(codeHoehe)}
+                      onPointerDown={codeGroesseStarten}
+                      onKeyDown={(e) => {
+                        if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+                          e.preventDefault();
+                          setCodeHoehe((h) =>
+                            Math.max(
+                              140,
+                              Math.min(window.innerHeight * 0.65, h + (e.key === 'ArrowUp' ? 24 : -24)),
                             ),
-                          ),
-                        },
-                      }
-                    : alt,
-                );
-              aendern(neu);
-            }}
-            gesperrt={testAktiv(test.phase)}
-            testZustand={test}
-            blockAnzeigen={blockAnzeigen}
-            veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
-            parameterOeffnen={() => setDialog('parameter')}
-            vorschauLaden={(id) => void datenvorschauLaden(id)}
-            vorschauen={aktuelleVorschauen}
-            spaltenNachQuelle={spaltenNachQuelle}
-            parameterKontext={parameterKontext}
-            quelleWaehlen={quelleWaehlen}
-            parameterZiel={parameterZiel}
-            feldZiel={feldZiel}
-            vorschauZiel={vorschauZiel}
-            vorschauBausteinAnzeigen={vorschauBausteinAnzeigen}
-            parametersatzWaehlen={(satz) =>
-              setTestOptionen((alt) => ({
-                ...alt,
-                business: {
-                  modus: 'prueflauf',
-                  speicherMB: 512,
-                  tempGB: 4,
-                  fortsetzen: false,
-                  ...alt.business,
-                  parametersatz: satz,
-                  parameter: {},
-                },
-              }))
-            }
-          />
-        </div>
-        <div
-          className="workflow-panel workflow-panel--laeufe"
-          id="workflow-laeufe"
-          role="tabpanel"
-          aria-labelledby="bereich-laeufe"
-          hidden={arbeitsbereich !== 'laeufe'}
-        >
-          <Laufverwaltung
-            key={projekt.projektKennung}
-            projektKennung={projekt.projektKennung!}
-            workflowStand={testInhaltsText(projekt)}
-            sichtbar={ansicht === 'editor' && arbeitsbereich === 'laeufe'}
-            vorbereitungAnfrage={laufVorbereitungAnfrage}
-            uebersichtAnfordern={laufDetailsAnfrage}
-            workflowInfo={{ name: projekt.name, geaendert }}
-            businessVorbereitung={
-              businessSchritte(projekt).length > 0 ? (
-                <BusinessVorbereitung
-                  key={projekt.projektKennung}
-                  projekt={projekt}
-                  optionen={testOptionen}
-                  aendern={setTestOptionen}
-                  gesperrt={testAktiv(test.phase)}
-                  merken={aendern}
+                          );
+                        }
+                      }}
+                    />
+                    <header className="panel-kopf">
+                      <h2>{sprache.vorschauTitel}</h2>
+                      <div className="knopfgruppe">
+                        <Knopf
+                          variante="leise"
+                          symbol="oben"
+                          aria-label="Codevorschau vergrößern"
+                          onClick={() => setCodeHoehe((h) => Math.min(window.innerHeight * 0.65, h + 48))}
+                        />
+                        <Knopf
+                          variante="leise"
+                          symbol="unten"
+                          aria-label="Codevorschau verkleinern"
+                          onClick={() => setCodeHoehe((h) => Math.max(140, h - 48))}
+                        />
+                        <Knopf
+                          variante="leise"
+                          aria-pressed={codeUmbruch}
+                          onClick={() => setCodeUmbruch(!codeUmbruch)}
+                        >
+                          Zeilen umbrechen
+                        </Knopf>
+                        <Knopf
+                          variante="leise"
+                          symbol="schliessen"
+                          aria-label="Codevorschau schließen"
+                          onClick={() => setVorschauOffen(false)}
+                        />
+                      </div>
+                    </header>
+                    <p className="code-hinweis">Schreibgeschützt. Diese Vorschau führt keine Aktionen aus.</p>
+                    <pre
+                      tabIndex={0}
+                      className={`code ${codeUmbruch ? 'mit-umbruch' : ''}`}
+                      aria-label={`Schreibgeschützter ${sprache.vorschauTitel}`}
+                    >
+                      {ergebnis.code ??
+                        "' Vervollständige den Entwurf. Die Hinweise erklären fehlende Verbindungen."}
+                    </pre>
+                  </section>
+                )}
+                {hinweiseOffen && (
+                  <section
+                    className="hinweise-panel"
+                    data-testid="hinweise-panel"
+                    aria-label="Hinweise zum Workflow"
+                  >
+                    <header className="panel-kopf">
+                      <h2>Hinweise zum Workflow</h2>
+                      <Knopf
+                        variante="leise"
+                        symbol="schliessen"
+                        aria-label="Hinweise schließen"
+                        onClick={() => setHinweiseOffen(false)}
+                      />
+                    </header>
+                    <div className="hinweise-liste">
+                      {ergebnis.meldungen.length ? (
+                        ergebnis.meldungen.map((m, i) => (
+                          <Knopf
+                            key={i}
+                            variante="leise"
+                            symbol={m.stufe === 'fehler' ? 'fehler' : 'hinweis'}
+                            onClick={() => blockAnzeigen(m.blockId, m.feldPfad)}
+                          >
+                            {m.text}
+                          </Knopf>
+                        ))
+                      ) : (
+                        <p>Der Workflow enthält keine erkannten Strukturfehler.</p>
+                      )}
+                    </div>
+                  </section>
+                )}
+              </section>
+              {eigenschaftenOffen && (
+                <Eigenschaften
+                  vorschauOeffnen={schrittVorschauOeffnen}
+                  vorschauHinweis={datenvorschauHinweis(projekt, auswahl)}
+                  spaltenNachQuelle={spaltenNachQuelle}
+                  parameterKontext={parameterKontext}
+                  quelleWaehlen={quelleWaehlen}
+                  feldFehler={ergebnis.meldungen.flatMap((m) =>
+                    m.blockId === auswahl && m.feldPfad ? [{ feldPfad: m.feldPfad, text: m.text }] : [],
+                  )}
+                  parameter={projekt.business.parameter}
+                  ws={workspace}
+                  blockId={auswahl}
+                  angeheftet={einstellungen.eigenschaftenAngeheftet}
+                  kannAnheften={kannAnheften}
+                  anheften={() =>
+                    void einstellungenSetzen({
+                      ...einstellungenRef.current,
+                      eigenschaftenAngeheftet: !einstellungenRef.current.eigenschaftenAngeheftet,
+                    })
+                  }
+                  schliessen={eigenschaftenSchliessen}
+                  verschieben={() => {
+                    if (auswahlRef.current) platzierungStarten('verschieben', auswahlRef.current);
+                    else melden('Wähle zuerst einen Baustein.');
+                  }}
+                  blockAktion={blockAktion}
+                  schreibgeschuetzt={testAktiv(test.phase)}
+                  beruehrt={(id) => setBeruehrt((alt) => new Set([...alt, id]))}
                 />
-              ) : undefined
-            }
-            sprache={projekt.skriptsprache}
-            pythonStatus={pythonStatus}
-            pythonEinrichten={() => setDialog('einstellungen')}
-            zustand={
-              test.projektKennung && test.projektKennung !== projekt.projektKennung ? testBereit() : test
-            }
-            optionen={testOptionen}
-            veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
-            gesperrt={!!verarbeitung}
-            schliessen={() => setArbeitsbereich('ablauf')}
-            starten={() => void testStarten()}
-            stoppen={() => void testStoppen()}
-            ordnerWaehlen={() => void testOrdnerWaehlen()}
-            optionenAendern={setTestOptionen}
-            kopieren={() =>
-              void window.scriptlab.testAusgabeKopieren().then((r) => {
-                if (!r.ok) melden(r.meldung, 'fehler');
-              })
-            }
-            leeren={() =>
-              void window.scriptlab.testAusgabeLeeren().then((r) => {
-                if (r.ok) testUebernehmen(r.wert);
-              })
-            }
-            blockAnzeigen={(id) => blockAnzeigen(id)}
-          />
-        </div>
-        {dauerfehler && (
-          <section className="aufgabenfehler" role="alert">
-            <Symbol name="fehler" />
-            <p>{dauerfehler}</p>
+              )}
+            </main>
+          </div>
+          <div
+            className="workflow-panel"
+            id="workflow-daten"
+            role="tabpanel"
+            aria-labelledby="bereich-daten"
+            hidden={arbeitsbereich !== 'daten'}
+          >
+            <Datenbereich
+              projekt={projekt}
+              workspace={workspace}
+              blockId={auswahl}
+              auswaehlen={auswaehlen}
+              aendern={(neu) => {
+                const satz = testOptionen.business?.parametersatz ?? 'test';
+                const vorher = projekt.business.parametersaetze[satz];
+                const nachher = neu.business.parametersaetze[satz];
+                const ersetzt = Object.keys(testOptionen.business?.parameter ?? {}).filter(
+                  (name) =>
+                    Object.hasOwn(vorher, name) !== Object.hasOwn(nachher, name) ||
+                    vorher[name] !== nachher[name],
+                );
+                if (ersetzt.length)
+                  setTestOptionen((alt) =>
+                    alt.business
+                      ? {
+                          ...alt,
+                          business: {
+                            ...alt.business,
+                            parameter: Object.fromEntries(
+                              Object.entries(alt.business.parameter).filter(
+                                ([name]) => !ersetzt.includes(name),
+                              ),
+                            ),
+                          },
+                        }
+                      : alt,
+                  );
+                aendern(neu);
+              }}
+              gesperrt={testAktiv(test.phase)}
+              testZustand={test}
+              blockAnzeigen={blockAnzeigen}
+              veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
+              parameterOeffnen={() => setDialog('parameter')}
+              vorschauLaden={(id) => void datenvorschauLaden(id)}
+              vorschauen={aktuelleVorschauen}
+              spaltenNachQuelle={spaltenNachQuelle}
+              parameterKontext={parameterKontext}
+              quelleWaehlen={quelleWaehlen}
+              parameterZiel={parameterZiel}
+              feldZiel={feldZiel}
+              vorschauZiel={vorschauZiel}
+              vorschauBausteinAnzeigen={vorschauBausteinAnzeigen}
+              parametersatzWaehlen={(satz) =>
+                setTestOptionen((alt) => ({
+                  ...alt,
+                  business: {
+                    modus: 'prueflauf',
+                    speicherMB: 512,
+                    tempGB: 4,
+                    fortsetzen: false,
+                    ...alt.business,
+                    parametersatz: satz,
+                    parameter: {},
+                  },
+                }))
+              }
+            />
+          </div>
+          <div
+            className="workflow-panel workflow-panel--laeufe"
+            id="workflow-laeufe"
+            role="tabpanel"
+            aria-labelledby="bereich-laeufe"
+            hidden={arbeitsbereich !== 'laeufe'}
+          >
+            <Laufverwaltung
+              key={projekt.projektKennung}
+              projektKennung={projekt.projektKennung!}
+              workflowStand={testInhaltsText(projekt)}
+              sichtbar={ansicht === 'editor' && arbeitsbereich === 'laeufe'}
+              vorbereitungAnfrage={laufVorbereitungAnfrage}
+              uebersichtAnfordern={laufDetailsAnfrage}
+              workflowInfo={{ name: projekt.name, geaendert }}
+              businessVorbereitung={
+                businessSchritte(projekt).length > 0 ? (
+                  <BusinessVorbereitung
+                    key={projekt.projektKennung}
+                    projekt={projekt}
+                    optionen={testOptionen}
+                    aendern={setTestOptionen}
+                    gesperrt={testAktiv(test.phase)}
+                    merken={aendern}
+                  />
+                ) : undefined
+              }
+              sprache={projekt.skriptsprache}
+              pythonStatus={pythonStatus}
+              pythonEinrichten={() => setDialog('einstellungen')}
+              zustand={
+                test.projektKennung && test.projektKennung !== projekt.projektKennung ? testBereit() : test
+              }
+              optionen={testOptionen}
+              veraltet={!!test.standHash && testInhalt.current !== testInhaltsText(projekt)}
+              gesperrt={!!verarbeitung}
+              schliessen={() => setArbeitsbereich('ablauf')}
+              starten={() => void testStarten()}
+              stoppen={() => void testStoppen()}
+              ordnerWaehlen={() => void testOrdnerWaehlen()}
+              optionenAendern={setTestOptionen}
+              kopieren={() =>
+                void window.scriptlab.testAusgabeKopieren().then((r) => {
+                  if (!r.ok) melden(r.meldung, 'fehler');
+                })
+              }
+              leeren={() =>
+                void window.scriptlab.testAusgabeLeeren().then((r) => {
+                  if (r.ok) testUebernehmen(r.wert);
+                })
+              }
+              blockAnzeigen={(id) => blockAnzeigen(id)}
+            />
+          </div>
+          {dauerfehler && (
+            <section className="aufgabenfehler" role="alert">
+              <Symbol name="fehler" />
+              <p>{dauerfehler}</p>
+              <Knopf
+                variante="leise"
+                symbol="schliessen"
+                aria-label="Fehlermeldung schließen"
+                onClick={fehlerSchliessen}
+              />
+            </section>
+          )}
+          {entwurfStatus?.phase === 'fehler' && (
+            <section className="aufgabenfehler" role="alert">
+              <p>
+                {entwurfStatus.meldung ??
+                  'Der Entwurf konnte nicht lokal gesichert werden. Dein Arbeitsstand bleibt im Editor.'}
+              </p>
+              <Knopf onClick={() => void entwurfJetztSichern()}>Erneut sichern</Knopf>
+            </section>
+          )}
+          {dateikonflikt && (
+            <section className="aufgabenfehler" role="alert">
+              <p>
+                Die Ausgangsdatei wurde außerhalb von ScriptLab geändert. Speichere deinen Arbeitsstand als
+                separate Kopie.
+              </p>
+              <Knopf onClick={() => void projektAktion('unter')}>Kopie speichern</Knopf>
+            </section>
+          )}
+          <footer className="statusleiste" data-testid="statusleiste">
+            {entwurfStatus?.phase === 'gesichert' && (
+              <span
+                className="entwurf-status"
+                aria-label="Entwurfstatus"
+                role="status"
+                title={`Lokal als Entwurf gesichert: ${entwurfStatus.gesichertAm ? new Date(entwurfStatus.gesichertAm).toLocaleString('de-DE') : ''}`}
+              >
+                Entwurf lokal gesichert
+              </span>
+            )}
+            {entwurfStatus?.phase === 'ausstehend' && (
+              <span className="entwurf-status" role="status">
+                Entwurfssicherung ausstehend
+              </span>
+            )}
+            <span id="status-aktion" role="status" className={`status-aktion status-aktion--${statusArt}`}>
+              {verarbeitung ?? (statusArt === 'fehler' && dauerfehler === status ? '' : status)}
+            </span>
             <Knopf
               variante="leise"
-              symbol="schliessen"
-              aria-label="Fehlermeldung schließen"
-              onClick={fehlerSchliessen}
-            />
-          </section>
-        )}
-        {entwurfStatus?.phase === 'fehler' && (
-          <section className="aufgabenfehler" role="alert">
-            <p>
-              {entwurfStatus.meldung ??
-                'Der Entwurf konnte nicht lokal gesichert werden. Dein Arbeitsstand bleibt im Editor.'}
-            </p>
-            <Knopf onClick={() => void entwurfJetztSichern()}>Erneut sichern</Knopf>
-          </section>
-        )}
-        {dateikonflikt && (
-          <section className="aufgabenfehler" role="alert">
-            <p>
-              Die Ausgangsdatei wurde außerhalb von ScriptLab geändert. Speichere deinen Arbeitsstand als
-              separate Kopie.
-            </p>
-            <Knopf onClick={() => void projektAktion('unter')}>Kopie speichern</Knopf>
-          </section>
-        )}
-        <footer className="statusleiste" data-testid="statusleiste">
-          {entwurfStatus?.phase === 'gesichert' && (
-            <span
-              className="entwurf-status"
-              aria-label="Entwurfstatus"
-              role="status"
-              title={`Lokal als Entwurf gesichert: ${entwurfStatus.gesichertAm ? new Date(entwurfStatus.gesichertAm).toLocaleString('de-DE') : ''}`}
+              symbol={sichtbareHinweise.some((m) => m.stufe === 'fehler') ? 'hinweis' : 'info'}
+              onClick={() => {
+                setPruefungAngefordert(true);
+                setArbeitsbereich('ablauf');
+                setHinweiseOffen(!hinweiseOffen);
+              }}
             >
-              Entwurf lokal gesichert
-            </span>
-          )}
-          {entwurfStatus?.phase === 'ausstehend' && (
-            <span className="entwurf-status" role="status">
-              Entwurfssicherung ausstehend
-            </span>
-          )}
-          <span id="status-aktion" role="status" className={`status-aktion status-aktion--${statusArt}`}>
-            {verarbeitung ?? (statusArt === 'fehler' && dauerfehler === status ? '' : status)}
-          </span>
-          <Knopf
-            variante="leise"
-            symbol={sichtbareHinweise.some((m) => m.stufe === 'fehler') ? 'hinweis' : 'info'}
-            onClick={() => {
-              setPruefungAngefordert(true);
-              setArbeitsbereich('ablauf');
-              setHinweiseOffen(!hinweiseOffen);
-            }}
-          >
-            Hinweise{sichtbareHinweise.length ? ` (${sichtbareHinweise.length})` : ''}
-          </Knopf>
-        </footer>
+              Hinweise{sichtbareHinweise.length ? ` (${sichtbareHinweise.length})` : ''}
+            </Knopf>
+          </footer>
+        </div>
       </div>
       <Variablendialoge />
       <ExportDialog

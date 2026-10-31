@@ -1,8 +1,10 @@
+import { Symbol, type SymbolName } from './Icon';
+
 export type Arbeitsbereich = 'ablauf' | 'daten' | 'laeufe';
-const bereiche: { id: Arbeitsbereich; text: string }[] = [
-  { id: 'ablauf', text: 'Ablauf' },
-  { id: 'daten', text: 'Daten und Parameter' },
-  { id: 'laeufe', text: 'Läufe' },
+const bereiche: { id: Arbeitsbereich; text: string; symbol: SymbolName }[] = [
+  { id: 'ablauf', text: 'Ablauf', symbol: 'bausteine' },
+  { id: 'daten', text: 'Daten und Parameter', symbol: 'tabelle' },
+  { id: 'laeufe', text: 'Läufe', symbol: 'testen' },
 ];
 
 export function Arbeitsbereiche({
@@ -37,6 +39,7 @@ export function Arbeitsbereiche({
             document.getElementById(`bereich-${bereiche[ziel].id}`)?.focus();
           }}
         >
+          <Symbol name={bereich.symbol} />
           {bereich.text}
         </button>
       ))}

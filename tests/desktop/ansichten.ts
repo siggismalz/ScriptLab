@@ -11,11 +11,7 @@ export async function ansichtsMenueAktion(seite: Page, name: string) {
 }
 
 export async function einstellungenOeffnen(seite: Page) {
-  const bereiche = seite.getByRole('button', { name: 'Bereiche', exact: true });
-  if (await bereiche.isVisible()) {
-    await bereiche.click();
-    await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
-  } else await seite.getByRole('button', { name: 'Einstellungen', exact: true }).click();
+  await seite.getByRole('button', { name: 'Einstellungen', exact: true }).click();
   const dialog = seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
   await expect(dialog).toBeVisible();
   return dialog;
@@ -38,8 +34,10 @@ export async function laufansichtWaehlen(
 }
 
 export async function startseiteWaehlen(seite: Page) {
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Start', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Start', exact: true })
+    .click();
 }
 
 /** Neue beziehungsweise andere Dateien werden im aktiven Workflow über das benannte Menü gewählt. */

@@ -93,7 +93,7 @@ describe('Datenansicht mit echten Laufgrenzen', () => {
     const lauf = vorschau();
     lauf.business!.vorschau!.zeilen = Array.from({ length: 200 }, (_, i) => [`Zeile ${i + 1}`]);
     const html = darstellen(lauf, true);
-    expect(html).toContain('Der Workflow wurde seit dieser Vorschau geändert');
+    expect(html).toContain('Workflow oder verwendete Parameter wurden seit dieser Vorschau geändert');
     expect(html).toContain('200 Vorschauzeilen geladen');
     expect(html).toContain('Zeile 50');
     expect(html).not.toContain('Zeile 51');

@@ -120,6 +120,12 @@ for (const farbe of ['hell', 'dunkel'] as const) {
             BrowserWindow.getAllWindows()[0].setContentSize(1100, 720),
           );
           await expect.poll(() => s.seite.evaluate(() => innerWidth)).toBe(1100);
+          // Die kompakte Sidebar gibt hier bereits Platz für drei lesbare Karten frei.
+          await raster(3);
+          await s.app.evaluate(({ BrowserWindow }) =>
+            BrowserWindow.getAllWindows()[0].setContentSize(1000, 720),
+          );
+          await expect.poll(() => s.seite.evaluate(() => innerWidth)).toBe(1000);
           await raster(2);
           await s.app.evaluate(({ BrowserWindow }) =>
             BrowserWindow.getAllWindows()[0].setContentSize(1280, 720),

@@ -16,14 +16,15 @@
   gap: var(--abstand-8) var(--abstand-16);
   align-items: center;
   justify-content: space-between;
-  padding: var(--abstand-8) var(--abstand-16);
+  padding: var(--abstand-16) var(--abstand-24);
   border-bottom: 1px solid var(--farbe-trennung);
 }
 .laufverwaltung-kontext > div:first-child {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--abstand-8) var(--abstand-16);
+  flex: 1 1 360px;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--abstand-4);
 }
 .laufverwaltung-kontext h2 {
   margin: 0;
@@ -32,9 +33,14 @@
   line-height: 1.5;
 }
 .laufverwaltung-kontext > div:first-child > span,
+.laufverwaltung-kontext p,
 .laufverwaltung-umfang,
 .laufverwaltung-stand {
   color: var(--farbe-text-sekundaer);
+}
+.laufverwaltung-kontext p {
+  margin: 0;
+  max-width: 72ch;
 }
 .laufverwaltung-aktiv {
   border-left: 3px solid var(--farbe-akzent);
@@ -44,7 +50,7 @@
   overflow: auto;
   flex: 1 1 0;
   min-height: 0;
-  padding: var(--abstand-16);
+  padding: var(--abstand-24);
   scroll-padding: var(--abstand-16);
 }
 .laufverwaltung-filter {
@@ -115,4 +121,12 @@
   align-items: center;
   gap: var(--abstand-12);
   margin-top: var(--abstand-16);
+  flex-wrap: wrap;
+}
+@media (max-width: 850px) {
+  .laufverwaltung-kontext,
+  .laufverwaltung-aktiv,
+  .laufverwaltung-liste {
+    padding: var(--abstand-16);
+  }
 }

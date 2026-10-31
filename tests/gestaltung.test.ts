@@ -97,6 +97,13 @@ describe('Helles und dunkles Farbschema', () => {
 
   for (const schema of ['dunkel', 'hell'] as const) {
     const f = farbenNachThema[schema];
+    it(`${schema}: Seitennavigation hat lesbare Texte, Auswahl und Tastaturfokus`, () => {
+      for (const hintergrund of [f.seitenleiste, f.seitenleisteAuswahl]) {
+        expect(kontrast(f.aufSeitenleiste, hintergrund)).toBeGreaterThanOrEqual(4.5);
+        expect(kontrast(f.seitenleisteSekundaer, hintergrund)).toBeGreaterThanOrEqual(4.5);
+        expect(kontrast(f.seitenleisteKontur, hintergrund)).toBeGreaterThanOrEqual(3);
+      }
+    });
     for (const hintergrund of [
       f.fenster,
       f.navigation,

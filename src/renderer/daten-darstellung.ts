@@ -1,4 +1,37 @@
 import { businessEingabeTitel, type BusinessDefinition, type KonfigFeld } from '../kern/business-katalog';
+import type { BusinessSchritt } from '../kern/business-modell';
+
+/** Nur ein Hinweis auf sichtbar mehrteilige CSV-Kopfzeilen, niemals eine automatische Umdeutung. */
+export function csvTrennzeichenHinweis(
+  schritt: Pick<BusinessSchritt, 'operation' | 'konfiguration'> | undefined,
+  spalten: readonly { name: string }[],
+): { eingestellt: string; auffaellig: string } | null {
+  if (
+    schritt?.operation !== 'daten.importieren' ||
+    schritt.konfiguration.format !== 'CSV' ||
+    spalten.length !== 1
+  )
+    return null;
+  const optionen = schritt.konfiguration.optionen;
+  if (!optionen || typeof optionen !== 'object' || Array.isArray(optionen) || optionen.kopfzeile === false)
+    return null;
+  const eingestellt = optionen.trennzeichen;
+  if (typeof eingestellt !== 'string' || eingestellt.length !== 1) return null;
+  const auffaellig = [';', ',', '\t', '|'].find((zeichen) => {
+    if (zeichen === eingestellt) return false;
+    const teile = spalten[0].name.split(zeichen);
+    // Ein einzelnes Satzzeichen ist in einer normalen Spaltenbezeichnung nicht ungewöhnlich.
+    return teile.length >= 3 && teile.every((teil) => teil.trim().length > 0);
+  });
+  return auffaellig ? { eingestellt, auffaellig } : null;
+}
+
+/** Lange Namen verbreitern eine Spalte maßvoll; bewusst eingestellte Breiten bleiben erhalten. */
+export function vorschauSpaltenbreite(name: string, eingestellt?: number): number {
+  return eingestellt === undefined || !Number.isFinite(eingestellt)
+    ? Math.max(176, Math.min(320, 32 + name.length * 8))
+    : Math.max(96, Math.min(640, eingestellt));
+}
 
 /** Kurze Verweise verwenden dieselben Feldnamen wie das Formular, keine Fehlermeldung als zweiten Fließtext. */
 export function fehlerFeldverweis(

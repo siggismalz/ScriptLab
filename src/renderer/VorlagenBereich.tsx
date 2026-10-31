@@ -111,6 +111,7 @@ export function VorlagenBereich({
       </div>
       <div className="vorlagen-ergebniszeile">
         <p role="status">{treffer.length === 1 ? '1 Vorlage' : `${treffer.length} Vorlagen`}</p>
+        <p className="vorlagen-auswahlhilfe">Auswählen zeigt Vorbereitung und enthaltene Dateien.</p>
         {hatFilter && (
           <Knopf
             variante="leise"
@@ -147,7 +148,7 @@ export function VorlagenBereich({
                 <div className="vorlagen-kartenkopf">
                   <div className="vorlagen-metadaten">
                     <span>{vorlage.aufgabe}</span>
-                    <span>{sprachdaten[vorlage.skriptsprache].bezeichnung}</span>
+                    <span className="vorlagen-sprache">{sprachdaten[vorlage.skriptsprache].bezeichnung}</span>
                   </div>
                   <h2>
                     <Knopf
@@ -164,7 +165,13 @@ export function VorlagenBereich({
                   {filter.bereich === 'dokumente' && (
                     <p className="vorlagen-zuordnung">Workflow: {vorlage.name}</p>
                   )}
-                  <p className="vorlagen-ergebnis">{vorlage.ergebnis}</p>
+                  <p className="vorlagen-ergebnis">
+                    <span className="vorlagen-ergebnis-label">Erwartetes Ergebnis</span>
+                    <span>{vorlage.ergebnis}</span>
+                  </p>
+                  <span className="vorlagen-auswahlhinweis" aria-hidden="true">
+                    {offen ? 'Vorbereitung geöffnet' : 'Vorbereitung ansehen'}
+                  </span>
                 </div>
                 {offen && (
                   <div className="vorlagen-details" id={detailId}>

@@ -7,6 +7,7 @@ import './stil.css';
 import './produkt.css';
 import './start-werkbank.css';
 import './palette-werkbank.css';
+import './arbeitsplatz.css';
 
 Object.defineProperty(window, 'scriptlab', { value: brueckeVerbinden(window.scriptlabTransport) });
 designTokensAnwenden();

@@ -16,7 +16,12 @@ import { Knopf } from './komponenten/Knopf';
 import { Auswahlfeld, Feld } from './komponenten/Feld';
 import { Symbol } from './komponenten/Icon';
 import { Statusanzeige } from './komponenten/Statusanzeige';
-import { fehlerFeldverweis, vorschauTyptext } from './daten-darstellung';
+import {
+  csvTrennzeichenHinweis,
+  fehlerFeldverweis,
+  vorschauSpaltenbreite,
+  vorschauTyptext,
+} from './daten-darstellung';
 import './datenbereich.css';
 
 export interface DatenbereichEigenschaften {
@@ -56,9 +61,9 @@ const enthaeltFormatvorgabe = (hilfe: string) =>
     hilfe,
   );
 const datenansichten = [
-  { id: 'quellen', text: 'Quellen und Zuordnung' },
-  { id: 'parameter', text: 'Parameterwerte' },
-  { id: 'vorschau', text: 'Datenvorschau' },
+  { id: 'quellen', text: 'Quellen und Zuordnung', kurz: 'Quellen' },
+  { id: 'parameter', text: 'Parameterwerte', kurz: 'Parameter' },
+  { id: 'vorschau', text: 'Datenvorschau', kurz: 'Vorschau' },
 ] as const;
 type Datenansicht = (typeof datenansichten)[number]['id'];
 
@@ -236,6 +241,10 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
   const maxSpaltenseite = Math.max(0, Math.ceil(spalten.length / 20) - 1);
   const aktiveSpaltenseite = Math.min(spaltenseite, maxSpaltenseite);
   const sichtbareSpalten = spalten.slice(aktiveSpaltenseite * 20, aktiveSpaltenseite * 20 + 20);
+  const csvHinweis = vorschauStand?.veraltet ? null : csvTrennzeichenHinweis(schritt, spalten);
+  const breite = (name: string) => vorschauSpaltenbreite(name, spaltenbreiten[name]);
+  const konfigurationstitel =
+    schritt?.operation === 'daten.importieren' ? 'Quelle konfigurieren' : 'Schritt konfigurieren';
 
   function waehlen(id: string) {
     setAuswahl(id);
@@ -245,51 +254,65 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
     if (scrollbereich.current) scrollpositionen.current[datenansicht] = scrollbereich.current.scrollTop;
     setDatenansicht(neu);
   }
+  function quelleneinstellungenOeffnen(trennzeichen = false) {
+    datenansichtWechseln('quellen');
+    requestAnimationFrame(() => {
+      if (trennzeichen) feldFokussieren(['konfiguration', 'optionen', 'trennzeichen']);
+      else {
+        const kopf = scrollbereich.current?.querySelector<HTMLElement>('.daten-konfigurationskopf h2');
+        kopf?.scrollIntoView({ block: 'nearest' });
+        kopf?.focus({ preventScroll: true });
+      }
+    });
+  }
 
   return (
     <section className="datenbereich" data-testid="datenbereich" aria-label="Daten und Parameter">
       <header className="daten-seitenkopf">
-        <h1>Daten und Parameter</h1>
+        <h2>Daten und Parameter</h2>
+        <nav className="daten-ansichtauswahl" role="tablist" aria-label="Ansichten für Daten und Parameter">
+          {datenansichten.map((ansicht, index) => (
+            <button
+              key={ansicht.id}
+              type="button"
+              role="tab"
+              id={`${ansichtenId}-${ansicht.id}`}
+              aria-controls={`${ansichtenId}-panel-${ansicht.id}`}
+              aria-label={ansicht.text}
+              aria-selected={datenansicht === ansicht.id}
+              tabIndex={datenansicht === ansicht.id ? 0 : -1}
+              onClick={() => datenansichtWechseln(ansicht.id)}
+              onKeyDown={(event) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const ziel =
+                  event.key === 'Home'
+                    ? 0
+                    : event.key === 'End'
+                      ? datenansichten.length - 1
+                      : (index + (event.key === 'ArrowRight' ? 1 : -1) + datenansichten.length) %
+                        datenansichten.length;
+                datenansichtWechseln(datenansichten[ziel].id);
+                document.getElementById(`${ansichtenId}-${datenansichten[ziel].id}`)?.focus();
+              }}
+            >
+              {ansicht.kurz}
+            </button>
+          ))}
+        </nav>
       </header>
       {gesperrt && (
-        <Statusanzeige art="hinweis">
-          {laufAktiv
-            ? 'Während des Laufs sind Änderungen gesperrt. Die vorhandenen Daten bleiben lesbar.'
-            : 'Schließe den aktuellen Vorgang ab, bevor du Daten oder Parameter änderst.'}
-        </Statusanzeige>
+        <div className="daten-sperrhinweis">
+          <Statusanzeige art="hinweis">
+            {laufAktiv
+              ? 'Während des Laufs sind Änderungen gesperrt. Die vorhandenen Daten bleiben lesbar.'
+              : 'Schließe den aktuellen Vorgang ab, bevor du Daten oder Parameter änderst.'}
+          </Statusanzeige>
+        </div>
       )}
-      <nav className="daten-ansichtauswahl" role="tablist" aria-label="Ansichten für Daten und Parameter">
-        {datenansichten.map((ansicht, index) => (
-          <button
-            key={ansicht.id}
-            type="button"
-            role="tab"
-            id={`${ansichtenId}-${ansicht.id}`}
-            aria-controls={`${ansichtenId}-panel-${ansicht.id}`}
-            aria-selected={datenansicht === ansicht.id}
-            tabIndex={datenansicht === ansicht.id ? 0 : -1}
-            onClick={() => datenansichtWechseln(ansicht.id)}
-            onKeyDown={(event) => {
-              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-              event.preventDefault();
-              const ziel =
-                event.key === 'Home'
-                  ? 0
-                  : event.key === 'End'
-                    ? datenansichten.length - 1
-                    : (index + (event.key === 'ArrowRight' ? 1 : -1) + datenansichten.length) %
-                      datenansichten.length;
-              datenansichtWechseln(datenansichten[ziel].id);
-              document.getElementById(`${ansichtenId}-${datenansichten[ziel].id}`)?.focus();
-            }}
-          >
-            {ansicht.text}
-          </button>
-        ))}
-      </nav>
       <div
         ref={scrollbereich}
-        className="daten-ansichten"
+        className={`daten-ansichten${datenansicht === 'vorschau' ? ' daten-ansichten--vorschau' : ''}`}
         onScroll={(event) => {
           if (event.currentTarget.clientHeight > 0 && !event.currentTarget.closest('[hidden]'))
             scrollpositionen.current[datenansicht] = event.currentTarget.scrollTop;
@@ -339,7 +362,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
           </section>
           <section className="daten-eigenschaften" aria-label="Datenkonfiguration">
             <div className="daten-konfigurationskopf">
-              <h2>{schritt?.bezeichnung ?? 'Konfiguration'}</h2>
+              <h2 tabIndex={-1}>{schritt?.bezeichnung ?? 'Konfiguration'}</h2>
               {block && workspace && (
                 <Knopf
                   variante="leise"
@@ -589,17 +612,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
           hidden={datenansicht !== 'vorschau'}
         >
           <h2 className="sl-nur-vorlesen">Datenvorschau</h2>
-          {auswahl && props.vorschauBausteinAnzeigen && (
-            <Knopf
-              className="daten-vorschau-rueckweg"
-              variante="leise"
-              symbol="links"
-              onClick={() => props.vorschauBausteinAnzeigen!(auswahl)}
-            >
-              Zum Baustein
-            </Knopf>
-          )}
-          <div className="daten-vorschauwahl">
+          <div className="daten-vorschauwahl" role="group" aria-label="Datenvorschau vorbereiten">
             <Auswahlfeld
               beschriftung="Ergebnis bis zu diesem Schritt"
               value={auswahl ?? ''}
@@ -644,85 +657,63 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
               Datenvorschau laden
             </Knopf>
           </div>
-          {gesperrt && lauf.optionen.business?.vorschauBlockId === auswahl && (
-            <Statusanzeige art="verarbeitung">
-              Die Datenvorschau wird geladen. Du kannst den Prozess oben stoppen.
-            </Statusanzeige>
-          )}
-          {aktuellerLauf &&
-            lauf.optionen.business?.vorschauBlockId === auswahl &&
-            ['fehlgeschlagen', 'mit_fehlern'].includes(lauf.phase) && (
-              <div className="daten-vorschaufehler">
-                <Statusanzeige art="fehler">
-                  {lauf.meldung ||
-                    'Die Daten konnten nicht vollständig verarbeitet werden. Prüfe den zugeordneten Baustein.'}
-                </Statusanzeige>
-                {lauf.fehlerBlockId && (
-                  <Knopf
-                    symbol="bausteine"
-                    onClick={() => {
-                      waehlen(lauf.fehlerBlockId!);
-                      datenansichtWechseln('quellen');
-                    }}
-                  >
-                    Betroffenen Baustein auswählen
-                  </Knopf>
-                )}
-              </div>
+          <div className="daten-vorschauhinweise">
+            {laufAktiv && aktuellerLauf && lauf.optionen.business?.vorschauBlockId === auswahl && (
+              <Statusanzeige art="verarbeitung">
+                {lauf.phase === 'stoppt'
+                  ? 'Die Datenvorschau wird gestoppt. Das tatsächliche Prozessende wird abgewartet.'
+                  : 'Die Datenvorschau wird geladen. Du kannst den Prozess oben stoppen.'}
+              </Statusanzeige>
             )}
+            {aktuellerLauf &&
+              lauf.optionen.business?.vorschauBlockId === auswahl &&
+              ['fehlgeschlagen', 'mit_fehlern'].includes(lauf.phase) && (
+                <div className="daten-vorschaufehler">
+                  <Statusanzeige art="fehler">
+                    {lauf.meldung ||
+                      'Die Daten konnten nicht vollständig verarbeitet werden. Prüfe den zugeordneten Baustein.'}
+                  </Statusanzeige>
+                  {lauf.fehlerBlockId && (
+                    <Knopf
+                      symbol="bausteine"
+                      onClick={() => {
+                        waehlen(lauf.fehlerBlockId!);
+                        datenansichtWechseln('quellen');
+                      }}
+                    >
+                      Betroffenen Baustein auswählen
+                    </Knopf>
+                  )}
+                </div>
+              )}
+            {vorschau ? (
+              <>
+                {vorschauStand?.veraltet && (
+                  <Statusanzeige art="hinweis">
+                    Workflow oder verwendete Parameter wurden seit dieser Vorschau geändert. Lade die Vorschau
+                    erneut, um den aktuellen Stand zu sehen.
+                  </Statusanzeige>
+                )}
+                {csvHinweis && (
+                  <div className="daten-csv-hinweis">
+                    <Statusanzeige art="hinweis">
+                      Nur eine Spalte erkannt. Die Kopfzeile enthält mehrfach{' '}
+                      {csvHinweis.auffaellig === '\t' ? 'Tabulatoren' : `„${csvHinweis.auffaellig}“`},
+                      eingestellt ist{' '}
+                      {csvHinweis.eingestellt === '\t' ? 'Tabulator' : `„${csvHinweis.eingestellt}“`}. Prüfe
+                      das CSV-Trennzeichen und lade die Vorschau danach erneut.
+                    </Statusanzeige>
+                    <Knopf variante="leise" onClick={() => quelleneinstellungenOeffnen(true)}>
+                      Trennzeichen prüfen
+                    </Knopf>
+                  </div>
+                )}
+              </>
+            ) : null}
+          </div>
           {vorschau ? (
             <>
-              {vorschauStand?.veraltet && (
-                <Statusanzeige art="hinweis">
-                  Der Workflow wurde seit dieser Vorschau geändert. Lade die Vorschau nach der Korrektur
-                  erneut.
-                </Statusanzeige>
-              )}
               <div className="daten-vorschauwerkzeuge">
-                <div>
-                  <p className="daten-vorschauumfang">
-                    {zeilen.length.toLocaleString('de-DE')} Vorschauzeilen geladen · Gesamtzahl der Quelldaten
-                    unbekannt.
-                  </p>
-                  <details className="daten-herkunft">
-                    <summary>Herkunft und Laufstand</summary>
-                    <dl>
-                      <div>
-                        <dt>Workflow</dt>
-                        <dd>{vorschauLauf?.projektName ?? projekt.name}</dd>
-                      </div>
-                      <div>
-                        <dt>Umfang</dt>
-                        <dd>
-                          Ergebnis bis zum ausgewählten Schritt einschließlich seiner notwendigen Vorgänger.
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Begrenzung</dt>
-                        <dd>
-                          Höchstens 200 Zeilen und 256 KiB. Suche und Sortierung gelten nur für diesen
-                          Ausschnitt.
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Arbeitsordner des Laufs</dt>
-                        <dd>{vorschauLauf?.optionen.basisVerzeichnis ?? 'Nicht bekannt'}</dd>
-                      </div>
-                      <div>
-                        <dt>Lauf-ID</dt>
-                        <dd>
-                          <code>{vorschauLauf?.laufId ?? 'Nicht bekannt'}</code>
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>Vollständige Standkennung</dt>
-                        <dd>
-                          <code>{vorschauLauf?.standHash ?? 'Nicht bekannt'}</code>
-                        </dd>
-                      </div>
-                    </dl>
-                  </details>
-                </div>
                 <Feld
                   beschriftung="In geladenen Vorschauzeilen suchen"
                   type="search"
@@ -732,69 +723,20 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                     setZeilenseite(0);
                   }}
                 />
-              </div>
-              {(vorschau.gekuerzt || vorschau.abgeschnitten || vorschau.zellen_gekuerzt) && (
-                <Statusanzeige art="hinweis">
-                  Der Ausschnitt wurde begrenzt. Weitere Zeilen oder lange Zelltexte werden nicht vollständig
-                  angezeigt.
-                </Statusanzeige>
-              )}
-              {(filter || geladeneZeilen.length > 50) && (
-                <div className="daten-tabellensteuerung">
-                  {filter && (
-                    <p>
-                      {geladeneZeilen.length} Treffer in {zeilen.length} geladenen Vorschauzeilen.
+                <div className="daten-vorschauinformation">
+                  <p className="daten-vorschauumfang">
+                    {zeilen.length.toLocaleString('de-DE')} Vorschauzeilen geladen
+                    {filter ? ` · ${geladeneZeilen.length.toLocaleString('de-DE')} Treffer` : ''}
+                  </p>
+                  <p className="daten-hilfetext">Suche und Sortierung gelten für diesen Ausschnitt.</p>
+                  {Boolean(vorschau.gekuerzt || vorschau.abgeschnitten || vorschau.zellen_gekuerzt) && (
+                    <p className="daten-vorschaubegrenzung" role="status">
+                      <Symbol name="hinweis" groesse={16} />
+                      <span>Der Ausschnitt wurde begrenzt: Weitere Zeilen oder Zelltexte sind gekürzt.</span>
                     </p>
                   )}
-                  {geladeneZeilen.length > 50 && (
-                    <div className="knopfgruppe">
-                      <Knopf
-                        variante="leise"
-                        onClick={() => setZeilenseite(Math.max(0, aktiveZeilenseite - 1))}
-                        disabled={aktiveZeilenseite === 0}
-                        grund="Die erste Seite ist bereits sichtbar."
-                      >
-                        Vorherige Zeilen
-                      </Knopf>
-                      <span>
-                        Seite {aktiveZeilenseite + 1} von {maxZeilenseite + 1}
-                      </span>
-                      <Knopf
-                        variante="leise"
-                        onClick={() => setZeilenseite(aktiveZeilenseite + 1)}
-                        disabled={aktiveZeilenseite === maxZeilenseite}
-                        grund="Die letzte Seite ist bereits sichtbar."
-                      >
-                        Weitere Zeilen
-                      </Knopf>
-                    </div>
-                  )}
                 </div>
-              )}
-              {spalten.length > 20 && (
-                <div className="daten-tabellensteuerung">
-                  <p>
-                    Spalten {aktiveSpaltenseite * 20 + 1}–
-                    {Math.min(spalten.length, aktiveSpaltenseite * 20 + 20)} von {spalten.length}
-                  </p>
-                  <div className="knopfgruppe">
-                    <Knopf
-                      onClick={() => setSpaltenseite(Math.max(0, aktiveSpaltenseite - 1))}
-                      disabled={aktiveSpaltenseite === 0}
-                      grund="Die ersten Spalten sind bereits sichtbar."
-                    >
-                      Vorherige Spalten
-                    </Knopf>
-                    <Knopf
-                      onClick={() => setSpaltenseite(aktiveSpaltenseite + 1)}
-                      disabled={aktiveSpaltenseite === maxSpaltenseite}
-                      grund="Die letzten Spalten sind bereits sichtbar."
-                    >
-                      Weitere Spalten
-                    </Knopf>
-                  </div>
-                </div>
-              )}
+              </div>
               {geladeneZeilen.length ? (
                 <div
                   className="daten-tabellenausschnitt"
@@ -804,12 +746,10 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                 >
                   <table
                     style={{
-                      width:
-                        48 +
-                        sichtbareSpalten.reduce((summe, s) => summe + (spaltenbreiten[s.name] ?? 176), 0),
+                      width: 48 + sichtbareSpalten.reduce((summe, s) => summe + breite(s.name), 0),
                     }}
                   >
-                    <caption>
+                    <caption className="sl-nur-vorlesen">
                       Schreibgeschützte Daten · Zeilen {aktiveZeilenseite * 50 + 1}–
                       {Math.min(geladeneZeilen.length, aktiveZeilenseite * 50 + 50)} von{' '}
                       {geladeneZeilen.length} gefilterten Vorschauzeilen
@@ -817,7 +757,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                     <colgroup>
                       <col style={{ width: 48 }} />
                       {sichtbareSpalten.map((s, i) => (
-                        <col key={`${s.name}-${i}`} style={{ width: spaltenbreiten[s.name] ?? 176 }} />
+                        <col key={`${s.name}-${i}`} style={{ width: breite(s.name) }} />
                       ))}
                     </colgroup>
                     <thead>
@@ -840,6 +780,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                               }
                             >
                               <button
+                                title={s.name}
                                 onClick={() =>
                                   setSortierung({
                                     spalte: index,
@@ -847,7 +788,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                                   })
                                 }
                               >
-                                <span>
+                                <span className="daten-spaltenname">
                                   {s.name}
                                   {sortierung?.spalte === index ? (sortierung.absteigend ? ' ↓' : ' ↑') : ''}
                                 </span>
@@ -883,7 +824,7 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                                 className={numerisch(s.typ) ? 'ist-zahl' : undefined}
                                 title={zellentext(wert)}
                               >
-                                {zellentext(wert)}
+                                <span className="daten-zellenwert">{zellentext(wert)}</span>
                               </td>
                             );
                           })}
@@ -893,45 +834,170 @@ export function Datenbereich(props: DatenbereichEigenschaften) {
                   </table>
                 </div>
               ) : (
-                <p>
+                <p className="daten-vorschau-leer">
                   {filter
                     ? 'Keine Treffer in den geladenen Vorschauzeilen. Ändere den Suchbegriff.'
                     : 'Die geladene Vorschau enthält keine Zeilen.'}
                 </p>
               )}
-              {sichtbareSpalten.length > 0 && (
-                <details className="daten-spaltenbreiten">
-                  <summary>Spaltenbreiten einstellen</summary>
-                  <div>
-                    {sichtbareSpalten.map((s, i) => (
-                      <Feld
-                        key={`${s.name}-${i}`}
-                        beschriftung={`${s.name} · Breite in Pixeln`}
-                        type="number"
-                        min={96}
-                        max={640}
-                        step={16}
-                        value={spaltenbreiten[s.name] ?? 176}
-                        onChange={(e) => {
-                          const wert = Number(e.target.value);
-                          if (Number.isFinite(wert))
-                            setSpaltenbreiten((alt) => ({
-                              ...alt,
-                              [s.name]: Math.max(96, Math.min(640, wert)),
-                            }));
-                        }}
-                      />
-                    ))}
-                  </div>
-                </details>
+              {(geladeneZeilen.length > 50 || spalten.length > 20) && (
+                <div className="daten-tabellensteuerung">
+                  {geladeneZeilen.length > 50 && (
+                    <div className="knopfgruppe">
+                      <Knopf
+                        variante="leise"
+                        onClick={() => setZeilenseite(Math.max(0, aktiveZeilenseite - 1))}
+                        disabled={aktiveZeilenseite === 0}
+                        grundId={`${ansichtenId}-zeilenseite`}
+                        title={aktiveZeilenseite === 0 ? 'Die erste Seite ist bereits sichtbar.' : undefined}
+                      >
+                        Vorherige Zeilen
+                      </Knopf>
+                      <span id={`${ansichtenId}-zeilenseite`}>
+                        Seite {aktiveZeilenseite + 1} von {maxZeilenseite + 1}
+                      </span>
+                      <Knopf
+                        variante="leise"
+                        onClick={() => setZeilenseite(aktiveZeilenseite + 1)}
+                        disabled={aktiveZeilenseite === maxZeilenseite}
+                        grundId={`${ansichtenId}-zeilenseite`}
+                        title={
+                          aktiveZeilenseite === maxZeilenseite
+                            ? 'Die letzte Seite ist bereits sichtbar.'
+                            : undefined
+                        }
+                      >
+                        Weitere Zeilen
+                      </Knopf>
+                    </div>
+                  )}
+                  {spalten.length > 20 && (
+                    <div className="knopfgruppe">
+                      <span id={`${ansichtenId}-spaltenseite`}>
+                        Spalten {aktiveSpaltenseite * 20 + 1}–
+                        {Math.min(spalten.length, aktiveSpaltenseite * 20 + 20)} von {spalten.length}
+                      </span>
+                      <Knopf
+                        variante="leise"
+                        onClick={() => setSpaltenseite(Math.max(0, aktiveSpaltenseite - 1))}
+                        disabled={aktiveSpaltenseite === 0}
+                        grundId={`${ansichtenId}-spaltenseite`}
+                        title={
+                          aktiveSpaltenseite === 0 ? 'Die ersten Spalten sind bereits sichtbar.' : undefined
+                        }
+                      >
+                        Vorherige Spalten
+                      </Knopf>
+                      <Knopf
+                        variante="leise"
+                        onClick={() => setSpaltenseite(aktiveSpaltenseite + 1)}
+                        disabled={aktiveSpaltenseite === maxSpaltenseite}
+                        grundId={`${ansichtenId}-spaltenseite`}
+                        title={
+                          aktiveSpaltenseite === maxSpaltenseite
+                            ? 'Die letzten Spalten sind bereits sichtbar.'
+                            : undefined
+                        }
+                      >
+                        Weitere Spalten
+                      </Knopf>
+                    </div>
+                  )}
+                </div>
               )}
+              <div className="daten-vorschaudetails">
+                <Knopf variante="leise" symbol="eigenschaften" onClick={() => quelleneinstellungenOeffnen()}>
+                  {konfigurationstitel}
+                </Knopf>
+                {auswahl && props.vorschauBausteinAnzeigen && (
+                  <Knopf
+                    variante="leise"
+                    symbol="links"
+                    onClick={() => props.vorschauBausteinAnzeigen!(auswahl)}
+                  >
+                    Zum Baustein
+                  </Knopf>
+                )}
+                <details className="daten-herkunft">
+                  <summary>Herkunft und Laufstand</summary>
+                  <dl>
+                    <div>
+                      <dt>Workflow</dt>
+                      <dd>{vorschauLauf?.projektName ?? projekt.name}</dd>
+                    </div>
+                    <div>
+                      <dt>Umfang</dt>
+                      <dd>
+                        Ergebnis bis zum ausgewählten Schritt einschließlich seiner notwendigen Vorgänger.
+                        Gesamtzahl der Quelldaten unbekannt.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Begrenzung</dt>
+                      <dd>
+                        Höchstens 200 Zeilen und 256 KiB. Suche und Sortierung gelten nur für diesen
+                        Ausschnitt.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Arbeitsordner des Laufs</dt>
+                      <dd>{vorschauLauf?.optionen.basisVerzeichnis ?? 'Nicht bekannt'}</dd>
+                    </div>
+                    <div>
+                      <dt>Lauf-ID</dt>
+                      <dd>
+                        <code>{vorschauLauf?.laufId ?? 'Nicht bekannt'}</code>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Vollständige Standkennung</dt>
+                      <dd>
+                        <code>{vorschauLauf?.standHash ?? 'Nicht bekannt'}</code>
+                      </dd>
+                    </div>
+                  </dl>
+                </details>
+                {sichtbareSpalten.length > 0 && (
+                  <details className="daten-spaltenbreiten">
+                    <summary>Spaltenbreiten einstellen</summary>
+                    <div>
+                      {sichtbareSpalten.map((s, i) => (
+                        <Feld
+                          key={`${s.name}-${i}`}
+                          beschriftung={`${s.name} · Breite in Pixeln`}
+                          type="number"
+                          min={96}
+                          max={640}
+                          step={16}
+                          value={breite(s.name)}
+                          onChange={(e) => {
+                            const wert = Number(e.target.value);
+                            if (Number.isFinite(wert))
+                              setSpaltenbreiten((alt) => ({
+                                ...alt,
+                                [s.name]: Math.max(96, Math.min(640, wert)),
+                              }));
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
             </>
           ) : (
-            <p>
-              {testAktiv(lauf.phase) && aktuellerLauf
-                ? 'Der Lauf ist aktiv. Sobald eine begrenzte Datenvorschau vorliegt, wird sie hier angezeigt.'
-                : 'Für diesen Schritt ist noch keine Datenvorschau geladen. Wähle einen Tabellenschritt und klicke auf „Datenvorschau laden“.'}
-            </p>
+            <div className="daten-vorschau-leer">
+              <p>
+                {testAktiv(lauf.phase) && aktuellerLauf
+                  ? 'Der Lauf ist aktiv. Sobald eine begrenzte Datenvorschau vorliegt, wird sie hier angezeigt.'
+                  : 'Für diesen Schritt ist noch keine Datenvorschau geladen. Wähle einen Tabellenschritt und klicke auf „Datenvorschau laden“.'}
+              </p>
+              {schritt && (
+                <Knopf variante="leise" symbol="eigenschaften" onClick={() => quelleneinstellungenOeffnen()}>
+                  {konfigurationstitel}
+                </Knopf>
+              )}
+            </div>
           )}
         </section>
       </div>

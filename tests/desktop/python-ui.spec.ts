@@ -67,8 +67,10 @@ async function editorBereit(seite: Page) {
   await expect(seite.getByRole('button', { name: 'Speichern', exact: true })).toBeEnabled();
 }
 async function einstellungen(seite: Page) {
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation' })
+    .getByRole('button', { name: 'Einstellungen', exact: true })
+    .click();
   return seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
 }
 function unterschiedeLesen(

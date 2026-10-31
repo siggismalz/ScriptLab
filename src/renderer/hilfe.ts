@@ -202,7 +202,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         titel: 'Arbeitsfläche und Schriftgröße einstellen',
         texte: [
           'Mausrad, Bildlaufleisten, Ziehen an einer freien Stelle und die Ansichtspfeile verschieben die Arbeitsfläche. Strg+Mausrad zoomt nur über der Arbeitsfläche. In der Palette scrollt das Rad deren Inhalt.',
-          'Die Zoomknöpfe verkleinern, vergrößern, setzen auf 100 Prozent zurück oder zeigen mit „Alles anzeigen“ den gesamten Ablauf. „Bereiche → Einstellungen → Darstellung → Textgröße der Oberfläche“ verändert die Bedientexte unabhängig vom Canvas-Zoom.',
+          'Die Zoomknöpfe verkleinern, vergrößern, setzen auf 100 Prozent zurück oder zeigen mit „Alles anzeigen“ den gesamten Ablauf. „Einstellungen → Darstellung → Textgröße der Oberfläche“ verändert die Bedientexte unabhängig vom Canvas-Zoom.',
           'Eigenschaften und „Ansicht → Codevorschau öffnen“ sind optional. Bei schmalen Fenstern überlagern die Eigenschaften den rechten Rand; bei genügend Platz lassen sie sich anheften. Palette und Codevorschau sind an ihren Trennlinien verstellbar.',
         ],
       },
@@ -303,7 +303,7 @@ export const hilfeArtikel: readonly HilfeArtikel[] = [
         titel: 'Mitgelieferte Komponenten prüfen',
         texte: [
           'ScriptLab verwendet mitgeliefertes CPython 3.15.2 x64 einschließlich Tcl/Tk und aller festen Business-Pakete. Für Workflows innerhalb der Anwendung ist keine externe Installation oder Einrichtung nötig. Die Sprachwahl zwischen Python und VBS bleibt erhalten.',
-          '„Bereiche → Einstellungen → Laufzeit“ zeigt den tatsächlichen Status der App-Komponenten. „Erneut prüfen“ prüft den Bestand. Versionen und Programmdatei stehen lesend in technischen Angaben. Eine Interpreterauswahl und Online-/Offline-Paketinstallation werden nicht angeboten. Ein fehlender oder beschädigter Bestandteil wird als Fehler gemeldet; ein Workflowstart lädt und installiert keine Pakete.',
+          '„Einstellungen → Laufzeit“ zeigt den tatsächlichen Status der App-Komponenten. „Erneut prüfen“ prüft den Bestand. Versionen und Programmdatei stehen lesend in technischen Angaben. Eine Interpreterauswahl und Online-/Offline-Paketinstallation werden nicht angeboten. Ein fehlender oder beschädigter Bestandteil wird als Fehler gemeldet; ein Workflowstart lädt und installiert keine Pakete.',
           'Zum selbstständigen Start einer exportierten .py-Datei verwendest du in PowerShell den tatsächlichen vollständigen Interpreterpfad und den Scriptpfad, zum Beispiel: & "C:\\Python315\\python.exe" -I -u -X utf8 "C:\\Meine Workflows\\Mein Workflow.py". Ersetze beide Beispielpfade durch deine vorhandenen Pfade. Die Optionen isolieren die Modulsuche, entpuffern die Ausgabe und aktivieren UTF-8; sie bilden keine Sicherheits-Sandbox. Ein Doppelklick hängt von Windows-Dateizuordnungen ab und wird nicht vorausgesetzt.',
           'Die externe Python-Umgebung wird erst für exportierte Scripts benötigt. Die lokale Hilfe und die normale Workflowverarbeitung mit den mitgelieferten Komponenten benötigen keine Internetverbindung.',
         ],

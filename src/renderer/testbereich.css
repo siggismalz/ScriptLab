@@ -18,13 +18,30 @@
 }
 .testbereich-kopf {
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   flex: 0 0 auto;
   align-items: center;
   gap: var(--abstand-8) var(--abstand-24);
-  min-height: 44px;
-  padding: var(--abstand-4) var(--abstand-16);
-  border-bottom: 1px solid var(--farbe-trennung);
+  padding: var(--abstand-16) var(--abstand-24);
+}
+.testbereich-laufkontext {
+  min-width: 0;
+}
+.testbereich-titelzeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--abstand-8) var(--abstand-16);
+  margin-bottom: var(--abstand-4);
+}
+.testbereich-titelzeile h2 {
+  margin: 0;
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+  line-height: 1.5;
+}
+.testbereich-kontextart {
+  color: var(--farbe-text-sekundaer);
 }
 .testbereich-aktionen {
   flex-wrap: wrap;
@@ -46,6 +63,7 @@
 .testbereich-modus {
   color: var(--farbe-text-sekundaer);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .testbereich-modus strong {
   font-weight: var(--gewicht-normal);
@@ -54,7 +72,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-  padding: 0 var(--abstand-4);
+  padding: 0 var(--abstand-12);
   border-bottom: 1px solid var(--farbe-trennung);
   flex: 0 0 auto;
 }
@@ -85,7 +103,7 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding: var(--abstand-16);
+  padding: var(--abstand-24);
   overflow: auto;
   overscroll-behavior: contain;
   scroll-padding: var(--abstand-16);
@@ -110,6 +128,29 @@
   align-items: flex-start;
   flex-direction: column;
   gap: var(--abstand-12);
+}
+.lauf-ergebnisfokus {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--abstand-8);
+  padding-bottom: var(--abstand-16);
+  border-bottom: 1px solid var(--farbe-trennung);
+}
+.lauf-ergebnisfokus :is(h3, p) {
+  margin: 0;
+}
+.lauf-ergebnismeldung {
+  font-size: calc(var(--schrift-abschnitt) * var(--text-skala, 1));
+  font-weight: var(--gewicht-semibold);
+  overflow-wrap: anywhere;
+}
+.lauf-moduserklaerung {
+  max-width: 80ch;
+  color: var(--farbe-text-sekundaer);
+}
+.lauf-stopp-hinweis {
+  color: var(--farbe-hinweis);
 }
 .testbereich-wirkung {
   display: flex;
@@ -318,10 +359,6 @@
     grid-column: 2;
     grid-row: 1;
   }
-  .testbereich-kopf .testbereich-modus {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
   .lauf-tabs {
     padding-inline: var(--abstand-4);
   }
@@ -365,6 +402,11 @@
   }
   .testbereich-kopf {
     gap: var(--abstand-8) var(--abstand-16);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .testbereich-kopf .testbereich-aktionen {
+    grid-column: 1;
+    grid-row: auto;
   }
   .testbereich-metadaten > div {
     grid-template-columns: minmax(0, 1fr);
@@ -383,15 +425,13 @@
 }
 
 .anwendung[style*='--text-skala: 2'] .testbereich-kopf {
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
 }
 .anwendung[style*='--text-skala: 2'] .testbereich-aktionen {
-  grid-column: 2;
-  grid-row: 1;
-}
-.anwendung[style*='--text-skala: 2'] .testbereich-modus {
-  grid-column: 1 / -1;
-  grid-row: 2;
+  grid-column: 1;
+  grid-row: auto;
+  justify-content: flex-start;
+  margin-left: 0;
 }
 
 /* Erst die Laufentscheidung, Details erst nach gezieltem Öffnen. */
@@ -496,38 +536,23 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* Ansichtswechsel und Laufbefehle teilen denselben Kontext. */
+/* Erst der Laufkontext, danach die Ansichten innerhalb dieses Laufs. */
 .lauf-kopfleiste {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: stretch;
   flex: 0 0 auto;
   border-bottom: 1px solid var(--farbe-trennung);
 }
 .lauf-kopfnavigation {
   display: flex;
-  flex: 0 0 auto;
   align-items: center;
-  padding: var(--abstand-4) var(--abstand-8);
 }
 .testbereich-stand {
   white-space: nowrap;
 }
 .lauf-kopfleiste .lauf-tabs {
-  flex: 0 1 auto;
   border-bottom: 0;
-}
-.lauf-kopfleiste .testbereich-kopf {
-  flex: 1 1 600px;
-  border-bottom: 0;
-}
-.lauf-kopfleiste .testbereich-kopf.ist-vorbereitung {
-  display: flex;
-  justify-content: flex-end;
-  flex: 1 1 auto;
-}
-.lauf-kopfleiste .testbereich-kopf.ist-vorbereitung .testbereich-aktionen {
-  margin-left: auto;
 }
 .lauf-vorbereitung-ordner > .sl-knopf {
   align-self: flex-start;

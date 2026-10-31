@@ -127,11 +127,13 @@ async function neuenWorkflowAnlegen(knopf: 'Neu' | 'Neuer Workflow' = 'Neu'): Pr
   await expect.poll(async () => (await projektLesen()).projektKennung).not.toBe(vorher);
   await editorBereit();
 }
-async function menueAktion(menue: 'Workflow' | 'Bereiche', eintrag: string) {
+async function menueAktion(menue: 'Workflow' | 'Navigation', eintrag: string) {
   await editorBereit();
   if (menue === 'Workflow') return workflowMenueAktion(seite, eintrag);
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: eintrag, exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation' })
+    .getByRole('button', { name: eintrag, exact: true })
+    .click();
 }
 async function projektangaben(name?: string, beschreibung?: string) {
   await menueAktion('Workflow', 'Projektangaben');
@@ -249,6 +251,7 @@ test('beginnt mit einem leeren Start und isoliert den Renderer', async () => {
       'pythonWaehlen',
       'pythonHilfeOeffnen',
       'beiStandAnfrage',
+      'dateipfadAusDatei',
     ],
   });
   expect(
@@ -438,12 +441,12 @@ test('sucht mit und ohne Treffer und öffnet ein lokales Beispiel über die Vorl
 });
 
 test('prüft Credits, Zertifikatsauflistung und die gesperrten Entwicklerupdates', async () => {
-  await menueAktion('Bereiche', 'Über ScriptLab');
+  await menueAktion('Navigation', 'Über ScriptLab');
   await expect(seite.getByRole('dialog', { name: 'Über ScriptLab', exact: true })).toContainText(
     'Entwickelt von Leon Stolz',
   );
   await seite.getByRole('button', { name: 'Dialog schließen', exact: true }).click();
-  await menueAktion('Bereiche', 'Einstellungen');
+  await menueAktion('Navigation', 'Einstellungen');
   const dialog = seite.getByRole('dialog', { name: 'Einstellungen', exact: true });
   await dialog.getByRole('tab', { name: 'Updates', exact: true }).click();
   await expect(dialog.getByRole('checkbox', { name: 'Automatisch nach Updates suchen' })).not.toBeChecked();
@@ -509,7 +512,7 @@ test('hält den Fokus im Dialog und kehrt zum Auslöser zurück', async () => {
   await expect
     .poll(() => seite.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
-  await menueAktion('Bereiche', 'Einstellungen');
+  await menueAktion('Navigation', 'Einstellungen');
   await seite.getByRole('button', { name: 'Dialog schließen', exact: true }).focus();
   await seite.keyboard.press('Shift+Tab');
   expect(
@@ -519,7 +522,7 @@ test('hält den Fokus im Dialog und kehrt zum Auslöser zurück', async () => {
   ).toBe(true);
   await seite.keyboard.press('Escape');
   await expect(seite.getByRole('dialog', { name: 'Einstellungen', exact: true })).not.toBeVisible();
-  await expect(seite.getByRole('button', { name: 'Bereiche', exact: true })).toBeFocused();
+  await expect(seite.getByRole('button', { name: 'Einstellungen', exact: true })).toBeFocused();
 });
 
 test('exportiert einen kombinierten Ablauf ohne dessen Dateiaktionen auszuführen', async () => {

@@ -67,8 +67,10 @@ async function fertig(vorher) {
   return lauf();
 }
 async function einstellungen(aktion) {
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Einstellungen', exact: true })
+    .click();
   await seite.getByRole('tab', { name: 'Darstellung', exact: true }).click();
   await aktion();
   await seite.getByRole('button', { name: 'Fertig', exact: true }).click();
@@ -91,8 +93,10 @@ try {
   await seite.getByRole('button', { name: 'Vergrößern', exact: true }).click();
   await seite.getByRole('button', { name: 'Speichern', exact: true }).click();
   const vorher = await stand();
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Start', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Start', exact: true })
+    .click();
   await expect(seite.getByRole('button', { name: 'Weiterbearbeiten', exact: true })).toHaveCount(1);
   await expect(seite.getByRole('heading', { name: projekt.name, exact: true })).toHaveCount(1);
   await expect(seite.getByTestId('start-karten').getByRole('button')).toHaveCount(4);

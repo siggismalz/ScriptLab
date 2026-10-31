@@ -473,8 +473,10 @@ for (const beispiel of beispiele) {
       expect(await readFile(eingang, 'utf8')).toBe('Unveränderter Eingang.');
     }
     await zieleUnveraendert();
-    await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-    await seite.getByRole('menuitem', { name: 'Vorlagen', exact: true }).click();
+    await seite
+      .getByRole('navigation', { name: 'Globale Navigation' })
+      .getByRole('button', { name: 'Vorlagen', exact: true })
+      .click();
     const vorlagenzeile = seite
       .getByTestId('beispiele')
       .getByRole('article', { name: `${beispiel.name} – VBScript (VBS)`, exact: true });

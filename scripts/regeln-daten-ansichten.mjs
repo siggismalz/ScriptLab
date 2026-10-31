@@ -107,8 +107,10 @@ async function vorschau() {
   return fertig;
 }
 async function thema(wert, skala = '1') {
-  await seite.getByRole('button', { name: 'Bereiche', exact: true }).click();
-  await seite.getByRole('menuitem', { name: 'Einstellungen', exact: true }).click();
+  await seite
+    .getByRole('navigation', { name: 'Globale Navigation', exact: true })
+    .getByRole('button', { name: 'Einstellungen', exact: true })
+    .click();
   await seite.getByRole('tab', { name: 'Darstellung', exact: true }).click();
   await seite.getByLabel('Farbschema', { exact: true }).selectOption(wert);
   await seite.getByLabel('Textgröße der Oberfläche', { exact: true }).selectOption(skala);
